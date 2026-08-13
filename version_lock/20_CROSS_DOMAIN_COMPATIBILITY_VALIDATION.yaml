@@ -1,61 +1,91 @@
 # ============================================================
 # JARVIS / JAS
-# VERSION LOCK v1 — CROSS-DOMAIN COMPATIBILITY VALIDATION
+# VERSION LOCK v1
+# CROSS-DOMAIN COMPATIBILITY VALIDATION
 # ============================================================
 
 cross_domain_compatibility_validation:
 
-  schema_version: "1.0"
+  schema_version: "1.1"
 
   project:
     name: "JARVIS"
     architecture: "JAS"
     architecture_version: "JAS v1"
 
+
+  # ==========================================================
+  # 1. DOCUMENT
+  # ==========================================================
+
   document:
+
     id: "JAS-VL-020"
-    name: "Cross Domain Compatibility Validation"
-    version: "1.0"
-    status: "IN_PROGRESS"
-    authority: "VERSION_LOCK_v1"
+
+    name:
+      "Cross Domain Compatibility Validation"
+
+    version:
+      "1.1"
+
+    status:
+      "IN_PROGRESS"
+
+    authority:
+      - "VERSION_LOCK_v1"
+      - "JAS v1"
+      - "Approved Stack v1.0"
+      - "19_APPROVED_MODELS.md"
+      - "20_APPROVED_MCP_SERVERS.md"
+      - "21_VERSION_LOCK_CANDIDATE.yaml"
+      - "22_CANDIDATE_EVIDENCE_AND_EXACT_VERSION_RESOLUTION.yaml"
+      - "24_FINAL_EXACT_VERSION_RESOLUTION.yaml"
+
+    purpose:
+      >
+      This document validates compatibility across the major JAS
+      technology domains after the research-stage architecture and
+      candidate selections have been established.
+
+      It distinguishes architectural compatibility from acquisition,
+      artifact identity and host-runtime validation.
+
+      A component SHALL NOT be considered finally locked merely because
+      its version is compatible. Exact artifact identity, reproducibility,
+      security and release evidence remain separate Version Lock gates.
 
 
   # ==========================================================
-  # 1. PURPOSE
+  # 2. VALIDATION MODEL
   # ==========================================================
 
-  purpose:
-    >
-    This document validates compatibility across the major JAS
-    technology domains after individual component resolution.
-
-    No component is considered production-locked merely because
-    its individual version is valid.
-
-    A component may only progress toward Version Lock when its
-    dependencies, runtime, platform, security requirements and
-    artifact identity are compatible.
-
-
-  # ==========================================================
-  # 2. VALIDATION RULE
-  # ==========================================================
-
-  validation_rule:
+  validation_model:
 
     individual_compatibility:
       >
-      A component must first be individually supported.
+      The component is supported by its selected runtime, platform
+      and directly connected dependencies.
 
     cross_domain_compatibility:
       >
-      The component must then operate correctly with all directly
-      connected JAS components.
+      The component can coexist with all directly connected JAS
+      components under the selected architecture.
+
+    acquisition_validation:
+      >
+      Exact lockfile, digest, revision and artifact identity are
+      captured during controlled acquisition.
+
+    host_runtime_validation:
+      >
+      The selected stack is executed on the actual development host
+      and runtime behavior is recorded.
 
     production_lock:
       >
-      Production lock requires both individual and cross-domain
-      compatibility.
+      Production lock requires compatibility validation plus the
+      required acquisition, security, licensing, reproducibility and
+      artifact identity gates.
 
 
   # ==========================================================
@@ -66,50 +96,223 @@ cross_domain_compatibility_validation:
 
     PASS:
       description:
-        "Compatibility is verified."
+        "Compatibility is established by authoritative evidence."
 
     PASS_WITH_CONDITION:
       description:
-        "Compatible when the documented condition is satisfied."
+        "Compatibility is valid only under an explicit documented architectural condition."
+
+    SELECTED_BASELINE:
+      description:
+        "Architecture or version family has been selected, but final artifact acquisition is still pending."
+
+    CANDIDATE:
+      description:
+        "Exact or near-exact candidate selected but final validation is incomplete."
 
     PENDING:
       description:
-        "Candidate exists but required verification has not yet completed."
+        "Required evidence, acquisition or runtime validation remains."
 
     BLOCKED:
       description:
-        "A required dependency or decision prevents validation."
+        "A required dependency, identity or decision prevents validation."
 
     NOT_APPLICABLE:
       description:
-        "The relationship does not apply."
+        "The relationship does not apply to the selected JAS architecture."
+
+    CONDITIONAL:
+      description:
+        "Required only if a future architectural path activates the component."
 
     LOCKED:
       description:
-        "Compatibility is verified and the component may enter final lock."
+        "All required gates for the component have passed and it may enter final Version Lock."
 
 
   # ==========================================================
-  # 4. MASTER DEPENDENCY CHAINS
+  # 4. ARCHITECTURAL BASELINE
+  # ==========================================================
+
+  architectural_baseline:
+
+    host_development:
+
+      operating_system:
+        "Windows 10 Pro"
+
+      architecture:
+        "x86_64"
+
+      role:
+        "Primary development and local validation host"
+
+
+    deployment:
+
+      operating_system:
+        "Linux"
+
+      architecture:
+        "x86_64"
+
+      role:
+        "Primary deployment/container target"
+
+
+    core_runtime:
+
+      python:
+        "3.13"
+
+      node:
+        "24 LTS"
+
+      package_manager:
+        "pnpm 11"
+
+
+    local_llm:
+
+      runtime:
+        "Ollama"
+
+      model:
+        "qwen3:4b-instruct-2507-q4_K_M"
+
+      model_family:
+        "Qwen3-4B-Instruct-2507"
+
+      quantization:
+        "Q4_K_M"
+
+
+    ml_runtime:
+
+      environment:
+        "aura-ml"
+
+      python:
+        "3.13"
+
+      pytorch:
+        "2.13.0"
+
+      torchvision:
+        "0.28.0"
+
+      cuda:
+        "13.0"
+
+      role:
+        >
+        Direct PyTorch-based model development and inference paths
+        separate from the primary Ollama LLM path.
+
+
+    voice_runtime:
+
+      environment:
+        "aura-voice"
+
+      python:
+        "3.13"
+
+      faster_whisper:
+        "1.2.1"
+
+      ctranslate2:
+        "4.8.1"
+
+      cuda:
+        "12.x"
+
+      cudnn:
+        "9"
+
+      compute_type:
+        "float16"
+
+      role:
+        >
+        Speech recognition runtime separated from the ML/PyTorch
+        environment.
+
+
+    frontend:
+
+      node:
+        "24 LTS"
+
+      pnpm:
+        "11.x"
+
+      react:
+        "19.2.8"
+
+      react_dom:
+        "19.2.8"
+
+      vite:
+        "8.x"
+
+      typescript:
+        "7.x"
+
+
+    mcp:
+
+      protocol:
+        "2026-07-28"
+
+      python_sdk:
+        "2.0.0"
+
+      status:
+        "SELECTED_BASELINE"
+
+
+  # ==========================================================
+  # 5. MASTER DEPENDENCY CHAINS
   # ==========================================================
 
   dependency_chains:
 
-    ai:
+    primary_llm:
 
-      - "Qwen3"
-      - "Model Runtime"
-      - "Transformers"
-      - "PyTorch"
-      - "CUDA"
+      - "Qwen3-4B-Instruct-2507"
+      - "Ollama"
       - "NVIDIA Driver"
-      - "Container Runtime"
+      - "Host GPU"
+
+
+    ml:
+
+      - "CPython 3.13"
+      - "uv"
+      - "PyTorch 2.13.0"
+      - "torchvision 0.28.0"
+      - "CUDA 13.0"
+      - "NVIDIA Driver"
+      - "Host GPU"
+
+
+    voice:
+
+      - "CPython 3.13"
+      - "uv"
+      - "faster-whisper 1.2.1"
+      - "CTranslate2 4.8.1"
+      - "CUDA 12.x"
+      - "cuDNN 9"
+      - "NVIDIA Driver"
       - "Host GPU"
 
 
     backend:
 
-      - "CPython"
+      - "CPython 3.13"
       - "uv"
       - "FastAPI"
       - "Pydantic"
@@ -120,27 +323,27 @@ cross_domain_compatibility_validation:
 
     browser:
 
-      - "CPython"
-      - "Playwright"
-      - "Chromium"
+      - "CPython 3.13"
+      - "Playwright 1.61.0"
+      - "Playwright Chromium Artifact"
 
 
     frontend:
 
-      - "Node.js"
-      - "pnpm"
-      - "TypeScript"
-      - "React"
-      - "react-dom"
-      - "Vite"
+      - "Node.js 24 LTS"
+      - "pnpm 11"
+      - "TypeScript 7.x"
+      - "React 19.2.8"
+      - "react-dom 19.2.8"
+      - "Vite 8.x"
 
 
     mcp:
 
-      - "MCP Protocol"
-      - "MCP Python SDK"
+      - "MCP Protocol 2026-07-28"
+      - "MCP Python SDK 2.0.0"
       - "JAS MCP Client"
-      - "MCP Server"
+      - "Enabled MCP Servers"
       - "Transport"
       - "Permission Profile"
 
@@ -150,6 +353,7 @@ cross_domain_compatibility_validation:
       - "Docker"
       - "BuildKit"
       - "Buildx"
+      - "Compose"
       - "Base Image"
       - "Application Artifact"
       - "OCI Image"
@@ -158,193 +362,551 @@ cross_domain_compatibility_validation:
     release:
 
       - "Source Revision"
-      - "Lockfiles"
+      - "uv.lock"
+      - "pnpm-lock.yaml"
       - "Container Digest"
+      - "Model Digest"
       - "SBOM"
       - "Provenance"
       - "Signature"
 
 
   # ==========================================================
-  # 5. CORE RUNTIME
+  # 6. HOST VALIDATION BASELINE
   # ==========================================================
 
-  core_runtime:
+  host_validation:
 
-    python:
+    snapshot:
 
-      candidate:
-        "Python 3.12+"
+      source:
+        "D:/AURA/JAS/acquisition/host_snapshot/host_snapshot.txt"
 
-      exact_version:
-        null
-
-      status:
-        "PENDING"
-
-      dependencies:
-
-        uv:
-          "PENDING"
-
-        fastapi:
-          "PENDING"
-
-        pydantic:
-          "PENDING"
-
-        langgraph:
-          "PENDING"
-
-        playwright:
-          "PENDING"
-
-        mcp_sdk:
-          "PENDING"
+      captured:
+        "2026-08-13T13:34:01+02:00"
 
 
-    node:
+    operating_system:
 
-      candidate:
-        "24.18.1"
+      product:
+        "Windows 10 Pro"
+
+      version:
+        "2009"
+
+      build:
+        "26200"
+
+      architecture:
+        "64 bit"
 
       status:
-        "PENDING"
-
-      dependencies:
-
-        pnpm:
-          "PENDING"
-
-        typescript:
-          "PENDING"
-
-        react:
-          "PENDING"
-
-        vite:
-          "PENDING"
+        "PASS"
 
 
-  # ==========================================================
-  # 6. AI COMPATIBILITY CHAIN
-  # ==========================================================
+    cpu:
 
-  ai:
+      model:
+        "Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz"
 
-    qwen3:
+      physical_cores:
+        6
 
-      component_id:
-        "MODEL-LLM-QWEN3"
+      logical_processors:
+        12
 
       status:
-        "PENDING_EXACT_VARIANT"
+        "PASS"
 
 
-      required_identity:
+    memory:
 
-        - "Exact variant"
-        - "Revision"
-        - "Artifact digest"
-        - "Quantization"
-        - "Runtime"
-        - "License"
+      total_bytes:
+        17029664768
 
-
-    model_runtime:
+      approximate_gb:
+        15.86
 
       status:
-        "PENDING"
+        "PASS"
 
 
-    transformers:
+    gpu:
 
-      candidate:
-        null
+      vendor:
+        "NVIDIA"
 
-      status:
-        "PENDING"
+      model:
+        "GeForce GTX 1660 Ti"
 
+      vram_mib:
+        6144
 
-    pytorch:
+      compute_capability:
+        "7.5"
 
-      candidate:
-        null
-
-      status:
-        "PENDING"
-
-
-    cuda:
-
-      candidate:
-        null
+      architecture:
+        "Turing"
 
       status:
-        "PENDING"
+        "PASS"
 
 
     nvidia_driver:
 
-      candidate:
-        null
+      version:
+        "610.62"
+
+      source:
+        "nvidia-smi"
+
+      validation:
+        "HOST_VALIDATED_2026-08-13"
 
       status:
-        "PENDING"
+        "PASS"
 
 
-    host_gpu:
+    python_launcher:
 
-      profile:
-        null
+      version:
+        "3.13.14"
+
+      source:
+        "py --version"
 
       status:
-        "PENDING"
+        "HOST_PRESENT"
 
 
-    container_runtime:
+    python_default_command:
 
-      docker:
-        "29.6.2"
+      version:
+        "3.11.9"
+
+      source:
+        "python --version"
+
+      status:
+        "NOT_SELECTED"
+
+      note:
+        >
+        The system `python` command resolves to Python 3.11.9,
+        while the Python launcher provides Python 3.13.14.
+        JAS environment creation SHALL explicitly select CPython 3.13
+        rather than relying on the default `python` command.
+
+
+    uv:
+
+      version:
+        "0.10.0"
+
+      source:
+        "uv --version"
+
+      status:
+        "HOST_PRESENT"
+
+
+    node:
+
+      version:
+        "24.16.0"
+
+      source:
+        "node --version"
+
+      status:
+        "HOST_PRESENT"
+
+      note:
+        >
+        Host version is evidence of current installation only.
+        It does not replace the selected Version Lock candidate.
+
+
+    npm:
+
+      version:
+        "11.13.0"
+
+      status:
+        "HOST_PRESENT"
+
+
+    pnpm:
+
+      installed:
+        false
+
+      status:
+        "NOT_INSTALLED"
+
+      action:
+        "Acquire selected pnpm 11 version during frontend setup."
+
+
+    ollama:
+
+      version:
+        "0.32.9"
+
+      source:
+        "ollama --version"
+
+      status:
+        "HOST_PRESENT"
+
+      note:
+        >
+        Exact Ollama installer and executable identity remain
+        acquisition-stage artifacts.
+
+
+    docker:
+
+      installed:
+        false
+
+      status:
+        "NOT_INSTALLED"
+
+      action:
+        "Install during container acquisition phase."
+
+
+    wsl:
+
+      installed:
+        false
+
+      status:
+        "NOT_INSTALLED"
+
+      action:
+        >
+        WSL SHALL be installed only if required by the selected
+        container/deployment architecture.
+
+
+    git:
+
+      version:
+        "2.53.0.windows.1"
+
+      status:
+        "HOST_PRESENT"
+
+
+  # ==========================================================
+  # 7. PRIMARY LLM COMPATIBILITY
+  # ==========================================================
+
+  primary_llm:
+
+    model:
+
+      family:
+        "Qwen3"
+
+      exact_model:
+        "Qwen3-4B-Instruct-2507"
+
+      upstream_id:
+        "Qwen/Qwen3-4B-Instruct-2507"
+
+      ollama_tag:
+        "qwen3:4b-instruct-2507-q4_K_M"
+
+      quantization:
+        "Q4_K_M"
+
+      parameters:
+        "4.02B"
+
+      approximate_size_gb:
+        2.5
+
+      license:
+        "Apache-2.0"
+
+      status:
+        "SELECTED_BASELINE"
+
+
+    runtime:
+
+      implementation:
+        "Ollama"
+
+      host_platform:
+        "Windows 10 x86_64"
+
+      gpu_acceleration:
+        true
+
+      status:
+        "SELECTED_BASELINE"
+
+
+    gpu:
+
+      model:
+        "NVIDIA GeForce GTX 1660 Ti"
+
+      vram_gb:
+        6
+
+      compute_capability:
+        "7.5"
+
+      compatibility:
+        "PASS"
+
+
+    driver:
+
+      version:
+        "610.62"
+
+      status:
+        "PASS"
+
+
+    model_runtime_relationship:
+
+      qwen3_ollama:
+        "PASS_WITH_CONDITION"
+
+      condition:
+        >
+        Runtime behavior, GPU utilization and model loading SHALL
+        be validated during acquisition/runtime testing.
+
+
+    pytorch_dependency:
+
+      required:
+        false
+
+      status:
+        "NOT_APPLICABLE"
+
+
+    transformers_dependency:
+
+      required:
+        false
+
+      status:
+        "NOT_APPLICABLE"
+
+
+    cuda_toolkit_dependency:
+
+      required:
+        false
+
+      status:
+        "NOT_APPLICABLE"
+
+      note:
+        >
+        The primary Ollama path does not require JAS to install
+        the CUDA Toolkit as a direct application dependency.
+
+
+    primary_llm_chain_status:
+      "PASS_WITH_CONDITION"
+
+
+  # ==========================================================
+  # 8. ML / PYTORCH COMPATIBILITY
+  # ==========================================================
+
+  ml:
+
+    environment:
+      "aura-ml"
+
+
+    python:
+
+      version:
+        "3.13"
+
+      status:
+        "SELECTED_BASELINE"
+
+
+    pytorch:
+
+      version:
+        "2.13.0"
+
+      status:
+        "SELECTED_BASELINE"
+
+      role:
+        >
+        Direct PyTorch model development/inference outside the
+        primary Ollama Qwen3 path.
+
+
+    torchvision:
+
+      version:
+        "0.28.0"
+
+      status:
+        "SELECTED_BASELINE"
+
+
+    cuda:
+
+      version:
+        "13.0"
+
+      status:
+        "SELECTED_BASELINE"
+
+
+    gpu:
+
+      model:
+        "NVIDIA GeForce GTX 1660 Ti"
+
+      compute_capability:
+        "7.5"
+
+      status:
+        "PASS"
+
+
+    driver:
+
+      version:
+        "610.62"
 
       status:
         "PASS_WITH_CONDITION"
 
-
-    compatibility_matrix:
-
-      qwen3_transformers:
-        "PENDING"
-
-      transformers_pytorch:
-        "PENDING"
-
-      pytorch_cuda:
-        "PENDING"
-
-      cuda_driver:
-        "PENDING"
-
-      driver_gpu:
-        "PENDING"
-
-      gpu_container:
-        "PENDING"
-
-      docker_gpu_runtime:
-        "PENDING"
+      condition:
+        >
+        Actual PyTorch CUDA runtime availability SHALL be validated
+        after environment installation.
 
 
-    ai_chain_status:
-      "BLOCKED"
+    dependency_isolation:
+
+      primary_llm_ollama:
+        "ISOLATED"
+
+      voice_ct2:
+        "ISOLATED"
+
+      status:
+        "PASS"
 
 
-    blocker:
-      "Exact AI runtime, GPU profile and CUDA/PyTorch combination unresolved."
+    ml_chain_status:
+      "PASS_WITH_CONDITION"
 
 
   # ==========================================================
-  # 7. EMBEDDING / RERANKER CHAIN
+  # 9. VOICE COMPATIBILITY
+  # ==========================================================
+
+  voice:
+
+    environment:
+      "aura-voice"
+
+
+    python:
+      "3.13"
+
+
+    faster_whisper:
+
+      version:
+        "1.2.1"
+
+      status:
+        "SELECTED_BASELINE"
+
+
+    ctranslate2:
+
+      version:
+        "4.8.1"
+
+      status:
+        "SELECTED_BASELINE"
+
+
+    cuda:
+
+      family:
+        "12.x"
+
+      status:
+        "SELECTED_BASELINE"
+
+
+    cudnn:
+
+      major:
+        9
+
+      status:
+        "SELECTED_BASELINE"
+
+
+    compute_type:
+      "float16"
+
+
+    gpu:
+
+      model:
+        "NVIDIA GeForce GTX 1660 Ti"
+
+      vram_gb:
+        6
+
+      status:
+        "PASS_WITH_CONDITION"
+
+      condition:
+        >
+        large-v3 runtime loading and short-audio transcription
+        SHALL be validated on the actual 6 GB GPU.
+
+
+    model:
+
+      approved:
+        "Systran/faster-whisper-large-v3"
+
+      runtime:
+        "faster-whisper / CTranslate2"
+
+
+    pytorch_dependency:
+      false
+
+    dependency_isolation:
+      true
+
+    voice_chain_status:
+      "PASS_WITH_CONDITION"
+
+
+  # ==========================================================
+  # 10. RETRIEVAL MODEL COMPATIBILITY
   # ==========================================================
 
   retrieval_models:
@@ -354,14 +916,20 @@ cross_domain_compatibility_validation:
       model:
         "BAAI/bge-m3"
 
+      runtime:
+        "aura-ml"
+
       revision:
         null
 
-      runtime:
+      artifact_digest:
         null
 
       status:
-        "PENDING"
+        "CANDIDATE"
+
+      blocker:
+        "Exact revision and artifact identity require acquisition."
 
 
     reranker:
@@ -369,42 +937,44 @@ cross_domain_compatibility_validation:
       model:
         "BAAI/bge-reranker-v2-m3"
 
+      runtime:
+        "aura-ml"
+
       revision:
         null
 
-      runtime:
+      artifact_digest:
         null
 
       status:
-        "PENDING"
+        "CANDIDATE"
+
+      blocker:
+        "Exact revision and artifact identity require acquisition."
 
 
-    compatibility:
+    shared_runtime:
 
-      embedding_runtime:
-        "PENDING"
+      pytorch:
+        "2.13.0"
 
-      reranker_runtime:
-        "PENDING"
+      transformers:
+        "Pending exact acquisition version"
 
-      shared_runtime:
-        "PENDING"
-
-
-    status:
-      "PENDING"
+      status:
+        "PASS_WITH_CONDITION"
 
 
   # ==========================================================
-  # 8. STT / VOICE CHAIN
+  # 11. VISION COMPATIBILITY
   # ==========================================================
 
-  voice:
+  vision:
 
-    whisper:
+    siglip2:
 
-      model:
-        "OpenAI Whisper"
+      model_family:
+        "SigLIP2"
 
       exact_variant:
         null
@@ -413,216 +983,192 @@ cross_domain_compatibility_validation:
         null
 
       runtime:
-        null
+        "aura-ml"
 
       status:
-        "PENDING"
+        "CANDIDATE"
+
+      blocker:
+        "Exact model variant/revision requires acquisition."
 
 
-    vad:
+    opencv:
 
-      implementation:
-        "Silero VAD / approved VAD implementation"
+      package:
+        "opencv-python"
 
       exact_version:
         null
 
       status:
-        "PENDING"
+        "CANDIDATE"
+
+      blocker:
+        "Exact resolver version will be captured in ML lockfile."
 
 
-    tts:
+    runtime:
 
-      engine:
-        "Piper"
+      python:
+        "3.13"
 
-      enabled:
-        false
+      pytorch:
+        "2.13.0"
+
+      torchvision:
+        "0.28.0"
+
+      cuda:
+        "13.0"
 
       status:
-        "PROFILE_DEPENDENT"
-
-
-    compatibility:
-
-      whisper_runtime:
-        "PENDING"
-
-      whisper_vad:
-        "PENDING"
-
-      tts_runtime:
-        "NOT_APPLICABLE"
-
-
-    status:
-      "PENDING"
+        "PASS_WITH_CONDITION"
 
 
   # ==========================================================
-  # 9. BACKEND COMPATIBILITY
+  # 12. BACKEND COMPATIBILITY
   # ==========================================================
 
   backend:
 
     python:
-      "PENDING"
+
+      version:
+        "3.13"
+
+      status:
+        "SELECTED_BASELINE"
+
+
+    uv:
+
+      version:
+        null
+
+      status:
+        "CANDIDATE"
+
+      note:
+        >
+        Host uv 0.10.0 is available. Final project uv version and
+        lockfile behavior SHALL be recorded during environment setup.
 
 
     fastapi:
 
-      candidate:
+      exact_version:
         null
 
       status:
-        "PENDING"
+        "CANDIDATE"
+
+      resolver:
+        "Final version captured through uv resolution."
 
 
     pydantic:
 
-      candidate:
+      major_line:
+        "2.x"
+
+      exact_version:
         null
 
       status:
-        "PENDING"
+        "CANDIDATE"
+
+      resolver:
+        "Final version captured through uv resolution."
 
 
     langgraph:
 
-      candidate:
+      exact_version:
         null
 
       status:
-        "PENDING"
+        "CANDIDATE"
+
+      resolver:
+        "Final version captured through uv resolution."
 
 
     postgresql:
 
-      candidate:
+      server:
         "18.4"
 
+      architecture:
+        "linux/amd64"
+
+      image:
+        null
+
+      digest:
+        null
+
       status:
-        "PENDING"
+        "CANDIDATE"
+
+      blocker:
+        "Exact container image digest requires acquisition."
 
 
     qdrant:
 
-      candidate:
+      server:
         "1.18.2"
 
+      architecture:
+        "linux/amd64"
+
+      image:
+        null
+
+      digest:
+        null
+
       status:
-        "PENDING"
+        "CANDIDATE"
 
-
-    compatibility_matrix:
-
-      python_fastapi:
-        "PENDING"
-
-      python_pydantic:
-        "PENDING"
-
-      fastapi_pydantic:
-        "PENDING"
-
-      python_langgraph:
-        "PENDING"
-
-      python_postgresql_driver:
-        "PENDING"
-
-      python_qdrant_client:
-        "PENDING"
-
-      postgresql_migrations:
-        "PENDING"
-
-      qdrant_api:
-        "PENDING"
+      blocker:
+        "Exact container image digest requires acquisition."
 
 
     backend_status:
-      "PENDING"
+      "PASS_WITH_CONDITION"
 
 
   # ==========================================================
-  # 10. DATA COMPATIBILITY
-  # ==========================================================
-
-  data:
-
-    postgresql:
-
-      server:
-        "18.4"
-
-      client:
-        null
-
-      migration:
-        null
-
-      status:
-        "PENDING"
-
-
-    qdrant:
-
-      server:
-        "1.18.2"
-
-      client:
-        null
-
-      status:
-        "PENDING"
-
-
-    redis:
-
-      enabled:
-        false
-
-      status:
-        "PROFILE_DEPENDENT"
-
-
-    sqlite:
-
-      enabled:
-        false
-
-      status:
-        "PROFILE_DEPENDENT"
-
-
-    object_storage:
-
-      enabled:
-        false
-
-      status:
-        "PROFILE_DEPENDENT"
-
-
-  # ==========================================================
-  # 11. BROWSER COMPATIBILITY
+  # 13. BROWSER COMPATIBILITY
   # ==========================================================
 
   browser:
 
     playwright:
 
-      candidate:
+      python_package:
+        "playwright"
+
+      candidate_version:
+        "1.61.0"
+
+      exact_version:
         "1.61.0"
 
       status:
-        "PENDING"
+        "CANDIDATE"
 
 
     chromium:
 
-      revision:
+      package_source:
+        "Playwright-managed browser artifact"
+
+      exact_revision:
+        null
+
+      exact_build:
         null
 
       artifact_identity:
@@ -632,145 +1178,182 @@ cross_domain_compatibility_validation:
         "PENDING"
 
 
+    coupling_rule:
+      >
+      Playwright package version and its coupled browser artifact
+      SHALL be acquired and recorded together.
+
+
     firefox:
-
-      enabled:
-        false
-
-      status:
-        "PROFILE_DEPENDENT"
+      enabled: false
+      status: "NOT_APPLICABLE"
 
 
     webkit:
-
-      enabled:
-        false
-
-      status:
-        "PROFILE_DEPENDENT"
+      enabled: false
+      status: "NOT_APPLICABLE"
 
 
-    compatibility_matrix:
-
-      python_playwright:
-        "PENDING"
-
-      playwright_chromium:
-        "PENDING"
-
-      playwright_firefox:
-        "NOT_APPLICABLE"
-
-      playwright_webkit:
-        "NOT_APPLICABLE"
-
-      chromium_platform:
-        "PENDING"
-
-
-    primary_browser_chain:
+    browser_chain_status:
       "BLOCKED"
 
-
     blocker:
-      "Exact Playwright browser artifact identity unresolved."
+      "Playwright Chromium artifact identity has not yet been acquired."
 
 
   # ==========================================================
-  # 12. FRONTEND COMPATIBILITY
+  # 14. FRONTEND COMPATIBILITY
   # ==========================================================
 
   frontend:
 
     node:
-      "24.18.1"
+
+      selected_line:
+        "24 LTS"
+
+      candidate:
+        "24.18.1"
+
+      host_version:
+        "24.16.0"
+
+      status:
+        "CANDIDATE"
+
+      note:
+        >
+        Host Node 24.16.0 demonstrates current Node 24 availability.
+        Exact project Node version remains an acquisition/setup decision.
+
 
     pnpm:
-      "11.17.0"
+
+      selected_line:
+        "11.x"
+
+      candidate:
+        "11.17.0"
+
+      host_installed:
+        false
+
+      status:
+        "CANDIDATE"
+
 
     typescript:
-      "7.0.2"
+
+      selected_line:
+        "7.x"
+
+      candidate:
+        "7.0.2"
+
+      status:
+        "CANDIDATE"
+
 
     react:
-      "19.2.8"
+
+      version:
+        "19.2.8"
+
+      status:
+        "SELECTED_BASELINE"
+
 
     react_dom:
-      null
+
+      version:
+        "19.2.8"
+
+      status:
+        "SELECTED_BASELINE"
+
+      compatibility:
+        "React companion exact-version match."
+
 
     vite:
-      "8.1.5"
+
+      selected_line:
+        "8.x"
+
+      candidate:
+        "8.1.5"
+
+      status:
+        "CANDIDATE"
 
 
-    compatibility_matrix:
+    lockfile:
 
-      node_pnpm:
-        "PENDING"
+      file:
+        "pnpm-lock.yaml"
 
-      node_typescript:
-        "PENDING"
+      generation:
+        "pnpm resolver"
 
-      node_react:
-        "PENDING"
+      frozen_install:
+        true
 
-      node_vite:
-        "PENDING"
-
-      pnpm_typescript:
-        "PENDING"
-
-      pnpm_react:
-        "PENDING"
-
-      pnpm_vite:
-        "PENDING"
-
-      typescript_react:
-        "PENDING"
-
-      typescript_vite:
-        "PENDING"
-
-      react_react_dom:
-        "BLOCKED"
-
-      react_vite:
-        "PENDING"
-
-
-    blocker:
-
-      component:
-        "react-dom"
-
-      reason:
-        "Exact companion version has not been resolved."
+      status:
+        "PENDING_ACQUISITION"
 
 
     frontend_status:
-      "BLOCKED"
+      "PASS_WITH_CONDITION"
 
 
   # ==========================================================
-  # 13. MCP COMPATIBILITY
+  # 15. MCP COMPATIBILITY
   # ==========================================================
 
   mcp:
 
     protocol:
-      "2026-07-28"
+
+      version:
+        "2026-07-28"
+
+      status:
+        "SELECTED_BASELINE"
+
 
     python_sdk:
-      "2.x"
 
-    exact_sdk_version:
-      null
+      name:
+        "MCP Python SDK"
+
+      exact_version:
+        "2.0.0"
+
+      status:
+        "SELECTED_BASELINE"
+
+
+    protocol_sdk:
+
+      compatibility:
+        "PASS"
+
+      condition:
+        >
+        Enabled servers must independently satisfy the selected
+        MCP protocol revision and transport requirements.
 
 
     client:
-      "JAS MCP Client"
+
+      implementation:
+        "JAS MCP Client"
+
+      status:
+        "SELECTED_BASELINE"
 
 
-    transport:
+    transports:
 
       stdio:
         "APPROVED"
@@ -782,119 +1365,213 @@ cross_domain_compatibility_validation:
         "LEGACY"
 
 
-    compatibility_matrix:
-
-      protocol_sdk:
-        "PENDING_EXACT_SDK_VERSION"
-
-      sdk_python:
-        "PENDING"
-
-      sdk_transport_stdio:
-        "PENDING"
-
-      sdk_transport_streamable_http:
-        "PENDING"
-
-      server_protocol:
-        "PENDING"
-
-      server_sdk:
-        "PENDING"
-
-
     reference_servers:
 
       time:
-        "PENDING"
+        status:
+          "PROFILE_DEPENDENT"
 
       filesystem:
-        "PENDING"
+        status:
+          "PROFILE_DEPENDENT"
 
       git:
-        "PENDING"
+        status:
+          "PROFILE_DEPENDENT"
 
       fetch:
-        "PENDING"
+        status:
+          "PROFILE_DEPENDENT"
 
       memory:
-        "PENDING"
+        status:
+          "PROFILE_DEPENDENT"
+
+
+    disabled_servers:
 
       sequential_thinking:
-        "DEVELOPMENT_ONLY"
+        status:
+          "DEVELOPMENT_ONLY"
 
       everything:
-        "TESTING_ONLY"
+        status:
+          "TESTING_ONLY"
 
 
-    external_servers:
-
-      browser:
-        "BLOCKED"
-
-      database:
-        "BLOCKED"
-
-      docker:
-        "BLOCKED"
-
-      github:
-        "BLOCKED"
+    server_identity_rule:
+      >
+      No MCP server SHALL be promoted to production lock until its
+      publisher, repository, version/revision, transport, permissions,
+      license and immutable identity where applicable are captured.
 
 
     mcp_status:
-      "BLOCKED"
+      "PASS_WITH_CONDITION"
 
 
   # ==========================================================
-  # 14. CONTAINER COMPATIBILITY
+  # 16. CONTAINER COMPATIBILITY
   # ==========================================================
 
   containers:
 
+    host:
+
+      docker_installed:
+        false
+
+      wsl_installed:
+        false
+
+      status:
+        "PENDING_INSTALLATION"
+
+
     docker:
-      "29.6.2"
+
+      candidate:
+        "29.6.2"
+
+      status:
+        "CANDIDATE"
+
 
     buildkit:
-      "0.31.1"
+
+      candidate:
+        "0.31.1"
+
+      status:
+        "CANDIDATE"
+
 
     buildx:
-      null
+
+      exact_version:
+        null
+
+      status:
+        "PENDING"
+
 
     compose:
-      null
+
+      exact_version:
+        null
+
+      status:
+        "PENDING"
+
 
     oci:
-      "OCI"
+
+      standard:
+        "OCI"
+
+      status:
+        "PASS"
 
 
-    compatibility_matrix:
+    gpu_container_runtime:
 
-      docker_buildkit:
-        "PASS_WITH_CONDITION"
+      nvidia_container_toolkit:
+        status:
+          "CONDITIONAL"
 
-      docker_buildx:
-        "PENDING"
-
-      buildx_buildkit:
-        "PENDING"
-
-      compose_docker:
-        "PENDING"
-
-      base_image_docker:
-        "PENDING"
-
-      oci_image:
-        "PENDING"
+        reason:
+          >
+          Not required for the current native Windows Ollama path.
+          Required only if GPU workloads are moved into Linux containers.
 
 
     container_status:
       "BLOCKED"
 
+    blocker:
+      >
+      Docker/WSL installation and exact Buildx/Compose/base-image
+      identities have not yet been acquired.
+
 
   # ==========================================================
-  # 15. SUPPLY CHAIN
+  # 17. DATA COMPATIBILITY
+  # ==========================================================
+
+  data:
+
+    postgresql:
+
+      version:
+        "18.4"
+
+      deployment:
+        "Docker / OCI"
+
+      architecture:
+        "linux/amd64"
+
+      client:
+        null
+
+      migration_tool:
+        null
+
+      status:
+        "CANDIDATE"
+
+
+    qdrant:
+
+      version:
+        "1.18.2"
+
+      deployment:
+        "Docker / OCI"
+
+      architecture:
+        "linux/amd64"
+
+      client:
+        null
+
+      status:
+        "CANDIDATE"
+
+
+    redis:
+
+      enabled:
+        false
+
+      status:
+        "NOT_APPLICABLE"
+
+
+    sqlite:
+
+      enabled:
+        false
+
+      status:
+        "NOT_APPLICABLE"
+
+
+    object_storage:
+
+      enabled:
+        false
+
+      status:
+        "NOT_APPLICABLE"
+
+
+    data_status:
+      "PASS_WITH_CONDITION"
+
+
+  # ==========================================================
+  # 18. SUPPLY CHAIN COMPATIBILITY
   # ==========================================================
 
   supply_chain:
@@ -914,7 +1591,7 @@ cross_domain_compatibility_validation:
         "uv.lock"
 
       status:
-        "PENDING"
+        "PENDING_ACQUISITION"
 
 
     frontend_lockfile:
@@ -923,12 +1600,29 @@ cross_domain_compatibility_validation:
         "pnpm-lock.yaml"
 
       status:
-        "PENDING"
+        "PENDING_ACQUISITION"
+
+
+    model_identity:
+
+      qwen3:
+
+        ollama_tag:
+          "qwen3:4b-instruct-2507-q4_K_M"
+
+        digest:
+          "0edcdef34593"
+
+        status:
+          "RECORDED_PENDING_FULL_LOCAL_CAPTURE"
 
 
     image_digest:
 
-      value:
+      postgresql:
+        null
+
+      qdrant:
         null
 
       status:
@@ -949,7 +1643,7 @@ cross_domain_compatibility_validation:
 
     provenance:
 
-      direction:
+      standard:
         "SLSA-aligned / OCI attestation"
 
       implementation:
@@ -961,14 +1655,14 @@ cross_domain_compatibility_validation:
 
     signing:
 
-      candidate:
+      tool:
         "Cosign"
 
       version:
         null
 
       status:
-        "PENDING"
+        "CANDIDATE"
 
 
     supply_chain_status:
@@ -976,25 +1670,54 @@ cross_domain_compatibility_validation:
 
 
   # ==========================================================
-  # 16. SECURITY CROSS-CHECK
+  # 19. SECURITY CROSS-CHECK
   # ==========================================================
 
   security:
 
     authorization:
-      "JAS Internal Authorization / Policy Engine"
+
+      implementation:
+        "JAS Internal Authorization / Policy Engine"
+
+      status:
+        "PASS"
+
 
     audit:
-      "JAS Internal Audit System"
+
+      implementation:
+        "JAS Internal Audit System"
+
+      status:
+        "PASS"
+
 
     secret_management:
-      null
+
+      implementation:
+        null
+
+      status:
+        "PENDING"
+
 
     sandbox:
-      null
+
+      implementation:
+        null
+
+      status:
+        "PENDING"
+
 
     dependency_scanner:
-      null
+
+      implementation:
+        null
+
+      status:
+        "PENDING"
 
 
     mandatory_controls:
@@ -1009,61 +1732,25 @@ cross_domain_compatibility_validation:
       - "Rollback"
 
 
-    status:
-
-      authorization:
-        "PASS"
-
-      audit:
-        "PASS"
-
-      secret_management:
-        "PENDING"
-
-      sandbox:
-        "PENDING"
-
-      dependency_scanner:
-        "PENDING"
-
-      artifact_integrity:
-        "PENDING"
-
-
     security_status:
       "BLOCKED"
 
 
   # ==========================================================
-  # 17. LICENSE CROSS-CHECK
+  # 20. LICENSE CROSS-CHECK
   # ==========================================================
 
   licensing:
 
-    mandatory_components:
+    selected_components:
 
-      python:
-        "PENDING"
-
-      fastapi:
-        "PENDING"
-
-      pydantic:
-        "PENDING"
-
-      langgraph:
-        "PENDING"
-
-      qdrant:
-        "PENDING"
-
-      postgresql:
-        "PENDING"
-
-      playwright:
+      qwen3:
         "Apache-2.0"
 
       react:
+        "MIT"
+
+      react_dom:
         "MIT"
 
       vite:
@@ -1078,17 +1765,29 @@ cross_domain_compatibility_validation:
       pnpm:
         "MIT"
 
+      playwright:
+        "Apache-2.0"
 
-    special_review:
 
-      piper:
-        "REQUIRED_IF_ENABLED"
+    pending_components:
 
-      paligemma:
-        "REQUIRED_IF_ENABLED"
-
-      colpali:
-        "REQUIRED_IF_ENABLED"
+      - "Python"
+      - "FastAPI"
+      - "Pydantic"
+      - "LangGraph"
+      - "PyTorch"
+      - "torchvision"
+      - "Transformers"
+      - "faster-whisper"
+      - "CTranslate2"
+      - "Qdrant"
+      - "PostgreSQL"
+      - "OpenCV"
+      - "MCP SDK"
+      - "Enabled MCP servers"
+      - "Container images"
+      - "Security tooling"
+      - "Supply-chain tooling"
 
 
     status:
@@ -1096,18 +1795,33 @@ cross_domain_compatibility_validation:
 
 
   # ==========================================================
-  # 18. PLATFORM CROSS-CHECK
+  # 21. PLATFORM CROSS-CHECK
   # ==========================================================
 
   platform:
 
-    primary:
+    primary_development:
 
-      development:
-        "Windows x86_64"
+      os:
+        "Windows 10"
 
-      deployment:
-        "Linux x86_64"
+      architecture:
+        "x86_64"
+
+      status:
+        "PASS_WITH_CONDITION"
+
+
+    primary_deployment:
+
+      os:
+        "Linux"
+
+      architecture:
+        "x86_64"
+
+      status:
+        "SELECTED_BASELINE"
 
 
     secondary:
@@ -1119,10 +1833,16 @@ cross_domain_compatibility_validation:
     validation:
 
       windows_python:
-        "PENDING"
+        "PASS_WITH_CONDITION"
 
       windows_node:
-        "PENDING"
+        "PASS_WITH_CONDITION"
+
+      windows_ollama:
+        "PASS_WITH_CONDITION"
+
+      windows_gpu:
+        "PASS"
 
       windows_playwright:
         "PENDING"
@@ -1137,7 +1857,7 @@ cross_domain_compatibility_validation:
         "PENDING"
 
       linux_gpu:
-        "PENDING"
+        "CONDITIONAL"
 
       arm64:
         "PENDING"
@@ -1148,13 +1868,14 @@ cross_domain_compatibility_validation:
 
 
   # ==========================================================
-  # 19. RELEASE CROSS-CHECK
+  # 22. RELEASE CROSS-CHECK
   # ==========================================================
 
   release:
 
     source_revision:
       null
+
 
     dependency_lockfiles:
 
@@ -1165,17 +1886,31 @@ cross_domain_compatibility_validation:
         "pnpm-lock.yaml"
 
 
-    artifact:
+    artifacts:
+
+      local_model:
+
+        tag:
+          "qwen3:4b-instruct-2507-q4_K_M"
+
+        digest:
+          "0edcdef34593"
+
+        status:
+          "RECORDED_PENDING_ACQUISITION_VERIFICATION"
+
 
       container:
-        digest:
+
+        postgresql_digest:
           null
 
-      model:
-        digest:
+        qdrant_digest:
           null
+
 
       frontend:
+
         integrity:
           null
 
@@ -1201,57 +1936,114 @@ cross_domain_compatibility_validation:
 
 
   # ==========================================================
-  # 20. MASTER COMPATIBILITY MATRIX
+  # 23. MASTER COMPATIBILITY MATRIX
   # ==========================================================
 
   master_matrix:
 
-    runtime:
+    host:
 
-      python:
-        "PENDING"
+      operating_system:
+        "PASS"
+
+      gpu:
+        "PASS"
+
+      driver:
+        "PASS"
+
+      python_launcher:
+        "PASS"
 
       node:
-        "PENDING"
+        "PASS"
+
+      ollama:
+        "PASS"
 
 
-    ai:
+    primary_llm:
 
-      qwen3:
-        "BLOCKED"
+      qwen3_ollama:
+        "PASS_WITH_CONDITION"
 
-      pytorch:
-        "BLOCKED"
+      gpu:
+        "PASS"
 
-      cuda:
-        "BLOCKED"
+      driver:
+        "PASS"
+
+      runtime:
+        "PENDING_RUNTIME_TEST"
+
+
+    ml:
+
+      python_313:
+        "SELECTED_BASELINE"
+
+      pytorch_2_13:
+        "SELECTED_BASELINE"
+
+      torchvision_0_28:
+        "SELECTED_BASELINE"
+
+      cuda_13:
+        "SELECTED_BASELINE"
+
+      gpu:
+        "PASS"
+
+      runtime:
+        "PENDING_INSTALLATION_TEST"
+
+
+    voice:
+
+      python_313:
+        "SELECTED_BASELINE"
+
+      faster_whisper_1_2_1:
+        "SELECTED_BASELINE"
+
+      ctranslate2_4_8_1:
+        "SELECTED_BASELINE"
+
+      cuda_12:
+        "SELECTED_BASELINE"
+
+      cudnn_9:
+        "SELECTED_BASELINE"
+
+      runtime:
+        "PENDING_INSTALLATION_TEST"
 
 
     backend:
 
+      python:
+        "SELECTED_BASELINE"
+
       fastapi:
-        "PENDING"
+        "CANDIDATE"
 
       pydantic:
-        "PENDING"
+        "CANDIDATE"
 
       langgraph:
-        "PENDING"
-
-
-    data:
+        "CANDIDATE"
 
       postgresql:
-        "PENDING"
+        "CANDIDATE"
 
       qdrant:
-        "PENDING"
+        "CANDIDATE"
 
 
     browser:
 
       playwright:
-        "PENDING"
+        "CANDIDATE"
 
       chromium:
         "BLOCKED"
@@ -1259,20 +2051,23 @@ cross_domain_compatibility_validation:
 
     frontend:
 
-      react:
-        "PENDING"
-
-      react_dom:
-        "BLOCKED"
-
-      vite:
-        "PENDING"
-
-      typescript:
-        "PENDING"
+      node:
+        "CANDIDATE"
 
       pnpm:
-        "PENDING"
+        "CANDIDATE"
+
+      typescript:
+        "CANDIDATE"
+
+      react:
+        "PASS"
+
+      react_dom:
+        "PASS"
+
+      vite:
+        "CANDIDATE"
 
 
     mcp:
@@ -1281,7 +2076,7 @@ cross_domain_compatibility_validation:
         "PASS"
 
       sdk:
-        "PENDING"
+        "PASS"
 
       servers:
         "PENDING"
@@ -1290,10 +2085,10 @@ cross_domain_compatibility_validation:
     containers:
 
       docker:
-        "PASS_WITH_CONDITION"
+        "CANDIDATE"
 
       buildkit:
-        "PASS_WITH_CONDITION"
+        "CANDIDATE"
 
       buildx:
         "PENDING"
@@ -1316,8 +2111,14 @@ cross_domain_compatibility_validation:
       sandbox:
         "PENDING"
 
+      dependency_scanner:
+        "PENDING"
+
 
     supply_chain:
+
+      lockfiles:
+        "PENDING"
 
       sbom:
         "PENDING"
@@ -1330,109 +2131,175 @@ cross_domain_compatibility_validation:
 
 
   # ==========================================================
-  # 21. HARD BLOCKERS
+  # 24. HARD BLOCKERS
   # ==========================================================
 
   blockers:
 
     - id: "XCOMP-BLOCK-001"
-      domain: "AI"
-      component: "Qwen3 / PyTorch / CUDA"
+      domain: "Primary LLM"
+      component: "Ollama / Qwen3"
       reason:
-        "Exact model, runtime, CUDA and hardware combination unresolved."
+        "Runtime acquisition and actual GPU/model execution test are pending."
 
     - id: "XCOMP-BLOCK-002"
+      domain: "ML"
+      component: "PyTorch / CUDA"
+      reason:
+        "ML environment has been selected but actual runtime installation validation is pending."
+
+    - id: "XCOMP-BLOCK-003"
+      domain: "Voice"
+      component: "faster-whisper / CTranslate2"
+      reason:
+        "Voice environment has been selected but actual CUDA/cuDNN runtime validation is pending."
+
+    - id: "XCOMP-BLOCK-004"
       domain: "Browser"
       component: "Chromium"
       reason:
-        "Exact Playwright browser artifact identity unresolved."
-
-    - id: "XCOMP-BLOCK-003"
-      domain: "Frontend"
-      component: "react-dom"
-      reason:
-        "Exact React companion package version unresolved."
-
-    - id: "XCOMP-BLOCK-004"
-      domain: "MCP"
-      component: "Python SDK"
-      reason:
-        "Exact SDK version unresolved."
+        "Exact Playwright-managed browser artifact identity has not been acquired."
 
     - id: "XCOMP-BLOCK-005"
-      domain: "MCP"
-      component: "External servers"
+      domain: "Containers"
+      component: "Docker / Buildx / Compose"
       reason:
-        "Canonical implementations for Browser, Database, Docker and GitHub unresolved."
+        "Container stack is not installed and exact component identities remain pending."
 
     - id: "XCOMP-BLOCK-006"
-      domain: "Containers"
-      component: "Buildx / Compose"
+      domain: "Data"
+      component: "PostgreSQL / Qdrant"
       reason:
-        "Exact versions unresolved."
+        "Exact OCI image identities and digests remain pending."
 
     - id: "XCOMP-BLOCK-007"
+      domain: "Backend"
+      component: "Python dependency graph"
+      reason:
+        "Final uv resolution has not yet generated the authoritative uv.lock."
+
+    - id: "XCOMP-BLOCK-008"
+      domain: "Frontend"
+      component: "pnpm dependency graph"
+      reason:
+        "Final pnpm installation has not yet generated the authoritative pnpm-lock.yaml."
+
+    - id: "XCOMP-BLOCK-009"
+      domain: "MCP"
+      component: "Enabled MCP servers"
+      reason:
+        "No production MCP server has yet been enabled and immutably resolved."
+
+    - id: "XCOMP-BLOCK-010"
       domain: "Security"
       component: "Secret/Sandbox/Scanner"
       reason:
-        "Concrete implementations unresolved."
+        "Concrete production security implementations remain unresolved."
 
-    - id: "XCOMP-BLOCK-008"
+    - id: "XCOMP-BLOCK-011"
       domain: "Supply Chain"
       component: "SBOM/Provenance/Signing"
       reason:
-        "Exact production tooling and identities unresolved."
+        "Production tooling and artifact evidence remain unresolved."
 
 
   # ==========================================================
-  # 22. WHAT CAN BE PROMOTED
+  # 25. WHAT IS NOW RESOLVED
   # ==========================================================
 
-  promotable:
+  resolved_architecture:
 
-    architecture:
+    host:
 
-      mcp_protocol:
-        "2026-07-28"
+      gpu:
+        "NVIDIA GeForce GTX 1660 Ti 6 GB"
 
-      container_standard:
-        "OCI"
+      compute_capability:
+        "7.5"
 
-      frontend_package_manager:
-        "pnpm"
-
-      primary_platform:
-        "Linux x86_64"
-
-      development_platform:
-        "Windows x86_64"
+      driver:
+        "610.62"
 
 
-    candidates:
+    primary_llm:
 
-      docker:
-        "29.6.2"
+      runtime:
+        "Ollama"
 
-      buildkit:
-        "0.31.1"
+      model:
+        "Qwen3-4B-Instruct-2507"
+
+      artifact:
+        "qwen3:4b-instruct-2507-q4_K_M"
+
+      quantization:
+        "Q4_K_M"
+
+
+    ml:
+
+      python:
+        "3.13"
+
+      pytorch:
+        "2.13.0"
+
+      torchvision:
+        "0.28.0"
+
+      cuda:
+        "13.0"
+
+
+    voice:
+
+      python:
+        "3.13"
+
+      faster_whisper:
+        "1.2.1"
+
+      ctranslate2:
+        "4.8.1"
+
+      cuda:
+        "12.x"
+
+      cudnn:
+        "9"
+
+
+    frontend:
 
       node:
-        "24.18.1"
+        "24 LTS"
 
       pnpm:
-        "11.17.0"
-
-      typescript:
-        "7.0.2"
+        "11.x"
 
       react:
         "19.2.8"
 
-      vite:
-        "8.1.5"
+      react_dom:
+        "19.2.8"
 
-      playwright:
-        "1.61.0"
+      vite:
+        "8.x"
+
+      typescript:
+        "7.x"
+
+
+    mcp:
+
+      protocol:
+        "2026-07-28"
+
+      sdk:
+        "2.0.0"
+
+
+    databases:
 
       postgresql:
         "18.4"
@@ -1441,34 +2308,67 @@ cross_domain_compatibility_validation:
         "1.18.2"
 
 
-  # ==========================================================
-  # 23. NON-PROMOTABLE
-  # ==========================================================
+    browser:
 
-  non_promotable:
+      playwright:
+        "1.61.0"
 
-    - "Qwen3 exact variant"
-    - "PyTorch"
-    - "CUDA"
-    - "NVIDIA driver"
-    - "Chromium revision"
-    - "react-dom exact version"
-    - "MCP Python SDK exact version"
-    - "MCP server immutable identities"
-    - "Buildx exact version"
-    - "Compose exact version"
-    - "Base image digests"
-    - "Secret management implementation"
-    - "Sandbox implementation"
-    - "Dependency scanner"
-    - "SBOM tooling version"
-    - "Provenance implementation"
-    - "Cosign version"
-    - "Production signing identity"
+
+    deployment:
+
+      platform:
+        "Linux x86_64"
+
+      container_standard:
+        "OCI"
 
 
   # ==========================================================
-  # 24. VALIDATION SCORECARD
+  # 26. NON-LOCKED ACQUISITION TARGETS
+  # ==========================================================
+
+  acquisition_targets:
+
+    exact_lockfiles:
+
+      - "uv.lock"
+      - "pnpm-lock.yaml"
+
+
+    exact_artifacts:
+
+      - "Ollama installer identity"
+      - "Ollama executable identity"
+      - "Qwen3 local manifest/digest"
+      - "Playwright Chromium artifact"
+      - "PostgreSQL OCI image digest"
+      - "Qdrant OCI image digest"
+      - "Base image digests"
+
+
+    exact_runtime_versions:
+
+      - "uv"
+      - "FastAPI"
+      - "Pydantic"
+      - "LangGraph"
+      - "Transformers"
+      - "OpenCV"
+      - "pytest"
+      - "Ruff"
+      - "OpenTelemetry"
+
+
+    conditional_components:
+
+      - "NVIDIA Container Toolkit"
+      - "GPU container image"
+      - "MCP servers"
+      - "Piper TTS"
+
+
+  # ==========================================================
+  # 27. VALIDATION SCORECARD
   # ==========================================================
 
   scorecard:
@@ -1477,33 +2377,76 @@ cross_domain_compatibility_validation:
       status:
         "PASS"
 
-    individual_versions:
-      status:
-        "PARTIAL"
 
-    cross_domain_compatibility:
+    host_profile:
+      status:
+        "PASS"
+
+
+    primary_llm_selection:
+      status:
+        "PASS_WITH_CONDITION"
+
+
+    ml_architecture:
+      status:
+        "PASS_WITH_CONDITION"
+
+
+    voice_architecture:
+      status:
+        "PASS_WITH_CONDITION"
+
+
+    backend:
       status:
         "INCOMPLETE"
+
+
+    data:
+      status:
+        "INCOMPLETE"
+
+
+    browser:
+      status:
+        "INCOMPLETE"
+
+
+    frontend:
+      status:
+        "INCOMPLETE"
+
+
+    mcp:
+      status:
+        "PASS_WITH_CONDITION"
+
+
+    containers:
+      status:
+        "INCOMPLETE"
+
 
     security:
       status:
         "INCOMPLETE"
 
+
     licensing:
       status:
         "INCOMPLETE"
+
 
     supply_chain:
       status:
         "INCOMPLETE"
 
-    platform:
-      status:
-        "INCOMPLETE"
 
     reproducibility:
       status:
         "INCOMPLETE"
+
 
     final_lock:
       status:
@@ -1511,7 +2454,7 @@ cross_domain_compatibility_validation:
 
 
   # ==========================================================
-  # 25. CURRENT DECISION
+  # 28. CURRENT DECISION
   # ==========================================================
 
   current_decision:
@@ -1519,47 +2462,154 @@ cross_domain_compatibility_validation:
     architecture_validated:
       true
 
+
+    compatibility_resolution:
+
+      research_stage:
+        "COMPLETE"
+
+      architecture_stage:
+        "COMPLETE"
+
+      candidate_stage:
+        "COMPLETE"
+
+
+    acquisition_stage:
+
+      started:
+        true
+
+      host_snapshot:
+        "COMPLETE"
+
+      artifact_acquisition:
+        "NOT_COMPLETE"
+
+
     production_version_lock:
       false
 
-    candidate_lock:
-      false
 
     reason:
       >
-      Multiple cross-domain dependencies still require exact
-      compatibility validation before production locking.
+      The architecture and primary compatibility decisions are now
+      established. Remaining blockers are acquisition, exact lockfile
+      generation, artifact identity capture, browser/container identity,
+      runtime installation tests, security implementation and supply-chain
+      validation rather than unresolved architecture research.
 
 
   # ==========================================================
-  # 26. NEXT PHASE
+  # 29. NEXT PHASE
   # ==========================================================
 
   next_phase:
 
     name:
-      "Version Lock Candidate Construction"
+      "Controlled Acquisition and Environment Installation"
 
-    document:
-      "21_VERSION_LOCK_CANDIDATE.yaml"
 
     sequence:
 
-      - "Resolve remaining exact versions"
-      - "Resolve exact revisions"
-      - "Resolve artifact digests"
-      - "Resolve hardware profile"
-      - "Resolve PyTorch/CUDA chain"
-      - "Resolve Chromium artifact"
-      - "Resolve React DOM companion"
-      - "Resolve MCP SDK"
-      - "Resolve MCP server identities"
-      - "Resolve Buildx"
-      - "Resolve Compose"
-      - "Resolve base images"
-      - "Resolve security implementations"
-      - "Resolve SBOM tooling"
-      - "Resolve provenance tooling"
-      - "Resolve signing tooling"
-      - "Run final compatibility validation"
-      - "Generate Version Lock Candidate"
+      - "Acquire exact CPython 3.13 runtime"
+      - "Establish project uv version"
+      - "Create aura-core environment"
+      - "Resolve FastAPI"
+      - "Resolve Pydantic"
+      - "Resolve LangGraph"
+      - "Generate aura-core uv.lock"
+      - "Create aura-ml environment"
+      - "Resolve PyTorch 2.13.0"
+      - "Resolve torchvision 0.28.0"
+      - "Validate CUDA 13.0 runtime"
+      - "Create aura-voice environment"
+      - "Acquire faster-whisper 1.2.1"
+      - "Acquire CTranslate2 4.8.1"
+      - "Validate CUDA 12 / cuDNN 9"
+      - "Acquire Ollama"
+      - "Acquire Qwen3 exact Ollama artifact"
+      - "Capture Ollama and model immutable identities"
+      - "Run Qwen3 GPU/runtime tests"
+      - "Acquire pnpm 11"
+      - "Resolve React 19.2.8"
+      - "Resolve react-dom 19.2.8"
+      - "Resolve Vite 8.x"
+      - "Resolve TypeScript 7.x"
+      - "Generate pnpm-lock.yaml"
+      - "Acquire Playwright 1.61.0"
+      - "Install and capture coupled Chromium artifact"
+      - "Install Docker/WSL if required by deployment path"
+      - "Acquire PostgreSQL 18.4 image"
+      - "Acquire Qdrant 1.18.2 image"
+      - "Capture container digests"
+      - "Resolve remaining model revisions"
+      - "Resolve security tooling"
+      - "Resolve SBOM/provenance/signing tooling"
+      - "Run complete host/runtime validation"
+      - "Freeze acquisition manifest"
+      - "Proceed to final Version Lock release gate"
+
+
+  # ==========================================================
+  # 30. FINAL STATUS
+  # ==========================================================
+
+  state:
+
+    compatibility_research_complete:
+      true
+
+    architecture_resolved:
+      true
+
+    host_snapshot_complete:
+      true
+
+    primary_llm_selected:
+      true
+
+    ml_runtime_selected:
+      true
+
+    voice_runtime_selected:
+      true
+
+    frontend_architecture_selected:
+      true
+
+    mcp_baseline_selected:
+      true
+
+    backend_candidate_set:
+      true
+
+    data_candidate_set:
+      true
+
+    browser_candidate_set:
+      true
+
+    container_candidate_set:
+      true
+
+    exact_lockfiles_generated:
+      false
+
+    artifact_digests_complete:
+      false
+
+    runtime_validation_complete:
+      false
+
+    security_validation_complete:
+      false
+
+    supply_chain_validation_complete:
+      false
+
+    final_version_lock:
+      false
+
+    status:
+      "READY_FOR_CONTROLLED_ACQUISITION"

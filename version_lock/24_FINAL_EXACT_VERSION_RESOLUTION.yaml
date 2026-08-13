@@ -6,7 +6,7 @@
 
 final_exact_version_resolution:
 
-  schema_version: "1.0"
+  schema_version: "1.1"
 
   project:
     name: "JARVIS"
@@ -25,7 +25,7 @@ final_exact_version_resolution:
     name:
       "Final Exact Version Resolution"
 
-    version: "1.0"
+    version: "1.1"
 
     status:
       "RESOLUTION_IN_PROGRESS"
@@ -41,6 +41,16 @@ final_exact_version_resolution:
       - "21_VERSION_LOCK_CANDIDATE.yaml"
       - "22_CANDIDATE_EVIDENCE_AND_EXACT_VERSION_RESOLUTION.yaml"
       - "23_FINAL_COMPATIBILITY_AND_LOCK_PREPARATION.yaml"
+
+    host_evidence:
+      source:
+        "D:\\AURA\\JAS\\acquisition\\host_snapshot\\host_snapshot.txt"
+
+      captured_at:
+        "2026-08-13T13:34:01+02:00"
+
+      status:
+        "CAPTURED"
 
 
   # ==========================================================
@@ -77,6 +87,15 @@ final_exact_version_resolution:
       true
 
     mutable_latest_tags_forbidden:
+      true
+
+    host_version_is_not_automatically_production_lock:
+      true
+
+    resolver_generated_lockfiles_required:
+      true
+
+    runtime_managed_dependencies_must_not_be_falsely_promoted:
       true
 
 
@@ -118,6 +137,18 @@ final_exact_version_resolution:
       meaning:
         "Candidate may be transferred to final VERSION_LOCK.yaml."
 
+    HOST_OBSERVED:
+      meaning:
+        "Exact version was observed on the current development host."
+
+    CONDITIONAL:
+      meaning:
+        "Component is required only when a specific deployment path is enabled."
+
+    NOT_REQUIRED:
+      meaning:
+        "Component is not required by the currently selected production path."
+
 
   # ==========================================================
   # 4. HARDWARE PROFILE
@@ -131,13 +162,31 @@ final_exact_version_resolution:
     host:
 
       operating_system:
-        "Windows 11"
+        "Windows 10 Pro"
+
+      windows_version:
+        "2009"
+
+      os_build:
+        "26200"
 
       architecture:
         "x86_64"
 
       system_ram_gb:
         16
+
+
+    cpu:
+
+      model:
+        "Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz"
+
+      physical_cores:
+        6
+
+      logical_processors:
+        12
 
 
     gpu:
@@ -150,6 +199,9 @@ final_exact_version_resolution:
 
       vram_gb:
         6
+
+      vram_mib:
+        6144
 
       architecture:
         "Turing"
@@ -173,17 +225,192 @@ final_exact_version_resolution:
     evidence:
 
       source:
-        "Existing JAS hardware profile; host nvidia-smi validation on 2026-08-12"
+        "JAS host snapshot captured on 2026-08-13"
+
+      snapshot_file:
+        "D:\\AURA\\JAS\\acquisition\\host_snapshot\\host_snapshot.txt"
 
       exact_driver_version:
         "610.62"
 
+      cuda_umd_version:
+        "13.3"
+
       driver_validation:
-        "VALIDATED_2026-08-12"
+        "VALIDATED_2026-08-13"
+
+      gpu_query:
+        "NVIDIA GeForce GTX 1660 Ti, 610.62, 6144 MiB, 7.5"
 
 
   # ==========================================================
-  # 5. PRIMARY LOCAL MODEL RUNTIME
+  # 5. HOST TOOLCHAIN OBSERVATION
+  # ==========================================================
+
+  host_toolchain:
+
+    python_command:
+
+      executable:
+        "C:\\Users\\ardab\\AppData\\Local\\Programs\\Python\\Python311\\python.exe"
+
+      version:
+        "3.11.9"
+
+      status:
+        "HOST_OBSERVED"
+
+      note:
+        >
+        The default python command resolves to Python 3.11.9.
+        This is not the selected JAS runtime.
+
+
+    python_launcher:
+
+      executable:
+        "C:\\Windows\\py.exe"
+
+      version:
+        "3.13.14"
+
+      status:
+        "HOST_OBSERVED"
+
+      selected_runtime_candidate:
+        "3.13.14"
+
+      note:
+        >
+        Python 3.13.14 is currently available through the Windows
+        Python launcher and is therefore the preferred JAS Python
+        runtime candidate. Production/container compatibility
+        remains subject to resolver validation.
+
+
+    uv:
+
+      executable:
+        "C:\\Users\\ardab\\.local\\bin\\uv.exe"
+
+      version:
+        "0.10.0"
+
+      status:
+        "HOST_OBSERVED"
+
+      lockfile_role:
+        "uv.lock"
+
+
+    node:
+
+      executable:
+        "C:\\Program Files\\nodejs\\node.exe"
+
+      version:
+        "24.16.0"
+
+      status:
+        "HOST_OBSERVED"
+
+      policy:
+        "Node 24 LTS line"
+
+      note:
+        >
+        Node 24.16.0 is the currently installed host version.
+        It supersedes the previously recorded 24.18.1 host
+        candidate as the observed development environment version.
+        Production adoption remains subject to exact acquisition
+        and compatibility validation.
+
+
+    npm:
+
+      version:
+        "11.13.0"
+
+      status:
+        "HOST_OBSERVED"
+
+      role:
+        "Node distribution companion; not selected as JAS package manager"
+
+
+    pnpm:
+
+      installed:
+        false
+
+      version:
+        null
+
+      status:
+        "NOT_INSTALLED"
+
+      selected_package_manager:
+        "pnpm"
+
+
+    git:
+
+      version:
+        "2.53.0.windows.1"
+
+      status:
+        "HOST_OBSERVED"
+
+
+    wsl:
+
+      installed:
+        false
+
+      status:
+        "NOT_INSTALLED"
+
+      note:
+        >
+        WSL is not currently installed. It is required only if the
+        selected acquisition/deployment workflow explicitly depends
+        on WSL.
+
+
+    docker:
+
+      installed:
+        false
+
+      version:
+        null
+
+      status:
+        "NOT_INSTALLED"
+
+      note:
+        >
+        Docker is not currently installed. This is a host state,
+        not a rejection of the planned Linux container deployment.
+
+
+    ollama:
+
+      executable:
+        "C:\\Users\\ardab\\AppData\\Local\\Programs\\Ollama\\ollama.exe"
+
+      version:
+        "0.32.9"
+
+      status:
+        "HOST_OBSERVED"
+
+      model_runtime:
+        "Ollama"
+
+
+  # ==========================================================
+  # 6. PRIMARY LOCAL MODEL RUNTIME
   # ==========================================================
 
   local_model_runtime:
@@ -195,7 +422,7 @@ final_exact_version_resolution:
       "Primary local LLM inference runtime"
 
     host_platform:
-      "Windows 11"
+      "Windows 10 x86_64"
 
     gpu_backend:
       "NVIDIA GPU acceleration"
@@ -206,13 +433,33 @@ final_exact_version_resolution:
     containerized:
       false
 
-    status:
-      "RESOLVED"
+    exact_host_version:
+      "0.32.9"
+
+    version_status:
+      "HOST_OBSERVED"
+
+    acquisition_lock_required:
+      true
+
+    acquisition_identity:
+
+      installer_sha256:
+        null
+
+      executable_sha256:
+        null
+
+      full_runtime_identity:
+        null
+
+      status:
+        "PENDING_ACQUISITION_CAPTURE"
 
     validation:
 
       ollama_version:
-        null
+        "0.32.9"
 
       gpu_detection:
         "PENDING"
@@ -220,9 +467,18 @@ final_exact_version_resolution:
       runtime_test:
         "PENDING"
 
+      model_load:
+        "PENDING"
+
+      generation_test:
+        "PENDING"
+
+    status:
+      "RESOLVED_CANDIDATE"
+
 
   # ==========================================================
-  # 6. QWEN3 FAMILY RESOLUTION
+  # 7. QWEN3 FAMILY RESOLUTION
   # ==========================================================
 
   qwen3:
@@ -271,13 +527,22 @@ final_exact_version_resolution:
       tag:
         "qwen3:4b-instruct-2507-q4_K_M"
 
-      digest:
+      recorded_digest_prefix:
         "0edcdef34593"
 
+      digest_type:
+        "Ollama manifest reference observed during research"
+
+      full_digest:
+        null
+
       digest_status:
-        "RECORDED"
+        "PENDING_LOCAL_MANIFEST_CAPTURE"
 
       exact_local_artifact_identity:
+        false
+
+      immutable_identity_available_after_acquisition:
         true
 
 
@@ -293,7 +558,7 @@ final_exact_version_resolution:
         null
 
       revision_status:
-        "PENDING_UPSTREAM_REVISION_CAPTURE"
+        "PENDING_ACQUISITION_CAPTURE"
 
 
     runtime:
@@ -325,7 +590,7 @@ final_exact_version_resolution:
 
 
   # ==========================================================
-  # 7. QWEN3 ALTERNATIVES
+  # 8. QWEN3 ALTERNATIVES
   # ==========================================================
 
   qwen3_alternatives:
@@ -366,9 +631,8 @@ final_exact_version_resolution:
 
       reason:
         >
-        Ollama lists the Q4_K_M artifact at approximately
-        5.2 GB, leaving substantially less VRAM headroom on
-        the 6 GB GPU.
+        The Q4_K_M artifact leaves substantially less VRAM
+        headroom on the 6 GB GPU baseline.
 
 
     qwen3_14b:
@@ -378,7 +642,7 @@ final_exact_version_resolution:
 
       reason:
         >
-        Model artifact size exceeds the available 6 GB VRAM
+        Model artifact exceeds the practical 6 GB local VRAM
         baseline.
 
 
@@ -410,7 +674,7 @@ final_exact_version_resolution:
 
 
   # ==========================================================
-  # 8. QWEN3 MODEL IMMUTABILITY
+  # 9. QWEN3 MODEL IMMUTABILITY
   # ==========================================================
 
   model_immutability:
@@ -421,8 +685,11 @@ final_exact_version_resolution:
     model_tag:
       "qwen3:4b-instruct-2507-q4_K_M"
 
-    ollama_digest:
+    recorded_digest_prefix:
       "0edcdef34593"
+
+    full_ollama_digest:
+      null
 
     mutable_latest_tag:
       false
@@ -436,18 +703,30 @@ final_exact_version_resolution:
     upstream_artifact_digest:
       null
 
+    acquisition_requirement:
+
+      - "Pull exact Ollama model tag"
+      - "Read local Ollama manifest"
+      - "Capture full immutable digest"
+      - "Capture exact model metadata"
+      - "Verify model artifact identity"
+      - "Record SHA256/digest evidence"
+
+
     lock_preference:
       >
       The final local-model lock shall record the exact Ollama
-      model tag and immutable Ollama digest. The upstream model
-      revision shall also be recorded when captured.
+      model tag and full immutable Ollama manifest identity.
+      The shortened research digest prefix SHALL NOT be treated
+      as the final immutable digest.
+
 
     status:
-      "CANDIDATE_READY_FOR_LOCK"
+      "CANDIDATE_PENDING_ACQUISITION"
 
 
   # ==========================================================
-  # 9. PYTORCH RELATIONSHIP
+  # 10. PYTORCH RELATIONSHIP
   # ==========================================================
 
   pytorch:
@@ -479,9 +758,15 @@ final_exact_version_resolution:
       - "Alternative local inference runtime"
       - "JAS vision/model research requiring PyTorch"
 
+    note:
+      >
+      PyTorch SHALL NOT be added to the mandatory core LLM lock
+      merely because the host contains an NVIDIA GPU. It becomes
+      mandatory only for separately selected ML/vision workloads.
+
 
   # ==========================================================
-  # 10. TRANSFORMERS RELATIONSHIP
+  # 11. TRANSFORMERS RELATIONSHIP
   # ==========================================================
 
   transformers:
@@ -505,7 +790,7 @@ final_exact_version_resolution:
 
 
   # ==========================================================
-  # 11. CUDA RELATIONSHIP
+  # 12. CUDA RELATIONSHIP
   # ==========================================================
 
   cuda:
@@ -514,6 +799,9 @@ final_exact_version_resolution:
       >
       GPU compute technology supporting the NVIDIA acceleration
       stack.
+
+    host_observed_cuda_umd:
+      "13.3"
 
     primary_ollama_runtime:
       true
@@ -537,19 +825,18 @@ final_exact_version_resolution:
       false
 
     status:
-      "RUNTIME_MANAGED_PENDING_DRIVER_VALIDATION"
+      "RUNTIME_MANAGED_PENDING_RUNTIME_VALIDATION"
 
     lock_policy:
       >
-      CUDA Toolkit SHALL NOT be promoted into the mandatory
-      JAS application Version Lock merely because the host GPU
-      uses NVIDIA acceleration. It becomes a direct lock target
-      if JAS itself introduces a CUDA-dependent build/runtime
-      component.
+      The host-reported CUDA UMD version SHALL be recorded as
+      evidence but SHALL NOT be promoted to a mandatory JAS
+      CUDA Toolkit lock unless JAS itself introduces a direct
+      CUDA-dependent build or runtime component.
 
 
   # ==========================================================
-  # 12. NVIDIA DRIVER
+  # 13. NVIDIA DRIVER
   # ==========================================================
 
   nvidia_driver:
@@ -570,7 +857,7 @@ final_exact_version_resolution:
       "nvidia-smi"
 
     current_status:
-      "VALIDATED_2026-08-12"
+      "VALIDATED_2026-08-13"
 
     lock_identity:
 
@@ -585,7 +872,7 @@ final_exact_version_resolution:
 
 
   # ==========================================================
-  # 13. NVIDIA CONTAINER TOOLKIT
+  # 14. NVIDIA CONTAINER TOOLKIT
   # ==========================================================
 
   nvidia_container_toolkit:
@@ -604,7 +891,6 @@ final_exact_version_resolution:
       - "GPU inference services are containerized"
       - "CUDA workloads are executed through Docker GPU runtime"
 
-
     exact_version:
       null
 
@@ -613,7 +899,7 @@ final_exact_version_resolution:
 
 
   # ==========================================================
-  # 14. P0 RESOLUTION
+  # 15. P0 RESOLUTION
   # ==========================================================
 
   p0_resolution:
@@ -622,7 +908,7 @@ final_exact_version_resolution:
       "RESOLVED"
 
     local_runtime:
-      "RESOLVED"
+      "RESOLVED_CANDIDATE"
 
     qwen3_family:
       "RESOLVED"
@@ -634,10 +920,10 @@ final_exact_version_resolution:
       "RESOLVED"
 
     qwen3_runtime:
-      "RESOLVED"
+      "RESOLVED_CANDIDATE"
 
     qwen3_immutable_ollama_identity:
-      "RESOLVED"
+      "PENDING_FULL_MANIFEST_CAPTURE"
 
     qwen3_upstream_revision:
       "PENDING"
@@ -659,7 +945,7 @@ final_exact_version_resolution:
 
 
   # ==========================================================
-  # 15. PYTHON
+  # 16. PYTHON
   # ==========================================================
 
   python:
@@ -667,22 +953,34 @@ final_exact_version_resolution:
     implementation:
       "CPython"
 
-    minimum:
-      "3.12"
+    policy:
+      "Python 3.13"
 
-    candidate:
-      null
+    minimum:
+      "3.13"
+
+    host_observed_version:
+      "3.13.14"
+
+    selected_candidate:
+      "3.13.14"
 
     exact_version:
-      null
+      "3.13.14"
 
     platform:
       "linux/amd64"
 
+    development_host_platform:
+      "windows/x86_64"
+
     note:
       >
-      Linux/amd64 refers to the planned JAS production/container
-      environment and is separate from the current Windows host.
+      Python 3.13.14 is the exact CPython version currently
+      available through the Windows Python launcher. The planned
+      production environment remains Linux/amd64 and requires
+      independent acquisition/container verification of the exact
+      runtime artifact.
 
     pytorch_compatibility:
       "NOT_REQUIRED_FOR_PRIMARY_OLLAMA_PATH"
@@ -697,17 +995,20 @@ final_exact_version_resolution:
       "PENDING"
 
     status:
-      "UNRESOLVED"
+      "RESOLVED_CANDIDATE"
 
 
   # ==========================================================
-  # 16. UV
+  # 17. UV
   # ==========================================================
 
   uv:
 
+    host_observed_version:
+      "0.10.0"
+
     exact_version:
-      null
+      "0.10.0"
 
     python_compatibility:
       "PENDING"
@@ -718,12 +1019,18 @@ final_exact_version_resolution:
     frozen_resolution:
       true
 
+    host_status:
+      "HOST_OBSERVED"
+
+    production_status:
+      "CANDIDATE"
+
     status:
-      "UNRESOLVED"
+      "CANDIDATE"
 
 
   # ==========================================================
-  # 17. FASTAPI
+  # 18. FASTAPI
   # ==========================================================
 
   fastapi:
@@ -751,7 +1058,7 @@ final_exact_version_resolution:
 
 
   # ==========================================================
-  # 18. PYDANTIC
+  # 19. PYDANTIC
   # ==========================================================
 
   pydantic:
@@ -773,7 +1080,7 @@ final_exact_version_resolution:
 
 
   # ==========================================================
-  # 19. LANGGRAPH
+  # 20. LANGGRAPH
   # ==========================================================
 
   langgraph:
@@ -799,7 +1106,7 @@ final_exact_version_resolution:
 
 
   # ==========================================================
-  # 20. PLAYWRIGHT
+  # 21. PLAYWRIGHT
   # ==========================================================
 
   playwright:
@@ -844,21 +1151,27 @@ final_exact_version_resolution:
 
 
   # ==========================================================
-  # 21. FRONTEND
+  # 22. FRONTEND
   # ==========================================================
 
   frontend:
 
     node:
 
+      policy:
+        "Node 24 LTS"
+
+      host_observed_version:
+        "24.16.0"
+
       candidate:
-        "24.18.1"
+        "24.16.0"
 
       exact_version:
         null
 
       status:
-        "CANDIDATE"
+        "HOST_OBSERVED_CANDIDATE"
 
 
     pnpm:
@@ -869,8 +1182,11 @@ final_exact_version_resolution:
       exact_version:
         null
 
+      host_installed:
+        false
+
       status:
-        "CANDIDATE"
+        "CANDIDATE_NOT_INSTALLED"
 
 
     typescript:
@@ -935,7 +1251,7 @@ final_exact_version_resolution:
 
 
   # ==========================================================
-  # 22. POSTGRESQL
+  # 23. POSTGRESQL
   # ==========================================================
 
   postgresql:
@@ -961,12 +1277,15 @@ final_exact_version_resolution:
     application_driver:
       "PENDING"
 
+    host_status:
+      "NOT_INSTALLED"
+
     status:
       "CANDIDATE"
 
 
   # ==========================================================
-  # 23. QDRANT
+  # 24. QDRANT
   # ==========================================================
 
   qdrant:
@@ -989,12 +1308,15 @@ final_exact_version_resolution:
     api_compatibility:
       "PENDING"
 
+    host_status:
+      "NOT_INSTALLED"
+
     status:
       "CANDIDATE"
 
 
   # ==========================================================
-  # 24. EMBEDDING MODEL
+  # 25. EMBEDDING MODEL
   # ==========================================================
 
   embedding:
@@ -1019,7 +1341,7 @@ final_exact_version_resolution:
 
 
   # ==========================================================
-  # 25. RERANKER MODEL
+  # 26. RERANKER MODEL
   # ==========================================================
 
   reranker:
@@ -1044,7 +1366,7 @@ final_exact_version_resolution:
 
 
   # ==========================================================
-  # 26. WHISPER
+  # 27. WHISPER
   # ==========================================================
 
   whisper:
@@ -1053,7 +1375,7 @@ final_exact_version_resolution:
       "OpenAI Whisper"
 
     exact_model:
-      null
+      "Systran/faster-whisper-large-v3"
 
     revision:
       null
@@ -1062,17 +1384,60 @@ final_exact_version_resolution:
       null
 
     runtime:
-      null
+      "faster-whisper"
+
+    runtime_version:
+      "1.2.1"
+
+    inference_backend:
+      "CTranslate2"
+
+    inference_backend_version:
+      "4.8.1"
+
+    cuda_family:
+      "CUDA 12.x"
+
+    cudnn:
+      "9"
+
+    compute_type:
+      "float16"
 
     hardware_profile:
-      "PENDING"
+      "GTX 1660 Ti / 6 GB / CC 7.5"
+
+    status:
+      "RESOLVED_CANDIDATE_PENDING_ACQUISITION"
+
+
+  # ==========================================================
+  # 28. VOICE VAD
+  # ==========================================================
+
+  vad:
+
+    family:
+      "Silero VAD"
+
+    exact_version:
+      null
+
+    runtime:
+      null
+
+    revision:
+      null
+
+    digest:
+      null
 
     status:
       "UNRESOLVED"
 
 
   # ==========================================================
-  # 27. OPENCV
+  # 29. OPENCV
   # ==========================================================
 
   opencv:
@@ -1094,7 +1459,7 @@ final_exact_version_resolution:
 
 
   # ==========================================================
-  # 28. MCP
+  # 30. MCP
   # ==========================================================
 
   mcp:
@@ -1103,7 +1468,7 @@ final_exact_version_resolution:
       "2026-07-28"
 
     protocol_status:
-      "CANDIDATE"
+      "RESOLVED_ARCHITECTURAL_BASELINE"
 
 
     sdk:
@@ -1112,16 +1477,19 @@ final_exact_version_resolution:
         "MCP Python SDK"
 
       exact_version:
-        null
+        "2.0.0"
 
       runtime:
         "Python"
 
       protocol_compatibility:
-        "PENDING"
+        "PENDING_RUNTIME_VALIDATION"
+
+      evidence:
+        "PyPI / official MCP SDK documentation"
 
       status:
-        "UNRESOLVED"
+        "RESOLVED_CANDIDATE"
 
 
     enabled_servers:
@@ -1220,7 +1588,7 @@ final_exact_version_resolution:
 
 
   # ==========================================================
-  # 29. DOCKER
+  # 31. DOCKER
   # ==========================================================
 
   docker:
@@ -1232,6 +1600,9 @@ final_exact_version_resolution:
 
       exact_version:
         null
+
+      host_installed:
+        false
 
       platform:
         "linux/amd64"
@@ -1271,7 +1642,7 @@ final_exact_version_resolution:
 
 
   # ==========================================================
-  # 30. BASE IMAGES
+  # 32. BASE IMAGES
   # ==========================================================
 
   base_images:
@@ -1291,7 +1662,7 @@ final_exact_version_resolution:
         "linux/amd64"
 
       python_version:
-        null
+        "3.13.14"
 
       status:
         "UNRESOLVED"
@@ -1312,7 +1683,7 @@ final_exact_version_resolution:
         "linux/amd64"
 
       node_version:
-        null
+        "24.16.0"
 
       status:
         "UNRESOLVED"
@@ -1340,7 +1711,7 @@ final_exact_version_resolution:
 
 
   # ==========================================================
-  # 31. OPENTELEMETRY
+  # 33. OPENTELEMETRY
   # ==========================================================
 
   opentelemetry:
@@ -1362,7 +1733,7 @@ final_exact_version_resolution:
 
 
   # ==========================================================
-  # 32. TESTING
+  # 34. TESTING
   # ==========================================================
 
   pytest:
@@ -1390,7 +1761,7 @@ final_exact_version_resolution:
 
 
   # ==========================================================
-  # 33. SECURITY TOOLING
+  # 35. SECURITY TOOLING
   # ==========================================================
 
   security:
@@ -1426,7 +1797,7 @@ final_exact_version_resolution:
 
 
   # ==========================================================
-  # 34. SUPPLY CHAIN
+  # 36. SUPPLY CHAIN
   # ==========================================================
 
   supply_chain:
@@ -1471,7 +1842,7 @@ final_exact_version_resolution:
 
 
   # ==========================================================
-  # 35. P0 RESOLUTION TABLE
+  # 37. P0 RESOLUTION TABLE
   # ==========================================================
 
   resolution_table:
@@ -1490,10 +1861,13 @@ final_exact_version_resolution:
       local_model_runtime:
 
         state:
-          "RESOLVED"
+          "RESOLVED_CANDIDATE"
 
         selected:
           "Ollama"
+
+        host_version:
+          "0.32.9"
 
 
       qwen3:
@@ -1519,11 +1893,17 @@ final_exact_version_resolution:
         candidate:
           null
 
+        host_observed_umd:
+          "13.3"
+
 
       nvidia_driver:
 
         state:
-          "PENDING_HOST_VALIDATION"
+          "RESOLVED_HOST_DRIVER"
+
+        version:
+          "610.62"
 
 
       nvidia_container_toolkit:
@@ -1533,46 +1913,64 @@ final_exact_version_resolution:
 
 
   # ==========================================================
-  # 36. P1 RESOLUTION TABLE
+  # 38. P1 RESOLUTION TABLE
   # ==========================================================
 
   P1:
 
     python:
       state:
-        "BLOCKED"
+        "RESOLVED_CANDIDATE"
+
+      selected:
+        "3.13.14"
+
 
     uv:
       state:
-        "BLOCKED"
+        "CANDIDATE"
+
+      host_observed:
+        "0.10.0"
+
 
     fastapi:
       state:
         "BLOCKED"
 
+
     pydantic:
       state:
         "BLOCKED"
+
 
     langgraph:
       state:
         "BLOCKED"
 
+
     playwright:
       state:
         "CANDIDATE"
+
 
     chromium:
       state:
         "BLOCKED"
 
+
     frontend:
       state:
         "BLOCKED"
 
+
     mcp:
       state:
-        "BLOCKED"
+        "RESOLVED_CANDIDATE"
+
+      sdk:
+        "2.0.0"
+
 
     containers:
       state:
@@ -1580,7 +1978,7 @@ final_exact_version_resolution:
 
 
   # ==========================================================
-  # 37. P2 RESOLUTION TABLE
+  # 39. P2 RESOLUTION TABLE
   # ==========================================================
 
   P2:
@@ -1589,25 +1987,31 @@ final_exact_version_resolution:
       state:
         "CANDIDATE"
 
+
     qdrant:
       state:
         "CANDIDATE"
+
 
     opentelemetry:
       state:
         "BLOCKED"
 
+
     pytest:
       state:
         "BLOCKED"
+
 
     ruff:
       state:
         "BLOCKED"
 
+
     security:
       state:
         "BLOCKED"
+
 
     supply_chain:
       state:
@@ -1615,36 +2019,111 @@ final_exact_version_resolution:
 
 
   # ==========================================================
-  # 38. AUTHORITATIVE EVIDENCE REGISTER
+  # 40. AUTHORITATIVE EVIDENCE REGISTER
   # ==========================================================
 
   authoritative_evidence:
 
+    host_snapshot:
+
+      source:
+        "JAS host snapshot"
+
+      file:
+        "D:\\AURA\\JAS\\acquisition\\host_snapshot\\host_snapshot.txt"
+
+      captured:
+        "2026-08-13"
+
+      status:
+        "VERIFIED"
+
+
+    hardware:
+
+      source:
+        "nvidia-smi"
+
+      gpu:
+        "NVIDIA GeForce GTX 1660 Ti"
+
+      driver:
+        "610.62"
+
+      vram:
+        "6144 MiB"
+
+      compute_capability:
+        "7.5"
+
+      status:
+        "VERIFIED"
+
+
+    python:
+
+      source:
+        "Windows Python Launcher"
+
+      version:
+        "3.13.14"
+
+      status:
+        "HOST_VERIFIED"
+
+
+    uv:
+
+      source:
+        "uv --version"
+
+      version:
+        "0.10.0"
+
+      status:
+        "HOST_VERIFIED"
+
+
+    node:
+
+      source:
+        "node --version"
+
+      version:
+        "24.16.0"
+
+      status:
+        "HOST_VERIFIED"
+
+
+    ollama:
+
+      source:
+        "ollama --version"
+
+      version:
+        "0.32.9"
+
+      status:
+        "HOST_VERIFIED"
+
+
     qwen3:
 
       source:
-        "Official Qwen model repository / model documentation"
+        "Official Ollama Library / selected JAS model baseline"
 
       exact_model:
-        "Qwen/Qwen3-4B-Instruct-2507"
-
-      status:
-        "VERIFIED"
-
-
-    ollama_qwen3:
-
-      source:
-        "Official Ollama Library"
-
-      exact_tag:
         "qwen3:4b-instruct-2507-q4_K_M"
 
-      digest:
+      research_digest_prefix:
         "0edcdef34593"
 
+      full_digest:
+        null
+
       status:
-        "VERIFIED"
+        "CANDIDATE_PENDING_LOCAL_MANIFEST_CAPTURE"
 
 
     fastapi:
@@ -1668,10 +2147,10 @@ final_exact_version_resolution:
     cuda:
 
       source:
-        "Official NVIDIA CUDA documentation"
+        "Official NVIDIA documentation + host nvidia-smi"
 
       status:
-        "PENDING_RUNTIME_PATH_VALIDATION"
+        "HOST_RUNTIME_EVIDENCE_CAPTURED"
 
 
     pytorch:
@@ -1683,14 +2162,82 @@ final_exact_version_resolution:
         "NOT_REQUIRED_FOR_PRIMARY_OLLAMA_PATH"
 
 
+    mcp:
+
+      source:
+        "Official MCP Python SDK / PyPI"
+
+      protocol:
+        "2026-07-28"
+
+      sdk:
+        "2.0.0"
+
+      status:
+        "SELECTED_BASELINE_PENDING_RUNTIME_VALIDATION"
+
+
   # ==========================================================
-  # 39. CURRENT EXACT RESOLUTIONS
+  # 41. CURRENT EXACT RESOLUTIONS
   # ==========================================================
 
   resolved_exact_versions:
 
     fully_resolved:
       []
+
+
+    host_verified:
+
+      - component:
+          "CPython"
+
+        exact_version:
+          "3.13.14"
+
+        state:
+          "HOST_OBSERVED"
+
+
+      - component:
+          "uv"
+
+        exact_version:
+          "0.10.0"
+
+        state:
+          "HOST_OBSERVED"
+
+
+      - component:
+          "Node.js"
+
+        exact_version:
+          "24.16.0"
+
+        state:
+          "HOST_OBSERVED"
+
+
+      - component:
+          "Ollama"
+
+        exact_version:
+          "0.32.9"
+
+        state:
+          "HOST_OBSERVED"
+
+
+      - component:
+          "NVIDIA Driver"
+
+        exact_version:
+          "610.62"
+
+        state:
+          "HOST_VALIDATED"
+
 
     resolved_candidates:
 
@@ -1706,8 +2253,31 @@ final_exact_version_resolution:
         ollama_tag:
           "qwen3:4b-instruct-2507-q4_K_M"
 
-        ollama_digest:
+        research_digest_prefix:
           "0edcdef34593"
+
+        state:
+          "RESOLVED_CANDIDATE"
+
+
+      - component:
+          "MCP Python SDK"
+
+        exact_version:
+          "2.0.0"
+
+        protocol:
+          "2026-07-28"
+
+        state:
+          "RESOLVED_CANDIDATE"
+
+
+      - component:
+          "Python runtime"
+
+        exact_version:
+          "3.13.14"
 
         state:
           "RESOLVED_CANDIDATE"
@@ -1765,11 +2335,77 @@ final_exact_version_resolution:
           "CANDIDATE_NOT_LOCKED"
 
 
+      - component:
+          "Node.js"
+
+        candidate:
+          "24.16.0"
+
+        state:
+          "HOST_OBSERVED_NOT_PRODUCTION_LOCKED"
+
+
+      - component:
+          "pnpm"
+
+        candidate:
+          "11.17.0"
+
+        state:
+          "CANDIDATE_NOT_INSTALLED"
+
+
+      - component:
+          "React"
+
+        candidate:
+          "19.2.8"
+
+        state:
+          "CANDIDATE_NOT_LOCKED"
+
+
+      - component:
+          "Vite"
+
+        candidate:
+          "8.1.5"
+
+        state:
+          "CANDIDATE_NOT_LOCKED"
+
+
+      - component:
+          "TypeScript"
+
+        candidate:
+          "7.0.2"
+
+        state:
+          "CANDIDATE_NOT_LOCKED"
+
+
   # ==========================================================
-  # 40. CRITICAL DECISIONS
+  # 42. CRITICAL DECISIONS
   # ==========================================================
 
   critical_decisions:
+
+    python_family:
+      decision:
+        "SELECT_PYTHON_3_13"
+
+      exact_host_candidate:
+        "3.13.14"
+
+      reason:
+        >
+        The JAS architecture previously established Python 3.13
+        as the preferred runtime family. The current host provides
+        CPython 3.13.14 through the Windows launcher, making it the
+        current exact development candidate. Final production
+        artifact identity remains subject to acquisition validation.
+
 
     qwen3_family:
       decision:
@@ -1820,6 +2456,30 @@ final_exact_version_resolution:
         primary Ollama LLM path.
 
 
+    mcp:
+      decision:
+        "SELECT_MCP_2_0_0"
+
+      protocol:
+        "2026-07-28"
+
+      reason:
+        >
+        The research phase selected MCP Python SDK 2.0.0 as the
+        baseline compatible with the 2026-07-28 protocol revision.
+
+
+    frontend_node:
+      decision:
+        "USE_HOST_OBSERVED_NODE_24_16_0_AS_CURRENT_CANDIDATE"
+
+      reason:
+        >
+        Node 24.16.0 is the exact version currently installed on
+        the host. The previously recorded 24.18.1 candidate is not
+        treated as installed or validated on this host.
+
+
     newer_qwen_families:
       decision:
         "DO_NOT_AUTO_PROMOTE"
@@ -1831,18 +2491,61 @@ final_exact_version_resolution:
 
 
   # ==========================================================
-  # 41. REQUIRED HOST VALIDATION
+  # 43. REQUIRED HOST VALIDATION
   # ==========================================================
 
   required_host_validation:
 
-    commands:
+    completed:
 
       - command:
           "nvidia-smi"
 
         purpose:
           "Capture exact NVIDIA driver version and GPU state."
+
+        status:
+          "COMPLETE"
+
+
+      - command:
+          "nvidia-smi --query-gpu=name,driver_version,memory.total,compute_cap"
+
+        purpose:
+          "Capture exact GPU, driver, VRAM and compute capability."
+
+        status:
+          "COMPLETE"
+
+
+      - command:
+          "py --version"
+
+        purpose:
+          "Capture exact Python launcher version."
+
+        status:
+          "COMPLETE"
+
+
+      - command:
+          "uv --version"
+
+        purpose:
+          "Capture exact uv host version."
+
+        status:
+          "COMPLETE"
+
+
+      - command:
+          "node --version"
+
+        purpose:
+          "Capture exact Node host version."
+
+        status:
+          "COMPLETE"
 
 
       - command:
@@ -1851,6 +2554,11 @@ final_exact_version_resolution:
         purpose:
           "Capture exact Ollama runtime version."
 
+        status:
+          "COMPLETE"
+
+
+    pending:
 
       - command:
           "ollama list"
@@ -1858,12 +2566,28 @@ final_exact_version_resolution:
         purpose:
           "Capture installed model identity."
 
+        status:
+          "PENDING"
+
 
       - command:
           "ollama show qwen3:4b-instruct-2507-q4_K_M"
 
         purpose:
           "Capture local model metadata and verify selected artifact."
+
+        status:
+          "PENDING"
+
+
+      - command:
+          "ollama ps"
+
+        purpose:
+          "Capture runtime model residency and hardware utilization."
+
+        status:
+          "PENDING"
 
 
     required_runtime_tests:
@@ -1884,7 +2608,7 @@ final_exact_version_resolution:
 
 
   # ==========================================================
-  # 42. FINAL LOCK READINESS
+  # 44. FINAL LOCK READINESS
   # ==========================================================
 
   readiness:
@@ -1899,7 +2623,7 @@ final_exact_version_resolution:
       true
 
     qwen3_immutable_identity_recorded:
-      true
+      false
 
     qwen3_upstream_revision_recorded:
       false
@@ -1939,39 +2663,40 @@ final_exact_version_resolution:
 
 
   # ==========================================================
-  # 43. NEXT REQUIRED ACTIONS
+  # 45. NEXT REQUIRED ACTIONS
   # ==========================================================
 
   next_actions:
 
     P0:
 
-      - "Run nvidia-smi"
-      - "Run ollama --version"
       - "Run ollama list"
       - "Run ollama show qwen3:4b-instruct-2507-q4_K_M"
+      - "Run ollama ps after model load"
       - "Validate Ollama GPU detection"
       - "Validate Qwen3 runtime behavior"
-      - "Capture exact NVIDIA driver version"
-      - "Capture exact Ollama version"
+      - "Capture full Ollama model manifest identity"
+      - "Capture Ollama installer/executable SHA256"
+      - "Record exact NVIDIA driver version"
 
 
     P1:
 
-      - "Select exact CPython version"
-      - "Select exact uv version"
+      - "Create exact Python core environment"
+      - "Select/verify uv 0.10.0"
       - "Resolve FastAPI"
       - "Resolve Pydantic"
       - "Resolve LangGraph"
+      - "Generate uv.lock through uv resolver"
       - "Resolve Playwright"
       - "Resolve Playwright browser identity"
       - "Resolve React"
       - "Resolve react-dom"
       - "Resolve Vite"
       - "Resolve TypeScript"
-      - "Resolve pnpm"
-      - "Resolve MCP SDK"
-      - "Resolve enabled MCP servers"
+      - "Install/verify pnpm 11.17.0"
+      - "Generate pnpm-lock.yaml through pnpm resolver"
+      - "Validate MCP SDK 2.0.0 against Python runtime"
 
 
     P2:
@@ -1988,13 +2713,16 @@ final_exact_version_resolution:
 
 
   # ==========================================================
-  # 44. CURRENT STATE
+  # 46. CURRENT STATE
   # ==========================================================
 
   state:
 
     status:
       "EXACT_VERSION_RESOLUTION_IN_PROGRESS"
+
+    host_snapshot:
+      "CAPTURED_2026-08-13"
 
     p0_hardware:
       "RESOLVED"
@@ -2003,10 +2731,19 @@ final_exact_version_resolution:
       "RESOLVED_CANDIDATE"
 
     p0_runtime:
-      "RESOLVED"
+      "RESOLVED_CANDIDATE"
 
     p0_host_validation:
-      "PENDING"
+      "PARTIALLY_COMPLETE"
+
+    python_runtime:
+      "RESOLVED_CANDIDATE_3_13_14"
+
+    frontend_host_runtime:
+      "NODE_24_16_0_OBSERVED"
+
+    mcp:
+      "RESOLVED_CANDIDATE_2_0_0"
 
     p1_resolution:
       "NOT_COMPLETE"

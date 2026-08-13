@@ -1,12 +1,12 @@
 # ============================================================
 # JARVIS / JAS
-# VERSION LOCK v1 — CANDIDATE EVIDENCE AND
-# EXACT VERSION RESOLUTION
+# VERSION LOCK v1
+# CANDIDATE EVIDENCE AND EXACT VERSION RESOLUTION
 # ============================================================
 
 candidate_evidence_and_exact_version_resolution:
 
-  schema_version: "1.0"
+  schema_version: "1.1"
 
   project:
     name: "JARVIS"
@@ -27,7 +27,7 @@ candidate_evidence_and_exact_version_resolution:
       "Candidate Evidence and Exact Version Resolution"
 
     version:
-      "1.0"
+      "1.1"
 
     status:
       "IN_PROGRESS"
@@ -38,6 +38,10 @@ candidate_evidence_and_exact_version_resolution:
       - "19_APPROVED_MODELS.md"
       - "20_APPROVED_MCP_SERVERS.md"
       - "21_VERSION_LOCK_CANDIDATE.yaml"
+      - "14_COMPATIBILITY_RESOLUTION.yaml"
+      - "20_CROSS_DOMAIN_COMPATIBILITY_VALIDATION.yaml"
+      - "24_FINAL_EXACT_VERSION_RESOLUTION.yaml"
+      - "JAS host snapshot 2026-08-13"
 
     final_lock:
       false
@@ -53,8 +57,12 @@ candidate_evidence_and_exact_version_resolution:
     exact production candidates.
 
     A version may only advance toward final Version Lock when its
-    identity, compatibility, security and licensing requirements
-    are supported by sufficient evidence.
+    identity, compatibility, security, licensing and reproducibility
+    requirements are supported by sufficient evidence.
+
+    Host-installed versions are recorded as observed host evidence
+    and SHALL NOT automatically be promoted to selected production
+    versions.
 
 
   # ==========================================================
@@ -78,8 +86,8 @@ candidate_evidence_and_exact_version_resolution:
 
       meaning:
         >
-        Candidate discovered from a public source but not yet
-        independently validated.
+        Candidate or host-installed version discovered from a
+        source but not yet independently validated.
 
 
     E2:
@@ -172,6 +180,16 @@ candidate_evidence_and_exact_version_resolution:
       - "License"
 
 
+    ollama_model:
+
+      - "Official Ollama Library identity"
+      - "Exact model tag"
+      - "Local manifest identity"
+      - "Full immutable digest"
+      - "Runtime version"
+      - "GPU runtime validation"
+
+
     mcp_server:
 
       - "Publisher"
@@ -193,8 +211,189 @@ candidate_evidence_and_exact_version_resolution:
       - "Platform"
 
 
+    host_runtime:
+
+      - "Observed command output"
+      - "Executable path"
+      - "Exact installed version"
+      - "Platform"
+      - "Date/time of observation"
+
+
   # ==========================================================
-  # 5. CORE RUNTIME RESOLUTION
+  # 5. HOST SNAPSHOT REFERENCE
+  # ==========================================================
+
+  host_snapshot:
+
+    captured_at:
+      "2026-08-13T13:34:01+02:00"
+
+    source:
+      "D:\\AURA\\JAS\\acquisition\\host_snapshot\\host_snapshot.txt"
+
+    platform:
+
+      operating_system:
+        "Windows 10 Pro"
+
+      windows_version:
+        "2009"
+
+      os_build:
+        "26200"
+
+      architecture:
+        "x86_64"
+
+
+    cpu:
+
+      model:
+        "Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz"
+
+      physical_cores:
+        6
+
+      logical_processors:
+        12
+
+
+    memory:
+
+      total_bytes:
+        17029664768
+
+      approximate_gb:
+        15.86
+
+
+    gpu:
+
+      vendor:
+        "NVIDIA"
+
+      model:
+        "GeForce GTX 1660 Ti"
+
+      vram_mib:
+        6144
+
+      architecture:
+        "Turing"
+
+      compute_capability:
+        "7.5"
+
+      driver:
+        "610.62"
+
+      cuda_umd:
+        "13.3"
+
+
+    python:
+
+      default_python:
+
+        path:
+          "C:\\Users\\ardab\\AppData\\Local\\Programs\\Python\\Python311\\python.exe"
+
+        version:
+          "3.11.9"
+
+
+      python_launcher:
+
+        path:
+          "C:\\Windows\\py.exe"
+
+        version:
+          "3.13.14"
+
+
+    uv:
+
+      path:
+        "C:\\Users\\ardab\\.local\\bin\\uv.exe"
+
+      version:
+        "0.10.0"
+
+      build:
+        "0ba432459"
+
+      build_date:
+        "2026-02-05"
+
+
+    node:
+
+      path:
+        "C:\\Program Files\\nodejs\\node.exe"
+
+      version:
+        "24.16.0"
+
+
+    npm:
+
+      version:
+        "11.13.0"
+
+
+    pnpm:
+
+      installed:
+        false
+
+      version:
+        null
+
+
+    ollama:
+
+      path:
+        "C:\\Users\\ardab\\AppData\\Local\\Programs\\Ollama\\ollama.exe"
+
+      version:
+        "0.32.9"
+
+
+    docker:
+
+      installed:
+        false
+
+      version:
+        null
+
+
+    wsl:
+
+      installed:
+        false
+
+      version:
+        null
+
+
+    git:
+
+      version:
+        "2.53.0.windows.1"
+
+
+    interpretation:
+
+      >
+      The host snapshot represents the current development machine.
+      It is acquisition evidence only and does not by itself define
+      the final reproducible JAS production environment.
+
+
+  # ==========================================================
+  # 6. CORE RUNTIME RESOLUTION
   # ==========================================================
 
   core_runtime:
@@ -204,17 +403,31 @@ candidate_evidence_and_exact_version_resolution:
       component_id:
         "SW-001"
 
-      candidate:
-        null
+      selected_family:
+        "CPython 3.13"
 
-      minimum_supported:
-        "3.12"
+      candidate:
+        "3.13.14"
+
+      target_role:
+        "JAS Python runtime"
 
       evidence_level:
-        "E0"
+        "E1"
 
-      authoritative_source:
-        null
+      evidence:
+
+        host_observed:
+          true
+
+        host_path:
+          "C:\\Windows\\py.exe"
+
+        host_version:
+          "3.13.14"
+
+        authoritative_upstream_verification:
+          "REQUIRED"
 
       compatibility:
 
@@ -230,12 +443,20 @@ candidate_evidence_and_exact_version_resolution:
         uv:
           "PENDING"
 
-        pytorch:
+        playwright:
           "PENDING"
 
+        mcp_sdk:
+          "PENDING"
+
+        voice_environment:
+          "PENDING"
+
+        ml_environment:
+          "PENDING"
 
       decision:
-        "NOT_RESOLVED"
+        "SELECTED_RUNTIME_CANDIDATE"
 
 
     cpython:
@@ -243,14 +464,20 @@ candidate_evidence_and_exact_version_resolution:
       component_id:
         "CPYTHON-001"
 
-      candidate:
-        null
+      implementation:
+        "CPython"
+
+      major_minor:
+        "3.13"
+
+      exact_version:
+        "3.13.14"
 
       evidence_level:
-        "E0"
+        "E1"
 
       decision:
-        "NOT_RESOLVED"
+        "CANDIDATE_PENDING_AUTHORITATIVE_RELEASE_VERIFICATION"
 
 
     node:
@@ -258,20 +485,33 @@ candidate_evidence_and_exact_version_resolution:
       component_id:
         "SW-027"
 
+      selected_major:
+        "24"
+
       candidate:
         "24.18.1"
+
+      host_observed:
+        "24.16.0"
 
       evidence_level:
         "E1"
 
       authoritative_source:
-        null
+        "Node.js official release source"
 
       compatibility:
-        "PENDING_FINAL_TIMESTAMP_VALIDATION"
+        "PENDING_FINAL_ACQUISITION"
 
       decision:
         "PROVISIONAL_CANDIDATE"
+
+      note:
+        >
+        Node 24.16.0 is the currently installed host version.
+        The selected Version Lock candidate remains the researched
+        Node 24 LTS target and shall be acquired and verified
+        independently.
 
 
     typescript:
@@ -283,7 +523,7 @@ candidate_evidence_and_exact_version_resolution:
         "7.0.2"
 
       evidence_level:
-        "E1"
+        "E2"
 
       compatibility:
         "PENDING"
@@ -293,7 +533,7 @@ candidate_evidence_and_exact_version_resolution:
 
 
   # ==========================================================
-  # 6. PYTHON PACKAGE RESOLUTION
+  # 7. PYTHON PACKAGE RESOLUTION
   # ==========================================================
 
   python_packages:
@@ -312,20 +552,23 @@ candidate_evidence_and_exact_version_resolution:
       required_evidence:
 
         - "Official release"
-        - "Python compatibility"
+        - "Python 3.13 compatibility"
         - "Pydantic compatibility"
         - "Starlette compatibility"
         - "License"
-
+        - "Resolved transitive dependency graph"
 
       decision:
-        "BLOCKED"
+        "BLOCKED_PENDING_RESOLUTION"
 
 
     pydantic:
 
       component_id:
         "SW-006"
+
+      major_line:
+        "2.x"
 
       candidate:
         null
@@ -336,13 +579,13 @@ candidate_evidence_and_exact_version_resolution:
       required_evidence:
 
         - "Official release"
-        - "Python compatibility"
+        - "Python 3.13 compatibility"
         - "FastAPI compatibility"
         - "License"
-
+        - "Resolved dependency graph"
 
       decision:
-        "BLOCKED"
+        "BLOCKED_PENDING_RESOLUTION"
 
 
     langgraph:
@@ -359,14 +602,13 @@ candidate_evidence_and_exact_version_resolution:
       required_evidence:
 
         - "Official release"
-        - "Python compatibility"
+        - "Python 3.13 compatibility"
         - "LangChain ecosystem compatibility"
         - "Dependency resolution"
         - "License"
 
-
       decision:
-        "BLOCKED"
+        "BLOCKED_PENDING_RESOLUTION"
 
 
     uv:
@@ -375,24 +617,30 @@ candidate_evidence_and_exact_version_resolution:
         "SW-026"
 
       candidate:
-        null
+        "0.10.0"
+
+      host_observed:
+        "0.10.0"
 
       evidence_level:
-        "E0"
+        "E1"
+
+      authoritative_source:
+        "Astral / uv official release source"
 
       required_evidence:
 
         - "Official release"
-        - "Python compatibility"
+        - "Python 3.13 compatibility"
         - "Lockfile compatibility"
-
+        - "Frozen resolver behavior"
 
       decision:
-        "BLOCKED"
+        "HOST_VERSION_RECORDED_NOT_FINAL_LOCKED"
 
 
   # ==========================================================
-  # 7. DATA SERVICE RESOLUTION
+  # 8. DATA SERVICE RESOLUTION
   # ==========================================================
 
   data:
@@ -419,7 +667,6 @@ candidate_evidence_and_exact_version_resolution:
         architecture:
           "linux/amd64"
 
-
       compatibility:
 
         python_driver:
@@ -430,7 +677,6 @@ candidate_evidence_and_exact_version_resolution:
 
         qdrant:
           "NOT_DIRECTLY_COUPLED"
-
 
       decision:
         "PROVISIONAL_CANDIDATE"
@@ -458,19 +704,20 @@ candidate_evidence_and_exact_version_resolution:
         architecture:
           "linux/amd64"
 
-
       compatibility:
 
         python_client:
           "PENDING"
 
+        api:
+          "PENDING"
 
       decision:
         "PROVISIONAL_CANDIDATE"
 
 
   # ==========================================================
-  # 8. BROWSER RESOLUTION
+  # 9. BROWSER RESOLUTION
   # ==========================================================
 
   browser:
@@ -489,10 +736,10 @@ candidate_evidence_and_exact_version_resolution:
       required_evidence:
 
         - "Official package release"
-        - "Python compatibility"
+        - "Python 3.13 compatibility"
         - "Browser revision mapping"
         - "Browser artifact identity"
-
+        - "Windows compatibility"
 
       decision:
         "PROVISIONAL_CANDIDATE"
@@ -521,9 +768,15 @@ candidate_evidence_and_exact_version_resolution:
       decision:
         "BLOCKED"
 
+      rule:
+        >
+        Chromium SHALL be acquired through the selected Playwright
+        package/browser relationship. An independently installed
+        system Chrome SHALL NOT substitute for the locked artifact.
+
 
   # ==========================================================
-  # 9. FRONTEND RESOLUTION
+  # 10. FRONTEND RESOLUTION
   # ==========================================================
 
   frontend:
@@ -533,8 +786,32 @@ candidate_evidence_and_exact_version_resolution:
       name:
         "pnpm"
 
-      version:
+      selected_major:
+        "11"
+
+      candidate:
         "11.17.0"
+
+      host_installed:
+        false
+
+      host_version:
+        null
+
+      evidence_level:
+        "E2"
+
+      decision:
+        "PROVISIONAL_CANDIDATE"
+
+
+    node:
+
+      candidate:
+        "24.18.1"
+
+      host_version:
+        "24.16.0"
 
       evidence_level:
         "E1"
@@ -549,7 +826,7 @@ candidate_evidence_and_exact_version_resolution:
         "19.2.8"
 
       evidence_level:
-        "E1"
+        "E2"
 
       decision:
         "PROVISIONAL_CANDIDATE"
@@ -558,13 +835,16 @@ candidate_evidence_and_exact_version_resolution:
     react_dom:
 
       version:
-        null
+        "19.2.8"
+
+      compatibility:
+        "MUST_MATCH_REACT"
 
       evidence_level:
-        "E0"
+        "E2"
 
       decision:
-        "BLOCKED"
+        "PROVISIONAL_CANDIDATE"
 
 
     vite:
@@ -579,8 +859,35 @@ candidate_evidence_and_exact_version_resolution:
         "PROVISIONAL_CANDIDATE"
 
 
+    typescript:
+
+      version:
+        "7.0.2"
+
+      evidence_level:
+        "E2"
+
+      decision:
+        "PROVISIONAL_CANDIDATE"
+
+
+    lockfile:
+
+      file:
+        "pnpm-lock.yaml"
+
+      generation:
+        "pnpm resolver"
+
+      frozen_install_required:
+        true
+
+      status:
+        "NOT_YET_GENERATED"
+
+
   # ==========================================================
-  # 10. QWEN3 RESOLUTION
+  # 11. QWEN3 RESOLUTION
   # ==========================================================
 
   qwen3:
@@ -594,27 +901,53 @@ candidate_evidence_and_exact_version_resolution:
 
 
     exact_variant:
-      null
+      "Qwen3-4B-Instruct-2507"
+
 
     exact_model_id:
-      null
+      "Qwen/Qwen3-4B-Instruct-2507"
+
+
+    exact_ollama_model:
+      "qwen3:4b-instruct-2507-q4_K_M"
+
 
     revision:
       null
 
+
     artifact_digest:
       null
 
+
     quantization:
-      null
+      "Q4_K_M"
+
+
+    parameter_count:
+      "4.02B"
+
 
     runtime:
-      null
+      "Ollama"
+
+
+    hardware_profile:
+
+      gpu:
+        "NVIDIA GeForce GTX 1660 Ti"
+
+      vram_gb:
+        6
+
+      compute_capability:
+        "7.5"
 
 
     evidence:
 
       model_family:
+
         level:
           "E2"
 
@@ -622,108 +955,198 @@ candidate_evidence_and_exact_version_resolution:
           "Official Qwen model documentation/repository"
 
         status:
-          "FAMILY_VERIFIED"
+          "VERIFIED"
 
 
       exact_variant:
+
+        level:
+          "E2"
+
+        source:
+          "Official Qwen model repository"
+
+        status:
+          "VERIFIED"
+
+
+      ollama_variant:
+
+        level:
+          "E2"
+
+        source:
+          "Official Ollama Library"
+
+        status:
+          "VERIFIED"
+
+
+      ollama_tag:
+
+        level:
+          "E2"
+
+        value:
+          "qwen3:4b-instruct-2507-q4_K_M"
+
+        status:
+          "VERIFIED"
+
+
+      ollama_digest:
+
+        level:
+          "E1"
+
+        value:
+          "0edcdef34593"
+
+        status:
+          "RECORDED_SHORT_IDENTIFIER_NOT_SUFFICIENT_FOR_FINAL_IMMUTABILITY"
+
+
+      upstream_revision:
+
         level:
           "E0"
 
         status:
-          "NOT_SELECTED"
-
-
-      revision:
-        level:
-          "E0"
-
-        status:
-          "NOT_SELECTED"
-
-
-      artifact_digest:
-        level:
-          "E0"
-
-        status:
-          "NOT_SELECTED"
+          "NOT_CAPTURED"
 
 
     selection_rule:
 
       >
-      The exact Qwen3 variant SHALL be selected according to the
-      JAS hardware profile, latency requirements, memory budget,
+      The exact Qwen3 variant is selected according to the JAS
+      hardware profile, latency requirements, memory budget,
       license requirements and local inference runtime.
 
       Model family selection alone is insufficient for Version Lock.
 
 
+    compatibility:
+
+      hardware:
+        "PASS"
+
+      vram:
+        "PASS"
+
+      runtime:
+        "PASS_WITH_CONSTRAINT"
+
+      runtime_constraint:
+        "Primary local inference SHALL use native Ollama on the Windows host."
+
+      production_runtime_validation:
+        "PENDING"
+
+
     status:
-      "BLOCKED"
+      "RESOLVED_CANDIDATE"
 
 
   # ==========================================================
-  # 11. MODEL RUNTIME RESOLUTION
+  # 12. MODEL RUNTIME RESOLUTION
   # ==========================================================
 
   model_runtime:
+
+    primary_llm:
+
+      runtime:
+        "Ollama"
+
+      version:
+        "0.32.9"
+
+      host_observed:
+        true
+
+      evidence_level:
+        "E1"
+
+      status:
+        "HOST_RUNTIME_OBSERVED_PENDING_RUNTIME_VALIDATION"
+
 
     transformers:
 
       version:
         null
 
+      role:
+        "Optional ML / direct model inference framework"
+
+      primary_qwen_dependency:
+        false
+
       evidence_level:
         "E0"
 
       status:
-        "BLOCKED"
+        "OPTIONAL_PENDING_ML_ENVIRONMENT_RESOLUTION"
 
 
     pytorch:
 
       version:
-        null
+        "2.13.0"
 
-      build:
-        null
+      torchvision:
+        "0.28.0"
 
       cuda_build:
-        null
+        "13.0"
+
+      role:
+        "ML / vision / direct model development environment"
+
+      primary_qwen_ollama_dependency:
+        false
 
       evidence_level:
-        "E0"
+        "E2"
 
       status:
-        "BLOCKED"
+        "SELECTED_ML_ENVIRONMENT_BASELINE"
 
 
     cuda:
 
       toolkit_version:
-        null
+        "13.0"
 
-      minimum_driver:
-        null
+      role:
+        "ML environment CUDA baseline"
+
+      primary_ollama_toolkit_dependency:
+        false
 
       evidence_level:
-        "E0"
+        "E2"
 
       status:
-        "BLOCKED"
+        "SELECTED_ML_ENVIRONMENT_BASELINE"
 
 
     nvidia_driver:
 
       version:
-        null
+        "610.62"
+
+      gpu:
+        "NVIDIA GeForce GTX 1660 Ti"
 
       evidence_level:
-        "E0"
+        "E1"
+
+      host_validation:
+        "PASS"
 
       status:
-        "BLOCKED"
+        "RESOLVED_HOST_EVIDENCE"
 
 
     gpu:
@@ -732,60 +1155,78 @@ candidate_evidence_and_exact_version_resolution:
         "NVIDIA"
 
       model:
-        null
+        "GeForce GTX 1660 Ti"
 
       architecture:
-        null
+        "Turing"
+
+      compute_capability:
+        "7.5"
 
       vram_gb:
-        null
+        6
 
       evidence_level:
-        "E0"
+        "E1"
 
       status:
-        "BLOCKED"
+        "RESOLVED_HOST_PROFILE"
 
 
     container_runtime:
 
       nvidia_container_toolkit:
+
         version:
           null
 
-        evidence_level:
-          "E0"
+        required_for_primary_ollama_path:
+          false
 
         status:
-          "BLOCKED"
+          "CONDITIONAL"
 
 
     complete_chain:
 
-      qwen3:
-        "BLOCKED"
+      primary_ollama_path:
 
-      transformers:
-        "BLOCKED"
+        qwen3:
+          "RESOLVED_CANDIDATE"
 
-      pytorch:
-        "BLOCKED"
+        ollama:
+          "HOST_VERSION_OBSERVED"
 
-      cuda:
-        "BLOCKED"
+        driver:
+          "HOST_VALIDATED"
 
-      driver:
-        "BLOCKED"
+        gpu:
+          "HOST_VALIDATED"
 
-      gpu:
-        "BLOCKED"
+        status:
+          "PENDING_RUNTIME_TEST"
 
-      nvidia_container_toolkit:
-        "BLOCKED"
+
+      ml_path:
+
+        pytorch:
+          "SELECTED_BASELINE"
+
+        torchvision:
+          "SELECTED_BASELINE"
+
+        cuda:
+          "SELECTED_BASELINE"
+
+        gpu:
+          "HOST_VALIDATED"
+
+        status:
+          "PENDING_ENVIRONMENT_ACQUISITION"
 
 
   # ==========================================================
-  # 12. EMBEDDING / RERANKING
+  # 13. EMBEDDING / RERANKING
   # ==========================================================
 
   retrieval:
@@ -802,13 +1243,16 @@ candidate_evidence_and_exact_version_resolution:
         null
 
       runtime:
+        "Sentence Transformers / PyTorch"
+
+      precision:
         null
 
       evidence_level:
-        "E1"
+        "E2"
 
       status:
-        "BLOCKED"
+        "MODEL_SELECTED_RUNTIME_PENDING"
 
 
     reranker:
@@ -823,28 +1267,54 @@ candidate_evidence_and_exact_version_resolution:
         null
 
       runtime:
+        "Sentence Transformers / PyTorch"
+
+      precision:
         null
 
       evidence_level:
-        "E1"
+        "E2"
 
       status:
-        "BLOCKED"
+        "MODEL_SELECTED_RUNTIME_PENDING"
+
+
+    shared_runtime:
+
+      python:
+        "3.13"
+
+      pytorch:
+        "2.13.0"
+
+      cuda:
+        "13.0"
+
+      status:
+        "BASELINE_SELECTED"
 
 
   # ==========================================================
-  # 13. VOICE
+  # 14. VOICE
   # ==========================================================
 
   voice:
 
+    environment:
+      name:
+        "aura-voice"
+
+      python:
+        "3.13"
+
+
     whisper:
 
       family:
-        "OpenAI Whisper"
+        "faster-whisper"
 
       exact_model:
-        null
+        "Systran/faster-whisper-large-v3"
 
       revision:
         null
@@ -853,13 +1323,63 @@ candidate_evidence_and_exact_version_resolution:
         null
 
       runtime:
-        null
+        "CTranslate2"
 
       evidence_level:
-        "E0"
+        "E2"
 
       status:
-        "BLOCKED"
+        "SELECTED_RUNTIME_MODEL_PENDING_ACQUISITION"
+
+
+    faster_whisper:
+
+      version:
+        "1.2.1"
+
+      evidence_level:
+        "E2"
+
+      status:
+        "SELECTED"
+
+
+    ctranslate2:
+
+      version:
+        "4.8.1"
+
+      evidence_level:
+        "E2"
+
+      status:
+        "SELECTED"
+
+
+    cuda:
+
+      major_line:
+        "12.x"
+
+      cuBLAS:
+        "CUDA 12"
+
+      cuDNN:
+        "9"
+
+      evidence_level:
+        "E2"
+
+      status:
+        "SELECTED_BASELINE_MINOR_VERSION_PENDING_ACQUISITION"
+
+
+    compute_type:
+      "float16"
+
+
+    gpu_target:
+      "NVIDIA GeForce GTX 1660 Ti"
 
 
     vad:
@@ -874,7 +1394,19 @@ candidate_evidence_and_exact_version_resolution:
         "E0"
 
       status:
-        "BLOCKED"
+        "PENDING"
+
+
+    tts:
+
+      implementation:
+        "Kokoro"
+
+      status:
+        "SELECTED_ARCHITECTURAL_BASELINE"
+
+      exact_version:
+        null
 
 
     piper:
@@ -882,27 +1414,12 @@ candidate_evidence_and_exact_version_resolution:
       enabled:
         false
 
-      engine_version:
-        null
-
-      voice_model:
-        null
-
-      voice_revision:
-        null
-
-      voice_digest:
-        null
-
-      evidence_level:
-        "E0"
-
       status:
-        "PROFILE_DEPENDENT"
+        "NOT_APPLICABLE"
 
 
   # ==========================================================
-  # 14. VISION
+  # 15. VISION
   # ==========================================================
 
   vision:
@@ -912,11 +1429,14 @@ candidate_evidence_and_exact_version_resolution:
       version:
         null
 
+      python_binding:
+        "opencv-python"
+
       evidence_level:
         "E0"
 
       status:
-        "BLOCKED"
+        "PENDING"
 
 
     siglip2:
@@ -930,11 +1450,14 @@ candidate_evidence_and_exact_version_resolution:
       digest:
         null
 
+      runtime:
+        "Transformers / PyTorch"
+
       evidence_level:
         "E0"
 
       status:
-        "BLOCKED"
+        "PENDING"
 
 
     transformers:
@@ -942,15 +1465,18 @@ candidate_evidence_and_exact_version_resolution:
       version:
         null
 
+      runtime:
+        "PyTorch 2.13.0 / CUDA 13.0"
+
       evidence_level:
         "E0"
 
       status:
-        "BLOCKED"
+        "PENDING_ML_LOCK"
 
 
   # ==========================================================
-  # 15. MCP RESOLUTION
+  # 16. MCP RESOLUTION
   # ==========================================================
 
   mcp:
@@ -964,7 +1490,7 @@ candidate_evidence_and_exact_version_resolution:
         "E2"
 
       status:
-        "ARCHITECTURAL_CANDIDATE"
+        "SELECTED"
 
 
     sdk:
@@ -973,19 +1499,40 @@ candidate_evidence_and_exact_version_resolution:
         "MCP Python SDK"
 
       exact_version:
-        null
+        "2.0.0"
+
+      runtime:
+        "Python 3.13"
 
       evidence_level:
-        "E0"
+        "E2"
+
+      protocol_compatibility:
+        "SELECTED_PROTOCOL_2026-07-28"
 
       status:
-        "BLOCKED"
+        "SELECTED_BASELINE_PENDING_DEPENDENCY_RESOLUTION"
+
+
+    transport:
+
+      stdio:
+        "APPROVED"
+
+      streamable_http:
+        "APPROVED"
+
+      sse:
+        "LEGACY"
 
 
     servers:
 
       time:
 
+        enabled:
+          false
+
         version:
           null
 
@@ -998,15 +1545,15 @@ candidate_evidence_and_exact_version_resolution:
         publisher:
           null
 
-        evidence_level:
-          "E0"
-
         status:
-          "BLOCKED"
+          "PROFILE_DEPENDENT"
 
 
       filesystem:
 
+        enabled:
+          false
+
         version:
           null
 
@@ -1019,15 +1566,18 @@ candidate_evidence_and_exact_version_resolution:
         publisher:
           null
 
-        evidence_level:
-          "E0"
+        permission_profile:
+          "Restricted roots / least privilege / sandbox"
 
         status:
-          "BLOCKED"
+          "PROFILE_DEPENDENT"
 
 
       git:
 
+        enabled:
+          false
+
         version:
           null
 
@@ -1040,15 +1590,15 @@ candidate_evidence_and_exact_version_resolution:
         publisher:
           null
 
-        evidence_level:
-          "E0"
-
         status:
-          "BLOCKED"
+          "PROFILE_DEPENDENT"
 
 
       fetch:
 
+        enabled:
+          false
+
         version:
           null
 
@@ -1061,15 +1611,15 @@ candidate_evidence_and_exact_version_resolution:
         publisher:
           null
 
-        evidence_level:
-          "E0"
-
         status:
-          "BLOCKED"
+          "PROFILE_DEPENDENT"
 
 
       memory:
 
+        enabled:
+          false
+
         version:
           null
 
@@ -1082,15 +1632,21 @@ candidate_evidence_and_exact_version_resolution:
         publisher:
           null
 
-        evidence_level:
-          "E0"
-
         status:
-          "BLOCKED"
+          "PROFILE_DEPENDENT"
+
+
+    server_policy:
+
+      >
+      MCP servers are not automatically enabled merely because
+      their reference implementations are approved. Each enabled
+      server requires independent identity, permission, transport,
+      protocol and security validation.
 
 
   # ==========================================================
-  # 16. CONTAINER RESOLUTION
+  # 17. CONTAINER RESOLUTION
   # ==========================================================
 
   containers:
@@ -1100,11 +1656,14 @@ candidate_evidence_and_exact_version_resolution:
       version:
         "29.6.2"
 
+      host_installed:
+        false
+
       evidence_level:
         "E1"
 
       status:
-        "PROVISIONAL_CANDIDATE"
+        "PROVISIONAL_CANDIDATE_NOT_INSTALLED"
 
 
     buildkit:
@@ -1156,8 +1715,8 @@ candidate_evidence_and_exact_version_resolution:
         digest:
           null
 
-        evidence_level:
-          "E0"
+        architecture:
+          "linux/amd64"
 
         status:
           "BLOCKED"
@@ -1174,15 +1733,15 @@ candidate_evidence_and_exact_version_resolution:
         digest:
           null
 
-        evidence_level:
-          "E0"
+        architecture:
+          "linux/amd64"
 
         status:
           "BLOCKED"
 
 
   # ==========================================================
-  # 17. OBSERVABILITY
+  # 18. OBSERVABILITY
   # ==========================================================
 
   observability:
@@ -1198,15 +1757,18 @@ candidate_evidence_and_exact_version_resolution:
       collector_version:
         null
 
+      protocol:
+        "OTLP"
+
       evidence_level:
         "E0"
 
       status:
-        "BLOCKED"
+        "BLOCKED_PENDING_RESOLUTION"
 
 
   # ==========================================================
-  # 18. TESTING
+  # 19. TESTING
   # ==========================================================
 
   testing:
@@ -1220,7 +1782,7 @@ candidate_evidence_and_exact_version_resolution:
         "E0"
 
       status:
-        "BLOCKED"
+        "BLOCKED_PENDING_RESOLUTION"
 
 
     ruff:
@@ -1232,7 +1794,7 @@ candidate_evidence_and_exact_version_resolution:
         "E0"
 
       status:
-        "BLOCKED"
+        "BLOCKED_PENDING_RESOLUTION"
 
 
     dependency_scanner:
@@ -1247,11 +1809,11 @@ candidate_evidence_and_exact_version_resolution:
         "E0"
 
       status:
-        "BLOCKED"
+        "BLOCKED_PENDING_RESOLUTION"
 
 
   # ==========================================================
-  # 19. SECURITY
+  # 20. SECURITY
   # ==========================================================
 
   security:
@@ -1305,7 +1867,7 @@ candidate_evidence_and_exact_version_resolution:
 
 
   # ==========================================================
-  # 20. SUPPLY CHAIN
+  # 21. SUPPLY CHAIN
   # ==========================================================
 
   supply_chain:
@@ -1362,7 +1924,7 @@ candidate_evidence_and_exact_version_resolution:
 
 
   # ==========================================================
-  # 21. EVIDENCE REGISTER
+  # 22. EVIDENCE REGISTER
   # ==========================================================
 
   evidence_register:
@@ -1372,8 +1934,7 @@ candidate_evidence_and_exact_version_resolution:
       Every E2 or higher claim must reference an authoritative
       source before promotion.
 
-
-    sources:
+    authoritative_sources:
 
       official_project:
         status:
@@ -1387,6 +1948,10 @@ candidate_evidence_and_exact_version_resolution:
         status:
           "REQUIRED"
 
+      official_ollama_library:
+        status:
+          "REQUIRED_FOR_OLLAMA_MODELS"
+
       official_container_registry:
         status:
           "REQUIRED"
@@ -1396,33 +1961,43 @@ candidate_evidence_and_exact_version_resolution:
           "REQUIRED_WHEN_APPLICABLE"
 
 
+    host_evidence:
+
+      host_snapshot:
+        file:
+          "D:\\AURA\\JAS\\acquisition\\host_snapshot\\host_snapshot.txt"
+
+        captured:
+          "2026-08-13"
+
+        status:
+          "RECORDED"
+
+
   # ==========================================================
-  # 22. RESOLUTION PRIORITY
+  # 23. RESOLUTION PRIORITY
   # ==========================================================
 
   resolution_priority:
 
     P0:
 
-      - "GPU profile"
-      - "Qwen3 exact variant"
-      - "PyTorch"
-      - "CUDA"
-      - "NVIDIA driver"
-      - "NVIDIA Container Toolkit"
+      - "Host hardware profile"
+      - "Ollama runtime acquisition"
+      - "Qwen3 exact local artifact"
+      - "Ollama immutable model identity"
+      - "Ollama GPU runtime validation"
 
 
     P1:
 
-      - "Python"
+      - "Python 3.13"
       - "uv"
       - "FastAPI"
       - "Pydantic"
       - "LangGraph"
-
-
-    P2:
-
+      - "ML environment"
+      - "Voice environment"
       - "Playwright"
       - "Chromium"
       - "React"
@@ -1430,9 +2005,10 @@ candidate_evidence_and_exact_version_resolution:
       - "Vite"
       - "TypeScript"
       - "pnpm"
+      - "MCP SDK"
 
 
-    P3:
+    P2:
 
       - "PostgreSQL"
       - "Qdrant"
@@ -1441,69 +2017,342 @@ candidate_evidence_and_exact_version_resolution:
       - "Ruff"
 
 
-    P4:
+    P3:
 
       - "MCP servers"
+      - "Security tooling"
       - "SBOM"
       - "Provenance"
       - "Signing"
-      - "Security tooling"
 
 
   # ==========================================================
-  # 23. HARD BLOCKERS
+  # 24. HARD BLOCKERS
   # ==========================================================
 
   blockers:
 
     - id: "EVIDENCE-BLOCK-001"
-      area: "AI"
+      area: "Ollama"
       reason:
-        "Hardware profile must be resolved before exact Qwen3/PyTorch/CUDA selection."
+        "Exact Ollama runtime acquisition and runtime GPU validation remain pending."
+
 
     - id: "EVIDENCE-BLOCK-002"
-      area: "Python"
+      area: "Qwen3"
       reason:
-        "Exact runtime must be selected before dependency lock resolution."
+        >
+        Short Ollama digest identifier is recorded, but the complete
+        immutable local manifest identity and upstream revision have
+        not yet been captured.
+
 
     - id: "EVIDENCE-BLOCK-003"
-      area: "Browser"
+      area: "Python"
       reason:
-        "Playwright/browser revision evidence incomplete."
+        >
+        Python 3.13.14 is observed through the Windows launcher, but
+        the reproducible target environment and dependency lock graph
+        have not yet been generated.
+
 
     - id: "EVIDENCE-BLOCK-004"
-      area: "Frontend"
+      area: "ML"
       reason:
-        "React DOM and complete package graph unresolved."
+        >
+        PyTorch/torchvision/CUDA baseline is selected, but the actual
+        environment and resolver output have not yet been acquired.
+
 
     - id: "EVIDENCE-BLOCK-005"
-      area: "MCP"
+      area: "Voice"
       reason:
-        "Exact SDK and server identities unresolved."
+        >
+        Voice runtime baseline is selected, but exact acquisition,
+        CUDA 12 minor compatibility and model artifacts remain pending.
+
 
     - id: "EVIDENCE-BLOCK-006"
-      area: "Container"
+      area: "Browser"
       reason:
-        "Base image and Buildx/Compose identities unresolved."
+        "Playwright Chromium artifact identity has not yet been captured."
+
 
     - id: "EVIDENCE-BLOCK-007"
-      area: "Security"
+      area: "Frontend"
       reason:
-        "Concrete security implementations unresolved."
+        "pnpm is not installed on the host and pnpm-lock.yaml has not yet been generated."
+
 
     - id: "EVIDENCE-BLOCK-008"
+      area: "Containers"
+      reason:
+        "Docker and WSL are not installed on the current host."
+
+
+    - id: "EVIDENCE-BLOCK-009"
+      area: "Data"
+      reason:
+        "PostgreSQL/Qdrant image digests and client compatibility remain unresolved."
+
+
+    - id: "EVIDENCE-BLOCK-010"
+      area: "MCP"
+      reason:
+        "SDK baseline is selected, but enabled server identities remain profile-dependent."
+
+
+    - id: "EVIDENCE-BLOCK-011"
+      area: "Security"
+      reason:
+        "Concrete secret management, sandbox and dependency scanning implementations remain unresolved."
+
+
+    - id: "EVIDENCE-BLOCK-012"
       area: "Supply Chain"
       reason:
-        "Exact tooling versions and release identities unresolved."
+        "Exact SBOM, provenance and signing tooling identities remain unresolved."
 
 
   # ==========================================================
-  # 24. CURRENT STATE
+  # 25. CURRENT RESOLUTION SUMMARY
+  # ==========================================================
+
+  resolved_or_selected:
+
+    hardware:
+
+      gpu:
+        "NVIDIA GeForce GTX 1660 Ti"
+
+      vram:
+        "6 GB"
+
+      compute_capability:
+        "7.5"
+
+      driver:
+        "610.62"
+
+      state:
+        "HOST_VALIDATED"
+
+
+    python:
+
+      family:
+        "3.13"
+
+      observed:
+        "3.13.14"
+
+      state:
+        "CANDIDATE"
+
+
+    qwen3:
+
+      model:
+        "Qwen/Qwen3-4B-Instruct-2507"
+
+      ollama:
+        "qwen3:4b-instruct-2507-q4_K_M"
+
+      quantization:
+        "Q4_K_M"
+
+      state:
+        "RESOLVED_CANDIDATE"
+
+
+    ollama:
+
+      version:
+        "0.32.9"
+
+      state:
+        "HOST_OBSERVED"
+
+
+    ml:
+
+      python:
+        "3.13"
+
+      pytorch:
+        "2.13.0"
+
+      torchvision:
+        "0.28.0"
+
+      cuda:
+        "13.0"
+
+      state:
+        "SELECTED_BASELINE"
+
+
+    voice:
+
+      python:
+        "3.13"
+
+      faster_whisper:
+        "1.2.1"
+
+      ctranslate2:
+        "4.8.1"
+
+      cuda:
+        "12.x"
+
+      cudnn:
+        "9"
+
+      state:
+        "SELECTED_BASELINE"
+
+
+    frontend:
+
+      node:
+        "24 LTS"
+
+      pnpm:
+        "11.x"
+
+      react:
+        "19.2.8"
+
+      react_dom:
+        "19.2.8"
+
+      vite:
+        "8.x"
+
+      typescript:
+        "7.x"
+
+      state:
+        "SELECTED_ARCHITECTURAL_BASELINE"
+
+
+    mcp:
+
+      protocol:
+        "2026-07-28"
+
+      sdk:
+        "2.0.0"
+
+      state:
+        "SELECTED_BASELINE"
+
+
+  # ==========================================================
+  # 26. HOST OBSERVATION VS TARGET POLICY
+  # ==========================================================
+
+  host_vs_target_policy:
+
+    rule:
+      >
+      A host-installed version SHALL be treated as observational
+      evidence unless it exactly matches the selected reproducible
+      target and passes the corresponding acquisition and validation
+      requirements.
+
+    examples:
+
+      python:
+
+        host:
+          "3.11.9"
+
+        launcher:
+          "3.13.14"
+
+        target_family:
+          "3.13"
+
+        interpretation:
+          >
+          Python 3.13.14 is the useful host evidence. The default
+          Python 3.11.9 executable is not the selected JAS runtime.
+
+
+      node:
+
+        host:
+          "24.16.0"
+
+        target:
+          "Node 24 LTS"
+
+        interpretation:
+          >
+          Node 24.16.0 demonstrates that the major LTS line is
+          available on the host, but the final acquisition version
+          remains separately controlled.
+
+
+      uv:
+
+        host:
+          "0.10.0"
+
+        interpretation:
+          >
+          Host uv is recorded as acquisition tooling evidence and
+          is not automatically promoted into the final application
+          lock without reproducibility validation.
+
+
+      pnpm:
+
+        host:
+          "NOT_INSTALLED"
+
+        interpretation:
+          >
+          pnpm SHALL be installed during the controlled frontend
+          acquisition phase.
+
+
+      docker:
+
+        host:
+          "NOT_INSTALLED"
+
+        interpretation:
+          >
+          Docker SHALL be installed during the controlled container
+          acquisition phase if the containerized deployment path
+          remains enabled.
+
+
+      wsl:
+
+        host:
+          "NOT_INSTALLED"
+
+        interpretation:
+          >
+          WSL is not currently part of the host baseline. Its
+          installation SHALL be treated as an explicit acquisition
+          step rather than silently assumed.
+
+
+  # ==========================================================
+  # 27. CURRENT STATE
   # ==========================================================
 
   state:
 
     evidence_collection_started:
+      true
+
+    host_snapshot_captured:
       true
 
     authoritative_evidence_complete:
@@ -1534,33 +2383,130 @@ candidate_evidence_and_exact_version_resolution:
       false
 
     status:
-      "EVIDENCE_COLLECTION_IN_PROGRESS"
+      "EVIDENCE_COLLECTION_AND_ACQUISITION_PREPARATION"
 
 
   # ==========================================================
-  # 25. NEXT PHASE
+  # 28. NEXT PHASE
   # ==========================================================
 
   next_phase:
 
     name:
-      "Final Compatibility and Lock Preparation"
+      "Controlled Acquisition and Exact Artifact Capture"
 
     next_document:
       "23_FINAL_COMPATIBILITY_AND_LOCK_PREPARATION.yaml"
 
     sequence:
 
-      - "Complete P0 AI runtime resolution"
-      - "Complete Python dependency resolution"
-      - "Complete browser resolution"
-      - "Complete frontend resolution"
-      - "Complete MCP resolution"
-      - "Complete container resolution"
-      - "Complete security resolution"
-      - "Complete supply-chain resolution"
-      - "Run complete compatibility matrix"
-      - "Run license validation"
-      - "Run security validation"
-      - "Freeze candidate set"
+      - "Acquire selected Python runtime"
+      - "Create isolated JAS core environment"
+      - "Resolve uv dependency graph"
+      - "Generate uv.lock"
+      - "Acquire ML environment dependencies"
+      - "Generate ML lock graph"
+      - "Acquire voice environment dependencies"
+      - "Generate voice lock graph"
+      - "Acquire Ollama runtime"
+      - "Pull exact Qwen3 Ollama model"
+      - "Capture full local Ollama model identity"
+      - "Validate Ollama GPU execution"
+      - "Acquire Playwright"
+      - "Install coupled Chromium artifact"
+      - "Capture Chromium revision and artifact identity"
+      - "Acquire Node 24 target"
+      - "Acquire pnpm 11 target"
+      - "Generate pnpm-lock.yaml"
+      - "Acquire Docker / WSL if deployment path requires them"
+      - "Acquire PostgreSQL image"
+      - "Acquire Qdrant image"
+      - "Capture container digests"
+      - "Resolve MCP SDK"
+      - "Resolve enabled MCP server identities"
+      - "Resolve security tooling"
+      - "Resolve supply-chain tooling"
+      - "Run cross-domain compatibility validation"
+      - "Run host runtime validation"
+      - "Freeze exact candidate set"
       - "Prepare final Version Lock"
+
+
+  # ==========================================================
+  # 29. ANTI-FABRICATION RULE
+  # ==========================================================
+
+  anti_fabrication:
+
+    rule:
+      >
+      No exact version, revision, digest, browser artifact identity,
+      lockfile content, container digest or model manifest identity
+      shall be invented from web metadata or inferred from a tag.
+
+    resolver_generated_artifacts:
+
+      uv_lock:
+        "MUST_BE_GENERATED_BY_UV"
+
+      pnpm_lock:
+        "MUST_BE_GENERATED_BY_PNPM"
+
+      ollama_model_identity:
+        "MUST_BE_CAPTURED_FROM_LOCAL_OLLAMA_MANIFEST"
+
+      container_digest:
+        "MUST_BE_CAPTURED_FROM_CONTAINER_REGISTRY_OR_LOCAL_PULL"
+
+      browser_identity:
+        "MUST_BE_CAPTURED_FROM_PLAYWRIGHT_BROWSER_INSTALLATION"
+
+      host_runtime_evidence:
+        "MUST_BE_CAPTURED_FROM_ACTUAL_HOST"
+
+
+  # ==========================================================
+  # 30. FINAL DECISION
+  # ==========================================================
+
+  final_decision:
+
+    architecture:
+      "RESOLVED"
+
+    candidate_set:
+      "PARTIALLY_RESOLVED"
+
+    host_profile:
+      "RESOLVED"
+
+    qwen3:
+      "RESOLVED_CANDIDATE"
+
+    ollama:
+      "HOST_VERSION_OBSERVED"
+
+    ml_baseline:
+      "RESOLVED_BASELINE"
+
+    voice_baseline:
+      "RESOLVED_BASELINE"
+
+    frontend_baseline:
+      "RESOLVED_ARCHITECTURAL_BASELINE"
+
+    mcp_baseline:
+      "RESOLVED_BASELINE"
+
+    final_version_lock:
+      false
+
+    decision:
+      >
+      The research-derived architecture and major compatibility
+      decisions are now incorporated into the evidence document.
+      The project SHALL proceed to controlled acquisition rather
+      than further broad technology selection.
+
+    next_action:
+      "BEGIN CONTROLLED ACQUISITION"

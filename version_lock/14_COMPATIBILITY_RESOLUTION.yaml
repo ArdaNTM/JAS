@@ -5,23 +5,39 @@
 
 version_lock_compatibility_resolution:
 
-  schema_version: "1.0"
+  schema_version: "1.1"
 
   project:
     name: "JARVIS"
     architecture: "JAS"
     architecture_version: "JAS v1"
 
+
+  # ==========================================================
+  # 1. DOCUMENT
+  # ==========================================================
+
   document:
+
     id: "JAS-VL-014"
+
     name: "Compatibility Resolution"
-    version: "1.0"
+
+    version: "1.1"
+
     status: "IN_PROGRESS"
-    authority: "VERSION_LOCK_v1"
+
+    authority:
+      - "VERSION_LOCK_v1"
+      - "JAS v1"
+      - "21_VERSION_LOCK_CANDIDATE.yaml"
+      - "22_CANDIDATE_EVIDENCE_AND_EXACT_VERSION_RESOLUTION.yaml"
+      - "24_FINAL_EXACT_VERSION_RESOLUTION.yaml"
+      - "HOST_SNAPSHOT_2026-08-13"
 
 
   # ==========================================================
-  # 1. PURPOSE
+  # 2. PURPOSE
   # ==========================================================
 
   purpose:
@@ -39,9 +55,13 @@ version_lock_compatibility_resolution:
     Its interaction with the complete JAS dependency graph SHALL
     also be validated.
 
+    Host-installed software SHALL be treated as observational
+    evidence until acquisition, version verification, compatibility
+    validation and lock identity requirements have been satisfied.
+
 
   # ==========================================================
-  # 2. COMPATIBILITY STATES
+  # 3. COMPATIBILITY STATES
   # ==========================================================
 
   states:
@@ -49,6 +69,13 @@ version_lock_compatibility_resolution:
     UNKNOWN:
       description:
         "Compatibility has not yet been evaluated."
+
+    OBSERVED:
+      description:
+        >
+        The component has been observed on the current host, but
+        observation alone does not establish JAS compatibility or
+        production lock eligibility.
 
     PASS:
       description:
@@ -72,11 +99,19 @@ version_lock_compatibility_resolution:
 
     BLOCKED:
       description:
-        "Evaluation cannot proceed because an upstream dependency is unresolved."
+        >
+        Evaluation cannot proceed because an upstream dependency,
+        architectural decision or required evidence is unresolved.
+
+    CONDITIONAL:
+      description:
+        >
+        Component is required only when the corresponding optional
+        or conditional architecture path is enabled.
 
 
   # ==========================================================
-  # 3. GLOBAL RULES
+  # 4. GLOBAL RULES
   # ==========================================================
 
   rules:
@@ -92,113 +127,403 @@ version_lock_compatibility_resolution:
 
     rule_003:
       >
-      A model SHALL be evaluated together with its inference runtime.
+      A model SHALL be evaluated together with its selected
+      inference runtime.
 
     rule_004:
       >
       GPU-dependent components SHALL be evaluated together with
-      CUDA, driver and hardware compatibility.
+      the hardware and runtime path that actually uses the GPU.
 
     rule_005:
+      >
+      Direct PyTorch/CUDA compatibility SHALL NOT be treated as a
+      mandatory primary LLM requirement when the selected primary
+      inference architecture is Ollama.
+
+    rule_006:
       >
       Browser automation SHALL be evaluated using the exact
       Playwright/browser revision relationship.
 
-    rule_006:
+    rule_007:
       >
       MCP clients and servers SHALL be evaluated against the
       selected protocol revision.
 
-    rule_007:
+    rule_008:
       >
       Container images SHALL be evaluated together with their
       architecture and host platform requirements.
 
-    rule_008:
-      >
-      A PASS based only on package metadata SHALL not be treated
-      as equivalent to full runtime validation.
-
     rule_009:
+      >
+      A package metadata PASS SHALL NOT be treated as equivalent
+      to complete runtime validation.
+
+    rule_010:
       >
       Compatibility SHALL be re-evaluated whenever a dependency
       candidate changes.
 
-    rule_010:
+    rule_011:
       >
       A single compatibility failure in a mandatory production
       component SHALL prevent final Version Lock promotion.
 
+    rule_012:
+      >
+      Host observation SHALL NOT automatically become a JAS lock
+      decision.
+
+    rule_013:
+      >
+      Exact versions SHALL be resolved before final lock promotion.
+
+    rule_014:
+      >
+      Mutable latest tags SHALL NOT be used as final immutable
+      production identities.
+
+    rule_015:
+      >
+      Optional architecture branches SHALL NOT block the primary
+      JAS runtime unless that branch is explicitly enabled.
+
 
   # ==========================================================
-  # 4. CORE PYTHON RUNTIME
+  # 5. HOST OBSERVATION
+  # ==========================================================
+
+  host_observation:
+
+    snapshot:
+
+      source:
+        "D:/AURA/JAS/acquisition/host_snapshot/host_snapshot.txt"
+
+      captured_at:
+        "2026-08-13T13:34:01+02:00"
+
+      status:
+        "OBSERVED"
+
+
+    operating_system:
+
+      product:
+        "Windows 10 Pro"
+
+      windows_version:
+        "2009"
+
+      build:
+        "26200"
+
+      architecture:
+        "x86_64"
+
+
+    cpu:
+
+      model:
+        "Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz"
+
+      physical_cores:
+        6
+
+      logical_processors:
+        12
+
+
+    memory:
+
+      total_bytes:
+        17029664768
+
+      approximate_gib:
+        15.86
+
+
+    gpu:
+
+      vendor:
+        "NVIDIA"
+
+      model:
+        "GeForce GTX 1660 Ti"
+
+      vram_mib:
+        6144
+
+      compute_capability:
+        "7.5"
+
+      driver_version:
+        "610.62"
+
+      cuda_umd_version:
+        "13.3"
+
+      driver_model:
+        "WDDM"
+
+
+    python_host:
+
+      python_path:
+        "C:/Users/ardab/AppData/Local/Programs/Python/Python311/python.exe"
+
+      python_version:
+        "3.11.9"
+
+      launcher:
+        "C:/Windows/py.exe"
+
+      launcher_default_version:
+        "3.13.14"
+
+
+    uv_host:
+
+      executable:
+        "C:/Users/ardab/.local/bin/uv.exe"
+
+      version:
+        "0.10.0"
+
+      status:
+        "OBSERVED"
+
+
+    node_host:
+
+      executable:
+        "C:/Program Files/nodejs/node.exe"
+
+      version:
+        "24.16.0"
+
+      status:
+        "OBSERVED"
+
+
+    npm_host:
+
+      version:
+        "11.13.0"
+
+      status:
+        "OBSERVED"
+
+
+    pnpm_host:
+
+      installed:
+        false
+
+      status:
+        "NOT_INSTALLED"
+
+
+    ollama_host:
+
+      executable:
+        "C:/Users/ardab/AppData/Local/Programs/Ollama/ollama.exe"
+
+      version:
+        "0.32.9"
+
+      status:
+        "OBSERVED"
+
+
+    docker_host:
+
+      installed:
+        false
+
+      status:
+        "NOT_INSTALLED"
+
+
+    wsl_host:
+
+      installed:
+        false
+
+      status:
+        "NOT_INSTALLED"
+
+
+    git_host:
+
+      version:
+        "2.53.0.windows.1"
+
+      status:
+        "OBSERVED"
+
+
+    interpretation:
+
+      >
+      The host snapshot establishes the current development-machine
+      state only. It does not establish the final JAS production
+      dependency lock.
+
+      Host-installed versions may be used as acquisition and
+      compatibility evidence but SHALL be independently resolved
+      against the JAS target architecture.
+
+
+  # ==========================================================
+  # 6. PRIMARY RUNTIME ARCHITECTURE
+  # ==========================================================
+
+  primary_runtime:
+
+    development_platform:
+      "Windows x86_64"
+
+    production_platform:
+      "Linux x86_64"
+
+    python_runtime:
+      implementation:
+        "CPython"
+
+      target_version:
+        "3.13.x"
+
+      policy:
+        >
+        Python 3.13 is the selected JAS application runtime line.
+        The exact patch version SHALL be resolved during acquisition
+        and lock preparation.
+
+      status:
+        "PENDING_EXACT_VERSION"
+
+
+    primary_llm_runtime:
+
+      implementation:
+        "Ollama"
+
+      role:
+        "Primary local LLM inference runtime"
+
+      host:
+        "Windows x86_64"
+
+      status:
+        "SELECTED_PENDING_RUNTIME_VALIDATION"
+
+
+  # ==========================================================
+  # 7. PYTHON RUNTIME COMPATIBILITY
   # ==========================================================
 
   python_runtime:
 
-    selected_candidate:
+    selected_line:
+      "3.13.x"
 
-      version: "3.14.7"
-      implementation: "CPython"
+    previous_3_14_candidate:
+      status:
+        "RETIRED_AS_PRIMARY_CANDIDATE"
+
+      reason:
+        >
+        The JAS resolution path has moved to Python 3.13 for the
+        application runtime. Python 3.14 SHALL NOT remain an active
+        primary Version Lock candidate unless the architecture is
+        explicitly reopened.
+
+    host_launcher:
+      observed_version:
+        "3.13.14"
 
       status:
-        "CANDIDATE"
+        "OBSERVED"
 
-      source:
-        "Python Software Foundation"
-
-      note:
-        >
-        Python 3.14.7 supersedes the previously recorded 3.14.6
-        research candidate as the current 3.14 maintenance release.
+      lock_status:
+        "NOT_LOCKED"
 
 
     compatibility:
 
       uv:
-        status: "PENDING"
-        reason:
-          "Exact uv release compatibility must be verified."
+        status:
+          "PENDING"
 
-      fastapi:
-        status: "PENDING"
-        reason:
-          "FastAPI runtime compatibility must be validated."
-
-      pydantic:
-        status: "PENDING"
-        reason:
-          "Pydantic Python 3.14 support must be validated."
-
-      langgraph:
-        status: "PENDING"
-        reason:
-          "LangGraph metadata permits modern Python versions, but
-          complete dependency compatibility must be resolved."
-
-      pytest:
-        status: "PENDING"
-
-      ruff:
-        status: "PENDING"
-
-      transformers:
-        status: "PENDING"
-
-      pytorch:
-        status: "PENDING"
         reason:
           >
-          Python 3.14 compatibility is particularly important for
-          the AI runtime and must not be inferred solely from the
-          Python package metadata.
+          uv must be resolved against the selected Python 3.13
+          runtime and frozen dependency lockfile.
+
+      fastapi:
+        status:
+          "PENDING"
+
+        reason:
+          >
+          Exact FastAPI release and dependency graph must be
+          validated against Python 3.13.
+
+      pydantic:
+        status:
+          "PENDING"
+
+        reason:
+          >
+          Exact Pydantic release must be validated against Python
+          3.13 and the selected FastAPI release.
+
+      langgraph:
+        status:
+          "PENDING"
+
+        reason:
+          >
+          Exact LangGraph release and transitive dependency graph
+          must be resolved against Python 3.13.
+
+      pytest:
+        status:
+          "PENDING"
+
+      ruff:
+        status:
+          "PENDING"
+
+      transformers:
+        status:
+          "CONDITIONAL"
+
+        reason:
+          >
+          Transformers is not required for the primary Ollama Qwen3
+          inference path but remains relevant to optional model
+          development and research paths.
+
+      pytorch:
+        status:
+          "CONDITIONAL"
+
+        reason:
+          >
+          PyTorch is not required for the primary Ollama Qwen3
+          inference path. It becomes a mandatory compatibility
+          target only if a direct PyTorch-based model path is enabled.
 
     overall:
       "PENDING"
 
 
   # ==========================================================
-  # 5. PYTHON CORE DEPENDENCY GRAPH
+  # 8. PYTHON DEPENDENCY GRAPH
   # ==========================================================
 
   python_dependency_graph:
@@ -206,7 +531,7 @@ version_lock_compatibility_resolution:
     fastapi:
 
       candidate:
-        version: "0.139.2"
+        null
 
       relationships:
 
@@ -217,7 +542,8 @@ version_lock_compatibility_resolution:
           status: "PENDING"
 
         starlette:
-          status: "PENDING"
+          status:
+            "RESOLVED_BY_FASTAPI_DEPENDENCY_GRAPH"
 
       overall:
         "PENDING"
@@ -226,7 +552,7 @@ version_lock_compatibility_resolution:
     pydantic:
 
       candidate:
-        version: "2.13.4"
+        null
 
       relationships:
 
@@ -246,14 +572,12 @@ version_lock_compatibility_resolution:
     langgraph:
 
       candidate:
-        version: "1.2.9"
+        null
 
       relationships:
 
         python:
-          status: "PASS_WITH_CONSTRAINT"
-          constraint:
-            "Python >=3.10 is declared by package metadata."
+          status: "PENDING"
 
         langchain_ecosystem:
           status: "PENDING"
@@ -265,10 +589,30 @@ version_lock_compatibility_resolution:
         "PENDING"
 
 
+    uv:
+
+      candidate:
+        "0.10.0"
+
+      host_observed:
+        true
+
+      relationships:
+
+        python_313:
+          status: "PENDING"
+
+        lockfile:
+          status: "PENDING"
+
+      overall:
+        "PENDING"
+
+
     pytest:
 
       candidate:
-        version: "9.1.1"
+        null
 
       relationships:
 
@@ -282,7 +626,7 @@ version_lock_compatibility_resolution:
     ruff:
 
       candidate:
-        version: "0.15.22"
+        null
 
       relationships:
 
@@ -297,153 +641,308 @@ version_lock_compatibility_resolution:
 
 
   # ==========================================================
-  # 6. AI RUNTIME COMPATIBILITY
+  # 9. PRIMARY AI RUNTIME
   # ==========================================================
 
   ai_runtime:
 
+    primary_path:
+
+      runtime:
+        "Ollama"
+
+      model:
+        "Qwen3-4B-Instruct-2507"
+
+      artifact:
+        "qwen3:4b-instruct-2507-q4_K_M"
+
+      quantization:
+        "Q4_K_M"
+
+      status:
+        "RESOLVED_CANDIDATE"
+
+
+    ollama:
+
+      candidate:
+        "0.32.9"
+
+      source:
+        "Host snapshot"
+
+      status:
+        "OBSERVED"
+
+      lock_status:
+        "PENDING_ACQUISITION_AND_RUNTIME_VALIDATION"
+
+
     pytorch:
 
       status:
-        "RESEARCH_REQUIRED"
+        "NOT_REQUIRED_FOR_PRIMARY_OLLAMA_LLM_PATH"
 
-      compatibility_targets:
+      optional:
+        true
 
-        python_314:
-          status: "PENDING"
+      activation_conditions:
 
-        cuda:
-          status: "PENDING"
-
-        transformers:
-          status: "PENDING"
-
-        qwen3:
-          status: "PENDING"
-
-        siglip2:
-          status: "PENDING"
-
-        whisper:
-          status: "PENDING"
-
-
-      blocking_rule:
-        >
-        Python 3.14 SHALL NOT be promoted to final JAS Version Lock
-        until the selected PyTorch release provides the required
-        production support for Python 3.14.
+        - "Direct Transformers inference"
+        - "Custom PyTorch model development"
+        - "Alternative local inference runtime"
+        - "JAS vision/model research requiring PyTorch"
 
 
     transformers:
 
-      candidate:
-        status: "RESEARCH_REQUIRED"
+      status:
+        "OPTIONAL"
 
-      relationships:
+      primary_qwen3_dependency:
+        false
 
-        python:
-          status: "PENDING"
+      activation_conditions:
 
-        pytorch:
-          status: "PENDING"
+        - "Direct Transformers inference"
+        - "Model development"
+        - "Vision model integration"
+        - "Embedding/reranking path requiring Transformers"
 
-        qwen3:
-          status: "PENDING"
 
-        bge_m3:
-          status: "PENDING"
+    cuda_toolkit:
 
-        reranker:
-          status: "PENDING"
+      status:
+        "NOT_DIRECT_PRIMARY_DEPENDENCY"
 
-        siglip2:
-          status: "PENDING"
+      reason:
+        >
+        The primary JAS Qwen3 inference path uses Ollama rather than
+        direct application-level CUDA compilation or PyTorch execution.
 
-      overall:
-        "PENDING"
+      host_gpu_acceleration:
+        true
+
+      host_cuda_umd_observed:
+        "13.3"
+
+
+    nvidia_driver:
+
+      version:
+        "610.62"
+
+      host_observed:
+        true
+
+      gpu:
+        "GeForce GTX 1660 Ti"
+
+      status:
+        "HOST_VALIDATED"
+
+
+    gpu:
+
+      vendor:
+        "NVIDIA"
+
+      model:
+        "GeForce GTX 1660 Ti"
+
+      vram_gb:
+        6
+
+      architecture:
+        "Turing"
+
+      compute_capability:
+        "7.5"
+
+      status:
+        "HOST_VALIDATED"
+
+
+    nvidia_container_toolkit:
+
+      status:
+        "NOT_REQUIRED_FOR_PRIMARY_WINDOWS_OLLAMA_PATH"
+
+      conditional:
+        true
+
+      activation_conditions:
+
+        - "GPU inference moved into Linux containers"
+        - "CUDA workload moved into Docker"
+        - "Containerized GPU model runtime enabled"
+
+
+    overall:
+      "PENDING_RUNTIME_VALIDATION"
 
 
   # ==========================================================
-  # 7. MODEL COMPATIBILITY
+  # 10. QWEN3 COMPATIBILITY
   # ==========================================================
 
   models:
 
     qwen3:
 
-      status:
-        "RESEARCH_REQUIRED"
+      approved_family:
+        "Qwen3"
 
-      required_relationships:
+      exact_variant:
+        "Qwen3-4B-Instruct-2507"
 
-        model_variant:
-          status: "PENDING"
+      exact_model_id:
+        "Qwen/Qwen3-4B-Instruct-2507"
 
-        model_revision:
-          status: "PENDING"
+      ollama_model:
+        "qwen3:4b-instruct-2507-q4_K_M"
 
-        inference_runtime:
-          status: "PENDING"
+      quantization:
+        "Q4_K_M"
 
-        transformers:
-          status: "PENDING"
+      approximate_model_size_gb:
+        2.5
 
-        pytorch:
-          status: "PENDING"
+      parameter_count:
+        "4.02B"
 
-        python:
-          status: "PENDING"
+      context_length:
+        262144
+
+      mode:
+        "Instruct / non-thinking"
+
+      license:
+        "Apache-2.0"
+
+      ollama_digest:
+        "0edcdef34593"
+
+      digest_status:
+        "RECORDED"
+
+      upstream_revision:
+        null
+
+      upstream_artifact_digest:
+        null
+
+      upstream_revision_status:
+        "PENDING_CAPTURE"
+
+
+      compatibility:
+
+        model_runtime:
+          status:
+            "PASS_WITH_CONSTRAINT"
+
+          constraint:
+            >
+            Compatibility is evaluated against Ollama as the selected
+            primary inference runtime rather than direct PyTorch.
+
+        ollama:
+          status:
+            "PENDING_RUNTIME_VALIDATION"
 
         gpu:
-          status: "PENDING"
+          status:
+            "PASS"
 
-        cuda:
-          status: "PENDING"
+        vram:
+          status:
+            "PASS"
 
-      lock_blockers:
+        driver:
+          status:
+            "PASS_WITH_CONSTRAINT"
 
-        - "Exact Qwen3 variant not selected"
-        - "Exact model revision not selected"
-        - "Inference runtime not selected"
-        - "Hardware profile not selected"
+          constraint:
+            >
+            Host driver 610.62 is observed and validated through
+            nvidia-smi; Ollama GPU execution still requires a direct
+            runtime test.
+
+        python:
+          status:
+            "NOT_DIRECTLY_COUPLED"
+
+        pytorch:
+          status:
+            "NOT_APPLICABLE"
+
+        cuda_toolkit:
+          status:
+            "NOT_APPLICABLE_TO_PRIMARY_APPLICATION_PATH"
+
+
+      lock_status:
+        "RESOLVED_CANDIDATE"
 
 
     bge_m3:
 
+      model:
+        "BAAI/bge-m3"
+
       status:
         "RESEARCH_REQUIRED"
 
       relationships:
 
-        transformers:
-          status: "PENDING"
-
-        pytorch:
+        runtime:
           status: "PENDING"
 
         python:
           status: "PENDING"
+
+        transformers:
+          status: "PENDING"
+
+        pytorch:
+          status: "CONDITIONAL"
+
+      overall:
+        "PENDING"
 
 
     bge_reranker:
 
+      model:
+        "BAAI/bge-reranker-v2-m3"
+
       status:
         "RESEARCH_REQUIRED"
 
       relationships:
 
-        transformers:
-          status: "PENDING"
-
-        pytorch:
+        runtime:
           status: "PENDING"
 
         python:
           status: "PENDING"
 
+        transformers:
+          status: "PENDING"
+
+        pytorch:
+          status: "CONDITIONAL"
+
+      overall:
+        "PENDING"
+
 
     whisper:
+
+      family:
+        "OpenAI Whisper"
 
       status:
         "RESEARCH_REQUIRED"
@@ -457,10 +956,13 @@ version_lock_compatibility_resolution:
           status: "PENDING"
 
         pytorch:
-          status: "PENDING"
+          status: "CONDITIONAL"
 
         hardware:
           status: "PENDING"
+
+      overall:
+        "PENDING"
 
 
     siglip2:
@@ -474,7 +976,7 @@ version_lock_compatibility_resolution:
           status: "PENDING"
 
         pytorch:
-          status: "PENDING"
+          status: "CONDITIONAL"
 
         python:
           status: "PENDING"
@@ -482,17 +984,23 @@ version_lock_compatibility_resolution:
         hardware:
           status: "PENDING"
 
+      overall:
+        "PENDING"
+
 
   # ==========================================================
-  # 8. DATABASE COMPATIBILITY
+  # 11. DATABASE COMPATIBILITY
   # ==========================================================
 
   databases:
 
     postgresql:
 
+      candidate:
+        "18.4"
+
       status:
-        "RESEARCH_REQUIRED"
+        "CANDIDATE"
 
       relationships:
 
@@ -506,13 +1014,27 @@ version_lock_compatibility_resolution:
           status: "PENDING"
 
         architecture:
+          status:
+            "PASS_WITH_CONSTRAINT"
+
+          constraint:
+            "Primary deployment target is Linux x86_64."
+
+        image_digest:
           status: "PENDING"
+
+
+      overall:
+        "PENDING"
 
 
     qdrant:
 
+      candidate:
+        "1.18.2"
+
       status:
-        "RESEARCH_REQUIRED"
+        "CANDIDATE"
 
       relationships:
 
@@ -531,25 +1053,40 @@ version_lock_compatibility_resolution:
         container:
           status: "PENDING"
 
+        architecture:
+          status:
+            "PASS_WITH_CONSTRAINT"
+
+          constraint:
+            "Primary deployment target is Linux x86_64."
+
+
+      overall:
+        "PENDING"
+
 
     redis:
 
-      enabled: false
+      enabled:
+        false
 
       status:
         "NOT_APPLICABLE"
 
 
   # ==========================================================
-  # 9. BROWSER COMPATIBILITY
+  # 12. BROWSER COMPATIBILITY
   # ==========================================================
 
   browser:
 
     playwright:
 
+      candidate:
+        "1.61.0"
+
       status:
-        "RESEARCH_REQUIRED"
+        "CANDIDATE"
 
       relationships:
 
@@ -568,16 +1105,11 @@ version_lock_compatibility_resolution:
         linux:
           status: "PENDING"
 
-      rule:
-        >
-        The selected Playwright version SHALL determine or explicitly
-        validate the browser revision used for production automation.
-
 
     chromium:
 
       status:
-        "RESEARCH_REQUIRED"
+        "PENDING"
 
       relationships:
 
@@ -590,96 +1122,119 @@ version_lock_compatibility_resolution:
         linux:
           status: "PENDING"
 
+        artifact_identity:
+          status: "PENDING"
+
+
+    rule:
+      >
+      Playwright package version and browser artifact identity SHALL
+      be treated as one coupled deployment contract.
+
+
+    overall:
+      "BLOCKED"
+
 
   # ==========================================================
-  # 10. FRONTEND COMPATIBILITY
+  # 13. FRONTEND COMPATIBILITY
   # ==========================================================
 
   frontend:
 
-    nodejs:
+    node:
 
       candidate:
-        version: "24.18.0"
+        "24.18.1"
 
-      policy:
-        "LTS preferred"
+      host_observed:
+        "24.16.0"
 
       status:
         "CANDIDATE"
 
 
+    package_manager:
+
+      selected:
+        "pnpm"
+
+      candidate_version:
+        "11.17.0"
+
+      host_installed:
+        false
+
+      status:
+        "ACQUISITION_PENDING"
+
+
     typescript:
 
       candidate:
-        version: "7.0.2"
+        "7.0.2"
 
-      relationships:
-
-        node:
-          status: "PENDING"
-
-        react:
-          status: "PENDING"
-
-        vite:
-          status: "PENDING"
+      status:
+        "PENDING"
 
 
     react:
 
       candidate:
-        status:
-          "RESEARCH_REQUIRED"
+        "19.2.8"
 
-      relationships:
+      status:
+        "PENDING"
 
-        node:
-          status: "PENDING"
 
-        typescript:
-          status: "PENDING"
+    react_dom:
 
-        vite:
-          status: "PENDING"
+      candidate:
+        "19.2.8"
+
+      relationship:
+        "MUST_MATCH_REACT_VERSION"
+
+      status:
+        "PENDING"
 
 
     vite:
 
       candidate:
-        version: "8.1.5"
+        "8.1.5"
 
-      relationships:
-
-        node:
-          status: "PENDING"
-
-        typescript:
-          status: "PENDING"
-
-        react:
-          status: "PENDING"
+      status:
+        "PENDING"
 
 
-    package_manager:
+    relationships:
 
-      selected:
-        null
+      node:
+        status: "PENDING"
 
-      candidates:
+      package_manager:
+        status: "PENDING"
 
-        pnpm:
-          status: "PENDING"
+      typescript:
+        status: "PENDING"
 
-        npm:
-          status: "PENDING"
+      react:
+        status: "PENDING"
 
-      blocking:
-        true
+      react_dom:
+        status: "PENDING"
+
+      vite:
+        status: "PENDING"
+
+
+    overall:
+      "BLOCKED"
 
 
   # ==========================================================
-  # 11. MCP COMPATIBILITY
+  # 14. MCP COMPATIBILITY
   # ==========================================================
 
   mcp:
@@ -690,13 +1245,22 @@ version_lock_compatibility_resolution:
         "2026-07-28"
 
       status:
-        "PENDING"
+        "ARCHITECTURAL_CANDIDATE"
 
 
     sdk:
 
-      version:
-        null
+      name:
+        "MCP Python SDK"
+
+      major_line:
+        "2.x"
+
+      exact_version:
+        "2.0.0"
+
+      runtime:
+        "Python 3.13"
 
       protocol_compatibility:
         "PENDING"
@@ -704,27 +1268,140 @@ version_lock_compatibility_resolution:
       runtime_compatibility:
         "PENDING"
 
+      status:
+        "CANDIDATE"
+
+
+    client:
+
+      implementation:
+        "JAS MCP Client"
+
+      status:
+        "ARCHITECTURAL"
+
+
+    transports:
+
+      stdio:
+        status:
+          "APPROVED"
+
+      streamable_http:
+        status:
+          "APPROVED"
+
+      sse:
+        status:
+          "LEGACY"
+
 
     servers:
 
-      status:
-        "PENDING"
+      time:
+        enabled:
+          false
 
-      rule:
-        >
-        Every enabled MCP server must independently pass protocol,
-        SDK, runtime, transport and permission compatibility.
+        status:
+          "PROFILE_DEPENDENT"
+
+
+      filesystem:
+        enabled:
+          false
+
+        status:
+          "PROFILE_DEPENDENT"
+
+
+      git:
+        enabled:
+          false
+
+        status:
+          "PROFILE_DEPENDENT"
+
+
+      fetch:
+        enabled:
+          false
+
+        status:
+          "PROFILE_DEPENDENT"
+
+
+      memory:
+        enabled:
+          false
+
+        status:
+          "PROFILE_DEPENDENT"
+
+
+      sequential_thinking:
+        enabled:
+          false
+
+        status:
+          "DEVELOPMENT_ONLY"
+
+
+      everything:
+        enabled:
+          false
+
+        status:
+          "TESTING_ONLY"
+
+
+    external_servers:
+
+      browser:
+        enabled:
+          false
+
+        status:
+          "NOT_ENABLED"
+
+
+      database:
+        enabled:
+          false
+
+        status:
+          "NOT_ENABLED"
+
+
+      docker:
+        enabled:
+          false
+
+        status:
+          "NOT_ENABLED"
+
+
+      github:
+        enabled:
+          false
+
+        status:
+          "NOT_ENABLED"
+
+
+    overall:
+      "PENDING"
 
 
   # ==========================================================
-  # 12. NATIVE TOOLCHAIN
+  # 15. NATIVE TOOLCHAIN
   # ==========================================================
 
   native:
 
     rust:
 
-      enabled: false
+      enabled:
+        false
 
       status:
         "NOT_APPLICABLE"
@@ -732,7 +1409,8 @@ version_lock_compatibility_resolution:
 
     cpp:
 
-      enabled: false
+      enabled:
+        false
 
       status:
         "NOT_APPLICABLE"
@@ -740,7 +1418,8 @@ version_lock_compatibility_resolution:
 
     cmake:
 
-      enabled: false
+      enabled:
+        false
 
       status:
         "NOT_APPLICABLE"
@@ -748,39 +1427,102 @@ version_lock_compatibility_resolution:
 
     ninja:
 
-      enabled: false
+      enabled:
+        false
 
       status:
         "NOT_APPLICABLE"
 
 
   # ==========================================================
-  # 13. GPU / CUDA
+  # 16. GPU / CUDA
   # ==========================================================
 
   gpu:
 
-    enabled: false
+    enabled:
+      true
 
-    status:
-      "NOT_APPLICABLE"
+    purpose:
+      "Primary local Ollama GPU acceleration"
+
+    hardware:
+
+      vendor:
+        "NVIDIA"
+
+      model:
+        "GeForce GTX 1660 Ti"
+
+      vram_gb:
+        6
+
+      architecture:
+        "Turing"
+
+      compute_capability:
+        "7.5"
+
+
+    driver:
+
+      version:
+        "610.62"
+
+      status:
+        "HOST_VALIDATED"
+
+
+    cuda:
+
+      host_cuda_umd:
+        "13.3"
+
+      toolkit:
+        null
+
+      direct_toolkit_dependency:
+        false
+
+      status:
+        "RUNTIME_MANAGED"
+
 
     activation_rule:
       >
-      GPU compatibility resolution SHALL be activated when the
-      selected local model deployment requires hardware acceleration.
+      GPU compatibility is mandatory for the primary local Ollama
+      Qwen3 path because local LLM inference is intended to use the
+      NVIDIA GPU.
+
+    container_gpu_path:
+      enabled:
+        false
+
+      nvidia_container_toolkit:
+        status:
+          "CONDITIONAL"
+
+
+    overall:
+      "PENDING_RUNTIME_VALIDATION"
 
 
   # ==========================================================
-  # 14. CONTAINER COMPATIBILITY
+  # 17. CONTAINER COMPATIBILITY
   # ==========================================================
 
   containers:
 
     docker:
 
+      candidate:
+        "29.6.2"
+
+      host_installed:
+        false
+
       status:
-        "RESEARCH_REQUIRED"
+        "ACQUISITION_PENDING"
 
       relationships:
 
@@ -845,22 +1587,45 @@ version_lock_compatibility_resolution:
           status: "PENDING"
 
 
+    wsl:
+
+      installed:
+        false
+
+      status:
+        "ACQUISITION_PENDING"
+
+      role:
+        >
+        WSL is required only if the selected Windows development
+        workflow uses WSL/Linux tooling. Its installation SHALL be
+        decided by the deployment and container strategy before
+        acquisition.
+
+
+    overall:
+      "BLOCKED"
+
+
   # ==========================================================
-  # 15. PLATFORM MATRIX
+  # 18. PLATFORM MATRIX
   # ==========================================================
 
   platforms:
 
     windows_x86_64:
 
+      role:
+        "PRIMARY_DEVELOPMENT"
+
       status:
-        "PRIMARY"
+        "OBSERVED"
 
       python:
         "PENDING"
 
       ai_runtime:
-        "PENDING"
+        "PENDING_RUNTIME_VALIDATION"
 
       browser:
         "PENDING"
@@ -869,13 +1634,16 @@ version_lock_compatibility_resolution:
         "PENDING"
 
       docker:
-        "PENDING"
+        "ACQUISITION_PENDING"
 
 
     linux_x86_64:
 
-      status:
+      role:
         "PRIMARY_DEPLOYMENT"
+
+      status:
+        "TARGET"
 
       python:
         "PENDING"
@@ -891,31 +1659,28 @@ version_lock_compatibility_resolution:
 
       docker:
         "PENDING"
+
+
+    linux_arm64:
+
+      role:
+        "SECONDARY"
+
+      status:
+        "PROFILE_DEPENDENT"
 
 
     macos_arm64:
 
-      status:
+      role:
         "SECONDARY_DEVELOPMENT"
 
-      python:
-        "PENDING"
-
-      ai_runtime:
-        "PENDING"
-
-      browser:
-        "PENDING"
-
-      frontend:
-        "PENDING"
-
-      docker:
-        "PENDING"
+      status:
+        "PROFILE_DEPENDENT"
 
 
   # ==========================================================
-  # 16. CRITICAL COMPATIBILITY CHAINS
+  # 19. CRITICAL COMPATIBILITY CHAINS
   # ==========================================================
 
   critical_chains:
@@ -923,38 +1688,40 @@ version_lock_compatibility_resolution:
     chain_001:
 
       name:
-        "Python AI Chain"
+        "Primary Local LLM Chain"
 
       sequence:
 
-        - "CPython"
-        - "Python"
-        - "uv"
-        - "PyTorch"
-        - "Transformers"
-        - "Qwen3"
+        - "Host GPU"
+        - "NVIDIA Driver"
+        - "Ollama"
+        - "Qwen3-4B-Instruct-2507 Q4_K_M"
 
       status:
-        "BLOCKED"
+        "PENDING_RUNTIME_VALIDATION"
 
       blocker:
-        "AI runtime compatibility unresolved"
+        "Ollama GPU detection and model runtime test pending."
 
 
     chain_002:
 
       name:
-        "Backend Chain"
+        "Python Backend Chain"
 
       sequence:
 
-        - "CPython"
+        - "CPython 3.13"
+        - "uv"
         - "FastAPI"
         - "Pydantic"
         - "LangGraph"
 
       status:
         "PENDING"
+
+      blocker:
+        "Exact Python package versions and dependency lock unresolved."
 
 
     chain_003:
@@ -964,17 +1731,18 @@ version_lock_compatibility_resolution:
 
       sequence:
 
-        - "Node.js"
-        - "Package Manager"
-        - "TypeScript"
-        - "React"
-        - "Vite"
+        - "Node.js 24"
+        - "pnpm 11"
+        - "TypeScript 7"
+        - "React 19"
+        - "react-dom 19"
+        - "Vite 8"
 
       status:
         "BLOCKED"
 
       blocker:
-        "React and package manager unresolved"
+        "Frontend acquisition and exact compatibility validation pending."
 
 
     chain_004:
@@ -984,6 +1752,7 @@ version_lock_compatibility_resolution:
 
       sequence:
 
+        - "CPython 3.13"
         - "Playwright"
         - "Chromium"
 
@@ -991,7 +1760,7 @@ version_lock_compatibility_resolution:
         "BLOCKED"
 
       blocker:
-        "Exact Playwright/browser revision unresolved"
+        "Exact Playwright/browser artifact relationship unresolved."
 
 
     chain_005:
@@ -1001,56 +1770,101 @@ version_lock_compatibility_resolution:
 
       sequence:
 
-        - "MCP Protocol"
-        - "MCP SDK"
-        - "MCP Server"
+        - "MCP Protocol 2026-07-28"
+        - "MCP Python SDK 2.0.0"
+        - "JAS MCP Client"
+        - "Enabled MCP Server"
+        - "Transport"
+        - "Permission Profile"
+
+      status:
+        "PENDING"
+
+      blocker:
+        "Enabled server identities and runtime validation unresolved."
+
+
+    chain_006:
+
+      name:
+        "Container Chain"
+
+      sequence:
+
+        - "Docker"
+        - "BuildKit"
+        - "Buildx"
+        - "Compose"
+        - "Base Image"
+        - "Application Artifact"
+        - "OCI Image"
 
       status:
         "BLOCKED"
 
       blocker:
-        "SDK and enabled server versions unresolved"
+        "Docker acquisition and exact container tooling identities unresolved."
 
 
   # ==========================================================
-  # 17. HARD BLOCKERS
+  # 20. HARD BLOCKERS
   # ==========================================================
 
   hard_blockers:
 
     - id: "BLOCK-001"
-      component: "AI Runtime"
+      component: "Primary LLM Runtime"
       reason:
-        "PyTorch compatibility with selected Python runtime unresolved."
+        "Ollama GPU detection and Qwen3 runtime validation are pending."
 
     - id: "BLOCK-002"
-      component: "Qwen3"
+      component: "Python Runtime"
       reason:
-        "Exact variant, revision and runtime unresolved."
+        "Exact Python 3.13 patch version and lock environment are unresolved."
 
     - id: "BLOCK-003"
-      component: "Frontend"
+      component: "Python Dependency Graph"
       reason:
-        "React and frontend package manager unresolved."
+        "FastAPI, Pydantic, LangGraph and uv exact versions are unresolved."
 
     - id: "BLOCK-004"
       component: "Browser"
       reason:
-        "Playwright/browser revision relationship unresolved."
+        "Exact Playwright/browser artifact identity is unresolved."
 
     - id: "BLOCK-005"
-      component: "MCP"
+      component: "Frontend"
       reason:
-        "Protocol/SDK/server compatibility unresolved."
+        "Frontend packages require acquisition and compatibility validation."
 
     - id: "BLOCK-006"
+      component: "MCP"
+      reason:
+        "SDK and enabled server runtime identities require validation."
+
+    - id: "BLOCK-007"
       component: "Data"
       reason:
-        "Qdrant/PostgreSQL exact server versions unresolved."
+        "PostgreSQL and Qdrant image, client and migration identities are unresolved."
+
+    - id: "BLOCK-008"
+      component: "Container"
+      reason:
+        "Docker, Buildx, Compose and base image identities are unresolved."
+
+    - id: "BLOCK-009"
+      component: "Security"
+      reason:
+        "Concrete security implementations remain unresolved."
+
+    - id: "BLOCK-010"
+      component: "Supply Chain"
+      reason:
+        "SBOM, provenance and signing tooling identities remain unresolved."
 
 
   # ==========================================================
-  # 18. PROMOTION CRITERIA
+  # 21. PROMOTION CRITERIA
   # ==========================================================
 
   promotion:
@@ -1075,141 +1889,327 @@ version_lock_compatibility_resolution:
         - "Artifact identity verified"
         - "Dependency graph frozen"
         - "Reproducibility validated"
-        - "No unresolved hard blockers"
+        - "No unresolved hard blockers affecting the component"
         - "Version Lock manifest updated"
 
 
+    host_observation_to_candidate:
+
+      mandatory:
+
+        - "Exact installed version captured"
+        - "Official release identity verified"
+        - "Target platform compatibility verified"
+        - "Acquisition method defined"
+        - "Runtime test completed where applicable"
+
+
   # ==========================================================
-  # 19. CURRENT DECISION
+  # 22. CURRENT DECISION
   # ==========================================================
 
   current_decision:
 
+    python:
+
+      selected_line:
+        "3.13.x"
+
+      status:
+        "SELECTED_LINE_PENDING_EXACT_VERSION"
+
+      reason:
+        >
+        Python 3.13 is the selected JAS application runtime line.
+        The host Python launcher currently exposes Python 3.13.14,
+        but the installed launcher version is host observation and
+        is not yet the final JAS lock identity.
+
+
     python_3_14:
 
       status:
-        "CANDIDATE"
-
-      not_locked:
-        true
+        "RETIRED_AS_PRIMARY_CANDIDATE"
 
       reason:
         >
-        Python 3.14.7 is the current 3.14 maintenance candidate,
-        but the JAS AI stack must be validated before final adoption.
+        Python 3.14 is no longer the active primary JAS runtime
+        candidate under the current resolution path.
 
-    python_3_13:
+
+    qwen3:
 
       status:
-        "FALLBACK_CANDIDATE"
+        "RESOLVED_CANDIDATE"
+
+      selected:
+        "Qwen3-4B-Instruct-2507 Q4_K_M"
+
+      runtime:
+        "Ollama"
 
       reason:
         >
-        Retained as a fallback candidate if the selected AI runtime
-        does not provide sufficient production compatibility with
-        Python 3.14.
+        The selected 4B Q4_K_M variant fits the current GTX 1660 Ti
+        6 GB hardware baseline and is aligned with the selected
+        primary Ollama inference architecture.
 
-    final_python:
-      null
+
+    pytorch:
+
+      status:
+        "CONDITIONAL"
+
+      reason:
+        >
+        PyTorch is removed from the mandatory primary LLM lock path.
+        It remains available for optional direct model development,
+        vision, embedding, reranking or alternative inference paths.
+
+
+    cuda_toolkit:
+
+      status:
+        "CONDITIONAL"
+
+      reason:
+        >
+        CUDA Toolkit is not a direct mandatory application dependency
+        for the primary Ollama path.
+
+
+    ollama:
+
+      host_version:
+        "0.32.9"
+
+      status:
+        "OBSERVED_NOT_LOCKED"
+
+
+    docker:
+
+      host_installed:
+        false
+
+      status:
+        "ACQUISITION_PENDING"
+
+
+    wsl:
+
+      host_installed:
+        false
+
+      status:
+        "ACQUISITION_PENDING"
+
+
+    pnpm:
+
+      host_installed:
+        false
+
+      selected_line:
+        "11.x"
+
+      status:
+        "ACQUISITION_PENDING"
 
 
   # ==========================================================
-  # 20. RESEARCH FINDINGS
+  # 23. RESEARCH FINDINGS
   # ==========================================================
 
   findings:
 
     finding_001:
       >
-      Python 3.14 is a stable major release family and is therefore
-      architecturally eligible under the Python 3.12+ policy.
+      The current host is Windows 10 Pro x86_64 with build 26200.
 
     finding_002:
       >
-      LangGraph 1.2.9 declares Python >=3.10 and is therefore not
-      itself a blocker for Python 3.14 based on package metadata.
+      The host contains a GTX 1660 Ti with 6 GiB VRAM and compute
+      capability 7.5.
 
     finding_003:
       >
-      Package-level Python compatibility does not establish complete
-      AI-stack compatibility.
+      NVIDIA driver 610.62 was successfully observed through
+      nvidia-smi and is therefore valid host evidence.
 
     finding_004:
       >
-      PyTorch is a critical compatibility gate because local model
-      execution depends on it or an equivalent inference runtime.
+      Python 3.13.14 is exposed by the Windows Python launcher and
+      is compatible with the selected JAS Python 3.13 runtime line
+      as a host observation.
 
     finding_005:
       >
-      The frontend cannot be locked until React and the package
-      manager are resolved together with Node.js, TypeScript and Vite.
+      The system Python command currently resolves to Python 3.11.9.
+      This SHALL NOT be confused with the selected JAS Python 3.13
+      application runtime.
 
     finding_006:
       >
-      Qwen3 cannot be locked at the family level. An exact model
-      variant, revision, artifact format and runtime are required.
+      uv 0.10.0 is installed on the host, but its presence does not
+      establish final JAS lock status.
+
+    finding_007:
+      >
+      Node.js 24.16.0 is installed on the host. The JAS frontend
+      candidate remains Node.js 24.18.1 until acquisition and final
+      resolution are completed.
+
+    finding_008:
+      >
+      pnpm is not currently installed on the host.
+
+    finding_009:
+      >
+      Ollama 0.32.9 is installed on the host and is selected as the
+      primary local LLM runtime architecture, but GPU detection and
+      model runtime behavior remain to be validated.
+
+    finding_010:
+      >
+      Docker is not currently installed on the host.
+
+    finding_011:
+      >
+      WSL is not currently installed on the host.
+
+    finding_012:
+      >
+      The selected Qwen3 primary model path does not require direct
+      PyTorch or CUDA Toolkit locking because inference is delegated
+      to Ollama.
+
+    finding_013:
+      >
+      Exact package versions, lockfiles, browser artifacts,
+      container identities, MCP server identities, security tooling
+      and supply-chain tooling remain unresolved.
 
 
   # ==========================================================
-  # 21. CURRENT STATE
+  # 24. STATE
   # ==========================================================
 
   state:
 
-    compatibility_resolution_started: true
+    compatibility_resolution_started:
+      true
 
-    mandatory_runtime_resolved: false
+    host_snapshot_available:
+      true
 
-    python_stack_resolved: false
+    host_snapshot_validated:
+      true
 
-    ai_stack_resolved: false
+    primary_python_line_selected:
+      true
 
-    model_stack_resolved: false
+    exact_python_version_resolved:
+      false
 
-    frontend_stack_resolved: false
+    python_stack_resolved:
+      false
 
-    browser_stack_resolved: false
+    primary_llm_runtime_selected:
+      true
 
-    mcp_stack_resolved: false
+    qwen3_variant_selected:
+      true
 
-    data_stack_resolved: false
+    qwen3_runtime_selected:
+      true
 
-    platform_stack_resolved: false
+    qwen3_runtime_validated:
+      false
 
-    final_lock_ready: false
+    ai_stack_resolved:
+      false
+
+    model_stack_resolved:
+      false
+
+    frontend_stack_resolved:
+      false
+
+    browser_stack_resolved:
+      false
+
+    mcp_stack_resolved:
+      false
+
+    data_stack_resolved:
+      false
+
+    container_stack_resolved:
+      false
+
+    platform_stack_resolved:
+      false
+
+    security_stack_resolved:
+      false
+
+    supply_chain_resolved:
+      false
+
+    final_lock_ready:
+      false
 
     status:
       "COMPATIBILITY_RESOLUTION_IN_PROGRESS"
 
 
   # ==========================================================
-  # 22. NEXT PHASE
+  # 25. NEXT PHASE
   # ==========================================================
 
   next_phase:
 
     name:
-      "Deep Dependency and Runtime Resolution"
+      "Acquisition and Runtime Validation"
+
+    prerequisites:
+
+      - "Host snapshot captured"
+      - "Primary Python line selected"
+      - "Primary Ollama runtime selected"
+      - "Qwen3 exact local model candidate selected"
 
     sequence:
 
-      - "Resolve PyTorch"
-      - "Resolve Python 3.14 compatibility"
-      - "Resolve Transformers"
-      - "Resolve Qwen3 runtime"
-      - "Resolve Qwen3 exact variant"
-      - "Resolve embedding runtime"
-      - "Resolve Whisper runtime"
-      - "Resolve SigLIP 2 runtime"
-      - "Resolve Qdrant"
-      - "Resolve PostgreSQL"
-      - "Resolve Playwright"
-      - "Resolve Chromium revision"
+      - "Acquire exact Python 3.13 runtime"
+      - "Create JAS Python environment"
+      - "Acquire and validate uv"
+      - "Resolve FastAPI"
+      - "Resolve Pydantic"
+      - "Resolve LangGraph"
+      - "Generate uv.lock"
+      - "Acquire Node.js target"
+      - "Acquire pnpm 11"
       - "Resolve React"
-      - "Resolve frontend package manager"
+      - "Resolve react-dom"
+      - "Resolve TypeScript"
+      - "Resolve Vite"
+      - "Generate pnpm-lock.yaml"
+      - "Validate Ollama GPU detection"
+      - "Validate Qwen3 model load"
+      - "Run Qwen3 runtime tests"
+      - "Resolve Playwright"
+      - "Resolve Chromium artifact"
+      - "Resolve PostgreSQL"
+      - "Resolve Qdrant"
+      - "Resolve Docker"
+      - "Resolve Buildx"
+      - "Resolve Compose"
       - "Resolve MCP SDK"
       - "Resolve enabled MCP servers"
-      - "Resolve Docker stack"
       - "Resolve security tooling"
-      - "Run complete dependency graph validation"
-      - "Promote compatible candidates"
+      - "Resolve supply-chain tooling"
+      - "Run complete cross-domain compatibility validation"
+      - "Freeze compatible candidates"
+      - "Prepare final Version Lock"
