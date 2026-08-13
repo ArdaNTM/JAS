@@ -1,0 +1,1506 @@
+# ============================================================
+# JARVIS / JAS
+# VERSION LOCK v1 — MCP LOCKS
+# ============================================================
+
+version_lock_mcp_locks:
+
+  schema_version: "1.0"
+
+  project:
+    name: "JARVIS"
+    architecture: "JAS"
+    architecture_version: "JAS v1"
+
+  lock:
+    version: "1.0"
+    status: "CANDIDATE"
+    authority: "VERSION_LOCK_v1"
+
+  # ----------------------------------------------------------
+  # IMPORTANT
+  # ----------------------------------------------------------
+  #
+  # MCP server approval and MCP server version locking are
+  # separate governance decisions.
+  #
+  # An approved MCP server SHALL NOT become a production
+  # dependency until its exact implementation identity,
+  # protocol compatibility, runtime, transport, license,
+  # permissions and artifact integrity have been validated.
+  #
+  # Every enabled production MCP server receives an individual
+  # lock entry.
+  #
+  # ==========================================================
+
+
+  # ==========================================================
+  # 1. MCP CLIENT
+  # ==========================================================
+
+  client:
+
+    - id: "SW-017"
+
+      name: "MCP Client SDK"
+
+      component_type: "protocol_sdk"
+
+      approved_status: "APPROVED"
+
+      lock_status: "CANDIDATE_LOCK"
+
+      sdk:
+        version: null
+        runtime: "Python"
+        runtime_version: null
+
+      protocol:
+        target: "2026-07-28"
+        exact_version: null
+        compatibility_status: "PENDING"
+
+      package:
+        name: null
+        registry: null
+        artifact_digest: null
+
+      transport_support:
+
+        stdio: true
+        streamable_http: true
+        sse:
+          status: "COMPATIBILITY_DEPENDENT"
+
+      security:
+
+        authentication:
+          supported: true
+          mechanism: "PENDING"
+
+        authorization:
+          required: true
+
+      validation:
+
+        protocol_compatibility: false
+        runtime_compatibility: false
+        transport_validation: false
+        security_validation: false
+
+      final_status: "PENDING_VERSION_RESOLUTION"
+
+
+  # ==========================================================
+  # 2. INTERNAL MCP GATEWAY
+  # ==========================================================
+
+  gateway:
+
+    - id: "MCP-GATEWAY"
+
+      name: "JARVIS MCP Gateway"
+
+      component_type: "internal_service"
+
+      approved_status: "APPROVED"
+
+      lock_status: "INTERNAL"
+
+      version_source:
+        authority: "JARVIS Release Version"
+
+      source_revision:
+        required: true
+        value: null
+
+      responsibilities:
+
+        - "MCP server registration"
+        - "Server trust evaluation"
+        - "Permission enforcement"
+        - "Transport policy enforcement"
+        - "Credential isolation"
+        - "Capability filtering"
+        - "Audit integration"
+        - "Server lifecycle management"
+
+      security:
+
+        default_policy: "DENY"
+
+        least_privilege: true
+
+        audit_required: true
+
+      final_status: "GOVERNED_BY_JARVIS_RELEASE"
+
+
+  # ==========================================================
+  # 3. APPROVED MCP SERVER REGISTRY
+  # ==========================================================
+
+  approved_server_registry:
+
+    authority:
+      document: "20_APPROVED_MCP_SERVERS.md"
+
+    rule: >
+      This registry represents the approved MCP capability families.
+      It does not itself constitute a production Version Lock.
+
+    production_rule: >
+      Only individually resolved and validated server entries may
+      become LOCKED.
+
+
+  # ==========================================================
+  # 4. TIME MCP
+  # ==========================================================
+
+  servers:
+
+    - id: "MCP-TIME"
+
+      name: "Time MCP Server"
+
+      capability: "Time"
+
+      approved_status: "APPROVED"
+
+      lock_status: "CANDIDATE_LOCK"
+
+      trust_tier: "T0"
+
+      publisher:
+        name: null
+        verified: false
+
+      repository:
+        url: null
+        revision: null
+
+      package:
+        name: null
+        version: null
+        registry: null
+
+      artifact:
+        type: null
+        digest:
+          algorithm: "SHA-256"
+          value: null
+
+      protocol:
+        version: "2026-07-28"
+
+      sdk:
+        name: "MCP Client SDK"
+        version: null
+
+      transport:
+        selected: null
+        candidates:
+          - "stdio"
+          - "streamable-http"
+
+      runtime:
+        name: null
+        version: null
+
+      permissions:
+
+        default: "NONE"
+
+        required:
+          - "Time query"
+
+        network:
+          required: false
+
+        filesystem:
+          required: false
+
+        shell:
+          required: false
+
+      security:
+
+        sandbox_required: false
+
+        credential_required: false
+
+        outbound_network:
+          allowed: false
+
+      license:
+        value: null
+        validation_status: "PENDING"
+
+      validation:
+
+        protocol_compatibility: false
+        artifact_integrity: false
+        license: false
+        security: false
+        permission_profile: false
+        runtime: false
+
+      final_status: "PENDING_SERVER_RESOLUTION"
+
+
+  # ==========================================================
+  # 5. FILESYSTEM MCP
+  # ==========================================================
+
+    - id: "MCP-FILESYSTEM"
+
+      name: "Filesystem MCP Server"
+
+      capability: "Filesystem"
+
+      approved_status: "CONDITIONAL"
+
+      lock_status: "PROFILE_DEPENDENT"
+
+      trust_tier: "T1/T3"
+
+      publisher:
+        name: null
+        verified: false
+
+      repository:
+        url: null
+        revision: null
+
+      package:
+        name: null
+        version: null
+        registry: null
+
+      artifact:
+        type: null
+        digest:
+          algorithm: "SHA-256"
+          value: null
+
+      protocol:
+        version: "2026-07-28"
+
+      sdk:
+        version: null
+
+      transport:
+        selected: null
+
+      runtime:
+        name: null
+        version: null
+
+      permissions:
+
+        filesystem:
+          mode: "RESTRICTED_ROOTS"
+
+          allowed_roots: []
+
+          denied_roots:
+            - "Operating-system protected directories"
+            - "Credential stores"
+            - "JAS security boundaries"
+
+        network:
+          allowed: false
+
+        shell:
+          allowed: false
+
+      sandbox:
+        required: true
+
+      security:
+
+        least_privilege: true
+
+        audit_required: true
+
+        credential_access: false
+
+      license:
+        value: null
+        validation_status: "PENDING"
+
+      validation:
+
+        server_identity: false
+        artifact_integrity: false
+        protocol: false
+        permission_profile: false
+        sandbox: false
+        license: false
+
+      final_status: "NOT_BASELINE_LOCKED"
+
+
+  # ==========================================================
+  # 6. GIT MCP
+  # ==========================================================
+
+    - id: "MCP-GIT"
+
+      name: "Git MCP Server"
+
+      capability: "Git repositories"
+
+      approved_status: "CONDITIONAL"
+
+      lock_status: "PROFILE_DEPENDENT"
+
+      trust_tier: "T1/T3"
+
+      publisher:
+        name: null
+        verified: false
+
+      repository:
+        url: null
+        revision: null
+
+      package:
+        name: null
+        version: null
+        registry: null
+
+      artifact:
+        type: null
+        digest:
+          algorithm: "SHA-256"
+          value: null
+
+      protocol:
+        version: "2026-07-28"
+
+      sdk:
+        version: null
+
+      transport:
+        selected: null
+
+      runtime:
+        name: null
+        version: null
+
+      repository_policy:
+
+        approved_repositories_only: true
+
+        allowed_repositories: []
+
+        write_access:
+          default: false
+
+      permissions:
+
+        read_repository: true
+
+        write_repository: false
+
+        create_branch: false
+
+        create_commit: false
+
+        push: false
+
+      security:
+
+        credential_access: false
+
+        credential_passthrough: false
+
+        audit_required: true
+
+      license:
+        value: null
+        validation_status: "PENDING"
+
+      validation:
+
+        server_identity: false
+        repository_scope: false
+        protocol: false
+        artifact_integrity: false
+        license: false
+        permission_profile: false
+
+      final_status: "NOT_BASELINE_LOCKED"
+
+
+  # ==========================================================
+  # 7. FETCH MCP
+  # ==========================================================
+
+    - id: "MCP-FETCH"
+
+      name: "Fetch MCP Server"
+
+      capability: "HTTP retrieval"
+
+      approved_status: "CONDITIONAL"
+
+      lock_status: "PROFILE_DEPENDENT"
+
+      trust_tier: "T2"
+
+      publisher:
+        name: null
+        verified: false
+
+      repository:
+        url: null
+        revision: null
+
+      package:
+        name: null
+        version: null
+        registry: null
+
+      artifact:
+        type: null
+        digest:
+          algorithm: "SHA-256"
+          value: null
+
+      protocol:
+        version: "2026-07-28"
+
+      sdk:
+        version: null
+
+      transport:
+        selected: null
+
+      runtime:
+        name: null
+        version: null
+
+      network_policy:
+
+        outbound_network: true
+
+        allowed_schemes:
+          - "https"
+
+        http_allowed: false
+
+        private_network_targets:
+          allowed: false
+
+        localhost_targets:
+          allowed: false
+
+      permissions:
+
+        filesystem: false
+
+        shell: false
+
+        credential_access: false
+
+      security:
+
+        ssrf_protection: true
+
+        redirect_validation: true
+
+        response_size_limit_required: true
+
+        timeout_required: true
+
+        audit_required: true
+
+      license:
+        value: null
+        validation_status: "PENDING"
+
+      validation:
+
+        server_identity: false
+        protocol: false
+        artifact_integrity: false
+        network_policy: false
+        ssrf_protection: false
+        license: false
+
+      final_status: "NOT_BASELINE_LOCKED"
+
+
+  # ==========================================================
+  # 8. MEMORY MCP
+  # ==========================================================
+
+    - id: "MCP-MEMORY"
+
+      name: "Memory MCP Server"
+
+      capability: "Memory"
+
+      approved_status: "CONDITIONAL"
+
+      lock_status: "PROFILE_DEPENDENT"
+
+      trust_tier: "T1"
+
+      publisher:
+        name: null
+        verified: false
+
+      repository:
+        url: null
+        revision: null
+
+      package:
+        name: null
+        version: null
+        registry: null
+
+      artifact:
+        type: null
+        digest:
+          algorithm: "SHA-256"
+          value: null
+
+      protocol:
+        version: "2026-07-28"
+
+      sdk:
+        version: null
+
+      transport:
+        selected: null
+
+      runtime:
+        name: null
+        version: null
+
+      data_policy:
+
+        isolated: true
+
+        persistent:
+          allowed: true
+
+        external_memory_access:
+          default: false
+
+      permissions:
+
+        filesystem: false
+
+        network: false
+
+        shell: false
+
+        database:
+          allowed: false
+
+      security:
+
+        namespace_isolation: true
+
+        audit_required: true
+
+        credential_access: false
+
+      license:
+        value: null
+        validation_status: "PENDING"
+
+      validation:
+
+        server_identity: false
+        artifact_integrity: false
+        protocol: false
+        data_isolation: false
+        license: false
+
+      final_status: "NOT_BASELINE_LOCKED"
+
+
+  # ==========================================================
+  # 9. BROWSER / CHROME MCP
+  # ==========================================================
+
+    - id: "MCP-BROWSER"
+
+      name: "Browser / Chrome MCP Server"
+
+      capability: "Browser automation"
+
+      approved_status: "CONDITIONAL"
+
+      lock_status: "PROFILE_DEPENDENT"
+
+      trust_tier: "T2/T4"
+
+      publisher:
+        name: null
+        verified: false
+
+      repository:
+        url: null
+        revision: null
+
+      package:
+        name: null
+        version: null
+        registry: null
+
+      artifact:
+        type: null
+        digest:
+          algorithm: "SHA-256"
+          value: null
+
+      protocol:
+        version: "2026-07-28"
+
+      sdk:
+        version: null
+
+      transport:
+        selected: null
+
+      runtime:
+        name: null
+        version: null
+
+      browser:
+
+        browser_family: "Chromium"
+
+        browser_revision: null
+
+        browser_artifact_digest: null
+
+      session_policy:
+
+        explicit_session_required: true
+
+        persistent_profile:
+          default: false
+
+        credential_reuse:
+          default: false
+
+      permissions:
+
+        filesystem:
+          default: false
+
+        network:
+          default: true
+
+        downloads:
+          default: false
+
+        uploads:
+          default: false
+
+      security:
+
+        sandbox_required: true
+
+        navigation_policy_required: true
+
+        origin_policy_required: true
+
+        audit_required: true
+
+      license:
+        value: null
+        validation_status: "PENDING"
+
+      validation:
+
+        server_identity: false
+        browser_compatibility: false
+        protocol: false
+        sandbox: false
+        permission_profile: false
+        license: false
+
+      final_status: "NOT_BASELINE_LOCKED"
+
+
+  # ==========================================================
+  # 10. DATABASE MCP
+  # ==========================================================
+
+    - id: "MCP-DATABASE"
+
+      name: "Database MCP Server"
+
+      capability: "Database"
+
+      approved_status: "CONDITIONAL"
+
+      lock_status: "PROFILE_DEPENDENT"
+
+      trust_tier: "T1/T3"
+
+      publisher:
+        name: null
+        verified: false
+
+      repository:
+        url: null
+        revision: null
+
+      package:
+        name: null
+        version: null
+        registry: null
+
+      artifact:
+        type: null
+        digest:
+          algorithm: "SHA-256"
+          value: null
+
+      protocol:
+        version: "2026-07-28"
+
+      sdk:
+        version: null
+
+      transport:
+        selected: null
+
+      runtime:
+        name: null
+        version: null
+
+      database:
+
+        engines:
+
+          - "PostgreSQL"
+
+        default_access: "READ_ONLY"
+
+        write_access:
+          allowed: false
+
+        schema_modification:
+          allowed: false
+
+        administrative_access:
+          allowed: false
+
+      permissions:
+
+        database_connections:
+          scoped: true
+
+        credentials:
+          source: "JAS Secret Management"
+
+      security:
+
+        credential_isolation: true
+
+        query_policy: true
+
+        audit_required: true
+
+        transaction_limits: true
+
+      license:
+        value: null
+        validation_status: "PENDING"
+
+      validation:
+
+        server_identity: false
+        database_compatibility: false
+        protocol: false
+        permission_profile: false
+        credential_isolation: false
+        license: false
+
+      final_status: "NOT_BASELINE_LOCKED"
+
+
+  # ==========================================================
+  # 11. DOCKER MCP
+  # ==========================================================
+
+    - id: "MCP-DOCKER"
+
+      name: "Docker MCP Server"
+
+      capability: "Containers"
+
+      approved_status: "CONDITIONAL"
+
+      lock_status: "DEVELOPMENT_ONLY"
+
+      trust_tier: "T4"
+
+      publisher:
+        name: null
+        verified: false
+
+      repository:
+        url: null
+        revision: null
+
+      package:
+        name: null
+        version: null
+        registry: null
+
+      artifact:
+        type: null
+        digest:
+          algorithm: "SHA-256"
+          value: null
+
+      protocol:
+        version: "2026-07-28"
+
+      sdk:
+        version: null
+
+      transport:
+        selected: null
+
+      runtime:
+        name: null
+        version: null
+
+      permissions:
+
+        container_management: true
+
+        image_management: true
+
+        network_management: true
+
+        volume_management: true
+
+        privileged_operations:
+          allowed: false
+
+        host_filesystem:
+          allowed: false
+
+      access:
+
+        default: "ADMIN_DEV"
+
+        production:
+          allowed: false
+
+      security:
+
+        sandbox_required: true
+
+        privileged_container_access:
+          allowed: false
+
+        host_socket_access:
+          status: "EXPLICIT_REVIEW_REQUIRED"
+
+        audit_required: true
+
+      license:
+        value: null
+        validation_status: "PENDING"
+
+      validation:
+
+        server_identity: false
+        protocol: false
+        artifact_integrity: false
+        permission_profile: false
+        sandbox: false
+        license: false
+
+      final_status: "DEVELOPMENT_ONLY"
+
+
+  # ==========================================================
+  # 12. GITHUB MCP
+  # ==========================================================
+
+    - id: "MCP-GITHUB"
+
+      name: "GitHub MCP Server"
+
+      capability: "GitHub"
+
+      approved_status: "CONDITIONAL"
+
+      lock_status: "PROFILE_DEPENDENT"
+
+      trust_tier: "T2/T3"
+
+      publisher:
+        name: null
+        verified: false
+
+      repository:
+        url: null
+        revision: null
+
+      package:
+        name: null
+        version: null
+        registry: null
+
+      artifact:
+        type: null
+        digest:
+          algorithm: "SHA-256"
+          value: null
+
+      protocol:
+        version: "2026-07-28"
+
+      sdk:
+        version: null
+
+      transport:
+        selected: null
+
+      runtime:
+        name: null
+        version: null
+
+      credentials:
+
+        source: "JAS Secret Management"
+
+        scope:
+          type: "MINIMUM_REQUIRED"
+
+        token:
+          plaintext_storage: false
+
+        environment_variables:
+          allowed: false
+
+      permissions:
+
+        repository_read: true
+
+        repository_write: false
+
+        issue_read: true
+
+        issue_write: false
+
+        pull_request_read: true
+
+        pull_request_write: false
+
+        workflow_management: false
+
+        organization_administration: false
+
+      security:
+
+        scoped_credentials: true
+
+        audit_required: true
+
+        credential_isolation: true
+
+      license:
+        value: null
+        validation_status: "PENDING"
+
+      validation:
+
+        server_identity: false
+        protocol: false
+        credential_scope: false
+        permission_profile: false
+        artifact_integrity: false
+        license: false
+
+      final_status: "NOT_BASELINE_LOCKED"
+
+
+  # ==========================================================
+  # 13. SEQUENTIAL THINKING MCP
+  # ==========================================================
+
+    - id: "MCP-SEQUENTIAL-THINKING"
+
+      name: "Sequential Thinking MCP Server"
+
+      capability: "Reasoning utility"
+
+      approved_status: "EXPERIMENTAL"
+
+      lock_status: "DEVELOPMENT_ONLY"
+
+      deployment_scope:
+        - "Development"
+        - "Testing"
+
+      publisher:
+        name: null
+        verified: false
+
+      repository:
+        url: null
+        revision: null
+
+      package:
+        name: null
+        version: null
+        registry: null
+
+      artifact:
+        type: null
+        digest:
+          algorithm: "SHA-256"
+          value: null
+
+      protocol:
+        version: "2026-07-28"
+
+      sdk:
+        version: null
+
+      transport:
+        selected: null
+
+      runtime:
+        name: null
+        version: null
+
+      production:
+        allowed: false
+
+      reason:
+        >
+        The Approved MCP Server governance classifies this server as
+        experimental. It SHALL NOT become a production dependency
+        without a future architectural approval.
+
+      final_status: "EXPERIMENTAL"
+
+
+  # ==========================================================
+  # 14. EVERYTHING MCP
+  # ==========================================================
+
+    - id: "MCP-EVERYTHING"
+
+      name: "Everything MCP Server"
+
+      capability: "MCP test suite"
+
+      approved_status: "EVALUATION"
+
+      lock_status: "TESTING_ONLY"
+
+      deployment_scope:
+        - "Testing"
+
+      publisher:
+        name: null
+        verified: false
+
+      repository:
+        url: null
+        revision: null
+
+      package:
+        name: null
+        version: null
+        registry: null
+
+      artifact:
+        type: null
+        digest:
+          algorithm: "SHA-256"
+          value: null
+
+      protocol:
+        version: "2026-07-28"
+
+      sdk:
+        version: null
+
+      transport:
+        selected: null
+
+      runtime:
+        name: null
+        version: null
+
+      production:
+        allowed: false
+
+      reason:
+        >
+        This server is an MCP evaluation/test suite and is not a
+        production capability provider.
+
+      final_status: "EVALUATION_ONLY"
+
+
+  # ==========================================================
+  # 15. PER-SERVER LOCK IDENTITY
+  # ==========================================================
+
+  lock_identity_requirements:
+
+    required:
+
+      - "server_id"
+      - "publisher"
+      - "version"
+      - "revision"
+      - "artifact_digest"
+      - "protocol_version"
+      - "sdk_version"
+      - "transport"
+      - "runtime"
+      - "license"
+      - "permission_profile"
+
+    strongly_recommended:
+
+      - "repository"
+      - "build_identity"
+      - "artifact_format"
+      - "source_commit"
+      - "container_image"
+      - "container_digest"
+
+    prohibited:
+
+      - "latest"
+      - "main"
+      - "master"
+      - "unversioned_registry_entry"
+
+
+  # ==========================================================
+  # 16. TRANSPORT GOVERNANCE
+  # ==========================================================
+
+  transport_policy:
+
+    approved:
+
+      - "stdio"
+      - "streamable-http"
+
+    conditional:
+
+      - "SSE"
+
+    requirements:
+
+      stdio:
+        process_isolation: true
+        executable_identity_required: true
+
+      streamable_http:
+        tls_required_for_remote: true
+        authentication_required_where_applicable: true
+        origin_validation_required: true
+
+      sse:
+        status: "COMPATIBILITY_DEPENDENT"
+        migration_review_required: true
+
+
+  # ==========================================================
+  # 17. TRUST TIERS
+  # ==========================================================
+
+  trust_tiers:
+
+    T0:
+      description: >
+        Low-risk deterministic capability with no meaningful
+        access to sensitive resources.
+
+    T1:
+      description: >
+        Restricted local capability requiring explicit permissions.
+
+    T2:
+      description: >
+        Network-facing or externally interacting capability.
+
+    T3:
+      description: >
+        Capability that can access important project or data resources.
+
+    T4:
+      description: >
+        Administrative, privileged or potentially destructive
+        capability.
+
+  default_policy:
+    unknown_server: "DENY"
+    unapproved_server: "DENY"
+    missing_digest: "DENY_FOR_PRODUCTION"
+    missing_publisher: "DENY_FOR_PRODUCTION"
+    missing_permission_profile: "DENY"
+    protocol_mismatch: "DENY"
+
+
+  # ==========================================================
+  # 18. SERVER SECURITY GATE
+  # ==========================================================
+
+  security_gate:
+
+    required_before_production_lock:
+
+      - "Publisher verification"
+      - "Repository verification"
+      - "Exact version verification"
+      - "Immutable revision verification"
+      - "Artifact digest verification"
+      - "Protocol compatibility"
+      - "SDK compatibility"
+      - "Transport validation"
+      - "Permission review"
+      - "Credential review"
+      - "Sandbox validation where required"
+      - "License validation"
+      - "Runtime validation"
+
+    failure_action:
+      "DO_NOT_LOCK"
+
+
+  # ==========================================================
+  # 19. MCP SERVER UPDATE POLICY
+  # ==========================================================
+
+  update_policy:
+
+    automatic_updates:
+      production: false
+      development: "ALLOWED_WITHOUT_PRODUCTION_PROMOTION"
+
+    update_sequence:
+
+      - "New server release detected"
+      - "Publisher verification"
+      - "Security review"
+      - "Protocol compatibility review"
+      - "SDK compatibility review"
+      - "Permission review"
+      - "Artifact verification"
+      - "Regression testing"
+      - "Integration testing"
+      - "New Version Lock candidate"
+      - "Approval"
+      - "Promotion to LOCKED"
+
+    rollback:
+      supported: true
+      previous_lock_required: true
+
+
+  # ==========================================================
+  # 20. MCP SERVER DRIFT
+  # ==========================================================
+
+  drift_detection:
+
+    required: true
+
+    detect:
+
+      - "Server version drift"
+      - "Revision drift"
+      - "Digest drift"
+      - "Protocol drift"
+      - "SDK drift"
+      - "Transport drift"
+      - "Runtime drift"
+      - "Permission drift"
+      - "Publisher drift"
+
+    unauthorized_drift:
+      action: "COMPLIANCE_FAILURE"
+
+
+  # ==========================================================
+  # 21. PROFILE POLICY
+  # ==========================================================
+
+  profiles:
+
+    minimal:
+      enabled_servers: []
+
+    development:
+      permitted:
+
+        - "MCP-TIME"
+        - "MCP-FILESYSTEM"
+        - "MCP-GIT"
+        - "MCP-SEQUENTIAL-THINKING"
+        - "MCP-EVERYTHING"
+
+      restrictions:
+        - "Explicit enablement"
+        - "Sandboxing where applicable"
+        - "No unrestricted credentials"
+
+    browser:
+      permitted:
+
+        - "MCP-BROWSER"
+
+      restrictions:
+        - "Explicit session"
+        - "Navigation policy"
+        - "Sandbox"
+
+    data:
+      permitted:
+
+        - "MCP-DATABASE"
+        - "MCP-MEMORY"
+
+      restrictions:
+        - "Read-only database default"
+        - "Scoped credentials"
+        - "Data isolation"
+
+    github:
+      permitted:
+
+        - "MCP-GITHUB"
+
+      restrictions:
+        - "Scoped credentials"
+        - "Repository restrictions"
+        - "Write operations disabled by default"
+
+    infrastructure:
+      permitted:
+
+        - "MCP-DOCKER"
+
+      restrictions:
+        - "Development only"
+        - "Privileged operations explicitly prohibited"
+        - "Host access explicitly reviewed"
+
+
+  # ==========================================================
+  # 22. PRODUCTION BASELINE
+  # ==========================================================
+
+  production_baseline:
+
+    mandatory:
+      - "MCP Client SDK"
+      - "JARVIS MCP Gateway"
+
+    optional:
+      - "MCP-TIME"
+      - "MCP-FILESYSTEM"
+      - "MCP-GIT"
+      - "MCP-FETCH"
+      - "MCP-MEMORY"
+      - "MCP-BROWSER"
+      - "MCP-DATABASE"
+      - "MCP-GITHUB"
+
+    prohibited:
+      - "MCP-DOCKER"
+      - "MCP-SEQUENTIAL-THINKING"
+      - "MCP-EVERYTHING"
+
+    rule:
+      >
+      Optional MCP servers enter a production profile only after
+      their individual lock identity and security policy have been
+      resolved.
+
+
+  # ==========================================================
+  # 23. VALIDATION STATUS
+  # ==========================================================
+
+  validation:
+
+    protocol_version_validated: false
+
+    sdk_version_validated: false
+
+    server_versions_resolved: false
+
+    server_revisions_resolved: false
+
+    artifact_digests_resolved: false
+
+    publisher_verification_complete: false
+
+    transport_validation_complete: false
+
+    permission_validation_complete: false
+
+    security_validation_complete: false
+
+    license_validation_complete: false
+
+    runtime_validation_complete: false
+
+    integration_validation_complete: false
+
+    final_lock_status: "CANDIDATE"
+
+
+  # ==========================================================
+  # 24. NEXT PHASE
+  # ==========================================================
+
+  next_phase:
+
+    name: "MCP Exact Server Resolution"
+
+    sequence:
+
+      - "Resolve exact MCP Client SDK version"
+      - "Verify MCP protocol target"
+      - "Resolve Time MCP publisher and artifact"
+      - "Resolve Filesystem MCP implementation"
+      - "Resolve Git MCP implementation"
+      - "Resolve Fetch MCP implementation"
+      - "Resolve Memory MCP implementation"
+      - "Resolve Browser MCP implementation"
+      - "Resolve Database MCP implementation"
+      - "Resolve GitHub MCP implementation"
+      - "Resolve exact server revisions"
+      - "Resolve artifact digests"
+      - "Validate transports"
+      - "Validate permission profiles"
+      - "Validate licenses"
+      - "Validate security"
+      - "Run MCP integration tests"
+      - "Promote approved candidates to LOCKED"
+
+  governing_rule: >
+    No MCP server SHALL become a production Version Lock entry
+    without an individually verified immutable identity and an
+    explicitly approved permission profile.

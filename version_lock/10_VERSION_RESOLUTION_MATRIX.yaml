@@ -1,0 +1,1666 @@
+# ============================================================
+# JARVIS / JAS
+# VERSION LOCK v1 — VERSION RESOLUTION MATRIX
+# ============================================================
+
+version_resolution_matrix:
+
+  schema_version: "1.0"
+
+  project:
+    name: "JARVIS"
+    architecture: "JAS"
+    architecture_version: "JAS v1"
+
+  resolution:
+    version: "1.0"
+    status: "CANDIDATE"
+    authority: "VERSION_LOCK_v1"
+
+    purpose:
+      >
+      Central resolution matrix for determining the exact versions,
+      revisions, artifacts and compatibility relationships required
+      to produce the final JAS Version Lock v1.
+
+    important_rule:
+      >
+      This matrix is a resolution control document. It does not
+      automatically select the newest upstream release. Every final
+      selection must satisfy architectural, dependency, platform,
+      security and reproducibility requirements.
+
+
+  # ==========================================================
+  # 1. RESOLUTION STATES
+  # ==========================================================
+
+  resolution_states:
+
+    UNRESOLVED:
+      description:
+        "No candidate has yet been selected."
+
+    CANDIDATE:
+      description:
+        "One or more candidate versions are under evaluation."
+
+    COMPATIBILITY_CHECK:
+      description:
+        "Candidate is undergoing dependency and runtime compatibility validation."
+
+    SECURITY_CHECK:
+      description:
+        "Candidate is undergoing vulnerability, provenance and integrity validation."
+
+    PLATFORM_CHECK:
+      description:
+        "Candidate is undergoing OS, architecture and hardware validation."
+
+    APPROVED_CANDIDATE:
+      description:
+        "Candidate passed required technical evaluations but is not yet final."
+
+    LOCKED:
+      description:
+        "Exact immutable identity has been validated and approved."
+
+    REJECTED:
+      description:
+        "Candidate failed one or more mandatory requirements."
+
+    DEPRECATED:
+      description:
+        "Previously locked component is retained for historical reproducibility."
+
+
+  # ==========================================================
+  # 2. RESOLUTION PRIORITY
+  # ==========================================================
+
+  selection_priority:
+
+    order:
+
+      - "Architectural compatibility"
+      - "Runtime compatibility"
+      - "Dependency compatibility"
+      - "Model compatibility"
+      - "MCP compatibility"
+      - "Platform compatibility"
+      - "Security"
+      - "License compatibility"
+      - "Reproducibility"
+      - "Performance"
+      - "Maintenance outlook"
+      - "Developer experience"
+
+    newest_version_rule:
+      >
+      Newest available upstream version SHALL NOT receive priority
+      merely because it is newer.
+
+    stable_version_preference:
+      >
+      When multiple candidates satisfy all mandatory requirements,
+      preference SHOULD be given to the most stable supported
+      candidate with the strongest compatibility margin.
+
+
+  # ==========================================================
+  # 3. RESOLUTION SOURCES
+  # ==========================================================
+
+  authoritative_sources:
+
+    architecture:
+
+      - "JAS v1 Architecture"
+
+    approved_stack:
+
+      - "Approved Stack Overview"
+      - "02_CORE_RUNTIME_AND_PROGRAMMING_LANGUAGES.md"
+
+    software:
+
+      - "21_APPROVED_SOFTWARE_MATRIX.md"
+
+    models:
+
+      - "19_APPROVED_MODELS.md"
+
+    mcp:
+
+      - "20_APPROVED_MCP_SERVERS.md"
+
+    support:
+
+      - "24_VERSION_SUPPORT_POLICY.md"
+
+    version_lock:
+
+      - "01_VERSION_LOCK_MANIFEST.yaml"
+      - "02_COMPONENT_LOCKS.yaml"
+      - "03_MODEL_LOCKS.yaml"
+      - "04_MCP_LOCKS.yaml"
+      - "05_PLATFORM_LOCKS.yaml"
+      - "06_ARTIFACT_AND_CONTAINER_LOCKS.yaml"
+      - "07_BUILD_TOOLCHAIN_LOCKS.yaml"
+      - "08_DEPENDENCY_LOCK_POLICY.yaml"
+      - "09_SECURITY_AND_INTEGRITY_LOCKS.yaml"
+
+
+  # ==========================================================
+  # 4. RESOLUTION RECORD SCHEMA
+  # ==========================================================
+
+  resolution_record:
+
+    required_fields:
+
+      - "component_id"
+      - "component_name"
+      - "category"
+      - "approved_source"
+      - "candidate_version"
+      - "candidate_revision"
+      - "candidate_artifact"
+      - "platform"
+      - "architecture"
+      - "runtime"
+      - "dependency_state"
+      - "security_state"
+      - "license_state"
+      - "compatibility_state"
+      - "decision"
+      - "decision_reason"
+
+    immutable_identity:
+
+      required_for_locked:
+
+        - "exact_version"
+        - "exact_revision_or_release"
+        - "artifact_digest_where_applicable"
+        - "platform"
+        - "architecture"
+
+
+  # ==========================================================
+  # 5. CORE RUNTIME RESOLUTION
+  # ==========================================================
+
+  core_runtime:
+
+    python:
+
+      component_id: "SW-001"
+
+      name: "Python"
+
+      category: "runtime"
+
+      source:
+        "02_CORE_RUNTIME_AND_PROGRAMMING_LANGUAGES.md"
+
+      approved_family:
+        "Python 3.12+"
+
+      candidates: []
+
+      selected:
+
+        version: null
+
+        implementation: "CPython"
+
+        platform: null
+
+        architecture: null
+
+        artifact: null
+
+        digest: null
+
+      compatibility_requirements:
+
+        - "AI framework compatibility"
+        - "FastAPI compatibility"
+        - "Pydantic compatibility"
+        - "LangGraph compatibility"
+        - "uv compatibility"
+        - "Windows compatibility"
+        - "Linux compatibility"
+
+      decision: "UNRESOLVED"
+
+
+    cpython:
+
+      component_id: "CPYTHON-001"
+
+      name: "CPython"
+
+      category: "runtime_implementation"
+
+      candidates: []
+
+      selected:
+
+        version: null
+
+        revision: null
+
+        artifact: null
+
+        digest: null
+
+      decision: "UNRESOLVED"
+
+
+  # ==========================================================
+  # 6. PYTHON CORE DEPENDENCIES
+  # ==========================================================
+
+  python_dependencies:
+
+    fastapi:
+
+      component_id: "SW-005"
+
+      name: "FastAPI"
+
+      candidates: []
+
+      compatibility:
+
+        python: null
+
+        pydantic: null
+
+        starlette: null
+
+      selected:
+
+        version: null
+
+        integrity: null
+
+      decision: "UNRESOLVED"
+
+
+    pydantic:
+
+      component_id: "SW-006"
+
+      name: "Pydantic"
+
+      candidates: []
+
+      compatibility:
+
+        python: null
+
+        fastapi: null
+
+        pydantic_core: null
+
+      selected:
+
+        version: null
+
+        integrity: null
+
+      decision: "UNRESOLVED"
+
+
+    langgraph:
+
+      component_id: "SW-007"
+
+      name: "LangGraph"
+
+      candidates: []
+
+      compatibility:
+
+        python: null
+
+        langchain_family: null
+
+      selected:
+
+        version: null
+
+        integrity: null
+
+      decision: "UNRESOLVED"
+
+
+  # ==========================================================
+  # 7. DATA AND MEMORY
+  # ==========================================================
+
+  data:
+
+    qdrant:
+
+      component_id: "SW-008"
+
+      name: "Qdrant"
+
+      candidates: []
+
+      selected:
+
+        version: null
+
+        image: null
+
+        digest: null
+
+        architecture: null
+
+      compatibility:
+
+        client_version: null
+
+        api_version: null
+
+        storage_format: null
+
+      decision: "UNRESOLVED"
+
+
+    postgresql:
+
+      component_id: "SW-009"
+
+      name: "PostgreSQL"
+
+      candidates: []
+
+      selected:
+
+        major: null
+
+        minor: null
+
+        version: null
+
+        image: null
+
+        digest: null
+
+      compatibility:
+
+        driver: null
+
+        schema_version: null
+
+      decision: "UNRESOLVED"
+
+
+    redis:
+
+      component_id: "SW-010"
+
+      name: "Redis"
+
+      enabled: false
+
+      candidates: []
+
+      selected:
+
+        version: null
+
+        image: null
+
+        digest: null
+
+      decision: "UNRESOLVED"
+
+
+  # ==========================================================
+  # 8. BROWSER RESOLUTION
+  # ==========================================================
+
+  browser:
+
+    playwright:
+
+      component_id: "SW-011"
+
+      name: "Playwright"
+
+      candidates: []
+
+      selected:
+
+        package_version: null
+
+        browser_family: "Chromium"
+
+        browser_revision: null
+
+        integrity: null
+
+      compatibility:
+
+        python: null
+
+        chromium: null
+
+      decision: "UNRESOLVED"
+
+
+    chromium:
+
+      component_id: "BROWSER-CHROMIUM"
+
+      name: "Chromium"
+
+      candidates: []
+
+      selected:
+
+        revision: null
+
+        build: null
+
+        platform: null
+
+        architecture: null
+
+        digest: null
+
+      compatibility:
+
+        playwright: null
+
+      decision: "UNRESOLVED"
+
+
+    firefox:
+
+      component_id: "BROWSER-FIREFOX"
+
+      enabled: false
+
+      candidates: []
+
+      selected:
+
+        revision: null
+
+        build: null
+
+      decision: "UNRESOLVED"
+
+
+    webkit:
+
+      component_id: "BROWSER-WEBKIT"
+
+      enabled: false
+
+      candidates: []
+
+      selected:
+
+        revision: null
+
+        build: null
+
+      decision: "UNRESOLVED"
+
+
+  # ==========================================================
+  # 9. VOICE RESOLUTION
+  # ==========================================================
+
+  voice:
+
+    whisper:
+
+      component_id: "MODEL-STT-WHISPER"
+
+      source:
+        "19_APPROVED_MODELS.md"
+
+      candidates: []
+
+      selected:
+
+        model: null
+
+        revision: null
+
+        digest: null
+
+        runtime: null
+
+      compatibility:
+
+        python: null
+
+        runtime: null
+
+        hardware: null
+
+      decision: "UNRESOLVED"
+
+
+    vad:
+
+      component_id: "VOICE-VAD"
+
+      candidates: []
+
+      selected:
+
+        implementation: null
+
+        version: null
+
+        digest: null
+
+      decision: "UNRESOLVED"
+
+
+    piper:
+
+      component_id: "MODEL-TTS-PIPER"
+
+      enabled: false
+
+      candidates: []
+
+      selected:
+
+        engine_version: null
+
+        voice_model: null
+
+        voice_revision: null
+
+        voice_digest: null
+
+      license_review:
+        status: "PENDING"
+
+      decision: "UNRESOLVED"
+
+
+  # ==========================================================
+  # 10. VISION RESOLUTION
+  # ==========================================================
+
+  vision:
+
+    opencv:
+
+      component_id: "CV-OPENCV"
+
+      candidates: []
+
+      selected:
+
+        version: null
+
+        platform_artifact: null
+
+        digest: null
+
+      compatibility:
+
+        python: null
+
+        numpy: null
+
+      decision: "UNRESOLVED"
+
+
+    transformers:
+
+      component_id: "CV-TRANSFORMERS"
+
+      candidates: []
+
+      selected:
+
+        version: null
+
+        integrity: null
+
+      compatibility:
+
+        python: null
+
+        torch: null
+
+      decision: "UNRESOLVED"
+
+
+    onnxruntime:
+
+      component_id: "CV-ONNXRUNTIME"
+
+      enabled: false
+
+      candidates: []
+
+      selected:
+
+        version: null
+
+        artifact: null
+
+        digest: null
+
+      decision: "UNRESOLVED"
+
+
+    paddleocr:
+
+      component_id: "CV-PADDLEOCR"
+
+      enabled: false
+
+      candidates: []
+
+      selected:
+
+        version: null
+
+        artifact: null
+
+        digest: null
+
+      decision: "UNRESOLVED"
+
+
+    tesseract:
+
+      component_id: "CV-TESSERACT"
+
+      enabled: false
+
+      candidates: []
+
+      selected:
+
+        version: null
+
+        artifact: null
+
+        digest: null
+
+      decision: "UNRESOLVED"
+
+
+  # ==========================================================
+  # 11. FRONTEND RESOLUTION
+  # ==========================================================
+
+  frontend:
+
+    nodejs:
+
+      component_id: "SW-027"
+
+      candidates: []
+
+      policy:
+        "Supported LTS line"
+
+      selected:
+
+        version: null
+
+        platform: null
+
+        architecture: null
+
+      decision: "UNRESOLVED"
+
+
+    package_manager:
+
+      status: "UNRESOLVED"
+
+      candidates:
+
+        pnpm:
+
+          version: null
+
+          lockfile: "pnpm-lock.yaml"
+
+        npm:
+
+          version: null
+
+          lockfile: "package-lock.json"
+
+      selected:
+
+        name: null
+
+        version: null
+
+        lockfile: null
+
+        lockfile_digest: null
+
+      decision: "UNRESOLVED"
+
+
+    typescript:
+
+      component_id: "FRONTEND-TS"
+
+      candidates: []
+
+      selected:
+
+        version: null
+
+        integrity: null
+
+      compatibility:
+
+        node: null
+
+      decision: "UNRESOLVED"
+
+
+    react:
+
+      component_id: "SW-014"
+
+      candidates: []
+
+      selected:
+
+        version: null
+
+        integrity: null
+
+      compatibility:
+
+        node: null
+
+        typescript: null
+
+      decision: "UNRESOLVED"
+
+
+    vite:
+
+      component_id: "SW-015"
+
+      candidates: []
+
+      selected:
+
+        version: null
+
+        integrity: null
+
+      compatibility:
+
+        node: null
+
+        typescript: null
+
+        react: null
+
+      decision: "UNRESOLVED"
+
+
+  # ==========================================================
+  # 12. MCP RESOLUTION
+  # ==========================================================
+
+  mcp:
+
+    protocol:
+
+      target: "2026-07-28"
+
+      sdk_version: null
+
+      compatibility_status: "PENDING"
+
+
+    client:
+
+      component_id: "SW-017"
+
+      candidates: []
+
+      selected:
+
+        sdk_version: null
+
+        protocol_version: null
+
+        runtime: null
+
+        integrity: null
+
+      decision: "UNRESOLVED"
+
+
+    servers:
+
+      resolution_rule:
+        >
+        Every enabled MCP server receives an independent resolution
+        record. No MCP server may inherit another server's version,
+        revision or digest.
+
+      entries: []
+
+      required_fields:
+
+        - "server_id"
+        - "publisher"
+        - "version"
+        - "revision"
+        - "digest"
+        - "protocol_version"
+        - "sdk_version"
+        - "transport"
+        - "runtime"
+        - "permission_profile"
+
+      decision: "UNRESOLVED"
+
+
+  # ==========================================================
+  # 13. MODEL RESOLUTION
+  # ==========================================================
+
+  models:
+
+    qwen3:
+
+      component_id: "MODEL-LLM-QWEN3"
+
+      candidates: []
+
+      selected:
+
+        family: "Qwen3"
+
+        variant: null
+
+        revision: null
+
+        format: null
+
+        quantization: null
+
+        digest: null
+
+        runtime: null
+
+      compatibility:
+
+        python: null
+
+        gpu: null
+
+        cuda: null
+
+        inference_runtime: null
+
+      decision: "UNRESOLVED"
+
+
+    bge_m3:
+
+      component_id: "MODEL-EMBED-BGE-M3"
+
+      candidates: []
+
+      selected:
+
+        model: "BAAI/bge-m3"
+
+        revision: null
+
+        digest: null
+
+        runtime: null
+
+      compatibility:
+
+        python: null
+
+        transformers: null
+
+      decision: "UNRESOLVED"
+
+
+    bge_reranker:
+
+      component_id: "MODEL-RERANK-BGE-V2-M3"
+
+      candidates: []
+
+      selected:
+
+        model: "BAAI/bge-reranker-v2-m3"
+
+        revision: null
+
+        digest: null
+
+        runtime: null
+
+      compatibility:
+
+        python: null
+
+        transformers: null
+
+      decision: "UNRESOLVED"
+
+
+    siglip2:
+
+      component_id: "MODEL-VISION-SIGLIP2"
+
+      candidates: []
+
+      selected:
+
+        variant: null
+
+        revision: null
+
+        digest: null
+
+        runtime: null
+
+      compatibility:
+
+        python: null
+
+        transformers: null
+
+        torch: null
+
+      decision: "UNRESOLVED"
+
+
+  # ==========================================================
+  # 14. MODEL RUNTIME RESOLUTION
+  # ==========================================================
+
+  model_runtimes:
+
+    transformers:
+
+      component_id: "MODEL-RUNTIME-TRANSFORMERS"
+
+      candidates: []
+
+      selected:
+
+        version: null
+
+        integrity: null
+
+      decision: "UNRESOLVED"
+
+
+    onnx:
+
+      component_id: "MODEL-RUNTIME-ONNX"
+
+      enabled: false
+
+      candidates: []
+
+      selected:
+
+        version: null
+
+        artifact: null
+
+        digest: null
+
+      decision: "UNRESOLVED"
+
+
+  # ==========================================================
+  # 15. NATIVE TOOLCHAIN
+  # ==========================================================
+
+  native:
+
+    rust:
+
+      component_id: "SW-003"
+
+      enabled: false
+
+      candidates: []
+
+      selected:
+
+        rustc: null
+
+        cargo: null
+
+        rustup: null
+
+        target: null
+
+      decision: "UNRESOLVED"
+
+
+    cpp:
+
+      component_id: "SW-004"
+
+      enabled: false
+
+      candidates: []
+
+      selected:
+
+        compiler: null
+
+        version: null
+
+        toolset: null
+
+        target: null
+
+        abi: null
+
+      decision: "UNRESOLVED"
+
+
+    cmake:
+
+      component_id: "DEVOPS-CMAKE"
+
+      enabled: false
+
+      candidates: []
+
+      selected:
+        version: null
+
+      decision: "UNRESOLVED"
+
+
+    ninja:
+
+      component_id: "DEVOPS-NINJA"
+
+      enabled: false
+
+      candidates: []
+
+      selected:
+        version: null
+
+      decision: "UNRESOLVED"
+
+
+  # ==========================================================
+  # 16. GPU / CUDA RESOLUTION
+  # ==========================================================
+
+  gpu:
+
+    enabled: false
+
+    cuda:
+
+      toolkit:
+
+        candidates: []
+
+        selected:
+
+          version: null
+
+          digest: null
+
+      driver:
+
+        candidates: []
+
+        selected:
+
+          version: null
+
+          digest: null
+
+      cudnn:
+
+        candidates: []
+
+        selected:
+
+          version: null
+
+          digest: null
+
+    compatibility_matrix:
+
+      pytorch_cuda: null
+
+      qwen3_runtime: null
+
+      whisper_runtime: null
+
+      vision_runtime: null
+
+    decision: "UNRESOLVED"
+
+
+  # ==========================================================
+  # 17. CONTAINER RESOLUTION
+  # ==========================================================
+
+  containers:
+
+    base_image:
+
+      candidates: []
+
+      selected:
+
+        registry: null
+
+        repository: null
+
+        tag: null
+
+        digest: null
+
+        architecture: null
+
+      decision: "UNRESOLVED"
+
+
+    jas_backend:
+
+      candidates: []
+
+      selected:
+
+        image: null
+
+        tag: null
+
+        digest: null
+
+        source_revision: null
+
+      dependencies:
+
+        python: null
+
+        uv_lock_revision: null
+
+      decision: "UNRESOLVED"
+
+
+    qdrant:
+
+      candidates: []
+
+      selected:
+
+        image: null
+
+        tag: null
+
+        digest: null
+
+      decision: "UNRESOLVED"
+
+
+    postgresql:
+
+      candidates: []
+
+      selected:
+
+        image: null
+
+        tag: null
+
+        digest: null
+
+      decision: "UNRESOLVED"
+
+
+  # ==========================================================
+  # 18. OBSERVABILITY
+  # ==========================================================
+
+  observability:
+
+    opentelemetry:
+
+      component_id: "SW-022"
+
+      candidates: []
+
+      selected:
+
+        sdk_version: null
+
+        api_version: null
+
+        integrity: null
+
+      compatibility:
+
+        python: null
+
+        collector: null
+
+      decision: "UNRESOLVED"
+
+
+    collector:
+
+      component_id: "OTEL-COLLECTOR"
+
+      enabled: false
+
+      candidates: []
+
+      selected:
+
+        version: null
+
+        image: null
+
+        digest: null
+
+      decision: "UNRESOLVED"
+
+
+  # ==========================================================
+  # 19. DEVELOPMENT TOOLCHAIN
+  # ==========================================================
+
+  build_toolchain:
+
+    uv:
+      candidates: []
+      selected:
+        version: null
+        digest: null
+      decision: "UNRESOLVED"
+
+    pytest:
+      candidates: []
+      selected:
+        version: null
+        integrity: null
+      decision: "UNRESOLVED"
+
+    ruff:
+      candidates: []
+      selected:
+        version: null
+        integrity: null
+      decision: "UNRESOLVED"
+
+    docker:
+      candidates: []
+      selected:
+        engine_version: null
+        buildkit_version: null
+        buildx_version: null
+        compose_version: null
+      decision: "UNRESOLVED"
+
+    git:
+      candidates: []
+      selected:
+        version: null
+        digest: null
+      decision: "UNRESOLVED"
+
+
+  # ==========================================================
+  # 20. COMPATIBILITY MATRIX
+  # ==========================================================
+
+  compatibility_matrix:
+
+    runtime:
+
+      python_to_fastapi: null
+
+      python_to_pydantic: null
+
+      python_to_langgraph: null
+
+      python_to_uv: null
+
+
+    backend:
+
+      fastapi_to_pydantic: null
+
+      langgraph_to_python: null
+
+
+    frontend:
+
+      node_to_typescript: null
+
+      node_to_vite: null
+
+      node_to_react: null
+
+      typescript_to_react: null
+
+
+    browser:
+
+      playwright_to_chromium: null
+
+
+    models:
+
+      qwen3_to_runtime: null
+
+      qwen3_to_cuda: null
+
+      bge_m3_to_runtime: null
+
+      reranker_to_runtime: null
+
+      siglip2_to_runtime: null
+
+      whisper_to_runtime: null
+
+
+    containers:
+
+      base_to_python: null
+
+      base_to_uv: null
+
+      backend_to_base: null
+
+      qdrant_to_platform: null
+
+      postgresql_to_platform: null
+
+
+    mcp:
+
+      sdk_to_protocol: null
+
+      server_to_protocol: null
+
+      server_to_runtime: null
+
+
+  # ==========================================================
+  # 21. CANDIDATE EVALUATION
+  # ==========================================================
+
+  evaluation:
+
+    candidate_score:
+
+      criteria:
+
+        architectural_fit: 0
+
+        runtime_compatibility: 0
+
+        dependency_compatibility: 0
+
+        model_compatibility: 0
+
+        platform_compatibility: 0
+
+        security: 0
+
+        license: 0
+
+        reproducibility: 0
+
+        performance: 0
+
+        maintenance: 0
+
+      scale:
+        min: 0
+        max: 5
+
+    scoring_rule:
+      >
+      Scores are decision-support metadata only. A high score does
+      not override a mandatory compatibility, security, license or
+      architectural failure.
+
+    candidate_records: []
+
+
+  # ==========================================================
+  # 22. REJECTION REASONS
+  # ==========================================================
+
+  rejection_reasons:
+
+    allowed:
+
+      - "ARCHITECTURAL_INCOMPATIBILITY"
+      - "RUNTIME_INCOMPATIBILITY"
+      - "DEPENDENCY_CONFLICT"
+      - "MODEL_INCOMPATIBILITY"
+      - "MCP_INCOMPATIBILITY"
+      - "PLATFORM_INCOMPATIBILITY"
+      - "SECURITY_FAILURE"
+      - "LICENSE_FAILURE"
+      - "REPRODUCIBILITY_FAILURE"
+      - "UNSUPPORTED_VERSION"
+      - "UNRESOLVED_NATIVE_ABI"
+      - "UNSTABLE_RELEASE"
+      - "INSUFFICIENT_MAINTENANCE"
+      - "PERFORMANCE_REGRESSION"
+
+
+  # ==========================================================
+  # 23. LOCK PROMOTION RULE
+  # ==========================================================
+
+  promotion:
+
+    candidate_to_locked:
+
+      mandatory:
+
+        - "Exact version resolved"
+        - "Exact revision resolved where applicable"
+        - "Artifact digest resolved where applicable"
+        - "Dependency compatibility passed"
+        - "Runtime compatibility passed"
+        - "Platform compatibility passed"
+        - "Security validation passed"
+        - "License validation passed"
+        - "Integrity validation passed"
+        - "Reproducibility validation passed"
+
+      prohibited:
+
+        - "Floating version"
+        - "Mutable tag"
+        - "Unverified artifact"
+        - "Unknown dependency graph"
+        - "Known critical vulnerability"
+        - "Unresolved mandatory dependency"
+
+
+  # ==========================================================
+  # 24. RESOLUTION ORDER
+  # ==========================================================
+
+  resolution_order:
+
+    phase_1:
+      name: "Foundation"
+      components:
+        - "CPython"
+        - "Python"
+        - "uv"
+        - "Docker"
+        - "Git"
+
+    phase_2:
+      name: "Core Dependencies"
+      components:
+        - "Pydantic"
+        - "FastAPI"
+        - "LangGraph"
+
+    phase_3:
+      name: "Data"
+      components:
+        - "PostgreSQL"
+        - "Qdrant"
+        - "Redis if enabled"
+
+    phase_4:
+      name: "Frontend"
+      components:
+        - "Node.js"
+        - "Package manager"
+        - "TypeScript"
+        - "React"
+        - "Vite"
+
+    phase_5:
+      name: "Browser"
+      components:
+        - "Playwright"
+        - "Chromium"
+
+    phase_6:
+      name: "AI"
+      components:
+        - "Transformers"
+        - "Qwen3"
+        - "BGE-M3"
+        - "BGE reranker"
+        - "Whisper"
+        - "SigLIP2"
+
+    phase_7:
+      name: "MCP"
+      components:
+        - "MCP SDK"
+        - "Enabled MCP servers"
+
+    phase_8:
+      name: "Native/GPU"
+      components:
+        - "Rust if enabled"
+        - "C/C++ if enabled"
+        - "CUDA if enabled"
+
+    phase_9:
+      name: "Security"
+      components:
+        - "SBOM"
+        - "Provenance"
+        - "Signatures"
+        - "Vulnerability scanner"
+
+    phase_10:
+      name: "Release"
+      components:
+        - "Complete dependency graph"
+        - "Complete artifact graph"
+        - "Final Version Lock"
+
+
+  # ==========================================================
+  # 25. CURRENT RESOLUTION STATUS
+  # ==========================================================
+
+  status_summary:
+
+    architecture_validated: true
+
+    inventory_available: true
+
+    exact_versions_resolved: false
+
+    exact_revisions_resolved: false
+
+    artifact_digests_resolved: false
+
+    dependency_graph_resolved: false
+
+    runtime_compatibility_resolved: false
+
+    model_compatibility_resolved: false
+
+    mcp_compatibility_resolved: false
+
+    platform_compatibility_resolved: false
+
+    security_validation_complete: false
+
+    license_validation_complete: false
+
+    reproducibility_validation_complete: false
+
+    final_lock_ready: false
+
+    status: "RESOLUTION_NOT_STARTED"
+
+
+  # ==========================================================
+  # 26. NEXT PHASE
+  # ==========================================================
+
+  next_phase:
+
+    name: "Candidate Version Research and Resolution"
+
+    sequence:
+
+      - "Populate candidate versions from authoritative sources"
+      - "Evaluate runtime compatibility"
+      - "Evaluate dependency compatibility"
+      - "Evaluate model compatibility"
+      - "Evaluate MCP compatibility"
+      - "Evaluate platform compatibility"
+      - "Evaluate security status"
+      - "Evaluate license status"
+      - "Evaluate artifact identity"
+      - "Reject incompatible candidates"
+      - "Select approved candidates"
+      - "Run reproducibility validation"
+      - "Promote candidates to LOCKED"
+      - "Generate final Version Lock v1"
+
+  governing_rule:
+    >
+    Version resolution SHALL be performed as a compatibility problem,
+    not as an independent latest-version selection problem.

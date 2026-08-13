@@ -1,0 +1,1273 @@
+# =============================================================================
+# JARVIS — VERSION RESOLUTION MATRIX
+# =============================================================================
+#
+# Project: JARVIS
+# Architecture: JAS v1
+# Document: VERSION_RESOLUTION_MATRIX.yaml
+# Version: 1.0
+# Status: DRAFT
+#
+# Purpose:
+#   This document records the process used to resolve approved technologies
+#   into exact, supported, reproducible versions for Version Lock v1.
+#
+# Important:
+#   This document is NOT the final Version Lock.
+#
+#   It records:
+#     - candidate versions
+#     - evaluation criteria
+#     - compatibility findings
+#     - security findings
+#     - support findings
+#     - license findings
+#     - selected versions
+#     - rejected candidates
+#     - decision rationale
+#
+# Authority:
+#   JAS v1
+#
+# Parent:
+#   VERSION_LOCK_SPEC.md
+#   VERSION_LOCK_COMPONENT_INVENTORY.yaml
+#
+# Final Consumer:
+#   VERSION_LOCK.yaml
+#
+# =============================================================================
+
+
+metadata:
+
+  project:
+    name: "JARVIS"
+    architecture: "JAS v1"
+
+  document:
+    name: "VERSION_RESOLUTION_MATRIX.yaml"
+    version: "1.0"
+    status: "DRAFT"
+    phase: "VERSION_RESOLUTION"
+
+  authority:
+    primary: "JAS v1"
+    technology_source: "Approved Stack v1"
+    inventory_source: "VERSION_LOCK_COMPONENT_INVENTORY.yaml"
+
+  purpose:
+    description: >
+      Resolve every production-relevant Version Lock component from an
+      approved technology into a specific reproducible version, revision,
+      digest, or compatible version policy.
+
+  rules:
+
+    no_unapproved_technology: true
+
+    no_implicit_latest: true
+
+    no_unbounded_version_ranges: true
+
+    require_traceability: true
+
+    require_compatibility_review: true
+
+    require_security_review: true
+
+    require_support_review: true
+
+    require_license_review: true
+
+    require_artifact_identity_when_available: true
+
+    require_reproducibility: true
+
+
+# =============================================================================
+# 1. RESOLUTION STATES
+# =============================================================================
+
+resolution_states:
+
+  - PENDING
+
+  - RESEARCHING
+
+  - CANDIDATES_IDENTIFIED
+
+  - COMPATIBILITY_REVIEW
+
+  - SECURITY_REVIEW
+
+  - SUPPORT_REVIEW
+
+  - LICENSE_REVIEW
+
+  - SELECTED
+
+  - VALIDATED
+
+  - REJECTED
+
+  - BLOCKED
+
+
+# =============================================================================
+# 2. DECISION TYPES
+# =============================================================================
+
+decision_types:
+
+  - NEW_SELECTION
+
+  - VERSION_UPDATE
+
+  - VERSION_DOWNGRADE
+
+  - REVISION_CHANGE
+
+  - DIGEST_CHANGE
+
+  - REPLACEMENT
+
+  - REMOVAL
+
+
+# =============================================================================
+# 3. VERSION POLICIES
+# =============================================================================
+
+version_policies:
+
+  EXACT:
+    description: >
+      The selected version must exactly match the specified version.
+
+  RANGE:
+    description: >
+      The component may operate inside an explicitly defined version range.
+
+  MINIMUM:
+    description: >
+      The component must be at least the specified version.
+
+  COMPATIBLE:
+    description: >
+      The component may vary within a documented compatibility contract.
+
+  REVISION:
+    description: >
+      The component is identified by an immutable source or artifact revision.
+
+  DIGEST:
+    description: >
+      The component is identified by an immutable artifact digest.
+
+
+# =============================================================================
+# 4. EVALUATION CRITERIA
+# =============================================================================
+
+evaluation_criteria:
+
+  architecture_compatibility:
+    weight: 0
+    required: true
+    description: >
+      Compatibility with JAS architecture and Approved Stack decisions.
+
+  functional_capability:
+    weight: 0
+    required: true
+    description: >
+      Whether the candidate provides the capabilities required by JARVIS.
+
+  api_stability:
+    weight: 0
+    required: true
+    description: >
+      Stability and compatibility of the public API.
+
+  backward_compatibility:
+    weight: 0
+    required: true
+    description: >
+      Compatibility with existing JARVIS components.
+
+  performance:
+    weight: 0
+    required: true
+    description: >
+      Runtime performance and throughput.
+
+  latency:
+    weight: 0
+    required: false
+    description: >
+      Relevant latency characteristics.
+
+  resource_usage:
+    weight: 0
+    required: true
+    description: >
+      CPU, RAM, GPU, VRAM, disk, and other resource requirements.
+
+  scalability:
+    weight: 0
+    required: false
+    description: >
+      Ability to scale with future JARVIS workloads.
+
+  reliability:
+    weight: 0
+    required: true
+    description: >
+      Operational stability and production reliability.
+
+  security:
+    weight: 0
+    required: true
+    description: >
+      Security posture and known vulnerability exposure.
+
+  supply_chain:
+    weight: 0
+    required: true
+    description: >
+      Integrity and provenance of the dependency or artifact.
+
+  maintenance:
+    weight: 0
+    required: true
+    description: >
+      Long-term maintenance viability.
+
+  support_lifecycle:
+    weight: 0
+    required: true
+    description: >
+      Current support state and expected lifecycle.
+
+  documentation:
+    weight: 0
+    required: false
+    description: >
+      Quality and completeness of documentation.
+
+  ecosystem:
+    weight: 0
+    required: false
+    description: >
+      Ecosystem maturity and integration availability.
+
+  license:
+    weight: 0
+    required: true
+    description: >
+      Compatibility with JARVIS licensing and distribution requirements.
+
+  bootstrap_compatibility:
+    weight: 0
+    required: true
+    description: >
+      Ability to provision deterministically through Bootstrap.
+
+  platform_compatibility:
+    weight: 0
+    required: true
+    description: >
+      Compatibility with supported JARVIS platforms.
+
+  reproducibility:
+    weight: 0
+    required: true
+    description: >
+      Ability to reproduce the selected state reliably.
+
+  migration_risk:
+    weight: 0
+    required: true
+    description: >
+      Risk associated with adopting the candidate version.
+
+
+# =============================================================================
+# 5. SCORE POLICY
+# =============================================================================
+
+score_policy:
+
+  scale:
+    minimum: 0
+    maximum: 10
+
+  interpretation:
+
+    0:
+      meaning: "Unacceptable"
+
+    1:
+      meaning: "Extremely poor"
+
+    2:
+      meaning: "Very poor"
+
+    3:
+      meaning: "Poor"
+
+    4:
+      meaning: "Below acceptable"
+
+    5:
+      meaning: "Acceptable"
+
+    6:
+      meaning: "Good"
+
+    7:
+      meaning: "Very good"
+
+    8:
+      meaning: "Strong"
+
+    9:
+      meaning: "Excellent"
+
+    10:
+      meaning: "Best available"
+
+
+# =============================================================================
+# 6. HARD-BLOCK CONDITIONS
+# =============================================================================
+
+hard_blocks:
+
+  - incompatible_license
+
+  - incompatible_architecture
+
+  - unsupported_platform
+
+  - critical_security_failure
+
+  - unavailable_required_artifact
+
+  - unreproducible_artifact
+
+  - incompatible_runtime
+
+  - incompatible_dependency
+
+  - rejected_technology
+
+  - unsupported_required_feature
+
+  - unacceptable_supply_chain_risk
+
+
+# =============================================================================
+# 7. CANDIDATE RECORD
+# =============================================================================
+
+candidate_record:
+
+  required_fields:
+
+    - version
+
+    - source
+
+    - release_date
+
+    - support_status
+
+    - license
+
+    - platform_compatibility
+
+    - architecture_compatibility
+
+    - security_status
+
+    - reproducibility
+
+    - rationale
+
+
+# =============================================================================
+# 8. COMPONENT RESOLUTION RECORD
+# =============================================================================
+
+component_resolution_schema:
+
+  component:
+
+    id: ""
+
+    name: ""
+
+    category: ""
+
+    criticality: ""
+
+  source:
+
+    approved_stack_document: ""
+
+    approved_technology: ""
+
+    vendor: ""
+
+    official_source: ""
+
+  lock:
+
+    required: true
+
+    policy: ""
+
+    artifact_identity: ""
+
+  current_state:
+
+    version: ""
+
+    revision: ""
+
+    digest: ""
+
+  candidate_versions: []
+
+  evaluation:
+
+    architecture_compatibility:
+      score: null
+      evidence: ""
+      status: "PENDING"
+
+    functional_capability:
+      score: null
+      evidence: ""
+      status: "PENDING"
+
+    api_stability:
+      score: null
+      evidence: ""
+      status: "PENDING"
+
+    backward_compatibility:
+      score: null
+      evidence: ""
+      status: "PENDING"
+
+    performance:
+      score: null
+      evidence: ""
+      status: "PENDING"
+
+    latency:
+      score: null
+      evidence: ""
+      status: "PENDING"
+
+    resource_usage:
+      score: null
+      evidence: ""
+      status: "PENDING"
+
+    scalability:
+      score: null
+      evidence: ""
+      status: "PENDING"
+
+    reliability:
+      score: null
+      evidence: ""
+      status: "PENDING"
+
+    security:
+      score: null
+      evidence: ""
+      status: "PENDING"
+
+    supply_chain:
+      score: null
+      evidence: ""
+      status: "PENDING"
+
+    maintenance:
+      score: null
+      evidence: ""
+      status: "PENDING"
+
+    support_lifecycle:
+      score: null
+      evidence: ""
+      status: "PENDING"
+
+    documentation:
+      score: null
+      evidence: ""
+      status: "PENDING"
+
+    ecosystem:
+      score: null
+      evidence: ""
+      status: "PENDING"
+
+    license:
+      score: null
+      evidence: ""
+      status: "PENDING"
+
+    bootstrap_compatibility:
+      score: null
+      evidence: ""
+      status: "PENDING"
+
+    platform_compatibility:
+      score: null
+      evidence: ""
+      status: "PENDING"
+
+    reproducibility:
+      score: null
+      evidence: ""
+      status: "PENDING"
+
+    migration_risk:
+      score: null
+      evidence: ""
+      status: "PENDING"
+
+  hard_blocks:
+
+    present: false
+
+    reasons: []
+
+  decision:
+
+    state: "PENDING"
+
+    selected_version: ""
+
+    selected_revision: ""
+
+    selected_digest: ""
+
+    selected_source: ""
+
+    rationale: ""
+
+  validation:
+
+    compatibility: "PENDING"
+
+    security: "PENDING"
+
+    license: "PENDING"
+
+    support: "PENDING"
+
+    reproducibility: "PENDING"
+
+    integration: "PENDING"
+
+
+# =============================================================================
+# 9. COMPONENT RESOLUTIONS
+# =============================================================================
+
+components: []
+
+
+# =============================================================================
+# 10. CROSS-COMPONENT COMPATIBILITY
+# =============================================================================
+
+compatibility_matrix:
+
+  description: >
+    Records compatibility requirements between independently versioned
+    JARVIS components.
+
+  relationships: []
+
+
+# =============================================================================
+# 11. RUNTIME COMPATIBILITY
+# =============================================================================
+
+runtime_compatibility:
+
+  requirements: []
+
+  examples:
+
+    - runtime: ""
+
+      required_by: ""
+
+      compatible_versions: []
+
+      incompatible_versions: []
+
+      notes: ""
+
+
+# =============================================================================
+# 12. GPU COMPATIBILITY
+# =============================================================================
+
+gpu_compatibility:
+
+  requirements: []
+
+  records:
+
+    - component: ""
+
+      gpu_runtime: ""
+
+      cuda_version: ""
+
+      driver_requirement: ""
+
+      supported_architectures: []
+
+      notes: ""
+
+
+# =============================================================================
+# 13. PLATFORM COMPATIBILITY
+# =============================================================================
+
+platform_compatibility:
+
+  targets:
+
+    - operating_system: ""
+
+      architecture: ""
+
+      supported: true
+
+      notes: ""
+
+
+# =============================================================================
+# 14. CONTAINER COMPATIBILITY
+# =============================================================================
+
+container_compatibility:
+
+  records:
+
+    - image: ""
+
+      version: ""
+
+      digest: ""
+
+      host_requirements: []
+
+      runtime_requirements: []
+
+      dependencies: []
+
+
+# =============================================================================
+# 15. MODEL COMPATIBILITY
+# =============================================================================
+
+model_compatibility:
+
+  records:
+
+    - model_id: ""
+
+      revision: ""
+
+      runtime: ""
+
+      quantization: ""
+
+      hardware_requirements: []
+
+      compatible_components: []
+
+      incompatible_components: []
+
+      evaluation_required: true
+
+
+# =============================================================================
+# 16. MCP COMPATIBILITY
+# =============================================================================
+
+mcp_compatibility:
+
+  records:
+
+    - server_id: ""
+
+      version: ""
+
+      revision: ""
+
+      protocol_version: ""
+
+      client_compatibility: ""
+
+      runtime_requirements: []
+
+      permission_requirements: []
+
+      security_review_required: true
+
+
+# =============================================================================
+# 17. BROWSER COMPATIBILITY
+# =============================================================================
+
+browser_compatibility:
+
+  records:
+
+    - automation_framework: ""
+
+      framework_version: ""
+
+      browser: ""
+
+      browser_version: ""
+
+      engine: ""
+
+      supported: true
+
+      tested: false
+
+      notes: ""
+
+
+# =============================================================================
+# 18. FRONTEND COMPATIBILITY
+# =============================================================================
+
+frontend_compatibility:
+
+  runtime: ""
+
+  framework: ""
+
+  build_tool: ""
+
+  package_manager: ""
+
+  node_version: ""
+
+  records: []
+
+
+# =============================================================================
+# 19. BACKEND COMPATIBILITY
+# =============================================================================
+
+backend_compatibility:
+
+  runtime: ""
+
+  framework: ""
+
+  server: ""
+
+  records: []
+
+
+# =============================================================================
+# 20. SECURITY COMPATIBILITY
+# =============================================================================
+
+security_compatibility:
+
+  records:
+
+    - component: ""
+
+      security_policy_reference: ""
+
+      known_vulnerabilities: []
+
+      security_review: "PENDING"
+
+      approved: false
+
+
+# =============================================================================
+# 21. LICENSE COMPATIBILITY
+# =============================================================================
+
+license_compatibility:
+
+  records:
+
+    - component: ""
+
+      license: ""
+
+      approved: false
+
+      compliance_reference: ""
+
+      restrictions: []
+
+      notes: ""
+
+
+# =============================================================================
+# 22. SUPPORT LIFECYCLE
+# =============================================================================
+
+support_lifecycle:
+
+  records:
+
+    - component: ""
+
+      selected_version: ""
+
+      release_date: ""
+
+      support_status: ""
+
+      maintenance_end: ""
+
+      end_of_life: ""
+
+      replacement_plan: ""
+
+      notes: ""
+
+
+# =============================================================================
+# 23. REJECTED CANDIDATES
+# =============================================================================
+
+rejected_candidates:
+
+  records:
+
+    - component: ""
+
+      candidate_version: ""
+
+      reason: ""
+
+      hard_block: false
+
+      evidence: ""
+
+
+# =============================================================================
+# 24. VERSION DECISION LOG
+# =============================================================================
+
+decision_log:
+
+  records:
+
+    - decision_id: ""
+
+      component: ""
+
+      decision_type: ""
+
+      old_state: ""
+
+      new_state: ""
+
+      reason: ""
+
+      evidence: []
+
+      impact:
+
+        architecture: ""
+
+        compatibility: ""
+
+        security: ""
+
+        performance: ""
+
+        license: ""
+
+        support: ""
+
+      status: "PENDING"
+
+
+# =============================================================================
+# 25. EVIDENCE REQUIREMENTS
+# =============================================================================
+
+evidence_requirements:
+
+  official_documentation:
+    required: true
+
+  official_release_information:
+    required: true
+
+  official_license:
+    required: true
+
+  official_security_information:
+    required: true
+
+  compatibility_information:
+    required: true
+
+  benchmark_information:
+    required_when_relevant: true
+
+  community_information:
+    allowed: true
+
+  third_party_analysis:
+    allowed: true
+
+  source_priority:
+
+    - official_documentation
+
+    - official_repository
+
+    - official_release_notes
+
+    - official_security_advisories
+
+    - official_package_registry
+
+    - reputable_independent_source
+
+    - community_source
+
+
+# =============================================================================
+# 26. RESEARCH RULES
+# =============================================================================
+
+research_rules:
+
+  use_current_information: true
+
+  verify_release_status: true
+
+  verify_support_status: true
+
+  verify_security_status: true
+
+  verify_license: true
+
+  verify_platform_support: true
+
+  verify_runtime_compatibility: true
+
+  verify_dependency_compatibility: true
+
+  do_not_assume_latest_is_best: true
+
+  do_not_select_based_on_popularity_only: true
+
+
+# =============================================================================
+# 27. VERSION SELECTION PRINCIPLE
+# =============================================================================
+
+selection_principle:
+
+  description: >
+    Select the newest suitable version that satisfies all mandatory
+    architectural, compatibility, security, support, license, platform,
+    reproducibility, and operational requirements.
+
+  priority_order:
+
+    - hard_block_constraints
+
+    - architecture_compatibility
+
+    - security
+
+    - compatibility
+
+    - support_lifecycle
+
+    - reproducibility
+
+    - platform_compatibility
+
+    - functional_capability
+
+    - reliability
+
+    - performance
+
+    - resource_usage
+
+    - maintainability
+
+    - ecosystem
+
+    - documentation
+
+    - migration_risk
+
+
+# =============================================================================
+# 28. "LATEST" POLICY
+# =============================================================================
+
+latest_policy:
+
+  prohibited_as_final_decision: true
+
+  allowed_for_research: true
+
+  final_selection_requires_exact_identity: true
+
+
+# =============================================================================
+# 29. SECURITY UPDATE POLICY
+# =============================================================================
+
+security_updates:
+
+  expedited_review_allowed: true
+
+  validation_required: true
+
+  regression_testing_required: true
+
+  emergency_override_allowed: false
+
+
+# =============================================================================
+# 30. MODEL UPDATE POLICY
+# =============================================================================
+
+model_updates:
+
+  behavioral_change_assumed: true
+
+  regression_evaluation_required: true
+
+  performance_evaluation_required: true
+
+  resource_evaluation_required: true
+
+  safety_evaluation_required: true
+
+
+# =============================================================================
+# 31. CONTAINER UPDATE POLICY
+# =============================================================================
+
+container_updates:
+
+  digest_required_for_production: true
+
+  tag_alone_sufficient: false
+
+  rebuild_validation_required: true
+
+
+# =============================================================================
+# 32. MCP UPDATE POLICY
+# =============================================================================
+
+mcp_updates:
+
+  security_review_required: true
+
+  protocol_compatibility_required: true
+
+  permission_review_required: true
+
+
+# =============================================================================
+# 33. BROWSER UPDATE POLICY
+# =============================================================================
+
+browser_updates:
+
+  compatibility_testing_required: true
+
+  regression_testing_required: true
+
+  automation_framework_compatibility_required: true
+
+
+# =============================================================================
+# 34. DATABASE UPDATE POLICY
+# =============================================================================
+
+database_updates:
+
+  migration_testing_required: true
+
+  backup_validation_required: true
+
+  rollback_validation_required: true
+
+
+# =============================================================================
+# 35. FINAL SELECTION REQUIREMENTS
+# =============================================================================
+
+final_selection_requirements:
+
+  every_production_component:
+    must_have:
+      - exact_or_explicit_lock_policy
+      - approved_stack_traceability
+      - jas_traceability
+      - source
+      - license_status
+      - support_status
+      - security_status
+      - compatibility_status
+
+  immutable_artifacts:
+    must_have:
+      - digest_or_immutable_revision
+
+
+# =============================================================================
+# 36. RESOLUTION GATE
+# =============================================================================
+
+resolution_gate:
+
+  requirements:
+
+    approved_stack_coverage: false
+
+    component_inventory_complete: false
+
+    all_candidates_researched: false
+
+    compatibility_validated: false
+
+    security_validated: false
+
+    license_validated: false
+
+    support_validated: false
+
+    reproducibility_validated: false
+
+  status: "BLOCKED"
+
+
+# =============================================================================
+# 37. OUTPUT
+# =============================================================================
+
+output:
+
+  master_lock:
+    file: "VERSION_LOCK.yaml"
+    status: "NOT_READY"
+
+  schema:
+    file: "VERSION_LOCK.schema.json"
+    status: "NOT_READY"
+
+  metadata:
+    file: "VERSION_LOCK_METADATA.yaml"
+    status: "NOT_READY"
+
+
+# =============================================================================
+# 38. COMPLETION CRITERIA
+# =============================================================================
+
+completion_criteria:
+
+  component_inventory_complete: false
+
+  all_production_components_resolved: false
+
+  all_selected_versions_validated: false
+
+  all_artifacts_verified: false
+
+  all_license_reviews_passed: false
+
+  all_security_reviews_passed: false
+
+  all_support_reviews_passed: false
+
+  all_cross_component_compatibility_validated: false
+
+  master_lock_generated: false
+
+  schema_validation_passed: false
+
+  environment_validation_passed: false
+
+  fingerprint_generated: false
+
+  version_lock_frozen: false
+
+
+# =============================================================================
+# 39. NEXT PHASE
+# =============================================================================
+
+next_phase:
+
+  name: "VERSION_RESOLUTION_EXECUTION"
+
+  description: >
+    Resolve every READY_FOR_VERSION_RESOLUTION component from the
+    Component Inventory into an evidence-backed version, revision,
+    digest, or explicitly justified compatibility policy.
+
+  required_inputs:
+
+    - VERSION_LOCK_SPEC.md
+
+    - VERSION_LOCK_COMPONENT_INVENTORY.yaml
+
+    - Approved Stack v1
+
+    - Version Support Policy
+
+    - License and Compliance Policy
+
+    - Security Stack
+
+  expected_output:
+
+    - completed component resolution records
+
+    - rejected candidate records
+
+    - compatibility matrix
+
+    - decision log
+
+    - validated selected versions
+
+
+# =============================================================================
+# END OF VERSION RESOLUTION MATRIX
+# =============================================================================

@@ -1,0 +1,1215 @@
+# ============================================================
+# JARVIS / JAS
+# VERSION LOCK v1 — COMPATIBILITY RESOLUTION
+# ============================================================
+
+version_lock_compatibility_resolution:
+
+  schema_version: "1.0"
+
+  project:
+    name: "JARVIS"
+    architecture: "JAS"
+    architecture_version: "JAS v1"
+
+  document:
+    id: "JAS-VL-014"
+    name: "Compatibility Resolution"
+    version: "1.0"
+    status: "IN_PROGRESS"
+    authority: "VERSION_LOCK_v1"
+
+
+  # ==========================================================
+  # 1. PURPOSE
+  # ==========================================================
+
+  purpose:
+    >
+    This document determines whether candidate versions collected
+    during Version Lock v1 can coexist as a technically valid,
+    reproducible and supportable JAS runtime.
+
+    Compatibility is evaluated as a system rather than as isolated
+    package selections.
+
+    A component SHALL NOT be promoted to LOCKED solely because its
+    own release is valid.
+
+    Its interaction with the complete JAS dependency graph SHALL
+    also be validated.
+
+
+  # ==========================================================
+  # 2. COMPATIBILITY STATES
+  # ==========================================================
+
+  states:
+
+    UNKNOWN:
+      description:
+        "Compatibility has not yet been evaluated."
+
+    PASS:
+      description:
+        "Compatibility requirement is satisfied."
+
+    PASS_WITH_CONSTRAINT:
+      description:
+        "Compatible only under an explicit architectural constraint."
+
+    PENDING:
+      description:
+        "Evaluation requires additional evidence or testing."
+
+    FAIL:
+      description:
+        "Candidate is incompatible."
+
+    NOT_APPLICABLE:
+      description:
+        "Compatibility relationship does not apply."
+
+    BLOCKED:
+      description:
+        "Evaluation cannot proceed because an upstream dependency is unresolved."
+
+
+  # ==========================================================
+  # 3. GLOBAL RULES
+  # ==========================================================
+
+  rules:
+
+    rule_001:
+      >
+      A final runtime SHALL support every mandatory production
+      dependency required by JAS.
+
+    rule_002:
+      >
+      A dependency SHALL support the selected runtime.
+
+    rule_003:
+      >
+      A model SHALL be evaluated together with its inference runtime.
+
+    rule_004:
+      >
+      GPU-dependent components SHALL be evaluated together with
+      CUDA, driver and hardware compatibility.
+
+    rule_005:
+      >
+      Browser automation SHALL be evaluated using the exact
+      Playwright/browser revision relationship.
+
+    rule_006:
+      >
+      MCP clients and servers SHALL be evaluated against the
+      selected protocol revision.
+
+    rule_007:
+      >
+      Container images SHALL be evaluated together with their
+      architecture and host platform requirements.
+
+    rule_008:
+      >
+      A PASS based only on package metadata SHALL not be treated
+      as equivalent to full runtime validation.
+
+    rule_009:
+      >
+      Compatibility SHALL be re-evaluated whenever a dependency
+      candidate changes.
+
+    rule_010:
+      >
+      A single compatibility failure in a mandatory production
+      component SHALL prevent final Version Lock promotion.
+
+
+  # ==========================================================
+  # 4. CORE PYTHON RUNTIME
+  # ==========================================================
+
+  python_runtime:
+
+    selected_candidate:
+
+      version: "3.14.7"
+      implementation: "CPython"
+
+      status:
+        "CANDIDATE"
+
+      source:
+        "Python Software Foundation"
+
+      note:
+        >
+        Python 3.14.7 supersedes the previously recorded 3.14.6
+        research candidate as the current 3.14 maintenance release.
+
+
+    compatibility:
+
+      uv:
+        status: "PENDING"
+        reason:
+          "Exact uv release compatibility must be verified."
+
+      fastapi:
+        status: "PENDING"
+        reason:
+          "FastAPI runtime compatibility must be validated."
+
+      pydantic:
+        status: "PENDING"
+        reason:
+          "Pydantic Python 3.14 support must be validated."
+
+      langgraph:
+        status: "PENDING"
+        reason:
+          "LangGraph metadata permits modern Python versions, but
+          complete dependency compatibility must be resolved."
+
+      pytest:
+        status: "PENDING"
+
+      ruff:
+        status: "PENDING"
+
+      transformers:
+        status: "PENDING"
+
+      pytorch:
+        status: "PENDING"
+        reason:
+          >
+          Python 3.14 compatibility is particularly important for
+          the AI runtime and must not be inferred solely from the
+          Python package metadata.
+
+    overall:
+      "PENDING"
+
+
+  # ==========================================================
+  # 5. PYTHON CORE DEPENDENCY GRAPH
+  # ==========================================================
+
+  python_dependency_graph:
+
+    fastapi:
+
+      candidate:
+        version: "0.139.2"
+
+      relationships:
+
+        python:
+          status: "PENDING"
+
+        pydantic:
+          status: "PENDING"
+
+        starlette:
+          status: "PENDING"
+
+      overall:
+        "PENDING"
+
+
+    pydantic:
+
+      candidate:
+        version: "2.13.4"
+
+      relationships:
+
+        python:
+          status: "PENDING"
+
+        pydantic_core:
+          status: "PENDING"
+
+        fastapi:
+          status: "PENDING"
+
+      overall:
+        "PENDING"
+
+
+    langgraph:
+
+      candidate:
+        version: "1.2.9"
+
+      relationships:
+
+        python:
+          status: "PASS_WITH_CONSTRAINT"
+          constraint:
+            "Python >=3.10 is declared by package metadata."
+
+        langchain_ecosystem:
+          status: "PENDING"
+
+        transitive_dependencies:
+          status: "PENDING"
+
+      overall:
+        "PENDING"
+
+
+    pytest:
+
+      candidate:
+        version: "9.1.1"
+
+      relationships:
+
+        python:
+          status: "PENDING"
+
+      overall:
+        "PENDING"
+
+
+    ruff:
+
+      candidate:
+        version: "0.15.22"
+
+      relationships:
+
+        python:
+          status: "PENDING"
+
+        uv:
+          status: "PENDING"
+
+      overall:
+        "PENDING"
+
+
+  # ==========================================================
+  # 6. AI RUNTIME COMPATIBILITY
+  # ==========================================================
+
+  ai_runtime:
+
+    pytorch:
+
+      status:
+        "RESEARCH_REQUIRED"
+
+      compatibility_targets:
+
+        python_314:
+          status: "PENDING"
+
+        cuda:
+          status: "PENDING"
+
+        transformers:
+          status: "PENDING"
+
+        qwen3:
+          status: "PENDING"
+
+        siglip2:
+          status: "PENDING"
+
+        whisper:
+          status: "PENDING"
+
+
+      blocking_rule:
+        >
+        Python 3.14 SHALL NOT be promoted to final JAS Version Lock
+        until the selected PyTorch release provides the required
+        production support for Python 3.14.
+
+
+    transformers:
+
+      candidate:
+        status: "RESEARCH_REQUIRED"
+
+      relationships:
+
+        python:
+          status: "PENDING"
+
+        pytorch:
+          status: "PENDING"
+
+        qwen3:
+          status: "PENDING"
+
+        bge_m3:
+          status: "PENDING"
+
+        reranker:
+          status: "PENDING"
+
+        siglip2:
+          status: "PENDING"
+
+      overall:
+        "PENDING"
+
+
+  # ==========================================================
+  # 7. MODEL COMPATIBILITY
+  # ==========================================================
+
+  models:
+
+    qwen3:
+
+      status:
+        "RESEARCH_REQUIRED"
+
+      required_relationships:
+
+        model_variant:
+          status: "PENDING"
+
+        model_revision:
+          status: "PENDING"
+
+        inference_runtime:
+          status: "PENDING"
+
+        transformers:
+          status: "PENDING"
+
+        pytorch:
+          status: "PENDING"
+
+        python:
+          status: "PENDING"
+
+        gpu:
+          status: "PENDING"
+
+        cuda:
+          status: "PENDING"
+
+      lock_blockers:
+
+        - "Exact Qwen3 variant not selected"
+        - "Exact model revision not selected"
+        - "Inference runtime not selected"
+        - "Hardware profile not selected"
+
+
+    bge_m3:
+
+      status:
+        "RESEARCH_REQUIRED"
+
+      relationships:
+
+        transformers:
+          status: "PENDING"
+
+        pytorch:
+          status: "PENDING"
+
+        python:
+          status: "PENDING"
+
+
+    bge_reranker:
+
+      status:
+        "RESEARCH_REQUIRED"
+
+      relationships:
+
+        transformers:
+          status: "PENDING"
+
+        pytorch:
+          status: "PENDING"
+
+        python:
+          status: "PENDING"
+
+
+    whisper:
+
+      status:
+        "RESEARCH_REQUIRED"
+
+      relationships:
+
+        runtime:
+          status: "PENDING"
+
+        python:
+          status: "PENDING"
+
+        pytorch:
+          status: "PENDING"
+
+        hardware:
+          status: "PENDING"
+
+
+    siglip2:
+
+      status:
+        "RESEARCH_REQUIRED"
+
+      relationships:
+
+        transformers:
+          status: "PENDING"
+
+        pytorch:
+          status: "PENDING"
+
+        python:
+          status: "PENDING"
+
+        hardware:
+          status: "PENDING"
+
+
+  # ==========================================================
+  # 8. DATABASE COMPATIBILITY
+  # ==========================================================
+
+  databases:
+
+    postgresql:
+
+      status:
+        "RESEARCH_REQUIRED"
+
+      relationships:
+
+        python_driver:
+          status: "PENDING"
+
+        migration_tool:
+          status: "PENDING"
+
+        container:
+          status: "PENDING"
+
+        architecture:
+          status: "PENDING"
+
+
+    qdrant:
+
+      status:
+        "RESEARCH_REQUIRED"
+
+      relationships:
+
+        server_version:
+          status: "PENDING"
+
+        client_version:
+          status: "PENDING"
+
+        api_version:
+          status: "PENDING"
+
+        storage_format:
+          status: "PENDING"
+
+        container:
+          status: "PENDING"
+
+
+    redis:
+
+      enabled: false
+
+      status:
+        "NOT_APPLICABLE"
+
+
+  # ==========================================================
+  # 9. BROWSER COMPATIBILITY
+  # ==========================================================
+
+  browser:
+
+    playwright:
+
+      status:
+        "RESEARCH_REQUIRED"
+
+      relationships:
+
+        python_package:
+          status: "PENDING"
+
+        browser_revision:
+          status: "PENDING"
+
+        chromium:
+          status: "PENDING"
+
+        windows:
+          status: "PENDING"
+
+        linux:
+          status: "PENDING"
+
+      rule:
+        >
+        The selected Playwright version SHALL determine or explicitly
+        validate the browser revision used for production automation.
+
+
+    chromium:
+
+      status:
+        "RESEARCH_REQUIRED"
+
+      relationships:
+
+        playwright:
+          status: "PENDING"
+
+        windows:
+          status: "PENDING"
+
+        linux:
+          status: "PENDING"
+
+
+  # ==========================================================
+  # 10. FRONTEND COMPATIBILITY
+  # ==========================================================
+
+  frontend:
+
+    nodejs:
+
+      candidate:
+        version: "24.18.0"
+
+      policy:
+        "LTS preferred"
+
+      status:
+        "CANDIDATE"
+
+
+    typescript:
+
+      candidate:
+        version: "7.0.2"
+
+      relationships:
+
+        node:
+          status: "PENDING"
+
+        react:
+          status: "PENDING"
+
+        vite:
+          status: "PENDING"
+
+
+    react:
+
+      candidate:
+        status:
+          "RESEARCH_REQUIRED"
+
+      relationships:
+
+        node:
+          status: "PENDING"
+
+        typescript:
+          status: "PENDING"
+
+        vite:
+          status: "PENDING"
+
+
+    vite:
+
+      candidate:
+        version: "8.1.5"
+
+      relationships:
+
+        node:
+          status: "PENDING"
+
+        typescript:
+          status: "PENDING"
+
+        react:
+          status: "PENDING"
+
+
+    package_manager:
+
+      selected:
+        null
+
+      candidates:
+
+        pnpm:
+          status: "PENDING"
+
+        npm:
+          status: "PENDING"
+
+      blocking:
+        true
+
+
+  # ==========================================================
+  # 11. MCP COMPATIBILITY
+  # ==========================================================
+
+  mcp:
+
+    protocol:
+
+      target:
+        "2026-07-28"
+
+      status:
+        "PENDING"
+
+
+    sdk:
+
+      version:
+        null
+
+      protocol_compatibility:
+        "PENDING"
+
+      runtime_compatibility:
+        "PENDING"
+
+
+    servers:
+
+      status:
+        "PENDING"
+
+      rule:
+        >
+        Every enabled MCP server must independently pass protocol,
+        SDK, runtime, transport and permission compatibility.
+
+
+  # ==========================================================
+  # 12. NATIVE TOOLCHAIN
+  # ==========================================================
+
+  native:
+
+    rust:
+
+      enabled: false
+
+      status:
+        "NOT_APPLICABLE"
+
+
+    cpp:
+
+      enabled: false
+
+      status:
+        "NOT_APPLICABLE"
+
+
+    cmake:
+
+      enabled: false
+
+      status:
+        "NOT_APPLICABLE"
+
+
+    ninja:
+
+      enabled: false
+
+      status:
+        "NOT_APPLICABLE"
+
+
+  # ==========================================================
+  # 13. GPU / CUDA
+  # ==========================================================
+
+  gpu:
+
+    enabled: false
+
+    status:
+      "NOT_APPLICABLE"
+
+    activation_rule:
+      >
+      GPU compatibility resolution SHALL be activated when the
+      selected local model deployment requires hardware acceleration.
+
+
+  # ==========================================================
+  # 14. CONTAINER COMPATIBILITY
+  # ==========================================================
+
+  containers:
+
+    docker:
+
+      status:
+        "RESEARCH_REQUIRED"
+
+      relationships:
+
+        host_os:
+          status: "PENDING"
+
+        architecture:
+          status: "PENDING"
+
+        buildkit:
+          status: "PENDING"
+
+        buildx:
+          status: "PENDING"
+
+        compose:
+          status: "PENDING"
+
+
+    backend_image:
+
+      status:
+        "PENDING"
+
+      relationships:
+
+        python:
+          status: "PENDING"
+
+        uv:
+          status: "PENDING"
+
+        system_libraries:
+          status: "PENDING"
+
+
+    qdrant_image:
+
+      status:
+        "PENDING"
+
+      relationships:
+
+        qdrant_server:
+          status: "PENDING"
+
+        architecture:
+          status: "PENDING"
+
+
+    postgresql_image:
+
+      status:
+        "PENDING"
+
+      relationships:
+
+        postgresql:
+          status: "PENDING"
+
+        architecture:
+          status: "PENDING"
+
+
+  # ==========================================================
+  # 15. PLATFORM MATRIX
+  # ==========================================================
+
+  platforms:
+
+    windows_x86_64:
+
+      status:
+        "PRIMARY"
+
+      python:
+        "PENDING"
+
+      ai_runtime:
+        "PENDING"
+
+      browser:
+        "PENDING"
+
+      frontend:
+        "PENDING"
+
+      docker:
+        "PENDING"
+
+
+    linux_x86_64:
+
+      status:
+        "PRIMARY_DEPLOYMENT"
+
+      python:
+        "PENDING"
+
+      ai_runtime:
+        "PENDING"
+
+      browser:
+        "PENDING"
+
+      frontend:
+        "PENDING"
+
+      docker:
+        "PENDING"
+
+
+    macos_arm64:
+
+      status:
+        "SECONDARY_DEVELOPMENT"
+
+      python:
+        "PENDING"
+
+      ai_runtime:
+        "PENDING"
+
+      browser:
+        "PENDING"
+
+      frontend:
+        "PENDING"
+
+      docker:
+        "PENDING"
+
+
+  # ==========================================================
+  # 16. CRITICAL COMPATIBILITY CHAINS
+  # ==========================================================
+
+  critical_chains:
+
+    chain_001:
+
+      name:
+        "Python AI Chain"
+
+      sequence:
+
+        - "CPython"
+        - "Python"
+        - "uv"
+        - "PyTorch"
+        - "Transformers"
+        - "Qwen3"
+
+      status:
+        "BLOCKED"
+
+      blocker:
+        "AI runtime compatibility unresolved"
+
+
+    chain_002:
+
+      name:
+        "Backend Chain"
+
+      sequence:
+
+        - "CPython"
+        - "FastAPI"
+        - "Pydantic"
+        - "LangGraph"
+
+      status:
+        "PENDING"
+
+
+    chain_003:
+
+      name:
+        "Frontend Chain"
+
+      sequence:
+
+        - "Node.js"
+        - "Package Manager"
+        - "TypeScript"
+        - "React"
+        - "Vite"
+
+      status:
+        "BLOCKED"
+
+      blocker:
+        "React and package manager unresolved"
+
+
+    chain_004:
+
+      name:
+        "Browser Chain"
+
+      sequence:
+
+        - "Playwright"
+        - "Chromium"
+
+      status:
+        "BLOCKED"
+
+      blocker:
+        "Exact Playwright/browser revision unresolved"
+
+
+    chain_005:
+
+      name:
+        "MCP Chain"
+
+      sequence:
+
+        - "MCP Protocol"
+        - "MCP SDK"
+        - "MCP Server"
+
+      status:
+        "BLOCKED"
+
+      blocker:
+        "SDK and enabled server versions unresolved"
+
+
+  # ==========================================================
+  # 17. HARD BLOCKERS
+  # ==========================================================
+
+  hard_blockers:
+
+    - id: "BLOCK-001"
+      component: "AI Runtime"
+      reason:
+        "PyTorch compatibility with selected Python runtime unresolved."
+
+    - id: "BLOCK-002"
+      component: "Qwen3"
+      reason:
+        "Exact variant, revision and runtime unresolved."
+
+    - id: "BLOCK-003"
+      component: "Frontend"
+      reason:
+        "React and frontend package manager unresolved."
+
+    - id: "BLOCK-004"
+      component: "Browser"
+      reason:
+        "Playwright/browser revision relationship unresolved."
+
+    - id: "BLOCK-005"
+      component: "MCP"
+      reason:
+        "Protocol/SDK/server compatibility unresolved."
+
+    - id: "BLOCK-006"
+      component: "Data"
+      reason:
+        "Qdrant/PostgreSQL exact server versions unresolved."
+
+
+  # ==========================================================
+  # 18. PROMOTION CRITERIA
+  # ==========================================================
+
+  promotion:
+
+    component_to_approved_candidate:
+
+      mandatory:
+
+        - "Upstream version verified"
+        - "Runtime compatibility PASS"
+        - "Dependency compatibility PASS"
+        - "Platform compatibility PASS"
+        - "Security validation PASS"
+        - "License validation PASS"
+
+
+    approved_candidate_to_locked:
+
+      mandatory:
+
+        - "Immutable identity available"
+        - "Artifact identity verified"
+        - "Dependency graph frozen"
+        - "Reproducibility validated"
+        - "No unresolved hard blockers"
+        - "Version Lock manifest updated"
+
+
+  # ==========================================================
+  # 19. CURRENT DECISION
+  # ==========================================================
+
+  current_decision:
+
+    python_3_14:
+
+      status:
+        "CANDIDATE"
+
+      not_locked:
+        true
+
+      reason:
+        >
+        Python 3.14.7 is the current 3.14 maintenance candidate,
+        but the JAS AI stack must be validated before final adoption.
+
+    python_3_13:
+
+      status:
+        "FALLBACK_CANDIDATE"
+
+      reason:
+        >
+        Retained as a fallback candidate if the selected AI runtime
+        does not provide sufficient production compatibility with
+        Python 3.14.
+
+    final_python:
+      null
+
+
+  # ==========================================================
+  # 20. RESEARCH FINDINGS
+  # ==========================================================
+
+  findings:
+
+    finding_001:
+      >
+      Python 3.14 is a stable major release family and is therefore
+      architecturally eligible under the Python 3.12+ policy.
+
+    finding_002:
+      >
+      LangGraph 1.2.9 declares Python >=3.10 and is therefore not
+      itself a blocker for Python 3.14 based on package metadata.
+
+    finding_003:
+      >
+      Package-level Python compatibility does not establish complete
+      AI-stack compatibility.
+
+    finding_004:
+      >
+      PyTorch is a critical compatibility gate because local model
+      execution depends on it or an equivalent inference runtime.
+
+    finding_005:
+      >
+      The frontend cannot be locked until React and the package
+      manager are resolved together with Node.js, TypeScript and Vite.
+
+    finding_006:
+      >
+      Qwen3 cannot be locked at the family level. An exact model
+      variant, revision, artifact format and runtime are required.
+
+
+  # ==========================================================
+  # 21. CURRENT STATE
+  # ==========================================================
+
+  state:
+
+    compatibility_resolution_started: true
+
+    mandatory_runtime_resolved: false
+
+    python_stack_resolved: false
+
+    ai_stack_resolved: false
+
+    model_stack_resolved: false
+
+    frontend_stack_resolved: false
+
+    browser_stack_resolved: false
+
+    mcp_stack_resolved: false
+
+    data_stack_resolved: false
+
+    platform_stack_resolved: false
+
+    final_lock_ready: false
+
+    status:
+      "COMPATIBILITY_RESOLUTION_IN_PROGRESS"
+
+
+  # ==========================================================
+  # 22. NEXT PHASE
+  # ==========================================================
+
+  next_phase:
+
+    name:
+      "Deep Dependency and Runtime Resolution"
+
+    sequence:
+
+      - "Resolve PyTorch"
+      - "Resolve Python 3.14 compatibility"
+      - "Resolve Transformers"
+      - "Resolve Qwen3 runtime"
+      - "Resolve Qwen3 exact variant"
+      - "Resolve embedding runtime"
+      - "Resolve Whisper runtime"
+      - "Resolve SigLIP 2 runtime"
+      - "Resolve Qdrant"
+      - "Resolve PostgreSQL"
+      - "Resolve Playwright"
+      - "Resolve Chromium revision"
+      - "Resolve React"
+      - "Resolve frontend package manager"
+      - "Resolve MCP SDK"
+      - "Resolve enabled MCP servers"
+      - "Resolve Docker stack"
+      - "Resolve security tooling"
+      - "Run complete dependency graph validation"
+      - "Promote compatible candidates"

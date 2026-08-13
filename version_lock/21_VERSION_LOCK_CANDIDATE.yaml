@@ -1,0 +1,1698 @@
+# ============================================================
+# JARVIS / JAS
+# VERSION LOCK v1 — VERSION LOCK CANDIDATE
+# ============================================================
+
+version_lock_candidate:
+
+  schema_version: "1.0"
+
+  project:
+    name: "JARVIS"
+    architecture: "JAS"
+    architecture_version: "JAS v1"
+
+
+  # ==========================================================
+  # 1. DOCUMENT
+  # ==========================================================
+
+  document:
+
+    id:
+      "JAS-VL-021"
+
+    name:
+      "Version Lock Candidate"
+
+    version:
+      "1.0"
+
+    status:
+      "CANDIDATE_NOT_FINAL"
+
+    authority:
+      - "JAS v1"
+      - "Approved Stack v1.0"
+      - "Version Lock Component Inventory"
+      - "Cross Domain Compatibility Validation"
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 2. CANDIDATE RULE
+  # ==========================================================
+
+  candidate_rule:
+
+    description:
+      >
+      A candidate is a proposed exact implementation identity that
+      has passed initial architectural screening but has not yet
+      passed every final Version Lock gate.
+
+    important:
+
+      candidate_is_not_final:
+        true
+
+      newest_is_not_automatically_selected:
+        true
+
+      exact_identity_required:
+        true
+
+      immutable_identity_preferred:
+        true
+
+
+  # ==========================================================
+  # 3. STATUS DEFINITIONS
+  # ==========================================================
+
+  statuses:
+
+    CANDIDATE:
+      description:
+        "Candidate selected for compatibility validation."
+
+    VALIDATED:
+      description:
+        "Candidate passed technical compatibility validation."
+
+    CONDITIONALLY_VALIDATED:
+      description:
+        "Candidate passes only under a documented deployment condition."
+
+    BLOCKED:
+      description:
+        "Candidate cannot proceed until a dependency or decision is resolved."
+
+    REJECTED:
+      description:
+        "Candidate is explicitly rejected."
+
+    LOCKED:
+      description:
+        "Candidate has been promoted into final Version Lock."
+
+
+  # ==========================================================
+  # 4. PRIMARY PLATFORM
+  # ==========================================================
+
+  platform:
+
+    development:
+
+      os:
+        "Windows"
+
+      architecture:
+        "x86_64"
+
+      status:
+        "CANDIDATE"
+
+
+    primary_runtime:
+
+      os:
+        "Linux"
+
+      architecture:
+        "x86_64"
+
+      status:
+        "CANDIDATE"
+
+
+    secondary_runtime:
+
+      - "Linux arm64"
+      - "macOS arm64"
+
+
+    policy:
+      >
+      Linux x86_64 is the primary production target.
+      Windows x86_64 is the primary development target.
+
+
+  # ==========================================================
+  # 5. CORE RUNTIME
+  # ==========================================================
+
+  runtimes:
+
+    python:
+
+      family:
+        "CPython"
+
+      minimum:
+        "3.12"
+
+      exact_version:
+        null
+
+      status:
+        "BLOCKED"
+
+      blocker:
+        "Exact Python release must be selected after AI/runtime dependency validation."
+
+
+    node:
+
+      selected_line:
+        "24.x LTS"
+
+      exact_version:
+        "24.18.1"
+
+      status:
+        "CANDIDATE"
+
+      source_validation:
+        >
+        Node.js 24.x is an LTS line. Exact patch release must remain
+        synchronized with the official Node.js release state at the
+        final lock timestamp.
+
+      note:
+        >
+        Node.js 24.18.1 is retained as the candidate from the previous
+        resolution pass. It must be revalidated against the final
+        lock timestamp before promotion.
+
+      final_lock:
+        false
+
+
+  # ==========================================================
+  # 6. PYTHON TOOLCHAIN
+  # ==========================================================
+
+  python_toolchain:
+
+    package_manager:
+
+      name:
+        "uv"
+
+      exact_version:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    metadata:
+
+      file:
+        "pyproject.toml"
+
+      status:
+        "REQUIRED"
+
+
+    dependency_lock:
+
+      file:
+        "uv.lock"
+
+      status:
+        "REQUIRED"
+
+
+    resolution_policy:
+
+      >
+      The final Python dependency graph SHALL be generated from
+      pyproject.toml and captured in uv.lock.
+
+    promotion_requirement:
+
+      - "Exact Python version"
+      - "Exact uv version"
+      - "Complete uv.lock"
+      - "Successful clean installation"
+      - "Test suite pass"
+
+
+  # ==========================================================
+  # 7. BACKEND
+  # ==========================================================
+
+  backend:
+
+    fastapi:
+
+      exact_version:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    pydantic:
+
+      exact_version:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    langgraph:
+
+      exact_version:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    compatibility:
+
+      python_fastapi:
+        "PENDING"
+
+      fastapi_pydantic:
+        "PENDING"
+
+      python_langgraph:
+        "PENDING"
+
+      langgraph_dependencies:
+        "PENDING"
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 8. DATA
+  # ==========================================================
+
+  data:
+
+    postgresql:
+
+      major_line:
+        "18"
+
+      candidate_version:
+        "18.4"
+
+      status:
+        "CANDIDATE"
+
+      deployment:
+
+        containerized:
+          true
+
+        image:
+          null
+
+        digest:
+          null
+
+
+    qdrant:
+
+      candidate_version:
+        "1.18.2"
+
+      status:
+        "CANDIDATE"
+
+      deployment:
+
+        containerized:
+          true
+
+        image:
+          null
+
+        digest:
+          null
+
+
+    redis:
+
+      enabled:
+        false
+
+      exact_version:
+        null
+
+      status:
+        "PROFILE_DEPENDENT"
+
+
+    sqlite:
+
+      enabled:
+        false
+
+      exact_version:
+        null
+
+      status:
+        "PROFILE_DEPENDENT"
+
+
+    object_storage:
+
+      enabled:
+        false
+
+      implementation:
+        null
+
+      status:
+        "PROFILE_DEPENDENT"
+
+
+  # ==========================================================
+  # 9. BROWSER
+  # ==========================================================
+
+  browser:
+
+    playwright:
+
+      candidate_version:
+        "1.61.0"
+
+      status:
+        "CANDIDATE"
+
+
+    chromium:
+
+      framework:
+        "Playwright"
+
+      exact_revision:
+        null
+
+      browser_build:
+        null
+
+      artifact_identity:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    firefox:
+
+      enabled:
+        false
+
+      revision:
+        null
+
+      status:
+        "PROFILE_DEPENDENT"
+
+
+    webkit:
+
+      enabled:
+        false
+
+      revision:
+        null
+
+      status:
+        "PROFILE_DEPENDENT"
+
+
+    promotion_requirement:
+
+      - "Playwright exact package version"
+      - "Browser revision"
+      - "Browser artifact identity"
+      - "Platform"
+      - "Clean installation validation"
+
+
+  # ==========================================================
+  # 10. FRONTEND
+  # ==========================================================
+
+  frontend:
+
+    package_manager:
+
+      name:
+        "pnpm"
+
+      version:
+        "11.17.0"
+
+      status:
+        "CANDIDATE"
+
+
+    node:
+
+      version:
+        "24.18.1"
+
+      status:
+        "CANDIDATE"
+
+
+    typescript:
+
+      version:
+        "7.0.2"
+
+      status:
+        "CANDIDATE"
+
+
+    react:
+
+      version:
+        "19.2.8"
+
+      status:
+        "CANDIDATE"
+
+
+    react_dom:
+
+      version:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    vite:
+
+      version:
+        "8.1.5"
+
+      status:
+        "CANDIDATE"
+
+
+    lockfile:
+
+      file:
+        "pnpm-lock.yaml"
+
+      required:
+        true
+
+
+    promotion_requirement:
+
+      - "React / react-dom version alignment"
+      - "Node compatibility"
+      - "TypeScript compatibility"
+      - "Vite compatibility"
+      - "Frozen pnpm installation"
+      - "Production build success"
+
+
+  # ==========================================================
+  # 11. AI MODEL
+  # ==========================================================
+
+  ai:
+
+    primary_llm:
+
+      family:
+        "Qwen3"
+
+      status:
+        "CANDIDATE_FAMILY_ONLY"
+
+
+      exact_variant:
+        null
+
+      exact_model_id:
+        null
+
+      revision:
+        null
+
+      artifact_digest:
+        null
+
+      quantization:
+        null
+
+      runtime:
+        null
+
+      license:
+        "Apache-2.0 on approved referenced checkpoints"
+
+
+      IMPORTANT:
+
+        >
+        Qwen3 remains the approved JAS model family.
+
+        The existence of newer Qwen families does not automatically
+        authorize replacing Qwen3.
+
+        Any change from Qwen3 to another model family requires a new
+        architectural/model approval and a new compatibility pass.
+
+
+    embedding:
+
+      model:
+        "BAAI/bge-m3"
+
+      revision:
+        null
+
+      digest:
+        null
+
+      runtime:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    reranker:
+
+      model:
+        "BAAI/bge-reranker-v2-m3"
+
+      revision:
+        null
+
+      digest:
+        null
+
+      runtime:
+        null
+
+      status:
+        "BLOCKED"
+
+
+  # ==========================================================
+  # 12. AI RUNTIME
+  # ==========================================================
+
+  ai_runtime:
+
+    transformers:
+
+      version:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    pytorch:
+
+      version:
+        null
+
+      build:
+        null
+
+      cuda_build:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    cuda:
+
+      toolkit_version:
+        null
+
+      driver_minimum:
+        null
+
+      architecture:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    nvidia_container_toolkit:
+
+      version:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    hardware_profile:
+
+      gpu_vendor:
+        "NVIDIA"
+
+      gpu_model:
+        null
+
+      architecture:
+        null
+
+      vram_gb:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    chain:
+
+      qwen3:
+        "BLOCKED"
+
+      transformers:
+        "BLOCKED"
+
+      pytorch:
+        "BLOCKED"
+
+      cuda:
+        "BLOCKED"
+
+      driver:
+        "BLOCKED"
+
+      gpu:
+        "BLOCKED"
+
+      container:
+        "BLOCKED"
+
+
+  # ==========================================================
+  # 13. VOICE
+  # ==========================================================
+
+  voice:
+
+    stt:
+
+      model_family:
+        "OpenAI Whisper"
+
+      exact_model:
+        null
+
+      revision:
+        null
+
+      digest:
+        null
+
+      runtime:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    vad:
+
+      approved_family:
+        "Silero VAD / approved VAD implementation"
+
+      exact_version:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    tts:
+
+      engine:
+        "Piper"
+
+      enabled:
+        false
+
+      exact_engine_version:
+        null
+
+      voice_model:
+        null
+
+      voice_revision:
+        null
+
+      status:
+        "PROFILE_DEPENDENT"
+
+      license_review:
+        "REQUIRED_IF_ENABLED"
+
+
+  # ==========================================================
+  # 14. VISION
+  # ==========================================================
+
+  vision:
+
+    opencv:
+
+      version:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    transformers:
+
+      version:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    siglip2:
+
+      model:
+        "SigLIP 2"
+
+      exact_variant:
+        null
+
+      revision:
+        null
+
+      digest:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    onnx_runtime:
+
+      enabled:
+        false
+
+      version:
+        null
+
+      status:
+        "PROFILE_DEPENDENT"
+
+
+    ocr:
+
+      paddleocr:
+        enabled:
+          false
+
+        version:
+          null
+
+        status:
+          "PROFILE_DEPENDENT"
+
+
+      tesseract:
+        enabled:
+          false
+
+        version:
+          null
+
+        status:
+          "PROFILE_DEPENDENT"
+
+
+  # ==========================================================
+  # 15. MCP
+  # ==========================================================
+
+  mcp:
+
+    protocol:
+
+      version:
+        "2026-07-28"
+
+      status:
+        "CANDIDATE"
+
+
+    sdk:
+
+      family:
+        "MCP Python SDK"
+
+      exact_version:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    client:
+
+      implementation:
+        "JAS MCP Client"
+
+      version:
+        "JAS release controlled"
+
+      status:
+        "INTERNAL"
+
+
+    transports:
+
+      stdio:
+        "APPROVED"
+
+      streamable_http:
+        "APPROVED"
+
+      sse:
+        "LEGACY"
+
+
+    servers:
+
+      time:
+        version:
+          null
+
+        revision:
+          null
+
+        digest:
+          null
+
+        status:
+          "BLOCKED"
+
+
+      filesystem:
+        version:
+          null
+
+        revision:
+          null
+
+        digest:
+          null
+
+        permission_profile:
+          "Restricted roots / least privilege / sandbox"
+
+        status:
+          "BLOCKED"
+
+
+      git:
+        version:
+          null
+
+        revision:
+          null
+
+        digest:
+          null
+
+        status:
+          "BLOCKED"
+
+
+      fetch:
+        version:
+          null
+
+        revision:
+          null
+
+        digest:
+          null
+
+        status:
+          "BLOCKED"
+
+
+      memory:
+        version:
+          null
+
+        revision:
+          null
+
+        digest:
+          null
+
+        status:
+          "BLOCKED"
+
+
+      browser:
+        enabled:
+          false
+
+        status:
+          "PROFILE_DEPENDENT"
+
+
+      database:
+        enabled:
+          false
+
+        status:
+          "PROFILE_DEPENDENT"
+
+
+      docker:
+        enabled:
+          false
+
+        status:
+          "HIGH_RISK_PROFILE"
+
+
+      github:
+        enabled:
+          false
+
+        status:
+          "PROFILE_DEPENDENT"
+
+
+  # ==========================================================
+  # 16. CONTAINERS
+  # ==========================================================
+
+  containers:
+
+    docker:
+
+      engine_version:
+        "29.6.2"
+
+      status:
+        "CANDIDATE"
+
+
+    buildkit:
+
+      version:
+        "0.31.1"
+
+      status:
+        "CANDIDATE"
+
+
+    buildx:
+
+      version:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    compose:
+
+      version:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    base_images:
+
+      python:
+        image:
+          null
+
+        tag:
+          null
+
+        digest:
+          null
+
+        status:
+          "BLOCKED"
+
+
+      node:
+        image:
+          null
+
+        tag:
+          null
+
+        digest:
+          null
+
+        status:
+          "BLOCKED"
+
+
+      gpu:
+        enabled:
+          false
+
+        image:
+          null
+
+        tag:
+          null
+
+        digest:
+          null
+
+        status:
+          "PROFILE_DEPENDENT"
+
+
+    artifact:
+
+      format:
+        "OCI"
+
+      image:
+        null
+
+      tag:
+        null
+
+      digest:
+        null
+
+      architecture:
+        "linux/amd64"
+
+      status:
+        "BLOCKED"
+
+
+  # ==========================================================
+  # 17. NATIVE TOOLCHAIN
+  # ==========================================================
+
+  native:
+
+    cpp:
+
+      required:
+        "CONDITIONAL"
+
+      compiler:
+        null
+
+      version:
+        null
+
+      target:
+        null
+
+      status:
+        "PENDING"
+
+
+    rust:
+
+      required:
+        "CONDITIONAL"
+
+      version:
+        null
+
+      cargo_version:
+        null
+
+      target:
+        null
+
+      status:
+        "PENDING"
+
+
+    cmake:
+
+      required:
+        "CONDITIONAL"
+
+      version:
+        null
+
+      status:
+        "PENDING"
+
+
+    ninja:
+
+      required:
+        "CONDITIONAL"
+
+      version:
+        null
+
+      status:
+        "PENDING"
+
+
+    policy:
+      >
+      Native components SHALL NOT be promoted into final Version Lock
+      unless a concrete JAS dependency requires them.
+
+
+  # ==========================================================
+  # 18. OBSERVABILITY
+  # ==========================================================
+
+  observability:
+
+    opentelemetry:
+
+      sdk_version:
+        null
+
+      api_version:
+        null
+
+      collector_version:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    logging:
+
+      implementation:
+        "Structured Application Logging"
+
+      status:
+        "ARCHITECTURAL_REFERENCE"
+
+
+    metrics:
+
+      implementation:
+        "OpenTelemetry Metrics"
+
+      status:
+        "ARCHITECTURAL_REFERENCE"
+
+
+    traces:
+
+      implementation:
+        "OpenTelemetry Traces"
+
+      status:
+        "ARCHITECTURAL_REFERENCE"
+
+
+  # ==========================================================
+  # 19. TESTING
+  # ==========================================================
+
+  testing:
+
+    pytest:
+
+      version:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    playwright_test:
+
+      version:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    ruff:
+
+      version:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    contract_testing:
+
+      enabled:
+        true
+
+      implementation:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    dependency_scanner:
+
+      implementation:
+        null
+
+      version:
+        null
+
+      status:
+        "BLOCKED"
+
+
+  # ==========================================================
+  # 20. SECURITY
+  # ==========================================================
+
+  security:
+
+    authorization:
+
+      implementation:
+        "JAS Internal Authorization / Policy Engine"
+
+      status:
+        "INTERNAL"
+
+
+    audit:
+
+      implementation:
+        "JAS Internal Audit System"
+
+      status:
+        "INTERNAL"
+
+
+    secret_management:
+
+      implementation:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    sandbox:
+
+      implementation:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    dependency_scanning:
+
+      implementation:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    default_policy:
+
+      filesystem:
+        "DENY"
+
+      network:
+        "DENY_WHERE_NOT_REQUIRED"
+
+      process_execution:
+        "DENY"
+
+      admin:
+        "DENY"
+
+      secrets:
+        "DENY"
+
+
+  # ==========================================================
+  # 21. SUPPLY CHAIN
+  # ==========================================================
+
+  supply_chain:
+
+    sbom:
+
+      format:
+        "CycloneDX"
+
+      tool:
+        null
+
+      version:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    provenance:
+
+      standard_direction:
+        "SLSA-aligned / OCI attestation"
+
+      implementation:
+        null
+
+      version:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    signing:
+
+      tool:
+        "Cosign"
+
+      version:
+        null
+
+      signing_identity:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    artifact_integrity:
+
+      container_digest:
+        null
+
+      model_digest:
+        null
+
+      frontend_integrity:
+        null
+
+      status:
+        "BLOCKED"
+
+
+  # ==========================================================
+  # 22. RELEASE
+  # ==========================================================
+
+  release:
+
+    source_revision:
+      null
+
+    release_version:
+      "JAS v1"
+
+    build_metadata:
+      null
+
+    container_digest:
+      null
+
+    sbom:
+      "REQUIRED"
+
+    provenance:
+      "REQUIRED"
+
+    signature:
+      "REQUIRED"
+
+    rollback_reference:
+      null
+
+    status:
+      "BLOCKED"
+
+
+  # ==========================================================
+  # 23. CANDIDATE SUMMARY
+  # ==========================================================
+
+  candidate_summary:
+
+    confirmed_candidate:
+
+      - "Node.js 24.18.1"
+      - "pnpm 11.17.0"
+      - "TypeScript 7.0.2"
+      - "React 19.2.8"
+      - "Vite 8.1.5"
+      - "Playwright 1.61.0"
+      - "PostgreSQL 18.4"
+      - "Qdrant 1.18.2"
+      - "Docker Engine 29.6.2"
+      - "BuildKit 0.31.1"
+      - "OCI"
+      - "CycloneDX"
+      - "Cosign"
+
+
+    architectural_candidate:
+
+      - "Qwen3 family"
+      - "MCP protocol 2026-07-28"
+      - "pnpm"
+      - "Linux x86_64 production"
+      - "Windows x86_64 development"
+
+
+    unresolved:
+
+      - "Python exact version"
+      - "uv exact version"
+      - "FastAPI"
+      - "Pydantic"
+      - "LangGraph"
+      - "Qwen3 exact variant"
+      - "Qwen3 revision"
+      - "Qwen3 digest"
+      - "Qwen3 runtime"
+      - "PyTorch"
+      - "CUDA"
+      - "NVIDIA Driver"
+      - "GPU profile"
+      - "Transformers"
+      - "Embedding runtime"
+      - "Reranker runtime"
+      - "Whisper"
+      - "Silero VAD"
+      - "OpenCV"
+      - "Chromium revision"
+      - "React DOM"
+      - "MCP SDK"
+      - "MCP server identities"
+      - "Buildx"
+      - "Compose"
+      - "Base image digests"
+      - "Native toolchains"
+      - "OpenTelemetry"
+      - "pytest"
+      - "Ruff"
+      - "Dependency scanner"
+      - "Secret management"
+      - "Sandbox"
+      - "SBOM tooling"
+      - "Provenance tooling"
+      - "Cosign version"
+
+
+  # ==========================================================
+  # 24. HARD BLOCKERS
+  # ==========================================================
+
+  blockers:
+
+    - id: "CANDIDATE-BLOCK-001"
+      area: "Python"
+      reason:
+        "Exact runtime and dependency graph unresolved."
+
+    - id: "CANDIDATE-BLOCK-002"
+      area: "AI"
+      reason:
+        "Hardware + PyTorch + CUDA + Qwen3 chain unresolved."
+
+    - id: "CANDIDATE-BLOCK-003"
+      area: "Browser"
+      reason:
+        "Chromium immutable revision unresolved."
+
+    - id: "CANDIDATE-BLOCK-004"
+      area: "Frontend"
+      reason:
+        "react-dom exact companion version unresolved."
+
+    - id: "CANDIDATE-BLOCK-005"
+      area: "MCP"
+      reason:
+        "Exact SDK and server identities unresolved."
+
+    - id: "CANDIDATE-BLOCK-006"
+      area: "Container"
+      reason:
+        "Buildx, Compose and base-image digests unresolved."
+
+    - id: "CANDIDATE-BLOCK-007"
+      area: "Security"
+      reason:
+        "Secret management, sandbox and dependency scanner unresolved."
+
+    - id: "CANDIDATE-BLOCK-008"
+      area: "Supply Chain"
+      reason:
+        "SBOM/provenance/signing exact implementations unresolved."
+
+
+  # ==========================================================
+  # 25. PROMOTION RULE
+  # ==========================================================
+
+  promotion:
+
+    candidate_to_validated:
+
+      requires:
+
+        - "Exact version"
+        - "Compatibility test"
+        - "Security test"
+        - "License validation"
+
+
+    validated_to_locked:
+
+      requires:
+
+        - "Immutable identity"
+        - "Artifact digest"
+        - "Reproducible installation"
+        - "Source revision"
+        - "SBOM"
+        - "Provenance"
+        - "Signature"
+        - "Rollback path"
+
+
+  # ==========================================================
+  # 26. CURRENT STATE
+  # ==========================================================
+
+  state:
+
+    candidate_created:
+      true
+
+    candidate_complete:
+      false
+
+    cross_domain_validation_complete:
+      false
+
+    security_validation_complete:
+      false
+
+    license_validation_complete:
+      false
+
+    artifact_validation_complete:
+      false
+
+    production_ready:
+      false
+
+    final_version_lock:
+      false
+
+    status:
+      "VERSION_LOCK_CANDIDATE_INCOMPLETE"
+
+
+  # ==========================================================
+  # 27. NEXT PHASE
+  # ==========================================================
+
+  next_phase:
+
+    name:
+      "Candidate Resolution and Evidence Collection"
+
+    next_document:
+      "22_CANDIDATE_EVIDENCE_AND_EXACT_VERSION_RESOLUTION.yaml"
+
+    sequence:
+
+      - "Resolve exact Python release"
+      - "Resolve uv"
+      - "Resolve FastAPI"
+      - "Resolve Pydantic"
+      - "Resolve LangGraph"
+      - "Resolve exact Qwen3 variant"
+      - "Resolve model revision and digest"
+      - "Resolve PyTorch"
+      - "Resolve CUDA"
+      - "Resolve NVIDIA driver requirement"
+      - "Resolve GPU profile"
+      - "Resolve Transformers"
+      - "Resolve embedding runtime"
+      - "Resolve reranker runtime"
+      - "Resolve Whisper"
+      - "Resolve OpenCV"
+      - "Resolve Chromium revision"
+      - "Resolve React DOM"
+      - "Resolve MCP SDK"
+      - "Resolve MCP server identities"
+      - "Resolve Buildx"
+      - "Resolve Compose"
+      - "Resolve base image digests"
+      - "Resolve OpenTelemetry"
+      - "Resolve pytest"
+      - "Resolve Ruff"
+      - "Resolve dependency scanner"
+      - "Resolve secret management"
+      - "Resolve sandbox"
+      - "Resolve SBOM tooling"
+      - "Resolve provenance tooling"
+      - "Resolve Cosign"
+      - "Collect authoritative evidence"
+      - "Re-run cross-domain validation"
+      - "Promote validated candidates toward final lock"

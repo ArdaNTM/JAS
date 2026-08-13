@@ -1,0 +1,1214 @@
+# ============================================================
+# JARVIS / JAS
+# VERSION LOCK v1 — DEPENDENCY LOCK POLICY
+# ============================================================
+
+version_lock_dependency_policy:
+
+  schema_version: "1.0"
+
+  project:
+    name: "JARVIS"
+    architecture: "JAS"
+    architecture_version: "JAS v1"
+
+  lock:
+    version: "1.0"
+    status: "CANDIDATE"
+    authority: "VERSION_LOCK_v1"
+
+
+  # ==========================================================
+  # IMPORTANT
+  # ==========================================================
+  #
+  # This document defines the governance rules for dependency
+  # resolution and locking.
+  #
+  # It does NOT itself select the final version of every
+  # dependency.
+  #
+  # Exact versions are resolved through the Version Lock
+  # resolution process and recorded in the corresponding lock
+  # files and component lock documents.
+  #
+  # ==========================================================
+
+
+  # ==========================================================
+  # 1. CORE PRINCIPLE
+  # ==========================================================
+
+  principle:
+
+    production_dependencies:
+
+      exact_version_required: true
+
+      deterministic_resolution_required: true
+
+      transitive_dependencies_locked: true
+
+      integrity_verification_required: true
+
+      source_provenance_required: true
+
+    rule:
+      >
+      A dependency SHALL NOT be considered production-locked
+      merely because its direct package version is specified.
+      The complete resolved dependency graph must also be
+      deterministic and reproducible.
+
+
+  # ==========================================================
+  # 2. DEPENDENCY CLASSES
+  # ==========================================================
+
+  dependency_classes:
+
+    direct:
+
+      description:
+        >
+        Dependency explicitly declared by a JAS project component.
+
+      lock_required: true
+
+      version_required: true
+
+      integrity_required: true
+
+
+    transitive:
+
+      description:
+        >
+        Dependency introduced by another dependency.
+
+      lock_required: true
+
+      version_required: true
+
+      integrity_required: true
+
+      direct_override_allowed: false
+
+
+    development:
+
+      description:
+        >
+        Dependency required only for development, testing,
+        formatting, linting or local tooling.
+
+      lock_required: true
+
+      production_runtime_inclusion: false
+
+
+    optional:
+
+      description:
+        >
+        Dependency required only when an optional capability is
+        enabled.
+
+      lock_required: "IF_ENABLED"
+
+      production_inclusion:
+        >
+        Optional dependencies SHALL NOT be included in the
+        production baseline unless the corresponding capability
+        profile explicitly enables them.
+
+
+    platform_specific:
+
+      description:
+        >
+        Dependency required only on a particular operating system,
+        architecture or hardware profile.
+
+      lock_required: true
+
+      platform_condition_required: true
+
+
+    native:
+
+      description:
+        >
+        Dependency containing native code, compiled extensions or
+        platform-specific binaries.
+
+      lock_required: true
+
+      compiler_compatibility_required: true
+
+      platform_artifact_required: true
+
+
+  # ==========================================================
+  # 3. PYTHON DEPENDENCY RESOLUTION
+  # ==========================================================
+
+  python:
+
+    package_manager:
+      name: "uv"
+      approved: true
+
+    project_definition:
+
+      canonical_file: "pyproject.toml"
+
+      required: true
+
+    lockfile:
+
+      canonical_file: "uv.lock"
+
+      required: true
+
+      authoritative: true
+
+      committed_to_source_control: true
+
+    resolution:
+
+      deterministic: true
+
+      resolver: "uv"
+
+      resolution_from:
+
+        - "pyproject.toml"
+        - "Python version"
+        - "platform"
+        - "architecture"
+        - "dependency constraints"
+
+      resolution_output:
+        - "uv.lock"
+
+    production_installation:
+
+      lockfile_required: true
+
+      unlocked_resolution_allowed: false
+
+      upgrade_during_installation: false
+
+    integrity:
+
+      package_hashes_required: true
+
+      artifact_verification_required: true
+
+      source_verification_required: true
+
+    environment:
+
+      isolated: true
+
+      virtual_environment_required: true
+
+      global_packages_allowed: false
+
+
+  # ==========================================================
+  # 4. PYTHON VERSION SPECIFIER POLICY
+  # ==========================================================
+
+  python_version_policy:
+
+    development:
+
+      broad_constraints_allowed: true
+
+      examples:
+
+        - ">=3.12,<3.14"
+
+    production:
+
+      exact_runtime_required: true
+
+      exact_dependency_resolution_required: true
+
+    rule:
+      >
+      A broad Python compatibility declaration may exist in project
+      metadata, but the production Version Lock SHALL identify one
+      exact Python runtime.
+
+
+  # ==========================================================
+  # 5. VERSION SPECIFIER POLICY
+  # ==========================================================
+
+  version_specifiers:
+
+    allowed_in_project_metadata:
+
+      - ">= lower bound"
+      - "< upper bound"
+      - "compatible release constraints"
+      - "environment markers"
+      - "platform markers"
+
+    production_lock:
+
+      exact_version_required: true
+
+      floating_versions_allowed: false
+
+      latest_allowed: false
+
+      wildcard_versions_allowed: false
+
+    prohibited:
+
+      - "*"
+      - "latest"
+      - "main"
+      - "master"
+      - "unbounded dependency"
+      - "unreviewed floating range"
+
+
+  # ==========================================================
+  # 6. TRANSITIVE DEPENDENCY POLICY
+  # ==========================================================
+
+  transitive_dependencies:
+
+    lock_required: true
+
+    visibility_required: true
+
+    dependency_graph_required: true
+
+    integrity_required: true
+
+    version_pinning:
+
+      required: true
+
+    hidden_dependencies:
+
+      allowed: false
+
+    undeclared_runtime_dependency:
+
+      action: "COMPLIANCE_FAILURE"
+
+    transitive_upgrade:
+
+      automatic: false
+
+      review_required: true
+
+
+  # ==========================================================
+  # 7. DEPENDENCY GRAPH
+  # ==========================================================
+
+  dependency_graph:
+
+    required: true
+
+    graph_identity:
+
+      source:
+
+        - "pyproject.toml"
+        - "uv.lock"
+        - "frontend lockfile"
+        - "native lockfiles"
+        - "container manifests"
+
+      source_revision_required: true
+
+    node_identity:
+
+      required:
+
+        - "package_name"
+        - "version"
+        - "source"
+        - "integrity"
+
+    edge_identity:
+
+      required:
+
+        - "parent"
+        - "child"
+        - "dependency_scope"
+
+    graph_hash:
+
+      required: true
+
+      algorithm: "SHA-256"
+
+      value: null
+
+
+  # ==========================================================
+  # 8. PACKAGE SOURCE POLICY
+  # ==========================================================
+
+  package_sources:
+
+    approved_sources:
+
+      python:
+
+        - "Official Python Package Index"
+        - "Approved private package registry"
+        - "JAS-controlled artifact repository"
+
+      javascript:
+
+        - "Approved npm-compatible registry"
+        - "JAS-controlled artifact repository"
+
+      rust:
+
+        - "Approved Cargo registry"
+        - "JAS-controlled artifact repository"
+
+      native:
+
+        - "Official upstream release"
+        - "Approved artifact repository"
+
+    unknown_sources:
+
+      allowed: false
+
+    arbitrary_urls:
+
+      production:
+        allowed: false
+
+    direct_git_dependencies:
+
+      default: "PROHIBITED"
+
+      exception:
+        allowed: true
+
+        requirements:
+
+          - "Explicit architectural approval"
+          - "Immutable commit"
+          - "Repository identity"
+          - "Source provenance"
+          - "Integrity verification"
+          - "License verification"
+
+
+  # ==========================================================
+  # 9. GIT DEPENDENCY POLICY
+  # ==========================================================
+
+  git_dependencies:
+
+    allowed: false
+
+    exceptions:
+
+      allowed: true
+
+      required_identity:
+
+        - "repository"
+        - "owner"
+        - "commit_sha"
+        - "source_revision"
+
+      mutable_reference:
+
+        - "main"
+        - "master"
+        - "develop"
+        - "branch"
+        - "floating tag"
+
+      allowed_mutable_reference: false
+
+    release_rule:
+      >
+      A Git-based dependency SHALL be resolved to an immutable
+      commit before it can enter a production Version Lock.
+
+
+  # ==========================================================
+  # 10. LOCAL PATH DEPENDENCIES
+  # ==========================================================
+
+  local_dependencies:
+
+    production:
+
+      allowed: true
+
+      conditions:
+
+        - "Dependency belongs to JAS source tree"
+        - "Source revision is part of release identity"
+        - "Build is reproducible"
+
+    external_local_paths:
+
+      allowed: false
+
+    absolute_paths:
+
+      allowed: false
+
+    machine_specific_paths:
+
+      allowed: false
+
+
+  # ==========================================================
+  # 11. NATIVE DEPENDENCIES
+  # ==========================================================
+
+  native_dependencies:
+
+    lock_required: true
+
+    required_identity:
+
+      - "name"
+      - "version"
+      - "source"
+      - "platform"
+      - "architecture"
+      - "compiler"
+      - "compiler_version"
+      - "ABI"
+      - "artifact_digest"
+
+    binary_artifacts:
+
+      digest_required: true
+
+    source_build:
+
+      compiler_lock_required: true
+
+      build_flags_required: true
+
+      target_required: true
+
+    ABI:
+
+      compatibility_validation_required: true
+
+      drift_action: "COMPLIANCE_FAILURE"
+
+
+  # ==========================================================
+  # 12. PLATFORM-SPECIFIC DEPENDENCIES
+  # ==========================================================
+
+  platform_dependencies:
+
+    windows:
+
+      lock_required: true
+
+      target:
+        os: "Windows"
+        architecture: null
+
+      dependencies: []
+
+
+    linux:
+
+      lock_required: true
+
+      target:
+        os: "Linux"
+        architecture: null
+
+      dependencies: []
+
+
+    macos:
+
+      lock_required: true
+
+      target:
+        os: "macOS"
+        architecture: null
+
+      dependencies: []
+
+
+    platform_selection:
+
+      rule:
+        >
+        A dependency SHALL only be installed when its platform
+        marker matches the active Version Lock hardware/software
+        profile.
+
+
+  # ==========================================================
+  # 13. FRONTEND DEPENDENCY RESOLUTION
+  # ==========================================================
+
+  frontend:
+
+    package_manager:
+
+      selected: null
+
+      selection_required: true
+
+      alternatives:
+
+        - "pnpm"
+        - "npm"
+
+    lockfile:
+
+      required: true
+
+      exact_file: null
+
+      committed: true
+
+    deterministic_resolution:
+
+      required: true
+
+    package_integrity:
+
+      required: true
+
+    production_installation:
+
+      frozen_lockfile: true
+
+      dependency_update_during_build: false
+
+    node_modules:
+
+      committed_to_git: false
+
+      generated_from_lockfile: true
+
+      reproducibility_required: true
+
+
+  # ==========================================================
+  # 14. CONTAINER DEPENDENCIES
+  # ==========================================================
+
+  containers:
+
+    base_images:
+
+      digest_required: true
+
+      mutable_tags:
+
+        production: false
+
+    OS_packages:
+
+      version_lock_required: true
+
+      repository_required: true
+
+      repository_snapshot_preferred: true
+
+      integrity_verification: true
+
+    application_dependencies:
+
+      must_match:
+        - "Version Lock"
+        - "uv.lock"
+        - "frontend lockfile"
+
+    dependency_installation:
+
+      network_resolution_at_release_build:
+
+        allowed: true
+
+        condition:
+          >
+          Every resolved dependency must be recorded and
+          reproducible from the resulting lock state.
+
+      runtime_installation:
+
+        allowed: false
+
+
+  # ==========================================================
+  # 15. OPTIONAL DEPENDENCY POLICY
+  # ==========================================================
+
+  optional_dependencies:
+
+    profiles:
+
+      core:
+
+        enabled: true
+
+      browser:
+
+        enabled: true
+
+      voice:
+
+        enabled: true
+
+      vision:
+
+        enabled: true
+
+      gpu:
+
+        enabled: false
+
+      mcp:
+
+        enabled: true
+
+      cloud:
+
+        enabled: false
+
+    rule:
+      >
+      Optional dependencies SHALL be resolved independently for
+      each enabled capability profile.
+
+    disabled_profile:
+
+      dependencies_installed: false
+
+      dependencies_locked:
+        >
+        They may remain represented as candidate entries but SHALL
+        NOT be treated as active production dependencies.
+
+
+  # ==========================================================
+  # 16. DEPENDENCY OVERRIDES
+  # ==========================================================
+
+  overrides:
+
+    allowed: true
+
+    requirements:
+
+      - "Security justification"
+      - "Compatibility justification"
+      - "Documented reason"
+      - "Test validation"
+      - "Version Lock review"
+
+    undocumented_override:
+
+      action: "COMPLIANCE_FAILURE"
+
+    override_record:
+
+      package: null
+
+      original_version: null
+
+      overridden_version: null
+
+      reason: null
+
+      approved_by: null
+
+      approval_revision: null
+
+
+  # ==========================================================
+  # 17. SECURITY VULNERABILITY POLICY
+  # ==========================================================
+
+  security:
+
+    continuous_monitoring:
+
+      required: true
+
+    vulnerability_sources:
+
+      - "CVE"
+      - "OSV"
+      - "Vendor security advisories"
+      - "Package registry advisories"
+      - "JAS security review"
+
+    severity_policy:
+
+      critical:
+
+        production:
+          action: "BLOCK"
+
+      high:
+
+        production:
+          action: "REVIEW_REQUIRED"
+
+      medium:
+
+        production:
+          action: "TRACK"
+
+      low:
+
+        production:
+          action: "TRACK"
+
+    known_vulnerable_dependency:
+
+      critical:
+        lock_allowed: false
+
+      high:
+        lock_allowed: "EXPLICIT_SECURITY_REVIEW"
+
+    security_exception:
+
+      allowed: true
+
+      required_fields:
+
+        - "dependency"
+        - "vulnerability"
+        - "reason"
+        - "mitigation"
+        - "expiration"
+        - "approval"
+
+
+  # ==========================================================
+  # 18. LICENSE VALIDATION
+  # ==========================================================
+
+  licensing:
+
+    required: true
+
+    every_dependency:
+
+      license_identity_required: true
+
+      license_source_required: true
+
+    prohibited_without_review:
+
+      - "Unknown license"
+      - "Unclear redistribution rights"
+      - "License incompatible with JAS distribution model"
+
+    copyleft:
+
+      review_required: true
+
+    model_and_voice_assets:
+
+      separate_license_review: true
+
+    license_snapshot:
+
+      generated: true
+
+      revision: null
+
+      digest: null
+
+
+  # ==========================================================
+  # 19. DEPENDENCY INTEGRITY
+  # ==========================================================
+
+  integrity:
+
+    preferred_algorithm:
+
+      primary: "SHA-256"
+
+    package_artifact:
+
+      hash_required: true
+
+    lockfile:
+
+      digest_required: true
+
+    source_revision:
+
+      required: true
+
+    verification:
+
+      before_installation: true
+
+      after_installation: true
+
+      before_release: true
+
+    mismatch:
+
+      action: "INSTALLATION_AND_RELEASE_BLOCK"
+
+
+  # ==========================================================
+  # 20. LOCKFILE GOVERNANCE
+  # ==========================================================
+
+  lockfiles:
+
+    python:
+
+      file: "uv.lock"
+
+      authoritative: true
+
+      committed: true
+
+      manually_edited: false
+
+    rust:
+
+      file: "Cargo.lock"
+
+      authoritative: true
+
+      committed: true
+
+      manually_edited: false
+
+      required_when_application: true
+
+    frontend:
+
+      file: null
+
+      authoritative: true
+
+      committed: true
+
+      manually_edited: false
+
+      selection_pending: true
+
+    lockfile_change:
+
+      requires_review: true
+
+      requires_tests: true
+
+      requires_diff_analysis: true
+
+      requires_security_scan: true
+
+
+  # ==========================================================
+  # 21. DEPENDENCY UPDATE POLICY
+  # ==========================================================
+
+  updates:
+
+    automatic_production_updates:
+
+      allowed: false
+
+    automatic_lockfile_regeneration:
+
+      production: false
+
+    update_classes:
+
+      patch:
+
+        review_required: true
+
+        testing_required: true
+
+      minor:
+
+        architectural_review: true
+
+        testing_required: true
+
+      major:
+
+        architectural_review: true
+
+        compatibility_review: true
+
+        migration_plan_required: true
+
+    security_update:
+
+      expedited_path: true
+
+      normal_approval_bypass: false
+
+      emergency_approval:
+        allowed: true
+
+
+  # ==========================================================
+  # 22. DEPENDENCY ROLLBACK
+  # ==========================================================
+
+  rollback:
+
+    required: true
+
+    rollback_identity:
+
+      required:
+
+        - "Previous lockfile"
+        - "Previous dependency graph"
+        - "Previous artifact digests"
+        - "Previous Version Lock revision"
+
+    rollback_operation:
+
+      deterministic: true
+
+      network_resolution_required: false
+
+    historical_locks:
+
+      retain: true
+
+      deletion_allowed: false
+
+
+  # ==========================================================
+  # 23. DEPENDENCY DRIFT
+  # ==========================================================
+
+  drift_detection:
+
+    required: true
+
+    detect:
+
+      - "Direct dependency version drift"
+      - "Transitive dependency version drift"
+      - "Lockfile drift"
+      - "Package hash drift"
+      - "Source repository drift"
+      - "Git commit drift"
+      - "Platform dependency drift"
+      - "Native ABI drift"
+      - "Container OS package drift"
+
+    unauthorized_drift:
+
+      action: "COMPLIANCE_FAILURE"
+
+    runtime_detection:
+
+      required: true
+
+      startup_validation: true
+
+
+  # ==========================================================
+  # 24. REPRODUCIBILITY TEST
+  # ==========================================================
+
+  reproducibility:
+
+    required: true
+
+    clean_environment_test:
+
+      required: true
+
+      procedure:
+
+        - "Create clean environment"
+        - "Install exact locked runtime"
+        - "Restore lockfiles"
+        - "Resolve dependencies from lock state"
+        - "Verify package integrity"
+        - "Build application"
+        - "Run test suite"
+        - "Compare dependency graph"
+        - "Compare artifact identity"
+
+    expected_result:
+
+      dependency_graph_identical: true
+
+      artifact_identity_identical: true
+
+      test_results_consistent: true
+
+
+  # ==========================================================
+  # 25. DEPENDENCY INVENTORY OUTPUT
+  # ==========================================================
+
+  inventory_output:
+
+    generated: true
+
+    required_fields:
+
+      - "Package name"
+      - "Version"
+      - "Source"
+      - "License"
+      - "Direct/transitive classification"
+      - "Integrity hash"
+      - "Parent dependency"
+      - "Platform marker"
+      - "Architecture marker"
+      - "Security status"
+
+    formats:
+
+      machine_readable:
+
+        - "YAML"
+        - "JSON"
+
+      supply_chain:
+
+        - "CycloneDX"
+
+
+  # ==========================================================
+  # 26. COMPLIANCE RULES
+  # ==========================================================
+
+  compliance:
+
+    mandatory_rules:
+
+      - id: "DEP-001"
+        rule: "Every production dependency must have an exact resolved version."
+
+      - id: "DEP-002"
+        rule: "Every production transitive dependency must be represented in the lock state."
+
+      - id: "DEP-003"
+        rule: "Production installation must use frozen lock state."
+
+      - id: "DEP-004"
+        rule: "Dependency integrity must be verified before release."
+
+      - id: "DEP-005"
+        rule: "Mutable Git references are prohibited in production locks."
+
+      - id: "DEP-006"
+        rule: "Mutable container references are prohibited in production releases."
+
+      - id: "DEP-007"
+        rule: "Known critical vulnerabilities block release."
+
+      - id: "DEP-008"
+        rule: "License identity must be known for every production dependency."
+
+      - id: "DEP-009"
+        rule: "Dependency graph changes require validation."
+
+      - id: "DEP-010"
+        rule: "Historical lock states must remain recoverable."
+
+
+  # ==========================================================
+  # 27. CURRENT STATUS
+  # ==========================================================
+
+  status_summary:
+
+    policy_defined: true
+
+    python_lock_policy_defined: true
+
+    frontend_lock_policy_defined: true
+
+    native_lock_policy_defined: true
+
+    container_dependency_policy_defined: true
+
+    transitive_dependency_policy_defined: true
+
+    integrity_policy_defined: true
+
+    security_policy_defined: true
+
+    license_policy_defined: true
+
+    rollback_policy_defined: true
+
+    reproducibility_policy_defined: true
+
+    exact_dependency_versions:
+
+      resolved: false
+
+    frontend_package_manager:
+
+      resolved: false
+
+    final_lock_status: "CANDIDATE"
+
+
+  # ==========================================================
+  # 28. NEXT PHASE
+  # ==========================================================
+
+  next_phase:
+
+    name: "Dependency Resolution"
+
+    sequence:
+
+      - "Resolve direct Python dependencies"
+      - "Resolve transitive Python dependencies"
+      - "Generate and validate uv.lock"
+      - "Resolve frontend package manager"
+      - "Resolve frontend dependency graph"
+      - "Generate frontend lockfile"
+      - "Resolve native dependencies"
+      - "Resolve platform-specific dependencies"
+      - "Resolve container OS dependencies"
+      - "Validate package integrity"
+      - "Validate licenses"
+      - "Run vulnerability scans"
+      - "Generate dependency inventory"
+      - "Compare dependency graph against Approved Stack"
+      - "Perform reproducibility test"
+      - "Promote validated dependency graph to LOCKED"
+
+  governing_rule: >
+    No dependency SHALL be considered production-locked merely
+    because its direct version is known. The complete resolved,
+    verified and reproducible dependency graph is the authoritative
+    production dependency state.

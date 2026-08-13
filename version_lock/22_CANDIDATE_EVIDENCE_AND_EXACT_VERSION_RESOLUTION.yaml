@@ -1,0 +1,1566 @@
+# ============================================================
+# JARVIS / JAS
+# VERSION LOCK v1 — CANDIDATE EVIDENCE AND
+# EXACT VERSION RESOLUTION
+# ============================================================
+
+candidate_evidence_and_exact_version_resolution:
+
+  schema_version: "1.0"
+
+  project:
+    name: "JARVIS"
+    architecture: "JAS"
+    architecture_version: "JAS v1"
+
+
+  # ==========================================================
+  # 1. DOCUMENT
+  # ==========================================================
+
+  document:
+
+    id:
+      "JAS-VL-022"
+
+    name:
+      "Candidate Evidence and Exact Version Resolution"
+
+    version:
+      "1.0"
+
+    status:
+      "IN_PROGRESS"
+
+    authority:
+      - "JAS v1"
+      - "Approved Stack v1.0"
+      - "19_APPROVED_MODELS.md"
+      - "20_APPROVED_MCP_SERVERS.md"
+      - "21_VERSION_LOCK_CANDIDATE.yaml"
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 2. PURPOSE
+  # ==========================================================
+
+  purpose:
+    >
+    This document records authoritative evidence used to resolve
+    exact production candidates.
+
+    A version may only advance toward final Version Lock when its
+    identity, compatibility, security and licensing requirements
+    are supported by sufficient evidence.
+
+
+  # ==========================================================
+  # 3. EVIDENCE LEVELS
+  # ==========================================================
+
+  evidence_levels:
+
+    E0:
+      name:
+        "UNVERIFIED"
+
+      meaning:
+        >
+        No authoritative evidence collected.
+
+
+    E1:
+      name:
+        "DISCOVERED"
+
+      meaning:
+        >
+        Candidate discovered from a public source but not yet
+        independently validated.
+
+
+    E2:
+      name:
+        "AUTHORITATIVE"
+
+      meaning:
+        >
+        Candidate verified against an authoritative upstream source.
+
+
+    E3:
+      name:
+        "COMPATIBILITY_VALIDATED"
+
+      meaning:
+        >
+        Candidate verified against directly connected JAS components.
+
+
+    E4:
+      name:
+        "RELEASE_READY"
+
+      meaning:
+        >
+        Candidate has passed version, compatibility, security,
+        licensing, reproducibility and artifact-identity checks.
+
+
+    E5:
+      name:
+        "LOCKED"
+
+      meaning:
+        >
+        Candidate has been promoted into final Version Lock.
+
+
+  promotion_rule:
+
+    E0_to_E1:
+      "Candidate discovery"
+
+    E1_to_E2:
+      "Authoritative source verification"
+
+    E2_to_E3:
+      "Compatibility verification"
+
+    E3_to_E4:
+      "Release validation"
+
+    E4_to_E5:
+      "Final Version Lock approval"
+
+
+  # ==========================================================
+  # 4. EVIDENCE REQUIREMENTS
+  # ==========================================================
+
+  evidence_requirements:
+
+    package:
+
+      - "Official package/release source"
+      - "Exact version"
+      - "Supported runtime"
+      - "License"
+      - "Integrity"
+
+
+    container:
+
+      - "Official image source"
+      - "Exact tag"
+      - "Digest"
+      - "Architecture"
+      - "Base image identity"
+
+
+    model:
+
+      - "Official model repository"
+      - "Exact model ID"
+      - "Exact revision"
+      - "Artifact identity"
+      - "Quantization"
+      - "Runtime"
+      - "License"
+
+
+    mcp_server:
+
+      - "Publisher"
+      - "Repository"
+      - "Version"
+      - "Revision"
+      - "Digest where applicable"
+      - "Protocol version"
+      - "Transport"
+      - "License"
+      - "Permission profile"
+
+
+    native_toolchain:
+
+      - "Compiler"
+      - "Exact version"
+      - "Target"
+      - "Platform"
+
+
+  # ==========================================================
+  # 5. CORE RUNTIME RESOLUTION
+  # ==========================================================
+
+  core_runtime:
+
+    python:
+
+      component_id:
+        "SW-001"
+
+      candidate:
+        null
+
+      minimum_supported:
+        "3.12"
+
+      evidence_level:
+        "E0"
+
+      authoritative_source:
+        null
+
+      compatibility:
+
+        fastapi:
+          "PENDING"
+
+        pydantic:
+          "PENDING"
+
+        langgraph:
+          "PENDING"
+
+        uv:
+          "PENDING"
+
+        pytorch:
+          "PENDING"
+
+
+      decision:
+        "NOT_RESOLVED"
+
+
+    cpython:
+
+      component_id:
+        "CPYTHON-001"
+
+      candidate:
+        null
+
+      evidence_level:
+        "E0"
+
+      decision:
+        "NOT_RESOLVED"
+
+
+    node:
+
+      component_id:
+        "SW-027"
+
+      candidate:
+        "24.18.1"
+
+      evidence_level:
+        "E1"
+
+      authoritative_source:
+        null
+
+      compatibility:
+        "PENDING_FINAL_TIMESTAMP_VALIDATION"
+
+      decision:
+        "PROVISIONAL_CANDIDATE"
+
+
+    typescript:
+
+      component_id:
+        "SW-002"
+
+      candidate:
+        "7.0.2"
+
+      evidence_level:
+        "E1"
+
+      compatibility:
+        "PENDING"
+
+      decision:
+        "PROVISIONAL_CANDIDATE"
+
+
+  # ==========================================================
+  # 6. PYTHON PACKAGE RESOLUTION
+  # ==========================================================
+
+  python_packages:
+
+    fastapi:
+
+      component_id:
+        "SW-005"
+
+      candidate:
+        null
+
+      evidence_level:
+        "E0"
+
+      required_evidence:
+
+        - "Official release"
+        - "Python compatibility"
+        - "Pydantic compatibility"
+        - "Starlette compatibility"
+        - "License"
+
+
+      decision:
+        "BLOCKED"
+
+
+    pydantic:
+
+      component_id:
+        "SW-006"
+
+      candidate:
+        null
+
+      evidence_level:
+        "E0"
+
+      required_evidence:
+
+        - "Official release"
+        - "Python compatibility"
+        - "FastAPI compatibility"
+        - "License"
+
+
+      decision:
+        "BLOCKED"
+
+
+    langgraph:
+
+      component_id:
+        "SW-007"
+
+      candidate:
+        null
+
+      evidence_level:
+        "E0"
+
+      required_evidence:
+
+        - "Official release"
+        - "Python compatibility"
+        - "LangChain ecosystem compatibility"
+        - "Dependency resolution"
+        - "License"
+
+
+      decision:
+        "BLOCKED"
+
+
+    uv:
+
+      component_id:
+        "SW-026"
+
+      candidate:
+        null
+
+      evidence_level:
+        "E0"
+
+      required_evidence:
+
+        - "Official release"
+        - "Python compatibility"
+        - "Lockfile compatibility"
+
+
+      decision:
+        "BLOCKED"
+
+
+  # ==========================================================
+  # 7. DATA SERVICE RESOLUTION
+  # ==========================================================
+
+  data:
+
+    postgresql:
+
+      component_id:
+        "SW-009"
+
+      candidate:
+        "18.4"
+
+      evidence_level:
+        "E1"
+
+      exact_identity:
+
+        image:
+          null
+
+        digest:
+          null
+
+        architecture:
+          "linux/amd64"
+
+
+      compatibility:
+
+        python_driver:
+          "PENDING"
+
+        migrations:
+          "PENDING"
+
+        qdrant:
+          "NOT_DIRECTLY_COUPLED"
+
+
+      decision:
+        "PROVISIONAL_CANDIDATE"
+
+
+    qdrant:
+
+      component_id:
+        "SW-008"
+
+      candidate:
+        "1.18.2"
+
+      evidence_level:
+        "E1"
+
+      exact_identity:
+
+        image:
+          null
+
+        digest:
+          null
+
+        architecture:
+          "linux/amd64"
+
+
+      compatibility:
+
+        python_client:
+          "PENDING"
+
+
+      decision:
+        "PROVISIONAL_CANDIDATE"
+
+
+  # ==========================================================
+  # 8. BROWSER RESOLUTION
+  # ==========================================================
+
+  browser:
+
+    playwright:
+
+      component_id:
+        "SW-011"
+
+      candidate:
+        "1.61.0"
+
+      evidence_level:
+        "E1"
+
+      required_evidence:
+
+        - "Official package release"
+        - "Python compatibility"
+        - "Browser revision mapping"
+        - "Browser artifact identity"
+
+
+      decision:
+        "PROVISIONAL_CANDIDATE"
+
+
+    chromium:
+
+      component_id:
+        "BROWSER-CHROMIUM"
+
+      package:
+        "Playwright Chromium"
+
+      revision:
+        null
+
+      build:
+        null
+
+      artifact_identity:
+        null
+
+      evidence_level:
+        "E0"
+
+      decision:
+        "BLOCKED"
+
+
+  # ==========================================================
+  # 9. FRONTEND RESOLUTION
+  # ==========================================================
+
+  frontend:
+
+    package_manager:
+
+      name:
+        "pnpm"
+
+      version:
+        "11.17.0"
+
+      evidence_level:
+        "E1"
+
+      decision:
+        "PROVISIONAL_CANDIDATE"
+
+
+    react:
+
+      version:
+        "19.2.8"
+
+      evidence_level:
+        "E1"
+
+      decision:
+        "PROVISIONAL_CANDIDATE"
+
+
+    react_dom:
+
+      version:
+        null
+
+      evidence_level:
+        "E0"
+
+      decision:
+        "BLOCKED"
+
+
+    vite:
+
+      version:
+        "8.1.5"
+
+      evidence_level:
+        "E1"
+
+      decision:
+        "PROVISIONAL_CANDIDATE"
+
+
+  # ==========================================================
+  # 10. QWEN3 RESOLUTION
+  # ==========================================================
+
+  qwen3:
+
+    component_id:
+      "MODEL-LLM-QWEN3"
+
+
+    approved_family:
+      "Qwen3"
+
+
+    exact_variant:
+      null
+
+    exact_model_id:
+      null
+
+    revision:
+      null
+
+    artifact_digest:
+      null
+
+    quantization:
+      null
+
+    runtime:
+      null
+
+
+    evidence:
+
+      model_family:
+        level:
+          "E2"
+
+        source:
+          "Official Qwen model documentation/repository"
+
+        status:
+          "FAMILY_VERIFIED"
+
+
+      exact_variant:
+        level:
+          "E0"
+
+        status:
+          "NOT_SELECTED"
+
+
+      revision:
+        level:
+          "E0"
+
+        status:
+          "NOT_SELECTED"
+
+
+      artifact_digest:
+        level:
+          "E0"
+
+        status:
+          "NOT_SELECTED"
+
+
+    selection_rule:
+
+      >
+      The exact Qwen3 variant SHALL be selected according to the
+      JAS hardware profile, latency requirements, memory budget,
+      license requirements and local inference runtime.
+
+      Model family selection alone is insufficient for Version Lock.
+
+
+    status:
+      "BLOCKED"
+
+
+  # ==========================================================
+  # 11. MODEL RUNTIME RESOLUTION
+  # ==========================================================
+
+  model_runtime:
+
+    transformers:
+
+      version:
+        null
+
+      evidence_level:
+        "E0"
+
+      status:
+        "BLOCKED"
+
+
+    pytorch:
+
+      version:
+        null
+
+      build:
+        null
+
+      cuda_build:
+        null
+
+      evidence_level:
+        "E0"
+
+      status:
+        "BLOCKED"
+
+
+    cuda:
+
+      toolkit_version:
+        null
+
+      minimum_driver:
+        null
+
+      evidence_level:
+        "E0"
+
+      status:
+        "BLOCKED"
+
+
+    nvidia_driver:
+
+      version:
+        null
+
+      evidence_level:
+        "E0"
+
+      status:
+        "BLOCKED"
+
+
+    gpu:
+
+      vendor:
+        "NVIDIA"
+
+      model:
+        null
+
+      architecture:
+        null
+
+      vram_gb:
+        null
+
+      evidence_level:
+        "E0"
+
+      status:
+        "BLOCKED"
+
+
+    container_runtime:
+
+      nvidia_container_toolkit:
+        version:
+          null
+
+        evidence_level:
+          "E0"
+
+        status:
+          "BLOCKED"
+
+
+    complete_chain:
+
+      qwen3:
+        "BLOCKED"
+
+      transformers:
+        "BLOCKED"
+
+      pytorch:
+        "BLOCKED"
+
+      cuda:
+        "BLOCKED"
+
+      driver:
+        "BLOCKED"
+
+      gpu:
+        "BLOCKED"
+
+      nvidia_container_toolkit:
+        "BLOCKED"
+
+
+  # ==========================================================
+  # 12. EMBEDDING / RERANKING
+  # ==========================================================
+
+  retrieval:
+
+    embedding:
+
+      model:
+        "BAAI/bge-m3"
+
+      revision:
+        null
+
+      digest:
+        null
+
+      runtime:
+        null
+
+      evidence_level:
+        "E1"
+
+      status:
+        "BLOCKED"
+
+
+    reranker:
+
+      model:
+        "BAAI/bge-reranker-v2-m3"
+
+      revision:
+        null
+
+      digest:
+        null
+
+      runtime:
+        null
+
+      evidence_level:
+        "E1"
+
+      status:
+        "BLOCKED"
+
+
+  # ==========================================================
+  # 13. VOICE
+  # ==========================================================
+
+  voice:
+
+    whisper:
+
+      family:
+        "OpenAI Whisper"
+
+      exact_model:
+        null
+
+      revision:
+        null
+
+      digest:
+        null
+
+      runtime:
+        null
+
+      evidence_level:
+        "E0"
+
+      status:
+        "BLOCKED"
+
+
+    vad:
+
+      family:
+        "Silero VAD"
+
+      exact_version:
+        null
+
+      evidence_level:
+        "E0"
+
+      status:
+        "BLOCKED"
+
+
+    piper:
+
+      enabled:
+        false
+
+      engine_version:
+        null
+
+      voice_model:
+        null
+
+      voice_revision:
+        null
+
+      voice_digest:
+        null
+
+      evidence_level:
+        "E0"
+
+      status:
+        "PROFILE_DEPENDENT"
+
+
+  # ==========================================================
+  # 14. VISION
+  # ==========================================================
+
+  vision:
+
+    opencv:
+
+      version:
+        null
+
+      evidence_level:
+        "E0"
+
+      status:
+        "BLOCKED"
+
+
+    siglip2:
+
+      exact_variant:
+        null
+
+      revision:
+        null
+
+      digest:
+        null
+
+      evidence_level:
+        "E0"
+
+      status:
+        "BLOCKED"
+
+
+    transformers:
+
+      version:
+        null
+
+      evidence_level:
+        "E0"
+
+      status:
+        "BLOCKED"
+
+
+  # ==========================================================
+  # 15. MCP RESOLUTION
+  # ==========================================================
+
+  mcp:
+
+    protocol:
+
+      version:
+        "2026-07-28"
+
+      evidence_level:
+        "E2"
+
+      status:
+        "ARCHITECTURAL_CANDIDATE"
+
+
+    sdk:
+
+      name:
+        "MCP Python SDK"
+
+      exact_version:
+        null
+
+      evidence_level:
+        "E0"
+
+      status:
+        "BLOCKED"
+
+
+    servers:
+
+      time:
+
+        version:
+          null
+
+        revision:
+          null
+
+        digest:
+          null
+
+        publisher:
+          null
+
+        evidence_level:
+          "E0"
+
+        status:
+          "BLOCKED"
+
+
+      filesystem:
+
+        version:
+          null
+
+        revision:
+          null
+
+        digest:
+          null
+
+        publisher:
+          null
+
+        evidence_level:
+          "E0"
+
+        status:
+          "BLOCKED"
+
+
+      git:
+
+        version:
+          null
+
+        revision:
+          null
+
+        digest:
+          null
+
+        publisher:
+          null
+
+        evidence_level:
+          "E0"
+
+        status:
+          "BLOCKED"
+
+
+      fetch:
+
+        version:
+          null
+
+        revision:
+          null
+
+        digest:
+          null
+
+        publisher:
+          null
+
+        evidence_level:
+          "E0"
+
+        status:
+          "BLOCKED"
+
+
+      memory:
+
+        version:
+          null
+
+        revision:
+          null
+
+        digest:
+          null
+
+        publisher:
+          null
+
+        evidence_level:
+          "E0"
+
+        status:
+          "BLOCKED"
+
+
+  # ==========================================================
+  # 16. CONTAINER RESOLUTION
+  # ==========================================================
+
+  containers:
+
+    docker:
+
+      version:
+        "29.6.2"
+
+      evidence_level:
+        "E1"
+
+      status:
+        "PROVISIONAL_CANDIDATE"
+
+
+    buildkit:
+
+      version:
+        "0.31.1"
+
+      evidence_level:
+        "E1"
+
+      status:
+        "PROVISIONAL_CANDIDATE"
+
+
+    buildx:
+
+      version:
+        null
+
+      evidence_level:
+        "E0"
+
+      status:
+        "BLOCKED"
+
+
+    compose:
+
+      version:
+        null
+
+      evidence_level:
+        "E0"
+
+      status:
+        "BLOCKED"
+
+
+    base_images:
+
+      python:
+
+        image:
+          null
+
+        tag:
+          null
+
+        digest:
+          null
+
+        evidence_level:
+          "E0"
+
+        status:
+          "BLOCKED"
+
+
+      node:
+
+        image:
+          null
+
+        tag:
+          null
+
+        digest:
+          null
+
+        evidence_level:
+          "E0"
+
+        status:
+          "BLOCKED"
+
+
+  # ==========================================================
+  # 17. OBSERVABILITY
+  # ==========================================================
+
+  observability:
+
+    opentelemetry:
+
+      sdk_version:
+        null
+
+      api_version:
+        null
+
+      collector_version:
+        null
+
+      evidence_level:
+        "E0"
+
+      status:
+        "BLOCKED"
+
+
+  # ==========================================================
+  # 18. TESTING
+  # ==========================================================
+
+  testing:
+
+    pytest:
+
+      version:
+        null
+
+      evidence_level:
+        "E0"
+
+      status:
+        "BLOCKED"
+
+
+    ruff:
+
+      version:
+        null
+
+      evidence_level:
+        "E0"
+
+      status:
+        "BLOCKED"
+
+
+    dependency_scanner:
+
+      implementation:
+        null
+
+      version:
+        null
+
+      evidence_level:
+        "E0"
+
+      status:
+        "BLOCKED"
+
+
+  # ==========================================================
+  # 19. SECURITY
+  # ==========================================================
+
+  security:
+
+    secret_management:
+
+      implementation:
+        null
+
+      evidence_level:
+        "E0"
+
+      status:
+        "BLOCKED"
+
+
+    sandbox:
+
+      implementation:
+        null
+
+      evidence_level:
+        "E0"
+
+      status:
+        "BLOCKED"
+
+
+    authorization:
+
+      implementation:
+        "JAS Internal Authorization / Policy Engine"
+
+      evidence_level:
+        "E2"
+
+      status:
+        "INTERNAL"
+
+
+    audit:
+
+      implementation:
+        "JAS Internal Audit System"
+
+      evidence_level:
+        "E2"
+
+      status:
+        "INTERNAL"
+
+
+  # ==========================================================
+  # 20. SUPPLY CHAIN
+  # ==========================================================
+
+  supply_chain:
+
+    sbom:
+
+      format:
+        "CycloneDX"
+
+      tooling:
+        null
+
+      version:
+        null
+
+      evidence_level:
+        "E1"
+
+      status:
+        "PROVISIONAL"
+
+
+    provenance:
+
+      direction:
+        "SLSA-aligned / OCI attestation"
+
+      implementation:
+        null
+
+      version:
+        null
+
+      evidence_level:
+        "E1"
+
+      status:
+        "PROVISIONAL"
+
+
+    signing:
+
+      tool:
+        "Cosign"
+
+      version:
+        null
+
+      evidence_level:
+        "E1"
+
+      status:
+        "PROVISIONAL"
+
+
+  # ==========================================================
+  # 21. EVIDENCE REGISTER
+  # ==========================================================
+
+  evidence_register:
+
+    rule:
+      >
+      Every E2 or higher claim must reference an authoritative
+      source before promotion.
+
+
+    sources:
+
+      official_project:
+        status:
+          "REQUIRED"
+
+      official_package_registry:
+        status:
+          "REQUIRED"
+
+      official_model_repository:
+        status:
+          "REQUIRED"
+
+      official_container_registry:
+        status:
+          "REQUIRED"
+
+      official_security_advisory:
+        status:
+          "REQUIRED_WHEN_APPLICABLE"
+
+
+  # ==========================================================
+  # 22. RESOLUTION PRIORITY
+  # ==========================================================
+
+  resolution_priority:
+
+    P0:
+
+      - "GPU profile"
+      - "Qwen3 exact variant"
+      - "PyTorch"
+      - "CUDA"
+      - "NVIDIA driver"
+      - "NVIDIA Container Toolkit"
+
+
+    P1:
+
+      - "Python"
+      - "uv"
+      - "FastAPI"
+      - "Pydantic"
+      - "LangGraph"
+
+
+    P2:
+
+      - "Playwright"
+      - "Chromium"
+      - "React"
+      - "react-dom"
+      - "Vite"
+      - "TypeScript"
+      - "pnpm"
+
+
+    P3:
+
+      - "PostgreSQL"
+      - "Qdrant"
+      - "OpenTelemetry"
+      - "pytest"
+      - "Ruff"
+
+
+    P4:
+
+      - "MCP servers"
+      - "SBOM"
+      - "Provenance"
+      - "Signing"
+      - "Security tooling"
+
+
+  # ==========================================================
+  # 23. HARD BLOCKERS
+  # ==========================================================
+
+  blockers:
+
+    - id: "EVIDENCE-BLOCK-001"
+      area: "AI"
+      reason:
+        "Hardware profile must be resolved before exact Qwen3/PyTorch/CUDA selection."
+
+    - id: "EVIDENCE-BLOCK-002"
+      area: "Python"
+      reason:
+        "Exact runtime must be selected before dependency lock resolution."
+
+    - id: "EVIDENCE-BLOCK-003"
+      area: "Browser"
+      reason:
+        "Playwright/browser revision evidence incomplete."
+
+    - id: "EVIDENCE-BLOCK-004"
+      area: "Frontend"
+      reason:
+        "React DOM and complete package graph unresolved."
+
+    - id: "EVIDENCE-BLOCK-005"
+      area: "MCP"
+      reason:
+        "Exact SDK and server identities unresolved."
+
+    - id: "EVIDENCE-BLOCK-006"
+      area: "Container"
+      reason:
+        "Base image and Buildx/Compose identities unresolved."
+
+    - id: "EVIDENCE-BLOCK-007"
+      area: "Security"
+      reason:
+        "Concrete security implementations unresolved."
+
+    - id: "EVIDENCE-BLOCK-008"
+      area: "Supply Chain"
+      reason:
+        "Exact tooling versions and release identities unresolved."
+
+
+  # ==========================================================
+  # 24. CURRENT STATE
+  # ==========================================================
+
+  state:
+
+    evidence_collection_started:
+      true
+
+    authoritative_evidence_complete:
+      false
+
+    exact_versions_resolved:
+      false
+
+    exact_revisions_resolved:
+      false
+
+    artifact_digests_resolved:
+      false
+
+    compatibility_validated:
+      false
+
+    security_validated:
+      false
+
+    licensing_validated:
+      false
+
+    production_ready:
+      false
+
+    final_version_lock:
+      false
+
+    status:
+      "EVIDENCE_COLLECTION_IN_PROGRESS"
+
+
+  # ==========================================================
+  # 25. NEXT PHASE
+  # ==========================================================
+
+  next_phase:
+
+    name:
+      "Final Compatibility and Lock Preparation"
+
+    next_document:
+      "23_FINAL_COMPATIBILITY_AND_LOCK_PREPARATION.yaml"
+
+    sequence:
+
+      - "Complete P0 AI runtime resolution"
+      - "Complete Python dependency resolution"
+      - "Complete browser resolution"
+      - "Complete frontend resolution"
+      - "Complete MCP resolution"
+      - "Complete container resolution"
+      - "Complete security resolution"
+      - "Complete supply-chain resolution"
+      - "Run complete compatibility matrix"
+      - "Run license validation"
+      - "Run security validation"
+      - "Freeze candidate set"
+      - "Prepare final Version Lock"

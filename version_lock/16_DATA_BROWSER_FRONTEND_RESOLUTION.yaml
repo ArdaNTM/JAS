@@ -1,0 +1,1639 @@
+# ============================================================
+# JARVIS / JAS
+# VERSION LOCK v1 — DATA, BROWSER AND FRONTEND RESOLUTION
+# ============================================================
+
+data_browser_frontend_resolution:
+
+  schema_version: "1.0"
+
+  project:
+    name: "JARVIS"
+    architecture: "JAS"
+    architecture_version: "JAS v1"
+
+  document:
+    id: "JAS-VL-016"
+    name: "Data Browser Frontend Resolution"
+    version: "1.0"
+    status: "IN_PROGRESS"
+    authority: "VERSION_LOCK_v1"
+
+
+  # ==========================================================
+  # 1. PURPOSE
+  # ==========================================================
+
+  purpose:
+    >
+    This document resolves compatibility candidates for the JAS
+    data layer, browser automation layer and frontend toolchain.
+
+    The resolution covers:
+
+      Data:
+        PostgreSQL
+        Qdrant
+        Redis
+        SQLite
+        Object Storage
+
+      Browser:
+        Playwright
+        Chromium
+        Firefox
+        WebKit
+
+      Frontend:
+        Node.js
+        TypeScript
+        React
+        Vite
+        pnpm
+
+    Exact production locking remains separate from candidate
+    resolution.
+
+
+  # ==========================================================
+  # 2. DATA ARCHITECTURE
+  # ==========================================================
+
+  data_architecture:
+
+    primary_relational_database:
+      "PostgreSQL"
+
+    primary_vector_database:
+      "Qdrant"
+
+    cache:
+      "Redis"
+
+    embedded_storage:
+      "SQLite"
+
+    object_storage:
+      "Implementation-dependent"
+
+
+  # ==========================================================
+  # 3. POSTGRESQL
+  # ==========================================================
+
+  postgresql:
+
+    component_id:
+      "SW-009"
+
+    role:
+      "Primary relational database"
+
+    source:
+
+      authority:
+        "PostgreSQL Global Development Group"
+
+      source_type:
+        "Official PostgreSQL release and versioning documentation"
+
+      status:
+        "VERIFIED"
+
+
+    supported_major_versions:
+
+      - major: "18"
+        current_minor: "18.4"
+        support_status: "SUPPORTED"
+
+      - major: "17"
+        current_minor: "17.10"
+        support_status: "SUPPORTED"
+
+      - major: "16"
+        current_minor: "16.14"
+        support_status: "SUPPORTED"
+
+      - major: "15"
+        current_minor: "15.18"
+        support_status: "SUPPORTED"
+
+      - major: "14"
+        current_minor: "14.23"
+        support_status: "SUPPORTED_BUT_EOL_APPROACHING"
+
+
+    primary_candidate:
+
+      major:
+        "18"
+
+      minor:
+        "18.4"
+
+      version:
+        "18.4"
+
+      status:
+        "CANDIDATE"
+
+
+    selection_policy:
+
+      priority:
+
+        - "Supported major version"
+        - "Current minor release"
+        - "Security maintenance"
+        - "Long support lifecycle"
+        - "Container availability"
+        - "JAS migration compatibility"
+
+      rule:
+        >
+        PostgreSQL 18 is preferred over older major versions unless
+        an explicit JAS compatibility requirement prevents adoption.
+
+
+    compatibility:
+
+      python:
+        "PENDING"
+
+      application_driver:
+        "PENDING"
+
+      migration_tool:
+        "PENDING"
+
+      qdrant:
+        "NOT_APPLICABLE"
+
+      docker:
+        "PENDING"
+
+      windows:
+        "PENDING"
+
+      linux:
+        "PENDING"
+
+
+    security:
+
+      status:
+        "PENDING"
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 4. QDRANT
+  # ==========================================================
+
+  qdrant:
+
+    component_id:
+      "SW-008"
+
+    role:
+      "Vector database and semantic retrieval"
+
+    source:
+
+      authority:
+        "Qdrant"
+
+      source_type:
+        "Official GitHub repository / release"
+
+      status:
+        "VERIFIED"
+
+
+    candidate:
+
+      version:
+        "1.18.2"
+
+      status:
+        "CANDIDATE"
+
+      release_type:
+        "Stable"
+
+
+    deployment:
+
+      local:
+        true
+
+      containerized:
+        true
+
+      cloud:
+        false
+
+
+    compatibility:
+
+      qdrant_client:
+        status:
+          "PENDING"
+
+        required:
+          - "Client API compatibility"
+          - "Server API compatibility"
+          - "Protocol compatibility"
+
+      python:
+        "PENDING"
+
+      storage:
+        "PENDING"
+
+      docker:
+        "PENDING"
+
+      architecture:
+        "PENDING"
+
+
+    storage_policy:
+
+      persistent_storage:
+        true
+
+      snapshots:
+        required:
+          true
+
+      backup:
+        required:
+          true
+
+
+    lock_identity:
+
+      required:
+
+        - "server_version"
+        - "container_image"
+        - "image_digest"
+        - "architecture"
+
+      image:
+        null
+
+      digest:
+        null
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 5. REDIS
+  # ==========================================================
+
+  redis:
+
+    component_id:
+      "SW-010"
+
+    enabled:
+      false
+
+    status:
+      "PROFILE_DEPENDENT"
+
+
+    role:
+      "Cache, ephemeral state and coordination"
+
+
+    resolution_rule:
+      >
+      Redis SHALL only enter Version Lock when JAS explicitly
+      enables a capability that requires Redis.
+
+
+    candidate:
+      version:
+        null
+
+
+    compatibility:
+      python_client:
+        "NOT_STARTED"
+
+      docker:
+        "NOT_STARTED"
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 6. SQLITE
+  # ==========================================================
+
+  sqlite:
+
+    component_id:
+      "SW-034"
+
+    enabled:
+      false
+
+    status:
+      "PROFILE_DEPENDENT"
+
+
+    role:
+      "Embedded local state and storage"
+
+
+    resolution_rule:
+      >
+      SQLite is not a mandatory server dependency. It SHALL be
+      resolved only for components that explicitly require embedded
+      relational storage.
+
+
+    candidate:
+      version:
+        null
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 7. OBJECT STORAGE
+  # ==========================================================
+
+  object_storage:
+
+    component_id:
+      "SW-035"
+
+    enabled:
+      false
+
+    status:
+      "PROFILE_DEPENDENT"
+
+
+    approved_families:
+
+      - "Local object storage"
+      - "S3-compatible storage"
+      - "Cloud object storage"
+
+
+    selected_implementation:
+      null
+
+    selected_api_version:
+      null
+
+    compatibility:
+      "NOT_STARTED"
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 8. DATA LAYER COMPATIBILITY
+  # ==========================================================
+
+  data_compatibility:
+
+    python:
+
+      postgresql:
+        "PENDING"
+
+      qdrant:
+        "PENDING"
+
+      redis:
+        "NOT_APPLICABLE"
+
+      sqlite:
+        "NOT_APPLICABLE"
+
+
+    persistence:
+
+      migrations:
+        "PENDING"
+
+      backups:
+        "PENDING"
+
+      recovery:
+        "PENDING"
+
+
+    containers:
+
+      postgresql:
+        "PENDING"
+
+      qdrant:
+        "PENDING"
+
+
+    overall:
+      "PENDING"
+
+
+  # ==========================================================
+  # 9. BROWSER ARCHITECTURE
+  # ==========================================================
+
+  browser_architecture:
+
+    framework:
+      "Playwright"
+
+    primary_engine:
+      "Chromium"
+
+    secondary_engines:
+
+      - "Firefox"
+      - "WebKit"
+
+    policy:
+      >
+      Chromium is the primary production browser automation
+      target. Firefox and WebKit remain supported only where
+      explicitly required by a JAS capability or compatibility test.
+
+
+  # ==========================================================
+  # 10. PLAYWRIGHT
+  # ==========================================================
+
+  playwright:
+
+    component_id:
+      "SW-011"
+
+    role:
+      "Browser automation framework"
+
+    language:
+      "Python"
+
+    source:
+
+      authority:
+        "Microsoft Playwright"
+
+      package_registry:
+        "PyPI"
+
+      status:
+        "VERIFIED"
+
+
+    candidate:
+
+      version:
+        "1.61.0"
+
+      status:
+        "CANDIDATE"
+
+      license:
+        "Apache-2.0"
+
+
+    python_support:
+
+      python_310:
+        true
+
+      python_311:
+        true
+
+      python_312:
+        true
+
+      python_313:
+        true
+
+      python_314:
+        true
+
+
+    compatibility:
+
+      python_314:
+        "PASS_METADATA"
+
+      windows:
+        "PENDING"
+
+      linux:
+        "PENDING"
+
+      macos:
+        "PENDING"
+
+      chromium:
+        "PENDING"
+
+      firefox:
+        "PENDING"
+
+      webkit:
+        "PENDING"
+
+
+    browser_artifacts:
+
+      chromium:
+        revision:
+          null
+
+        artifact_identity:
+          null
+
+      firefox:
+        revision:
+          null
+
+        artifact_identity:
+          null
+
+      webkit:
+        revision:
+          null
+
+        artifact_identity:
+          null
+
+
+    policy:
+
+      browser_installation:
+        >
+        Browser binaries SHALL be installed from the exact Playwright
+        release associated with the locked Playwright package.
+
+      mutable_browser_channels:
+        false
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 11. PLAYWRIGHT BROWSER RELATIONSHIP
+  # ==========================================================
+
+  browser_relationship:
+
+    playwright_to_chromium:
+
+      status:
+        "PENDING"
+
+      required:
+
+        - "Playwright version"
+        - "Chromium revision"
+        - "Browser artifact identity"
+
+
+    playwright_to_firefox:
+
+      status:
+        "PENDING"
+
+      required:
+
+        - "Playwright version"
+        - "Firefox revision"
+        - "Browser artifact identity"
+
+
+    playwright_to_webkit:
+
+      status:
+        "PENDING"
+
+      required:
+
+        - "Playwright version"
+        - "WebKit revision"
+        - "Browser artifact identity"
+
+
+    primary_browser:
+
+      engine:
+        "Chromium"
+
+      status:
+        "PENDING"
+
+
+  # ==========================================================
+  # 12. CHROMIUM
+  # ==========================================================
+
+  chromium:
+
+    component_id:
+      "BROWSER-CHROMIUM"
+
+    role:
+      "Primary browser automation engine"
+
+    source:
+      "Playwright-managed browser artifact"
+
+
+    candidate:
+
+      version:
+        null
+
+      revision:
+        null
+
+      status:
+        "RESEARCH_REQUIRED"
+
+
+    lock_identity:
+
+      required:
+
+        - "Playwright version"
+        - "Chromium revision"
+        - "Artifact identity"
+        - "Platform"
+        - "Architecture"
+
+      revision:
+        null
+
+      artifact_digest:
+        null
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 13. FIREFOX
+  # ==========================================================
+
+  firefox:
+
+    component_id:
+      "BROWSER-FIREFOX"
+
+    enabled:
+      false
+
+    status:
+      "PROFILE_DEPENDENT"
+
+
+    candidate:
+
+      version:
+        null
+
+      revision:
+        null
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 14. WEBKIT
+  # ==========================================================
+
+  webkit:
+
+    component_id:
+      "BROWSER-WEBKIT"
+
+    enabled:
+      false
+
+    status:
+      "PROFILE_DEPENDENT"
+
+
+    observed_playwright_channel:
+
+      playwright:
+        "1.61.0"
+
+      webkit:
+        "26.5"
+
+      status:
+        "OBSERVED_CANDIDATE"
+
+
+    note:
+      >
+      The Playwright 1.61 release notes identify WebKit 26.5.
+      The exact artifact/revision identity still requires lock-time
+      verification.
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 15. FRONTEND ARCHITECTURE
+  # ==========================================================
+
+  frontend_architecture:
+
+    runtime:
+      "Node.js"
+
+    language:
+      "TypeScript"
+
+    framework:
+      "React"
+
+    build_tool:
+      "Vite"
+
+    package_manager:
+      "pnpm"
+
+    package_lockfile:
+      "pnpm-lock.yaml"
+
+
+    rationale:
+
+      node:
+        >
+        Node.js provides the frontend/tooling runtime.
+
+      typescript:
+        >
+        TypeScript is the approved typed implementation language.
+
+      react:
+        >
+        React is the approved frontend framework.
+
+      vite:
+        >
+        Vite provides the frontend build and development toolchain.
+
+      pnpm:
+        >
+        pnpm provides deterministic dependency management and a
+        native lockfile.
+
+
+  # ==========================================================
+  # 16. NODE.JS
+  # ==========================================================
+
+  nodejs:
+
+    component_id:
+      "SW-027"
+
+    source:
+
+      authority:
+        "Node.js"
+
+      status:
+        "VERIFIED"
+
+
+    candidate:
+
+      version:
+        "24.18.1"
+
+      major:
+        "24"
+
+      lifecycle:
+        "LTS"
+
+      status:
+        "CANDIDATE"
+
+
+    selection_policy:
+
+      preferred:
+        "Supported LTS"
+
+      rejected_for_primary:
+        "Current-only release lines"
+
+
+    compatibility:
+
+      typescript:
+        "PENDING"
+
+      react:
+        "PENDING"
+
+      vite:
+        "PENDING"
+
+      pnpm:
+        "PENDING"
+
+      windows:
+        "PENDING"
+
+      linux:
+        "PENDING"
+
+      macos:
+        "PENDING"
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 17. TYPESCRIPT
+  # ==========================================================
+
+  typescript:
+
+    component_id:
+      "FRONTEND-TS"
+
+    source:
+
+      registry:
+        "npm"
+
+      status:
+        "VERIFIED"
+
+
+    candidate:
+
+      version:
+        "7.0.2"
+
+      status:
+        "CANDIDATE"
+
+
+    compatibility:
+
+      node_24:
+        "PENDING"
+
+      react:
+        "PENDING"
+
+      vite:
+        "PENDING"
+
+      pnpm:
+        "PENDING"
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 18. REACT
+  # ==========================================================
+
+  react:
+
+    component_id:
+      "SW-014"
+
+    source:
+
+      registry:
+        "npm"
+
+      status:
+        "VERIFIED"
+
+
+    candidate:
+
+      version:
+        "19.2.8"
+
+      status:
+        "CANDIDATE"
+
+
+    related_packages:
+
+      react_dom:
+        version:
+          null
+
+        status:
+          "RESEARCH_REQUIRED"
+
+
+    compatibility:
+
+      node_24:
+        "PENDING"
+
+      typescript_7:
+        "PENDING"
+
+      vite_8:
+        "PENDING"
+
+      react_dom:
+        "PENDING"
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 19. VITE
+  # ==========================================================
+
+  vite:
+
+    component_id:
+      "SW-015"
+
+    source:
+
+      registry:
+        "npm"
+
+      status:
+        "VERIFIED"
+
+
+    candidate:
+
+      version:
+        "8.1.5"
+
+      status:
+        "CANDIDATE"
+
+
+    excluded_candidates:
+
+      - version:
+          "8.2.0-beta.0"
+
+        reason:
+          "Pre-release"
+
+
+    compatibility:
+
+      node_24:
+        "PENDING"
+
+      typescript_7:
+        "PENDING"
+
+      react_19:
+        "PENDING"
+
+      pnpm_11:
+        "PENDING"
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 20. PNPM
+  # ==========================================================
+
+  pnpm:
+
+    component_id:
+      "SW-028"
+
+    source:
+
+      registry:
+        "npm"
+
+      status:
+        "VERIFIED"
+
+
+    candidate:
+
+      version:
+        "11.17.0"
+
+      status:
+        "CANDIDATE"
+
+      license:
+        "MIT"
+
+
+    rationale:
+      >
+      pnpm provides a deterministic lockfile, content-addressable
+      dependency storage and explicit dependency isolation. It is
+      therefore preferred for the JAS frontend toolchain.
+
+
+    compatibility:
+
+      node_24:
+        "PENDING"
+
+      typescript:
+        "PENDING"
+
+      react:
+        "PENDING"
+
+      vite:
+        "PENDING"
+
+
+    lockfile:
+
+      name:
+        "pnpm-lock.yaml"
+
+      required:
+        true
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 21. FRONTEND DEPENDENCY GRAPH
+  # ==========================================================
+
+  frontend_dependency_graph:
+
+    runtime:
+
+      - "Node.js 24.18.1"
+
+
+    package_manager:
+
+      - "pnpm 11.17.0"
+
+
+    development:
+
+      - "TypeScript 7.0.2"
+
+
+    application:
+
+      - "React 19.2.8"
+      - "react-dom"
+
+
+    build:
+
+      - "Vite 8.1.5"
+
+
+    compatibility_matrix:
+
+      node_pnpm:
+        "PENDING"
+
+      node_typescript:
+        "PENDING"
+
+      node_react:
+        "PENDING"
+
+      node_vite:
+        "PENDING"
+
+      pnpm_typescript:
+        "PENDING"
+
+      pnpm_react:
+        "PENDING"
+
+      pnpm_vite:
+        "PENDING"
+
+      typescript_react:
+        "PENDING"
+
+      typescript_vite:
+        "PENDING"
+
+      react_vite:
+        "PENDING"
+
+
+    overall:
+      "PENDING"
+
+
+  # ==========================================================
+  # 22. FRONTEND LOCKFILE POLICY
+  # ==========================================================
+
+  frontend_lockfile:
+
+    required:
+      true
+
+    file:
+      "pnpm-lock.yaml"
+
+    requirements:
+
+      - "Committed to source control"
+      - "Generated using the locked pnpm version"
+      - "Frozen dependency graph"
+      - "Integrity metadata retained"
+      - "No mutable dependency references"
+      - "Reproducible installation"
+
+
+    installation_policy:
+
+      production:
+        "Frozen lockfile installation"
+
+      development:
+        "Lockfile-respecting installation"
+
+
+  # ==========================================================
+  # 23. FRONTEND PLATFORM MATRIX
+  # ==========================================================
+
+  frontend_platforms:
+
+    windows_x86_64:
+
+      node:
+        "PENDING"
+
+      pnpm:
+        "PENDING"
+
+      vite:
+        "PENDING"
+
+      status:
+        "PRIMARY"
+
+
+    linux_x86_64:
+
+      node:
+        "PENDING"
+
+      pnpm:
+        "PENDING"
+
+      vite:
+        "PENDING"
+
+      status:
+        "PRIMARY_DEPLOYMENT"
+
+
+    macos_arm64:
+
+      node:
+        "PENDING"
+
+      pnpm:
+        "PENDING"
+
+      vite:
+        "PENDING"
+
+      status:
+        "SECONDARY"
+
+
+  # ==========================================================
+  # 24. CROSS-DOMAIN COMPATIBILITY
+  # ==========================================================
+
+  cross_domain:
+
+    python_browser:
+
+      python:
+        "CPython"
+
+      playwright:
+        "1.61.0"
+
+      status:
+        "PENDING"
+
+
+    node_browser:
+
+      node:
+        "24.18.1"
+
+      playwright:
+        "PENDING"
+
+      status:
+        "PENDING"
+
+
+    frontend_backend:
+
+      frontend_api:
+        "JAS-approved API boundary"
+
+      backend:
+        "FastAPI"
+
+      status:
+        "PENDING"
+
+
+    frontend_runtime_isolation:
+
+      requirement:
+        true
+
+      rule:
+        >
+        Node.js dependencies SHALL remain isolated from the Python
+        runtime and SHALL not be installed into the Python environment.
+
+
+  # ==========================================================
+  # 25. SECURITY REQUIREMENTS
+  # ==========================================================
+
+  security:
+
+    data:
+
+      postgresql:
+        "PENDING"
+
+      qdrant:
+        "PENDING"
+
+
+    browser:
+
+      playwright:
+        "PENDING"
+
+      browser_artifacts:
+        "PENDING"
+
+
+    frontend:
+
+      node:
+        "PENDING"
+
+      pnpm:
+        "PENDING"
+
+      npm_registry_integrity:
+        "PENDING"
+
+
+    requirements:
+
+      - "Known vulnerability assessment"
+      - "Integrity verification"
+      - "Lockfile integrity"
+      - "Artifact provenance where available"
+      - "Supported release line"
+      - "No mutable production reference"
+
+
+  # ==========================================================
+  # 26. HARD BLOCKERS
+  # ==========================================================
+
+  blockers:
+
+    - id: "DB-BLOCK-001"
+      component: "PostgreSQL"
+      reason:
+        "Database driver and migration compatibility unresolved."
+
+    - id: "DB-BLOCK-002"
+      component: "Qdrant"
+      reason:
+        "Exact client/server compatibility unresolved."
+
+    - id: "BROWSER-BLOCK-001"
+      component: "Playwright"
+      reason:
+        "Exact browser artifact identities unresolved."
+
+    - id: "BROWSER-BLOCK-002"
+      component: "Chromium"
+      reason:
+        "Exact revision and immutable artifact identity unresolved."
+
+    - id: "FRONTEND-BLOCK-001"
+      component: "React"
+      reason:
+        "react-dom companion version unresolved."
+
+    - id: "FRONTEND-BLOCK-002"
+      component: "Frontend dependency graph"
+      reason:
+        "Node/TypeScript/React/Vite/pnpm compatibility not fully validated."
+
+    - id: "FRONTEND-BLOCK-003"
+      component: "pnpm"
+      reason:
+        "Exact Node.js 24 compatibility requires validation."
+
+
+  # ==========================================================
+  # 27. CANDIDATE SUMMARY
+  # ==========================================================
+
+  candidate_summary:
+
+    data:
+
+      postgresql:
+        "18.4"
+
+      qdrant:
+        "1.18.2"
+
+      redis:
+        null
+
+      sqlite:
+        null
+
+      object_storage:
+        null
+
+
+    browser:
+
+      playwright:
+        "1.61.0"
+
+      chromium:
+        null
+
+      firefox:
+        null
+
+      webkit:
+        "26.5 observed through Playwright 1.61"
+
+
+    frontend:
+
+      node:
+        "24.18.1"
+
+      typescript:
+        "7.0.2"
+
+      react:
+        "19.2.8"
+
+      vite:
+        "8.1.5"
+
+      pnpm:
+        "11.17.0"
+
+
+  # ==========================================================
+  # 28. PROMOTION CRITERIA
+  # ==========================================================
+
+  promotion:
+
+    data:
+
+      mandatory:
+
+        - "Server version verified"
+        - "Client compatibility verified"
+        - "Migration compatibility verified"
+        - "Container compatibility verified"
+        - "Security validation passed"
+        - "Reproducible deployment validated"
+
+
+    browser:
+
+      mandatory:
+
+        - "Playwright version verified"
+        - "Browser revision verified"
+        - "Artifact identity verified"
+        - "Platform compatibility passed"
+        - "Browser installation reproducible"
+
+
+    frontend:
+
+      mandatory:
+
+        - "Node LTS compatibility passed"
+        - "TypeScript compatibility passed"
+        - "React/react-dom compatibility passed"
+        - "Vite compatibility passed"
+        - "pnpm compatibility passed"
+        - "Lockfile reproducibility passed"
+        - "Security validation passed"
+
+
+  # ==========================================================
+  # 29. CURRENT DECISION
+  # ==========================================================
+
+  current_decision:
+
+    postgresql:
+      candidate:
+        "18.4"
+      locked:
+        false
+
+    qdrant:
+      candidate:
+        "1.18.2"
+      locked:
+        false
+
+    playwright:
+      candidate:
+        "1.61.0"
+      locked:
+        false
+
+    node:
+      candidate:
+        "24.18.1"
+      locked:
+        false
+
+    typescript:
+      candidate:
+        "7.0.2"
+      locked:
+        false
+
+    react:
+      candidate:
+        "19.2.8"
+      locked:
+        false
+
+    vite:
+      candidate:
+        "8.1.5"
+      locked:
+        false
+
+    pnpm:
+      candidate:
+        "11.17.0"
+      locked:
+        false
+
+
+  # ==========================================================
+  # 30. CURRENT STATE
+  # ==========================================================
+
+  state:
+
+    data_resolution_started:
+      true
+
+    postgresql_resolved:
+      false
+
+    qdrant_resolved:
+      false
+
+    browser_resolution_started:
+      true
+
+    playwright_resolved:
+      false
+
+    chromium_resolved:
+      false
+
+    frontend_resolution_started:
+      true
+
+    node_resolved:
+      false
+
+    typescript_resolved:
+      false
+
+    react_resolved:
+      false
+
+    vite_resolved:
+      false
+
+    package_manager_resolved:
+      true
+
+    package_manager:
+      "pnpm"
+
+    compatibility_complete:
+      false
+
+    final_lock_ready:
+      false
+
+    status:
+      "DATA_BROWSER_FRONTEND_RESOLUTION_IN_PROGRESS"
+
+
+  # ==========================================================
+  # 31. NEXT PHASE
+  # ==========================================================
+
+  next_phase:
+
+    name:
+      "MCP and External Capability Resolution"
+
+    sequence:
+
+      - "Resolve MCP protocol version"
+      - "Resolve MCP Python SDK"
+      - "Resolve MCP client runtime compatibility"
+      - "Resolve enabled MCP servers"
+      - "Resolve server revisions"
+      - "Resolve server digests"
+      - "Resolve server transport"
+      - "Resolve server permission profiles"
+      - "Resolve GitHub MCP integration"
+      - "Resolve filesystem MCP integration"
+      - "Resolve browser MCP integration if enabled"
+      - "Resolve database MCP integration if enabled"
+      - "Validate MCP security boundaries"
+      - "Promote compatible MCP candidates"

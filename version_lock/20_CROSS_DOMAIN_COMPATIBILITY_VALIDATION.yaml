@@ -1,0 +1,1565 @@
+# ============================================================
+# JARVIS / JAS
+# VERSION LOCK v1 — CROSS-DOMAIN COMPATIBILITY VALIDATION
+# ============================================================
+
+cross_domain_compatibility_validation:
+
+  schema_version: "1.0"
+
+  project:
+    name: "JARVIS"
+    architecture: "JAS"
+    architecture_version: "JAS v1"
+
+  document:
+    id: "JAS-VL-020"
+    name: "Cross Domain Compatibility Validation"
+    version: "1.0"
+    status: "IN_PROGRESS"
+    authority: "VERSION_LOCK_v1"
+
+
+  # ==========================================================
+  # 1. PURPOSE
+  # ==========================================================
+
+  purpose:
+    >
+    This document validates compatibility across the major JAS
+    technology domains after individual component resolution.
+
+    No component is considered production-locked merely because
+    its individual version is valid.
+
+    A component may only progress toward Version Lock when its
+    dependencies, runtime, platform, security requirements and
+    artifact identity are compatible.
+
+
+  # ==========================================================
+  # 2. VALIDATION RULE
+  # ==========================================================
+
+  validation_rule:
+
+    individual_compatibility:
+      >
+      A component must first be individually supported.
+
+    cross_domain_compatibility:
+      >
+      The component must then operate correctly with all directly
+      connected JAS components.
+
+    production_lock:
+      >
+      Production lock requires both individual and cross-domain
+      compatibility.
+
+
+  # ==========================================================
+  # 3. VALIDATION STATES
+  # ==========================================================
+
+  states:
+
+    PASS:
+      description:
+        "Compatibility is verified."
+
+    PASS_WITH_CONDITION:
+      description:
+        "Compatible when the documented condition is satisfied."
+
+    PENDING:
+      description:
+        "Candidate exists but required verification has not yet completed."
+
+    BLOCKED:
+      description:
+        "A required dependency or decision prevents validation."
+
+    NOT_APPLICABLE:
+      description:
+        "The relationship does not apply."
+
+    LOCKED:
+      description:
+        "Compatibility is verified and the component may enter final lock."
+
+
+  # ==========================================================
+  # 4. MASTER DEPENDENCY CHAINS
+  # ==========================================================
+
+  dependency_chains:
+
+    ai:
+
+      - "Qwen3"
+      - "Model Runtime"
+      - "Transformers"
+      - "PyTorch"
+      - "CUDA"
+      - "NVIDIA Driver"
+      - "Container Runtime"
+      - "Host GPU"
+
+
+    backend:
+
+      - "CPython"
+      - "uv"
+      - "FastAPI"
+      - "Pydantic"
+      - "LangGraph"
+      - "PostgreSQL"
+      - "Qdrant"
+
+
+    browser:
+
+      - "CPython"
+      - "Playwright"
+      - "Chromium"
+
+
+    frontend:
+
+      - "Node.js"
+      - "pnpm"
+      - "TypeScript"
+      - "React"
+      - "react-dom"
+      - "Vite"
+
+
+    mcp:
+
+      - "MCP Protocol"
+      - "MCP Python SDK"
+      - "JAS MCP Client"
+      - "MCP Server"
+      - "Transport"
+      - "Permission Profile"
+
+
+    container:
+
+      - "Docker"
+      - "BuildKit"
+      - "Buildx"
+      - "Base Image"
+      - "Application Artifact"
+      - "OCI Image"
+
+
+    release:
+
+      - "Source Revision"
+      - "Lockfiles"
+      - "Container Digest"
+      - "SBOM"
+      - "Provenance"
+      - "Signature"
+
+
+  # ==========================================================
+  # 5. CORE RUNTIME
+  # ==========================================================
+
+  core_runtime:
+
+    python:
+
+      candidate:
+        "Python 3.12+"
+
+      exact_version:
+        null
+
+      status:
+        "PENDING"
+
+      dependencies:
+
+        uv:
+          "PENDING"
+
+        fastapi:
+          "PENDING"
+
+        pydantic:
+          "PENDING"
+
+        langgraph:
+          "PENDING"
+
+        playwright:
+          "PENDING"
+
+        mcp_sdk:
+          "PENDING"
+
+
+    node:
+
+      candidate:
+        "24.18.1"
+
+      status:
+        "PENDING"
+
+      dependencies:
+
+        pnpm:
+          "PENDING"
+
+        typescript:
+          "PENDING"
+
+        react:
+          "PENDING"
+
+        vite:
+          "PENDING"
+
+
+  # ==========================================================
+  # 6. AI COMPATIBILITY CHAIN
+  # ==========================================================
+
+  ai:
+
+    qwen3:
+
+      component_id:
+        "MODEL-LLM-QWEN3"
+
+      status:
+        "PENDING_EXACT_VARIANT"
+
+
+      required_identity:
+
+        - "Exact variant"
+        - "Revision"
+        - "Artifact digest"
+        - "Quantization"
+        - "Runtime"
+        - "License"
+
+
+    model_runtime:
+
+      status:
+        "PENDING"
+
+
+    transformers:
+
+      candidate:
+        null
+
+      status:
+        "PENDING"
+
+
+    pytorch:
+
+      candidate:
+        null
+
+      status:
+        "PENDING"
+
+
+    cuda:
+
+      candidate:
+        null
+
+      status:
+        "PENDING"
+
+
+    nvidia_driver:
+
+      candidate:
+        null
+
+      status:
+        "PENDING"
+
+
+    host_gpu:
+
+      profile:
+        null
+
+      status:
+        "PENDING"
+
+
+    container_runtime:
+
+      docker:
+        "29.6.2"
+
+      status:
+        "PASS_WITH_CONDITION"
+
+
+    compatibility_matrix:
+
+      qwen3_transformers:
+        "PENDING"
+
+      transformers_pytorch:
+        "PENDING"
+
+      pytorch_cuda:
+        "PENDING"
+
+      cuda_driver:
+        "PENDING"
+
+      driver_gpu:
+        "PENDING"
+
+      gpu_container:
+        "PENDING"
+
+      docker_gpu_runtime:
+        "PENDING"
+
+
+    ai_chain_status:
+      "BLOCKED"
+
+
+    blocker:
+      "Exact AI runtime, GPU profile and CUDA/PyTorch combination unresolved."
+
+
+  # ==========================================================
+  # 7. EMBEDDING / RERANKER CHAIN
+  # ==========================================================
+
+  retrieval_models:
+
+    embedding:
+
+      model:
+        "BAAI/bge-m3"
+
+      revision:
+        null
+
+      runtime:
+        null
+
+      status:
+        "PENDING"
+
+
+    reranker:
+
+      model:
+        "BAAI/bge-reranker-v2-m3"
+
+      revision:
+        null
+
+      runtime:
+        null
+
+      status:
+        "PENDING"
+
+
+    compatibility:
+
+      embedding_runtime:
+        "PENDING"
+
+      reranker_runtime:
+        "PENDING"
+
+      shared_runtime:
+        "PENDING"
+
+
+    status:
+      "PENDING"
+
+
+  # ==========================================================
+  # 8. STT / VOICE CHAIN
+  # ==========================================================
+
+  voice:
+
+    whisper:
+
+      model:
+        "OpenAI Whisper"
+
+      exact_variant:
+        null
+
+      revision:
+        null
+
+      runtime:
+        null
+
+      status:
+        "PENDING"
+
+
+    vad:
+
+      implementation:
+        "Silero VAD / approved VAD implementation"
+
+      exact_version:
+        null
+
+      status:
+        "PENDING"
+
+
+    tts:
+
+      engine:
+        "Piper"
+
+      enabled:
+        false
+
+      status:
+        "PROFILE_DEPENDENT"
+
+
+    compatibility:
+
+      whisper_runtime:
+        "PENDING"
+
+      whisper_vad:
+        "PENDING"
+
+      tts_runtime:
+        "NOT_APPLICABLE"
+
+
+    status:
+      "PENDING"
+
+
+  # ==========================================================
+  # 9. BACKEND COMPATIBILITY
+  # ==========================================================
+
+  backend:
+
+    python:
+      "PENDING"
+
+
+    fastapi:
+
+      candidate:
+        null
+
+      status:
+        "PENDING"
+
+
+    pydantic:
+
+      candidate:
+        null
+
+      status:
+        "PENDING"
+
+
+    langgraph:
+
+      candidate:
+        null
+
+      status:
+        "PENDING"
+
+
+    postgresql:
+
+      candidate:
+        "18.4"
+
+      status:
+        "PENDING"
+
+
+    qdrant:
+
+      candidate:
+        "1.18.2"
+
+      status:
+        "PENDING"
+
+
+    compatibility_matrix:
+
+      python_fastapi:
+        "PENDING"
+
+      python_pydantic:
+        "PENDING"
+
+      fastapi_pydantic:
+        "PENDING"
+
+      python_langgraph:
+        "PENDING"
+
+      python_postgresql_driver:
+        "PENDING"
+
+      python_qdrant_client:
+        "PENDING"
+
+      postgresql_migrations:
+        "PENDING"
+
+      qdrant_api:
+        "PENDING"
+
+
+    backend_status:
+      "PENDING"
+
+
+  # ==========================================================
+  # 10. DATA COMPATIBILITY
+  # ==========================================================
+
+  data:
+
+    postgresql:
+
+      server:
+        "18.4"
+
+      client:
+        null
+
+      migration:
+        null
+
+      status:
+        "PENDING"
+
+
+    qdrant:
+
+      server:
+        "1.18.2"
+
+      client:
+        null
+
+      status:
+        "PENDING"
+
+
+    redis:
+
+      enabled:
+        false
+
+      status:
+        "PROFILE_DEPENDENT"
+
+
+    sqlite:
+
+      enabled:
+        false
+
+      status:
+        "PROFILE_DEPENDENT"
+
+
+    object_storage:
+
+      enabled:
+        false
+
+      status:
+        "PROFILE_DEPENDENT"
+
+
+  # ==========================================================
+  # 11. BROWSER COMPATIBILITY
+  # ==========================================================
+
+  browser:
+
+    playwright:
+
+      candidate:
+        "1.61.0"
+
+      status:
+        "PENDING"
+
+
+    chromium:
+
+      revision:
+        null
+
+      artifact_identity:
+        null
+
+      status:
+        "PENDING"
+
+
+    firefox:
+
+      enabled:
+        false
+
+      status:
+        "PROFILE_DEPENDENT"
+
+
+    webkit:
+
+      enabled:
+        false
+
+      status:
+        "PROFILE_DEPENDENT"
+
+
+    compatibility_matrix:
+
+      python_playwright:
+        "PENDING"
+
+      playwright_chromium:
+        "PENDING"
+
+      playwright_firefox:
+        "NOT_APPLICABLE"
+
+      playwright_webkit:
+        "NOT_APPLICABLE"
+
+      chromium_platform:
+        "PENDING"
+
+
+    primary_browser_chain:
+      "BLOCKED"
+
+
+    blocker:
+      "Exact Playwright browser artifact identity unresolved."
+
+
+  # ==========================================================
+  # 12. FRONTEND COMPATIBILITY
+  # ==========================================================
+
+  frontend:
+
+    node:
+      "24.18.1"
+
+    pnpm:
+      "11.17.0"
+
+    typescript:
+      "7.0.2"
+
+    react:
+      "19.2.8"
+
+    react_dom:
+      null
+
+    vite:
+      "8.1.5"
+
+
+    compatibility_matrix:
+
+      node_pnpm:
+        "PENDING"
+
+      node_typescript:
+        "PENDING"
+
+      node_react:
+        "PENDING"
+
+      node_vite:
+        "PENDING"
+
+      pnpm_typescript:
+        "PENDING"
+
+      pnpm_react:
+        "PENDING"
+
+      pnpm_vite:
+        "PENDING"
+
+      typescript_react:
+        "PENDING"
+
+      typescript_vite:
+        "PENDING"
+
+      react_react_dom:
+        "BLOCKED"
+
+      react_vite:
+        "PENDING"
+
+
+    blocker:
+
+      component:
+        "react-dom"
+
+      reason:
+        "Exact companion version has not been resolved."
+
+
+    frontend_status:
+      "BLOCKED"
+
+
+  # ==========================================================
+  # 13. MCP COMPATIBILITY
+  # ==========================================================
+
+  mcp:
+
+    protocol:
+      "2026-07-28"
+
+    python_sdk:
+      "2.x"
+
+    exact_sdk_version:
+      null
+
+
+    client:
+      "JAS MCP Client"
+
+
+    transport:
+
+      stdio:
+        "APPROVED"
+
+      streamable_http:
+        "APPROVED"
+
+      sse:
+        "LEGACY"
+
+
+    compatibility_matrix:
+
+      protocol_sdk:
+        "PENDING_EXACT_SDK_VERSION"
+
+      sdk_python:
+        "PENDING"
+
+      sdk_transport_stdio:
+        "PENDING"
+
+      sdk_transport_streamable_http:
+        "PENDING"
+
+      server_protocol:
+        "PENDING"
+
+      server_sdk:
+        "PENDING"
+
+
+    reference_servers:
+
+      time:
+        "PENDING"
+
+      filesystem:
+        "PENDING"
+
+      git:
+        "PENDING"
+
+      fetch:
+        "PENDING"
+
+      memory:
+        "PENDING"
+
+      sequential_thinking:
+        "DEVELOPMENT_ONLY"
+
+      everything:
+        "TESTING_ONLY"
+
+
+    external_servers:
+
+      browser:
+        "BLOCKED"
+
+      database:
+        "BLOCKED"
+
+      docker:
+        "BLOCKED"
+
+      github:
+        "BLOCKED"
+
+
+    mcp_status:
+      "BLOCKED"
+
+
+  # ==========================================================
+  # 14. CONTAINER COMPATIBILITY
+  # ==========================================================
+
+  containers:
+
+    docker:
+      "29.6.2"
+
+    buildkit:
+      "0.31.1"
+
+    buildx:
+      null
+
+    compose:
+      null
+
+    oci:
+      "OCI"
+
+
+    compatibility_matrix:
+
+      docker_buildkit:
+        "PASS_WITH_CONDITION"
+
+      docker_buildx:
+        "PENDING"
+
+      buildx_buildkit:
+        "PENDING"
+
+      compose_docker:
+        "PENDING"
+
+      base_image_docker:
+        "PENDING"
+
+      oci_image:
+        "PENDING"
+
+
+    container_status:
+      "BLOCKED"
+
+
+  # ==========================================================
+  # 15. SUPPLY CHAIN
+  # ==========================================================
+
+  supply_chain:
+
+    source:
+
+      revision:
+        null
+
+      status:
+        "PENDING"
+
+
+    python_lockfile:
+
+      file:
+        "uv.lock"
+
+      status:
+        "PENDING"
+
+
+    frontend_lockfile:
+
+      file:
+        "pnpm-lock.yaml"
+
+      status:
+        "PENDING"
+
+
+    image_digest:
+
+      value:
+        null
+
+      status:
+        "PENDING"
+
+
+    sbom:
+
+      format:
+        "CycloneDX"
+
+      tooling:
+        null
+
+      status:
+        "PENDING"
+
+
+    provenance:
+
+      direction:
+        "SLSA-aligned / OCI attestation"
+
+      implementation:
+        null
+
+      status:
+        "PENDING"
+
+
+    signing:
+
+      candidate:
+        "Cosign"
+
+      version:
+        null
+
+      status:
+        "PENDING"
+
+
+    supply_chain_status:
+      "BLOCKED"
+
+
+  # ==========================================================
+  # 16. SECURITY CROSS-CHECK
+  # ==========================================================
+
+  security:
+
+    authorization:
+      "JAS Internal Authorization / Policy Engine"
+
+    audit:
+      "JAS Internal Audit System"
+
+    secret_management:
+      null
+
+    sandbox:
+      null
+
+    dependency_scanner:
+      null
+
+
+    mandatory_controls:
+
+      - "Least privilege"
+      - "Deny by default"
+      - "Credential isolation"
+      - "Audit logging"
+      - "Dependency scanning"
+      - "Artifact integrity"
+      - "Immutable production artifacts"
+      - "Rollback"
+
+
+    status:
+
+      authorization:
+        "PASS"
+
+      audit:
+        "PASS"
+
+      secret_management:
+        "PENDING"
+
+      sandbox:
+        "PENDING"
+
+      dependency_scanner:
+        "PENDING"
+
+      artifact_integrity:
+        "PENDING"
+
+
+    security_status:
+      "BLOCKED"
+
+
+  # ==========================================================
+  # 17. LICENSE CROSS-CHECK
+  # ==========================================================
+
+  licensing:
+
+    mandatory_components:
+
+      python:
+        "PENDING"
+
+      fastapi:
+        "PENDING"
+
+      pydantic:
+        "PENDING"
+
+      langgraph:
+        "PENDING"
+
+      qdrant:
+        "PENDING"
+
+      postgresql:
+        "PENDING"
+
+      playwright:
+        "Apache-2.0"
+
+      react:
+        "MIT"
+
+      vite:
+        "MIT"
+
+      typescript:
+        "Apache-2.0"
+
+      node:
+        "MIT"
+
+      pnpm:
+        "MIT"
+
+
+    special_review:
+
+      piper:
+        "REQUIRED_IF_ENABLED"
+
+      paligemma:
+        "REQUIRED_IF_ENABLED"
+
+      colpali:
+        "REQUIRED_IF_ENABLED"
+
+
+    status:
+      "PENDING"
+
+
+  # ==========================================================
+  # 18. PLATFORM CROSS-CHECK
+  # ==========================================================
+
+  platform:
+
+    primary:
+
+      development:
+        "Windows x86_64"
+
+      deployment:
+        "Linux x86_64"
+
+
+    secondary:
+
+      - "Linux arm64"
+      - "macOS arm64"
+
+
+    validation:
+
+      windows_python:
+        "PENDING"
+
+      windows_node:
+        "PENDING"
+
+      windows_playwright:
+        "PENDING"
+
+      linux_python:
+        "PENDING"
+
+      linux_node:
+        "PENDING"
+
+      linux_docker:
+        "PENDING"
+
+      linux_gpu:
+        "PENDING"
+
+      arm64:
+        "PENDING"
+
+
+    platform_status:
+      "PENDING"
+
+
+  # ==========================================================
+  # 19. RELEASE CROSS-CHECK
+  # ==========================================================
+
+  release:
+
+    source_revision:
+      null
+
+    dependency_lockfiles:
+
+      python:
+        "uv.lock"
+
+      frontend:
+        "pnpm-lock.yaml"
+
+
+    artifact:
+
+      container:
+        digest:
+          null
+
+      model:
+        digest:
+          null
+
+      frontend:
+        integrity:
+          null
+
+
+    security:
+
+      sbom:
+        "REQUIRED"
+
+      provenance:
+        "REQUIRED"
+
+      signature:
+        "REQUIRED"
+
+
+    rollback:
+      "REQUIRED"
+
+
+    release_status:
+      "BLOCKED"
+
+
+  # ==========================================================
+  # 20. MASTER COMPATIBILITY MATRIX
+  # ==========================================================
+
+  master_matrix:
+
+    runtime:
+
+      python:
+        "PENDING"
+
+      node:
+        "PENDING"
+
+
+    ai:
+
+      qwen3:
+        "BLOCKED"
+
+      pytorch:
+        "BLOCKED"
+
+      cuda:
+        "BLOCKED"
+
+
+    backend:
+
+      fastapi:
+        "PENDING"
+
+      pydantic:
+        "PENDING"
+
+      langgraph:
+        "PENDING"
+
+
+    data:
+
+      postgresql:
+        "PENDING"
+
+      qdrant:
+        "PENDING"
+
+
+    browser:
+
+      playwright:
+        "PENDING"
+
+      chromium:
+        "BLOCKED"
+
+
+    frontend:
+
+      react:
+        "PENDING"
+
+      react_dom:
+        "BLOCKED"
+
+      vite:
+        "PENDING"
+
+      typescript:
+        "PENDING"
+
+      pnpm:
+        "PENDING"
+
+
+    mcp:
+
+      protocol:
+        "PASS"
+
+      sdk:
+        "PENDING"
+
+      servers:
+        "PENDING"
+
+
+    containers:
+
+      docker:
+        "PASS_WITH_CONDITION"
+
+      buildkit:
+        "PASS_WITH_CONDITION"
+
+      buildx:
+        "PENDING"
+
+      compose:
+        "PENDING"
+
+
+    security:
+
+      authorization:
+        "PASS"
+
+      audit:
+        "PASS"
+
+      secrets:
+        "PENDING"
+
+      sandbox:
+        "PENDING"
+
+
+    supply_chain:
+
+      sbom:
+        "PENDING"
+
+      provenance:
+        "PENDING"
+
+      signing:
+        "PENDING"
+
+
+  # ==========================================================
+  # 21. HARD BLOCKERS
+  # ==========================================================
+
+  blockers:
+
+    - id: "XCOMP-BLOCK-001"
+      domain: "AI"
+      component: "Qwen3 / PyTorch / CUDA"
+      reason:
+        "Exact model, runtime, CUDA and hardware combination unresolved."
+
+    - id: "XCOMP-BLOCK-002"
+      domain: "Browser"
+      component: "Chromium"
+      reason:
+        "Exact Playwright browser artifact identity unresolved."
+
+    - id: "XCOMP-BLOCK-003"
+      domain: "Frontend"
+      component: "react-dom"
+      reason:
+        "Exact React companion package version unresolved."
+
+    - id: "XCOMP-BLOCK-004"
+      domain: "MCP"
+      component: "Python SDK"
+      reason:
+        "Exact SDK version unresolved."
+
+    - id: "XCOMP-BLOCK-005"
+      domain: "MCP"
+      component: "External servers"
+      reason:
+        "Canonical implementations for Browser, Database, Docker and GitHub unresolved."
+
+    - id: "XCOMP-BLOCK-006"
+      domain: "Containers"
+      component: "Buildx / Compose"
+      reason:
+        "Exact versions unresolved."
+
+    - id: "XCOMP-BLOCK-007"
+      domain: "Security"
+      component: "Secret/Sandbox/Scanner"
+      reason:
+        "Concrete implementations unresolved."
+
+    - id: "XCOMP-BLOCK-008"
+      domain: "Supply Chain"
+      component: "SBOM/Provenance/Signing"
+      reason:
+        "Exact production tooling and identities unresolved."
+
+
+  # ==========================================================
+  # 22. WHAT CAN BE PROMOTED
+  # ==========================================================
+
+  promotable:
+
+    architecture:
+
+      mcp_protocol:
+        "2026-07-28"
+
+      container_standard:
+        "OCI"
+
+      frontend_package_manager:
+        "pnpm"
+
+      primary_platform:
+        "Linux x86_64"
+
+      development_platform:
+        "Windows x86_64"
+
+
+    candidates:
+
+      docker:
+        "29.6.2"
+
+      buildkit:
+        "0.31.1"
+
+      node:
+        "24.18.1"
+
+      pnpm:
+        "11.17.0"
+
+      typescript:
+        "7.0.2"
+
+      react:
+        "19.2.8"
+
+      vite:
+        "8.1.5"
+
+      playwright:
+        "1.61.0"
+
+      postgresql:
+        "18.4"
+
+      qdrant:
+        "1.18.2"
+
+
+  # ==========================================================
+  # 23. NON-PROMOTABLE
+  # ==========================================================
+
+  non_promotable:
+
+    - "Qwen3 exact variant"
+    - "PyTorch"
+    - "CUDA"
+    - "NVIDIA driver"
+    - "Chromium revision"
+    - "react-dom exact version"
+    - "MCP Python SDK exact version"
+    - "MCP server immutable identities"
+    - "Buildx exact version"
+    - "Compose exact version"
+    - "Base image digests"
+    - "Secret management implementation"
+    - "Sandbox implementation"
+    - "Dependency scanner"
+    - "SBOM tooling version"
+    - "Provenance implementation"
+    - "Cosign version"
+    - "Production signing identity"
+
+
+  # ==========================================================
+  # 24. VALIDATION SCORECARD
+  # ==========================================================
+
+  scorecard:
+
+    architecture:
+      status:
+        "PASS"
+
+    individual_versions:
+      status:
+        "PARTIAL"
+
+    cross_domain_compatibility:
+      status:
+        "INCOMPLETE"
+
+    security:
+      status:
+        "INCOMPLETE"
+
+    licensing:
+      status:
+        "INCOMPLETE"
+
+    supply_chain:
+      status:
+        "INCOMPLETE"
+
+    platform:
+      status:
+        "INCOMPLETE"
+
+    reproducibility:
+      status:
+        "INCOMPLETE"
+
+    final_lock:
+      status:
+        "NOT_READY"
+
+
+  # ==========================================================
+  # 25. CURRENT DECISION
+  # ==========================================================
+
+  current_decision:
+
+    architecture_validated:
+      true
+
+    production_version_lock:
+      false
+
+    candidate_lock:
+      false
+
+    reason:
+      >
+      Multiple cross-domain dependencies still require exact
+      compatibility validation before production locking.
+
+
+  # ==========================================================
+  # 26. NEXT PHASE
+  # ==========================================================
+
+  next_phase:
+
+    name:
+      "Version Lock Candidate Construction"
+
+    document:
+      "21_VERSION_LOCK_CANDIDATE.yaml"
+
+    sequence:
+
+      - "Resolve remaining exact versions"
+      - "Resolve exact revisions"
+      - "Resolve artifact digests"
+      - "Resolve hardware profile"
+      - "Resolve PyTorch/CUDA chain"
+      - "Resolve Chromium artifact"
+      - "Resolve React DOM companion"
+      - "Resolve MCP SDK"
+      - "Resolve MCP server identities"
+      - "Resolve Buildx"
+      - "Resolve Compose"
+      - "Resolve base images"
+      - "Resolve security implementations"
+      - "Resolve SBOM tooling"
+      - "Resolve provenance tooling"
+      - "Resolve signing tooling"
+      - "Run final compatibility validation"
+      - "Generate Version Lock Candidate"

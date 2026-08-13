@@ -1,0 +1,1384 @@
+# ============================================================
+# JARVIS / JAS
+# VERSION LOCK v1 — PLATFORM LOCKS
+# ============================================================
+
+version_lock_platform_locks:
+
+  schema_version: "1.0"
+
+  project:
+    name: "JARVIS"
+    architecture: "JAS"
+    architecture_version: "JAS v1"
+
+  lock:
+    version: "1.0"
+    status: "CANDIDATE"
+    authority: "VERSION_LOCK_v1"
+
+  # ----------------------------------------------------------
+  # IMPORTANT
+  # ----------------------------------------------------------
+  #
+  # Platform identity is part of the Version Lock.
+  #
+  # A software version without its supported operating system,
+  # CPU architecture and relevant native runtime constraints
+  # does not constitute a complete reproducible environment.
+  #
+  # This document therefore governs:
+  #
+  #   operating system
+  #   CPU architecture
+  #   Python platform
+  #   Node.js platform
+  #   native toolchain target
+  #   GPU platform
+  #   CUDA compatibility
+  #   Docker platform
+  #   browser platform
+  #   model hardware profile
+  #
+  # Exact hardware-specific values remain unresolved until the
+  # JAS hardware profile is finalized.
+  #
+  # ==========================================================
+
+
+  # ==========================================================
+  # 1. SUPPORTED OPERATING SYSTEMS
+  # ==========================================================
+
+  operating_systems:
+
+    windows:
+
+      status: "PRIMARY_DEVELOPMENT_PLATFORM"
+
+      approved: true
+
+      architecture_support:
+
+        x86_64:
+          status: "REQUIRED"
+
+        arm64:
+          status: "CONDITIONAL"
+
+      role:
+
+        - "Primary development"
+        - "Desktop execution"
+        - "Local JARVIS operation"
+        - "Browser automation"
+        - "Frontend development"
+
+      requirements:
+
+        python:
+          required: true
+
+        nodejs:
+          required_if_frontend: true
+
+        docker:
+          supported: true
+
+        browser:
+          supported: true
+
+        native_build:
+          supported: true
+
+        cuda:
+          supported: true
+
+      validation_status: "PENDING_MACHINE_PROFILE"
+
+
+    linux:
+
+      status: "PRIMARY_DEPLOYMENT_PLATFORM"
+
+      approved: true
+
+      architecture_support:
+
+        x86_64:
+          status: "REQUIRED"
+
+        arm64:
+          status: "CONDITIONAL"
+
+      role:
+
+        - "Production deployment"
+        - "Server deployment"
+        - "Container host"
+        - "AI inference"
+        - "Automation"
+        - "CI/CD"
+
+      requirements:
+
+        python:
+          required: true
+
+        nodejs:
+          required_if_frontend: true
+
+        docker:
+          supported: true
+
+        browser:
+          supported: true
+
+        native_build:
+          supported: true
+
+        cuda:
+          supported: true
+
+      validation_status: "PENDING_DEPLOYMENT_PROFILE"
+
+
+    macos:
+
+      status: "SECONDARY_DEVELOPMENT_PLATFORM"
+
+      approved: true
+
+      architecture_support:
+
+        x86_64:
+          status: "LEGACY_COMPATIBILITY"
+
+        arm64:
+          status: "SUPPORTED"
+
+      role:
+
+        - "Secondary development"
+        - "Testing"
+        - "Local development"
+
+      requirements:
+
+        python:
+          required: true
+
+        nodejs:
+          required_if_frontend: true
+
+        docker:
+          supported: true
+
+        browser:
+          supported: true
+
+        native_build:
+          supported: true
+
+        cuda:
+          supported: false
+
+      limitations:
+
+        - >
+          NVIDIA CUDA-based acceleration is not part of the
+          macOS baseline.
+
+        - >
+          GPU-specific model runtimes require platform-specific
+          validation.
+
+      validation_status: "PENDING_PLATFORM_TESTING"
+
+
+  # ==========================================================
+  # 2. CPU ARCHITECTURES
+  # ==========================================================
+
+  cpu_architectures:
+
+    x86_64:
+
+      status: "PRIMARY"
+
+      aliases:
+
+        - "amd64"
+        - "x64"
+
+      approved: true
+
+      supported_os:
+
+        - "Windows"
+        - "Linux"
+        - "macOS"
+
+      priority: "P0"
+
+      native_build:
+        required: true
+
+      model_support:
+        required: true
+
+      container_support:
+        required: true
+
+
+    arm64:
+
+      status: "CONDITIONAL"
+
+      aliases:
+
+        - "aarch64"
+        - "arm64"
+
+      approved: true
+
+      supported_os:
+
+        - "Linux"
+        - "Windows"
+        - "macOS"
+
+      priority: "P1"
+
+      restrictions:
+
+        - >
+          Every native dependency must provide a compatible
+          ARM64 artifact or be buildable from source.
+
+        - >
+          AI runtime compatibility must be validated separately.
+
+        - >
+          CUDA support depends on the selected hardware platform.
+
+      native_build:
+        required: true
+
+      model_support:
+        required: true
+
+      container_support:
+        required: true
+
+
+  # ==========================================================
+  # 3. PRIMARY PLATFORM PROFILE
+  # ==========================================================
+
+  profiles:
+
+    development_primary:
+
+      id: "PLATFORM-DEV-WINDOWS-X64"
+
+      operating_system:
+        family: "Windows"
+        architecture: "x86_64"
+        exact_version: null
+        exact_build: null
+
+      role:
+        - "Primary JAS development"
+
+      required_components:
+
+        python: true
+        nodejs: true
+        git: true
+        docker: true
+        playwright: true
+
+      gpu:
+        required: false
+        enabled_if_available: true
+
+      cuda:
+        required_if_gpu: true
+
+      status: "CANDIDATE"
+
+
+    deployment_primary:
+
+      id: "PLATFORM-DEP-LINUX-X64"
+
+      operating_system:
+        family: "Linux"
+        distribution: null
+        distribution_version: null
+        kernel_version: null
+        architecture: "x86_64"
+
+      role:
+        - "Primary deployment"
+        - "AI inference"
+        - "Backend services"
+        - "Container execution"
+
+      required_components:
+
+        python: true
+        docker: true
+        git: true
+
+      frontend:
+        required_if_deployed: true
+        nodejs: true
+
+      gpu:
+        required: false
+        enabled_if_available: true
+
+      cuda:
+        required_if_gpu: true
+
+      status: "CANDIDATE"
+
+
+    development_secondary_macos:
+
+      id: "PLATFORM-DEV-MACOS-ARM64"
+
+      operating_system:
+        family: "macOS"
+        exact_version: null
+        architecture: "arm64"
+
+      role:
+        - "Secondary development"
+        - "Compatibility testing"
+
+      required_components:
+
+        python: true
+        nodejs: true
+        git: true
+
+      docker:
+        supported: true
+        exact_version: null
+
+      gpu:
+        type: "Apple Silicon"
+        runtime: null
+        exact_runtime_version: null
+
+      cuda:
+        supported: false
+
+      status: "CANDIDATE"
+
+
+  # ==========================================================
+  # 4. PYTHON PLATFORM
+  # ==========================================================
+
+  python_platform:
+
+    runtime:
+      name: "CPython"
+
+      version_family:
+        approved: "3.12+"
+
+        exact_version: null
+
+      implementation:
+        "CPython"
+
+    supported_platforms:
+
+      - os: "Windows"
+        architecture: "x86_64"
+
+      - os: "Linux"
+        architecture: "x86_64"
+
+      - os: "Linux"
+        architecture: "arm64"
+
+      - os: "macOS"
+        architecture: "arm64"
+
+    wheel_policy:
+
+      preferred:
+        - "Official platform wheel"
+
+      fallback:
+        - "Approved source build"
+
+      prohibited:
+
+        - "Unknown binary distribution"
+        - "Unverified native artifact"
+
+    native_extension_policy:
+
+      required_architecture_match: true
+
+      required_python_abi_match: true
+
+      required_integrity_verification: true
+
+
+  # ==========================================================
+  # 5. FRONTEND PLATFORM
+  # ==========================================================
+
+  frontend_platform:
+
+    runtime:
+
+      name: "Node.js"
+
+      version_policy: "Supported LTS line"
+
+      exact_version: null
+
+    language:
+
+      name: "TypeScript"
+
+      compiler_version: null
+
+    build:
+
+      tool: "Vite"
+
+      version: null
+
+    package_manager:
+
+      selected: null
+
+      candidates:
+
+        - "pnpm"
+        - "npm"
+
+      lockfile:
+
+        type: "Native ecosystem lockfile"
+
+        path: null
+
+    supported_platforms:
+
+      - "Windows x86_64"
+      - "Linux x86_64"
+      - "Linux arm64"
+      - "macOS arm64"
+
+    validation_status: "PENDING_PACKAGE_MANAGER_SELECTION"
+
+
+  # ==========================================================
+  # 6. NATIVE TOOLCHAIN PLATFORM
+  # ==========================================================
+
+  native_toolchain:
+
+    rust:
+
+      approved: true
+
+      status: "CONDITIONAL"
+
+      toolchain:
+
+        version: null
+
+        channel: "stable"
+
+        target:
+
+          windows_x86_64: null
+
+          linux_x86_64: null
+
+          linux_arm64: null
+
+          macos_arm64: null
+
+      cargo_version: null
+
+      lock_required: true
+
+
+    cpp:
+
+      approved: true
+
+      status: "CONDITIONAL"
+
+      compiler:
+
+        windows:
+          selected: null
+
+        linux:
+          selected: null
+
+        macos:
+          selected: null
+
+      compiler_version: null
+
+      target:
+
+        windows_x86_64: null
+
+        linux_x86_64: null
+
+        linux_arm64: null
+
+        macos_arm64: null
+
+      lock_required: true
+
+
+    cmake:
+
+      approved: true
+
+      version: null
+
+      status: "LOCK_REQUIRED_IF_USED"
+
+
+    ninja:
+
+      approved: true
+
+      version: null
+
+      status: "LOCK_REQUIRED_IF_USED"
+
+
+  # ==========================================================
+  # 7. GPU PLATFORM
+  # ==========================================================
+
+  gpu:
+
+    policy:
+
+      cpu_only_execution:
+        supported: true
+
+      gpu_acceleration:
+        supported: true
+
+      production_gpu:
+        status: "HARDWARE_PROFILE_DEPENDENT"
+
+    nvidia:
+
+      approved: true
+
+      status: "CONDITIONAL"
+
+      architecture:
+        selected: null
+
+      driver:
+
+        version: null
+
+        minimum_required: null
+
+      cuda:
+
+        toolkit_version: null
+
+        runtime_version: null
+
+        compatibility_status: "PENDING"
+
+      cudnn:
+
+        version: null
+
+        status: "PENDING"
+
+      pytorch_cuda:
+
+        version: null
+
+        build_identifier: null
+
+      validation:
+
+        driver_compatibility: false
+
+        cuda_compatibility: false
+
+        cudnn_compatibility: false
+
+        framework_compatibility: false
+
+      final_status: "PENDING_HARDWARE_PROFILE"
+
+
+    apple_silicon:
+
+      approved: true
+
+      status: "SECONDARY"
+
+      architecture: "arm64"
+
+      acceleration:
+
+        framework: null
+
+        version: null
+
+        backend: null
+
+      cuda:
+        supported: false
+
+      validation_status: "PENDING"
+
+
+    cpu:
+
+      approved: true
+
+      status: "BASELINE"
+
+      acceleration:
+        framework: null
+
+      requirements:
+
+        - "AVX compatibility where required"
+        - "Architecture-compatible binaries"
+
+
+  # ==========================================================
+  # 8. CUDA LOCK RELATIONSHIP
+  # ==========================================================
+
+  cuda:
+
+    status: "LOCK_REQUIRED_IF_USED"
+
+    toolkit:
+
+      version: null
+
+    driver:
+
+      version: null
+
+    compatibility_matrix:
+
+      python: "PENDING"
+
+      pytorch: "PENDING"
+
+      transformers: "PENDING"
+
+      qwen3_runtime: "PENDING"
+
+      whisper_runtime: "PENDING"
+
+      vision_runtime: "PENDING"
+
+    architecture:
+
+      gpu_compute_capability: null
+
+    lock_identity:
+
+      required:
+
+        - "cuda_version"
+        - "driver_version"
+        - "gpu_architecture"
+        - "framework_compatibility"
+
+    validation_status: "NOT_LOCKED"
+
+
+  # ==========================================================
+  # 9. DOCKER PLATFORM
+  # ==========================================================
+
+  docker:
+
+    engine:
+
+      version: null
+
+      platform: null
+
+    builder:
+
+      buildkit_version: null
+
+      buildx_version: null
+
+    compose:
+
+      version: null
+
+    artifact_standard:
+
+      name: "OCI"
+
+      version: null
+
+    image_policy:
+
+      production:
+
+        immutable_digest_required: true
+
+        architecture_required: true
+
+        tag_only_deployment: false
+
+      development:
+
+        digest_preferred: true
+
+        tag_allowed: true
+
+    supported_platforms:
+
+      - "linux/amd64"
+      - "linux/arm64"
+
+    host_platforms:
+
+      - "Windows x86_64"
+      - "Linux x86_64"
+      - "Linux arm64"
+      - "macOS arm64"
+
+    multi_architecture:
+
+      enabled: true
+
+      release_policy:
+        status: "PENDING"
+
+    validation_status: "PENDING_DOCKER_LOCK"
+
+
+  # ==========================================================
+  # 10. BROWSER PLATFORM
+  # ==========================================================
+
+  browser:
+
+    framework:
+
+      name: "Playwright"
+
+      version: null
+
+    chromium:
+
+      supported: true
+
+      revision: null
+
+      build: null
+
+      architecture: null
+
+      artifact_digest: null
+
+    firefox:
+
+      supported: true
+
+      revision: null
+
+      build: null
+
+      architecture: null
+
+      status: "OPTIONAL"
+
+    webkit:
+
+      supported: true
+
+      revision: null
+
+      build: null
+
+      architecture: null
+
+      status: "OPTIONAL"
+
+    platform_matrix:
+
+      windows_x86_64:
+        chromium: true
+        firefox: true
+        webkit: true
+
+      linux_x86_64:
+        chromium: true
+        firefox: true
+        webkit: true
+
+      linux_arm64:
+        chromium: true
+        firefox: true
+        webkit: true
+
+      macos_arm64:
+        chromium: true
+        firefox: true
+        webkit: true
+
+    release_policy:
+
+      browser_revision_required: true
+
+      framework_browser_compatibility_required: true
+
+      mutable_browser_downloads_prohibited: true
+
+    validation_status: "PENDING_BROWSER_LOCK"
+
+
+  # ==========================================================
+  # 11. MODEL HARDWARE PROFILES
+  # ==========================================================
+
+  model_hardware:
+
+    profile_cpu:
+
+      id: "MODEL-HW-CPU"
+
+      cpu_only: true
+
+      gpu: false
+
+      ram_gb: null
+
+      storage_gb: null
+
+      supported_models:
+
+        qwen3: "PENDING_BENCHMARK"
+
+        embeddings: true
+
+        reranker: true
+
+        whisper: true
+
+        vision: "PENDING_BENCHMARK"
+
+      status: "CANDIDATE"
+
+
+    profile_low_vram:
+
+      id: "MODEL-HW-GPU-LOW"
+
+      gpu_vendor: "NVIDIA"
+
+      gpu_model: null
+
+      vram_gb: null
+
+      cuda_version: null
+
+      supported_models:
+
+        qwen3: "PENDING_QUANTIZATION"
+
+        embeddings: true
+
+        reranker: true
+
+        whisper: true
+
+        vision: "PENDING"
+
+      status: "CANDIDATE"
+
+
+    profile_high_vram:
+
+      id: "MODEL-HW-GPU-HIGH"
+
+      gpu_vendor: "NVIDIA"
+
+      gpu_model: null
+
+      vram_gb: null
+
+      cuda_version: null
+
+      supported_models:
+
+        qwen3: "PENDING_VARIANT"
+
+        embeddings: true
+
+        reranker: true
+
+        whisper: true
+
+        vision: true
+
+      status: "CANDIDATE"
+
+
+  # ==========================================================
+  # 12. PLATFORM / MODEL COMPATIBILITY MATRIX
+  # ==========================================================
+
+  compatibility_matrix:
+
+    qwen3:
+
+      windows_x86_64_cpu:
+        status: "SUPPORTED_WITH_PERFORMANCE_LIMITS"
+
+      windows_x86_64_nvidia:
+        status: "SUPPORTED_PENDING_CUDA_LOCK"
+
+      linux_x86_64_cpu:
+        status: "SUPPORTED_WITH_PERFORMANCE_LIMITS"
+
+      linux_x86_64_nvidia:
+        status: "PRIMARY_TARGET"
+
+      linux_arm64:
+        status: "CONDITIONAL"
+
+      macos_arm64:
+        status: "CONDITIONAL"
+
+    bge_m3:
+
+      windows_x86_64:
+        status: "SUPPORTED"
+
+      linux_x86_64:
+        status: "SUPPORTED"
+
+      linux_arm64:
+        status: "SUPPORTED_PENDING_RUNTIME"
+
+      macos_arm64:
+        status: "SUPPORTED_PENDING_RUNTIME"
+
+    bge_reranker_v2_m3:
+
+      windows_x86_64:
+        status: "SUPPORTED"
+
+      linux_x86_64:
+        status: "SUPPORTED"
+
+      linux_arm64:
+        status: "SUPPORTED_PENDING_RUNTIME"
+
+      macos_arm64:
+        status: "SUPPORTED_PENDING_RUNTIME"
+
+    whisper_large_v3:
+
+      windows_x86_64:
+        status: "SUPPORTED"
+
+      linux_x86_64:
+        status: "SUPPORTED"
+
+      linux_arm64:
+        status: "SUPPORTED_PENDING_RUNTIME"
+
+      macos_arm64:
+        status: "SUPPORTED"
+
+    siglip2:
+
+      windows_x86_64:
+        status: "SUPPORTED_PENDING_RUNTIME"
+
+      linux_x86_64:
+        status: "SUPPORTED"
+
+      linux_arm64:
+        status: "CONDITIONAL"
+
+      macos_arm64:
+        status: "CONDITIONAL"
+
+
+  # ==========================================================
+  # 13. NATIVE ARTIFACT POLICY
+  # ==========================================================
+
+  native_artifacts:
+
+    platform_identity_required: true
+
+    architecture_identity_required: true
+
+    abi_identity_required: true
+
+    artifact_integrity_required: true
+
+    allowed_sources:
+
+      - "Official upstream release"
+      - "Approved package registry"
+      - "JAS-controlled build"
+      - "Approved vendor distribution"
+
+    prohibited_sources:
+
+      - "Unknown binary mirrors"
+      - "Unverified community binaries"
+      - "Mutable download URLs without integrity metadata"
+
+
+  # ==========================================================
+  # 14. PLATFORM NORMALIZATION
+  # ==========================================================
+
+  normalization:
+
+    operating_system:
+
+      canonical_values:
+
+        windows: "windows"
+
+        linux: "linux"
+
+        macos: "macos"
+
+    architecture:
+
+      canonical_values:
+
+        x86_64: "x86_64"
+
+        amd64: "x86_64"
+
+        arm64: "arm64"
+
+        aarch64: "arm64"
+
+    container:
+
+      canonical_values:
+
+        amd64: "linux/amd64"
+
+        x86_64: "linux/amd64"
+
+        arm64: "linux/arm64"
+
+        aarch64: "linux/arm64"
+
+
+  # ==========================================================
+  # 15. PLATFORM DETECTION
+  # ==========================================================
+
+  detection:
+
+    bootstrap_required: true
+
+    bootstrap_must_detect:
+
+      - "Operating system"
+      - "Operating system version"
+      - "Architecture"
+      - "CPU features"
+      - "Python version"
+      - "Node.js version where applicable"
+      - "Docker availability"
+      - "Docker architecture"
+      - "GPU vendor"
+      - "GPU model"
+      - "GPU driver"
+      - "CUDA runtime where applicable"
+      - "Available RAM"
+      - "Available storage"
+      - "Browser availability"
+
+    unknown_platform:
+
+      action: "FAIL_COMPATIBILITY_CHECK"
+
+    unsupported_platform:
+
+      action: "BLOCK_INSTALLATION"
+
+
+  # ==========================================================
+  # 16. PLATFORM DRIFT
+  # ==========================================================
+
+  drift_detection:
+
+    required: true
+
+    detect:
+
+      - "OS version drift"
+      - "Architecture mismatch"
+      - "Python ABI mismatch"
+      - "Native compiler drift"
+      - "GPU driver drift"
+      - "CUDA drift"
+      - "Docker platform drift"
+      - "Browser revision drift"
+      - "Model hardware profile drift"
+
+    severity:
+
+      runtime_drift: "HIGH"
+
+      native_toolchain_drift: "HIGH"
+
+      cuda_drift: "CRITICAL"
+
+      browser_drift: "MEDIUM"
+
+      hardware_profile_drift: "HIGH"
+
+    unauthorized_drift:
+
+      action: "COMPLIANCE_FAILURE"
+
+
+  # ==========================================================
+  # 17. REPRODUCIBILITY POLICY
+  # ==========================================================
+
+  reproducibility:
+
+    required: true
+
+    environment_identity:
+
+      includes:
+
+        - "OS"
+        - "OS version"
+        - "Architecture"
+        - "Runtime versions"
+        - "Native toolchain versions"
+        - "GPU runtime versions where applicable"
+        - "Container platform"
+        - "Browser revisions"
+        - "Model hardware profile"
+
+    goal:
+
+      >
+      Two supported machines executing the same Version Lock SHALL
+      produce functionally equivalent environments within the
+      documented platform-specific boundaries.
+
+
+  # ==========================================================
+  # 18. PLATFORM LOCK IDENTITY
+  # ==========================================================
+
+  lock_identity_requirements:
+
+    operating_system:
+
+      required:
+
+        - "os_family"
+        - "os_version"
+        - "architecture"
+
+    python_platform:
+
+      required:
+
+        - "python_version"
+        - "implementation"
+        - "architecture"
+        - "ABI"
+
+    native_toolchain:
+
+      required:
+
+        - "compiler"
+        - "compiler_version"
+        - "target"
+        - "architecture"
+
+    gpu:
+
+      required:
+
+        - "vendor"
+        - "model"
+        - "driver_version"
+
+      conditional:
+
+        - "cuda_version"
+        - "cudnn_version"
+        - "compute_capability"
+
+    container:
+
+      required:
+
+        - "platform"
+        - "architecture"
+        - "image_digest"
+
+    browser:
+
+      required:
+
+        - "framework_version"
+        - "browser_family"
+        - "browser_revision"
+
+
+  # ==========================================================
+  # 19. PRODUCTION PLATFORM BASELINE
+  # ==========================================================
+
+  production_baseline:
+
+    primary:
+
+      id: "PLATFORM-DEP-LINUX-X64"
+
+      os: "Linux"
+
+      architecture: "x86_64"
+
+      role:
+        - "Backend"
+        - "AI inference"
+        - "Containers"
+        - "Automation"
+
+      status: "CANDIDATE"
+
+
+    development:
+
+      id: "PLATFORM-DEV-WINDOWS-X64"
+
+      os: "Windows"
+
+      architecture: "x86_64"
+
+      role:
+        - "Primary development"
+
+      status: "CANDIDATE"
+
+
+    secondary:
+
+      id: "PLATFORM-DEV-MACOS-ARM64"
+
+      os: "macOS"
+
+      architecture: "arm64"
+
+      role:
+        - "Secondary development"
+        - "Compatibility testing"
+
+      status: "CANDIDATE"
+
+
+  # ==========================================================
+  # 20. VALIDATION GATE
+  # ==========================================================
+
+  validation:
+
+    operating_system_matrix_validated: false
+
+    architecture_matrix_validated: false
+
+    python_platform_validated: false
+
+    frontend_platform_validated: false
+
+    native_toolchain_validated: false
+
+    gpu_platform_validated: false
+
+    cuda_validated: false
+
+    docker_platform_validated: false
+
+    browser_platform_validated: false
+
+    model_hardware_validated: false
+
+    cross_platform_reproducibility_validated: false
+
+    final_lock_status: "CANDIDATE"
+
+
+  # ==========================================================
+  # 21. NEXT PHASE
+  # ==========================================================
+
+  next_phase:
+
+    name: "Platform Exact Resolution"
+
+    sequence:
+
+      - "Determine exact Windows development version/build"
+      - "Determine exact Linux deployment distribution/version"
+      - "Determine supported CPU architectures"
+      - "Finalize Python platform targets"
+      - "Finalize Node.js platform targets"
+      - "Finalize Rust targets"
+      - "Finalize C/C++ compiler targets"
+      - "Finalize Docker platforms"
+      - "Finalize Playwright browser platform matrix"
+      - "Determine JAS GPU hardware profile"
+      - "Resolve NVIDIA driver requirements"
+      - "Resolve CUDA version"
+      - "Resolve cuDNN version where applicable"
+      - "Validate Qwen3 hardware compatibility"
+      - "Validate Whisper hardware compatibility"
+      - "Validate vision model hardware compatibility"
+      - "Run cross-platform reproducibility tests"
+      - "Promote validated platform profiles to LOCKED"
+
+  governing_rule: >
+    A software component SHALL NOT be considered fully production
+    locked when its required platform, architecture or native
+    runtime compatibility remains unresolved.

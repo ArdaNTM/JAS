@@ -1,0 +1,1751 @@
+# ============================================================
+# JARVIS / JAS
+# VERSION LOCK v1 — FINAL COMPATIBILITY
+# AND LOCK PREPARATION
+# ============================================================
+
+final_compatibility_and_lock_preparation:
+
+  schema_version: "1.0"
+
+  project:
+    name: "JARVIS"
+    architecture: "JAS"
+    architecture_version: "JAS v1"
+
+
+  # ==========================================================
+  # 1. DOCUMENT
+  # ==========================================================
+
+  document:
+
+    id: "JAS-VL-023"
+
+    name:
+      "Final Compatibility and Lock Preparation"
+
+    version: "1.0"
+
+    status:
+      "LOCK_PREPARATION"
+
+    final_version_lock:
+      false
+
+    authority:
+      - "JAS v1"
+      - "Approved Stack v1.0"
+      - "19_APPROVED_MODELS.md"
+      - "20_APPROVED_MCP_SERVERS.md"
+      - "21_VERSION_LOCK_CANDIDATE.yaml"
+      - "22_CANDIDATE_EVIDENCE_AND_EXACT_VERSION_RESOLUTION.yaml"
+
+
+  # ==========================================================
+  # 2. PURPOSE
+  # ==========================================================
+
+  purpose:
+    >
+    This document performs the final compatibility gate before
+    production Version Lock generation.
+
+    Every production component must satisfy:
+
+      architectural approval
+        ->
+      exact identity
+        ->
+      compatibility
+        ->
+      security
+        ->
+      licensing
+        ->
+      reproducibility
+        ->
+      artifact integrity
+        ->
+      release readiness
+
+    No unresolved blocker may be silently promoted into the final
+    Version Lock.
+
+
+  # ==========================================================
+  # 3. FINAL GATE STATES
+  # ==========================================================
+
+  gate_states:
+
+    PASS:
+      meaning:
+        "Requirement has been satisfied."
+
+    CONDITIONAL:
+      meaning:
+        "Requirement is satisfied only under an explicit condition."
+
+    PENDING:
+      meaning:
+        "Required evidence or validation is still missing."
+
+    BLOCKED:
+      meaning:
+        "A prerequisite prevents promotion."
+
+    NOT_APPLICABLE:
+      meaning:
+        "Requirement does not apply."
+
+    READY:
+      meaning:
+        "Component is eligible for final Version Lock."
+
+
+  # ==========================================================
+  # 4. GLOBAL LOCK RULE
+  # ==========================================================
+
+  global_lock_rule:
+
+    production_component:
+
+      must_have:
+
+        - "Approved architectural role"
+        - "Exact version"
+        - "Exact revision where applicable"
+        - "Platform"
+        - "Architecture"
+        - "Integrity"
+        - "Compatibility evidence"
+        - "Security validation"
+        - "License validation"
+
+
+    artifact_component:
+
+      additionally_requires:
+
+        - "Immutable artifact identity"
+        - "Digest where available"
+        - "SBOM"
+        - "Provenance"
+        - "Signature"
+
+
+    model_component:
+
+      additionally_requires:
+
+        - "Exact model ID"
+        - "Exact variant"
+        - "Revision"
+        - "Artifact digest where available"
+        - "Quantization where applicable"
+        - "Runtime"
+        - "License"
+
+
+    mcp_component:
+
+      additionally_requires:
+
+        - "Server identity"
+        - "Publisher"
+        - "Version"
+        - "Revision"
+        - "Protocol version"
+        - "SDK version"
+        - "Transport"
+        - "Permission profile"
+
+
+  # ==========================================================
+  # 5. CORE RUNTIME GATE
+  # ==========================================================
+
+  core_runtime:
+
+    python:
+
+      architectural_approval:
+        "PASS"
+
+      exact_version:
+        "PENDING"
+
+      platform:
+        "PENDING"
+
+      compatibility:
+        "PENDING"
+
+      security:
+        "PENDING"
+
+      license:
+        "PENDING"
+
+      reproducibility:
+        "PENDING"
+
+      final_state:
+        "BLOCKED"
+
+
+    cpython:
+
+      architectural_approval:
+        "PASS"
+
+      exact_version:
+        "PENDING"
+
+      platform:
+        "PENDING"
+
+      compatibility:
+        "PENDING"
+
+      final_state:
+        "BLOCKED"
+
+
+    node:
+
+      architectural_approval:
+        "PASS"
+
+      candidate:
+        "24.18.1"
+
+      exact_version:
+        "PENDING_FINAL_TIMESTAMP_VALIDATION"
+
+      compatibility:
+        "PENDING"
+
+      security:
+        "PENDING"
+
+      license:
+        "PENDING"
+
+      final_state:
+        "BLOCKED"
+
+
+    typescript:
+
+      architectural_approval:
+        "PASS"
+
+      candidate:
+        "7.0.2"
+
+      compatibility:
+        "PENDING"
+
+      final_state:
+        "BLOCKED"
+
+
+  # ==========================================================
+  # 6. PYTHON DEPENDENCY GATE
+  # ==========================================================
+
+  python_dependencies:
+
+    fastapi:
+
+      exact_version:
+        null
+
+      python_compatibility:
+        "PENDING"
+
+      pydantic_compatibility:
+        "PENDING"
+
+      security:
+        "PENDING"
+
+      license:
+        "PENDING"
+
+      uv_lock:
+        "PENDING"
+
+      final_state:
+        "BLOCKED"
+
+
+    pydantic:
+
+      exact_version:
+        null
+
+      python_compatibility:
+        "PENDING"
+
+      fastapi_compatibility:
+        "PENDING"
+
+      security:
+        "PENDING"
+
+      license:
+        "PENDING"
+
+      final_state:
+        "BLOCKED"
+
+
+    langgraph:
+
+      exact_version:
+        null
+
+      python_compatibility:
+        "PENDING"
+
+      dependency_graph:
+        "PENDING"
+
+      security:
+        "PENDING"
+
+      license:
+        "PENDING"
+
+      final_state:
+        "BLOCKED"
+
+
+    uv:
+
+      exact_version:
+        null
+
+      python_compatibility:
+        "PENDING"
+
+      lockfile:
+        "uv.lock"
+
+      reproducibility:
+        "PENDING"
+
+      final_state:
+        "BLOCKED"
+
+
+  # ==========================================================
+  # 7. DATA GATE
+  # ==========================================================
+
+  data:
+
+    postgresql:
+
+      candidate:
+        "18.4"
+
+      exact_image:
+        null
+
+      digest:
+        null
+
+      architecture:
+        "linux/amd64"
+
+      client_compatibility:
+        "PENDING"
+
+      migration_validation:
+        "PENDING"
+
+      security:
+        "PENDING"
+
+      final_state:
+        "BLOCKED"
+
+
+    qdrant:
+
+      candidate:
+        "1.18.2"
+
+      exact_image:
+        null
+
+      digest:
+        null
+
+      architecture:
+        "linux/amd64"
+
+      client_compatibility:
+        "PENDING"
+
+      API_compatibility:
+        "PENDING"
+
+      security:
+        "PENDING"
+
+      final_state:
+        "BLOCKED"
+
+
+    redis:
+
+      enabled:
+        false
+
+      state:
+        "NOT_APPLICABLE_UNDER_CURRENT_PROFILE"
+
+
+    sqlite:
+
+      enabled:
+        false
+
+      state:
+        "NOT_APPLICABLE_UNDER_CURRENT_PROFILE"
+
+
+    object_storage:
+
+      enabled:
+        false
+
+      state:
+        "NOT_APPLICABLE_UNDER_CURRENT_PROFILE"
+
+
+  # ==========================================================
+  # 8. BROWSER GATE
+  # ==========================================================
+
+  browser:
+
+    playwright:
+
+      candidate:
+        "1.61.0"
+
+      python_compatibility:
+        "PENDING"
+
+      browser_mapping:
+        "PENDING"
+
+      security:
+        "PENDING"
+
+      final_state:
+        "BLOCKED"
+
+
+    chromium:
+
+      exact_revision:
+        null
+
+      build:
+        null
+
+      artifact_identity:
+        null
+
+      platform:
+        "linux/amd64"
+
+      digest:
+        null
+
+      final_state:
+        "BLOCKED"
+
+
+    firefox:
+
+      enabled:
+        false
+
+      final_state:
+        "NOT_APPLICABLE_UNDER_CURRENT_PROFILE"
+
+
+    webkit:
+
+      enabled:
+        false
+
+      final_state:
+        "NOT_APPLICABLE_UNDER_CURRENT_PROFILE"
+
+
+  # ==========================================================
+  # 9. FRONTEND GATE
+  # ==========================================================
+
+  frontend:
+
+    node:
+
+      version:
+        "24.18.1"
+
+      state:
+        "PENDING"
+
+
+    pnpm:
+
+      version:
+        "11.17.0"
+
+      state:
+        "PENDING"
+
+
+    typescript:
+
+      version:
+        "7.0.2"
+
+      state:
+        "PENDING"
+
+
+    react:
+
+      version:
+        "19.2.8"
+
+      state:
+        "PENDING"
+
+
+    react_dom:
+
+      version:
+        null
+
+      state:
+        "BLOCKED"
+
+
+    vite:
+
+      version:
+        "8.1.5"
+
+      state:
+        "PENDING"
+
+
+    lockfile:
+
+      file:
+        "pnpm-lock.yaml"
+
+      frozen_install:
+        "REQUIRED"
+
+      state:
+        "PENDING"
+
+
+    final_state:
+      "BLOCKED"
+
+
+  # ==========================================================
+  # 10. AI / MODEL GATE
+  # ==========================================================
+
+  ai:
+
+    qwen3:
+
+      approved_family:
+        "Qwen3"
+
+      exact_variant:
+        null
+
+      exact_model_id:
+        null
+
+      revision:
+        null
+
+      digest:
+        null
+
+      quantization:
+        null
+
+      runtime:
+        null
+
+      license:
+        "PENDING_EXACT_CHECKPOINT"
+
+      hardware_profile:
+        null
+
+      final_state:
+        "BLOCKED"
+
+
+    embedding:
+
+      model:
+        "BAAI/bge-m3"
+
+      revision:
+        null
+
+      digest:
+        null
+
+      runtime:
+        null
+
+      final_state:
+        "BLOCKED"
+
+
+    reranker:
+
+      model:
+        "BAAI/bge-reranker-v2-m3"
+
+      revision:
+        null
+
+      digest:
+        null
+
+      runtime:
+        null
+
+      final_state:
+        "BLOCKED"
+
+
+  # ==========================================================
+  # 11. AI RUNTIME GATE
+  # ==========================================================
+
+  ai_runtime:
+
+    transformers:
+
+      version:
+        null
+
+      model_compatibility:
+        "PENDING"
+
+      final_state:
+        "BLOCKED"
+
+
+    pytorch:
+
+      version:
+        null
+
+      build:
+        null
+
+      cuda_build:
+        null
+
+      model_compatibility:
+        "PENDING"
+
+      hardware_compatibility:
+        "PENDING"
+
+      final_state:
+        "BLOCKED"
+
+
+    cuda:
+
+      toolkit_version:
+        null
+
+      driver_requirement:
+        null
+
+      architecture:
+        null
+
+      final_state:
+        "BLOCKED"
+
+
+    nvidia_driver:
+
+      minimum_version:
+        null
+
+      tested_version:
+        null
+
+      GPU:
+        null
+
+      final_state:
+        "BLOCKED"
+
+
+    nvidia_container_toolkit:
+
+      version:
+        null
+
+      docker_compatibility:
+        "PENDING"
+
+      final_state:
+        "BLOCKED"
+
+
+    hardware:
+
+      vendor:
+        "NVIDIA"
+
+      model:
+        null
+
+      architecture:
+        null
+
+      vram_gb:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    complete_chain:
+
+      status:
+        "BLOCKED"
+
+      required:
+
+        - "Qwen3 exact variant"
+        - "Runtime"
+        - "PyTorch"
+        - "CUDA"
+        - "Driver"
+        - "GPU"
+        - "NVIDIA Container Toolkit"
+        - "Docker"
+
+
+  # ==========================================================
+  # 12. VOICE GATE
+  # ==========================================================
+
+  voice:
+
+    whisper:
+
+      exact_model:
+        null
+
+      revision:
+        null
+
+      digest:
+        null
+
+      runtime:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    vad:
+
+      implementation:
+        "Silero VAD"
+
+      version:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    piper:
+
+      enabled:
+        false
+
+      status:
+        "NOT_APPLICABLE_UNDER_CURRENT_PROFILE"
+
+
+  # ==========================================================
+  # 13. VISION GATE
+  # ==========================================================
+
+  vision:
+
+    opencv:
+
+      version:
+        null
+
+      platform_artifact:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    siglip2:
+
+      exact_variant:
+        null
+
+      revision:
+        null
+
+      digest:
+        null
+
+      runtime:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    onnx_runtime:
+
+      enabled:
+        false
+
+      status:
+        "NOT_APPLICABLE_UNDER_CURRENT_PROFILE"
+
+
+  # ==========================================================
+  # 14. MCP GATE
+  # ==========================================================
+
+  mcp:
+
+    protocol:
+
+      version:
+        "2026-07-28"
+
+      status:
+        "CONDITIONAL"
+
+
+    sdk:
+
+      exact_version:
+        null
+
+      runtime:
+        "Python"
+
+      protocol_compatibility:
+        "PENDING"
+
+      status:
+        "BLOCKED"
+
+
+    server_policy:
+
+      exact_identity_required:
+        true
+
+      immutable_revision_required:
+        true
+
+      digest_required_where_available:
+        true
+
+      permission_profile_required:
+        true
+
+
+    servers:
+
+      time:
+        status:
+          "BLOCKED"
+
+      filesystem:
+        status:
+          "BLOCKED"
+
+      git:
+        status:
+          "BLOCKED"
+
+      fetch:
+        status:
+          "BLOCKED"
+
+      memory:
+        status:
+          "BLOCKED"
+
+      browser:
+        enabled:
+          false
+
+        status:
+          "PROFILE_DEPENDENT"
+
+      database:
+        enabled:
+          false
+
+        status:
+          "PROFILE_DEPENDENT"
+
+      docker:
+        enabled:
+          false
+
+        status:
+          "PROFILE_DEPENDENT"
+
+      github:
+        enabled:
+          false
+
+        status:
+          "PROFILE_DEPENDENT"
+
+
+    final_state:
+      "BLOCKED"
+
+
+  # ==========================================================
+  # 15. CONTAINER GATE
+  # ==========================================================
+
+  containers:
+
+    docker:
+
+      candidate:
+        "29.6.2"
+
+      engine_compatibility:
+        "PENDING"
+
+      security:
+        "PENDING"
+
+      final_state:
+        "BLOCKED"
+
+
+    buildkit:
+
+      candidate:
+        "0.31.1"
+
+      docker_compatibility:
+        "PENDING"
+
+      provenance:
+        "PENDING"
+
+      sbom:
+        "PENDING"
+
+      final_state:
+        "BLOCKED"
+
+
+    buildx:
+
+      version:
+        null
+
+      docker_compatibility:
+        "PENDING"
+
+      final_state:
+        "BLOCKED"
+
+
+    compose:
+
+      version:
+        null
+
+      docker_compatibility:
+        "PENDING"
+
+      final_state:
+        "BLOCKED"
+
+
+    base_images:
+
+      python:
+
+        image:
+          null
+
+        tag:
+          null
+
+        digest:
+          null
+
+        architecture:
+          "linux/amd64"
+
+        security:
+          "PENDING"
+
+        final_state:
+          "BLOCKED"
+
+
+      node:
+
+        image:
+          null
+
+        tag:
+          null
+
+        digest:
+          null
+
+        architecture:
+          "linux/amd64"
+
+        security:
+          "PENDING"
+
+        final_state:
+          "BLOCKED"
+
+
+  # ==========================================================
+  # 16. NATIVE TOOLCHAIN GATE
+  # ==========================================================
+
+  native:
+
+    cpp:
+
+      required:
+        "CONDITIONAL"
+
+      compiler:
+        null
+
+      version:
+        null
+
+      target:
+        null
+
+      status:
+        "PENDING"
+
+
+    rust:
+
+      required:
+        "CONDITIONAL"
+
+      version:
+        null
+
+      cargo_version:
+        null
+
+      target:
+        null
+
+      status:
+        "PENDING"
+
+
+    cmake:
+
+      required:
+        "CONDITIONAL"
+
+      version:
+        null
+
+      status:
+        "PENDING"
+
+
+    ninja:
+
+      required:
+        "CONDITIONAL"
+
+      version:
+        null
+
+      status:
+        "PENDING"
+
+
+    promotion_rule:
+      >
+      Conditional native components remain outside the final lock
+      until a concrete dependency requires them.
+
+
+  # ==========================================================
+  # 17. OBSERVABILITY GATE
+  # ==========================================================
+
+  observability:
+
+    opentelemetry:
+
+      sdk_version:
+        null
+
+      api_version:
+        null
+
+      collector_version:
+        null
+
+      compatibility:
+        "PENDING"
+
+      security:
+        "PENDING"
+
+      final_state:
+        "BLOCKED"
+
+
+    structured_logging:
+
+      state:
+        "ARCHITECTURAL_REFERENCE"
+
+
+    metrics:
+
+      state:
+        "ARCHITECTURAL_REFERENCE"
+
+
+    traces:
+
+      state:
+        "ARCHITECTURAL_REFERENCE"
+
+
+  # ==========================================================
+  # 18. TESTING / QUALITY GATE
+  # ==========================================================
+
+  quality:
+
+    pytest:
+
+      version:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    ruff:
+
+      version:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    contract_testing:
+
+      implementation:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    dependency_scanner:
+
+      implementation:
+        null
+
+      version:
+        null
+
+      status:
+        "BLOCKED"
+
+
+  # ==========================================================
+  # 19. SECURITY GATE
+  # ==========================================================
+
+  security:
+
+    authorization:
+
+      implementation:
+        "JAS Internal Authorization / Policy Engine"
+
+      status:
+        "PASS"
+
+
+    audit:
+
+      implementation:
+        "JAS Internal Audit System"
+
+      status:
+        "PASS"
+
+
+    secret_management:
+
+      implementation:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    sandbox:
+
+      implementation:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    dependency_scanning:
+
+      implementation:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    artifact_integrity:
+
+      digest:
+        null
+
+      signature:
+        null
+
+      verification:
+        "PENDING"
+
+      status:
+        "BLOCKED"
+
+
+  # ==========================================================
+  # 20. LICENSING GATE
+  # ==========================================================
+
+  licensing:
+
+    status:
+      "BLOCKED"
+
+
+    required:
+
+      - "Exact dependency license"
+      - "Exact model license"
+      - "Exact voice license if enabled"
+      - "Container/base image license"
+      - "MCP server license"
+      - "Native dependency license"
+
+
+    special_review:
+
+      piper:
+        "ONLY_IF_ENABLED"
+
+      paligemma:
+        "ONLY_IF_ENABLED"
+
+      colpali:
+        "ONLY_IF_ENABLED"
+
+
+  # ==========================================================
+  # 21. SUPPLY CHAIN GATE
+  # ==========================================================
+
+  supply_chain:
+
+    source_revision:
+
+      value:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    python_lockfile:
+
+      file:
+        "uv.lock"
+
+      status:
+        "BLOCKED"
+
+
+    frontend_lockfile:
+
+      file:
+        "pnpm-lock.yaml"
+
+      status:
+        "BLOCKED"
+
+
+    sbom:
+
+      format:
+        "CycloneDX"
+
+      tool:
+        null
+
+      version:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    provenance:
+
+      implementation:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    signing:
+
+      tool:
+        "Cosign"
+
+      version:
+        null
+
+      identity:
+        null
+
+      status:
+        "BLOCKED"
+
+
+    container_digest:
+
+      value:
+        null
+
+      status:
+        "BLOCKED"
+
+
+  # ==========================================================
+  # 22. RELEASE GATE
+  # ==========================================================
+
+  release:
+
+    version:
+      "JAS v1"
+
+    source_revision:
+      null
+
+    build_identity:
+      null
+
+    artifact_identity:
+      null
+
+    sbom:
+      "REQUIRED"
+
+    provenance:
+      "REQUIRED"
+
+    signature:
+      "REQUIRED"
+
+    rollback:
+      "REQUIRED"
+
+    final_state:
+      "BLOCKED"
+
+
+  # ==========================================================
+  # 23. MASTER MATRIX
+  # ==========================================================
+
+  master_matrix:
+
+    core_runtime:
+      "BLOCKED"
+
+    python_dependencies:
+      "BLOCKED"
+
+    data:
+      "BLOCKED"
+
+    browser:
+      "BLOCKED"
+
+    frontend:
+      "BLOCKED"
+
+    ai_models:
+      "BLOCKED"
+
+    ai_runtime:
+      "BLOCKED"
+
+    voice:
+      "BLOCKED"
+
+    vision:
+      "BLOCKED"
+
+    mcp:
+      "BLOCKED"
+
+    containers:
+      "BLOCKED"
+
+    native:
+      "PENDING_CONDITIONAL"
+
+    observability:
+      "BLOCKED"
+
+    testing:
+      "BLOCKED"
+
+    security:
+      "BLOCKED"
+
+    licensing:
+      "BLOCKED"
+
+    supply_chain:
+      "BLOCKED"
+
+    release:
+      "BLOCKED"
+
+
+  # ==========================================================
+  # 24. LOCK-ELIGIBLE COMPONENTS
+  # ==========================================================
+
+  lock_eligible:
+
+    currently_ready:
+      []
+
+    reason:
+      >
+      The current candidate set does not yet satisfy all final
+      Version Lock gates.
+
+    important:
+      >
+      This empty list is intentional. A candidate being technically
+      plausible does not make it Version Lock eligible.
+
+
+  # ==========================================================
+  # 25. REMAINING P0 BLOCKERS
+  # ==========================================================
+
+  p0_blockers:
+
+    - id: "P0-001"
+      area: "Hardware"
+      requirement:
+        "Exact supported GPU profile"
+
+    - id: "P0-002"
+      area: "AI"
+      requirement:
+        "Exact Qwen3 variant"
+
+    - id: "P0-003"
+      area: "AI Runtime"
+      requirement:
+        "Exact PyTorch build"
+
+    - id: "P0-004"
+      area: "GPU Runtime"
+      requirement:
+        "Exact CUDA/toolkit compatibility"
+
+    - id: "P0-005"
+      area: "Driver"
+      requirement:
+        "Minimum supported NVIDIA driver"
+
+    - id: "P0-006"
+      area: "Python"
+      requirement:
+        "Exact CPython version"
+
+    - id: "P0-007"
+      area: "Python"
+      requirement:
+        "Complete uv.lock dependency graph"
+
+
+  # ==========================================================
+  # 26. REMAINING P1 BLOCKERS
+  # ==========================================================
+
+  p1_blockers:
+
+    - id: "P1-001"
+      area: "Backend"
+      requirement:
+        "FastAPI/Pydantic/LangGraph exact versions"
+
+    - id: "P1-002"
+      area: "Browser"
+      requirement:
+        "Playwright + Chromium immutable identity"
+
+    - id: "P1-003"
+      area: "Frontend"
+      requirement:
+        "React/react-dom/Vite/TypeScript graph"
+
+    - id: "P1-004"
+      area: "MCP"
+      requirement:
+        "Exact SDK and enabled server identities"
+
+    - id: "P1-005"
+      area: "Container"
+      requirement:
+        "Buildx/Compose/base image identities"
+
+
+  # ==========================================================
+  # 27. REMAINING P2 BLOCKERS
+  # ==========================================================
+
+  p2_blockers:
+
+    - id: "P2-001"
+      area: "Security"
+      requirement:
+        "Secret management implementation"
+
+    - id: "P2-002"
+      area: "Security"
+      requirement:
+        "Sandbox implementation"
+
+    - id: "P2-003"
+      area: "Quality"
+      requirement:
+        "Dependency scanner"
+
+    - id: "P2-004"
+      area: "Observability"
+      requirement:
+        "OpenTelemetry exact versions"
+
+    - id: "P2-005"
+      area: "Supply Chain"
+      requirement:
+        "SBOM tooling"
+
+    - id: "P2-006"
+      area: "Supply Chain"
+      requirement:
+        "Provenance implementation"
+
+    - id: "P2-007"
+      area: "Supply Chain"
+      requirement:
+        "Signing implementation/version"
+
+
+  # ==========================================================
+  # 28. CANDIDATE FREEZE RULE
+  # ==========================================================
+
+  candidate_freeze:
+
+    may_freeze:
+      false
+
+    requirements:
+
+      - "P0 blockers resolved"
+      - "P1 blockers resolved"
+      - "No unresolved critical compatibility issue"
+      - "No unresolved critical security issue"
+      - "No unresolved license blocker"
+      - "Exact identities recorded"
+      - "Dependency lockfiles generated"
+      - "Model revisions recorded"
+
+
+  # ==========================================================
+  # 29. FINAL LOCK GENERATION RULE
+  # ==========================================================
+
+  final_lock_generation:
+
+    allowed:
+      false
+
+
+    prerequisites:
+
+      - "Candidate freeze = true"
+      - "Compatibility matrix = PASS"
+      - "Security gate = PASS"
+      - "License gate = PASS"
+      - "Supply chain gate = PASS"
+      - "Release gate = PASS"
+
+
+    output:
+      "JAS/version_lock/VERSION_LOCK.yaml"
+
+
+  # ==========================================================
+  # 30. CURRENT STATE
+  # ==========================================================
+
+  state:
+
+    final_compatibility_run:
+      "NOT_COMPLETE"
+
+    candidate_freeze:
+      false
+
+    release_ready:
+      false
+
+    version_lock_generation:
+      false
+
+    status:
+      "FINAL_COMPATIBILITY_BLOCKED"
+
+
+  # ==========================================================
+  # 31. NEXT PHASE
+  # ==========================================================
+
+  next_phase:
+
+    name:
+      "Final Exact Version Resolution"
+
+    document:
+      "24_FINAL_EXACT_VERSION_RESOLUTION.yaml"
+
+    objective:
+      >
+      Resolve every P0/P1 blocker using authoritative upstream
+      evidence and produce the exact candidate set required for
+      the final compatibility run.
+
+    sequence:
+
+      - "Resolve hardware profile"
+      - "Resolve Qwen3 variant"
+      - "Resolve PyTorch"
+      - "Resolve CUDA"
+      - "Resolve NVIDIA driver"
+      - "Resolve NVIDIA Container Toolkit"
+      - "Resolve Python"
+      - "Resolve uv"
+      - "Resolve FastAPI"
+      - "Resolve Pydantic"
+      - "Resolve LangGraph"
+      - "Resolve Playwright"
+      - "Resolve Chromium"
+      - "Resolve React"
+      - "Resolve react-dom"
+      - "Resolve Vite"
+      - "Resolve TypeScript"
+      - "Resolve MCP SDK"
+      - "Resolve enabled MCP servers"
+      - "Resolve Buildx"
+      - "Resolve Compose"
+      - "Resolve base images"
+      - "Resolve OpenTelemetry"
+      - "Resolve pytest"
+      - "Resolve Ruff"
+      - "Resolve dependency scanner"
+      - "Resolve security implementations"
+      - "Resolve SBOM"
+      - "Resolve provenance"
+      - "Resolve signing"
+      - "Re-run final compatibility"
+      - "Freeze candidates"
+      - "Generate final Version Lock"

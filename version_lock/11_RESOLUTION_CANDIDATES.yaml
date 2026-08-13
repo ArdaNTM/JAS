@@ -1,0 +1,1152 @@
+# ============================================================
+# JARVIS / JAS
+# VERSION LOCK v1 — RESOLUTION CANDIDATES
+# ============================================================
+
+version_lock_resolution_candidates:
+
+  schema_version: "1.0"
+
+  project:
+    name: "JARVIS"
+    architecture: "JAS"
+    architecture_version: "JAS v1"
+
+  document:
+    id: "JAS-VL-011"
+    name: "Resolution Candidates"
+    version: "1.0"
+    status: "CANDIDATE"
+    authority: "VERSION_LOCK_v1"
+
+
+  # ==========================================================
+  # 1. PURPOSE
+  # ==========================================================
+
+  purpose:
+    >
+    This document records candidate versions, revisions, artifacts
+    and implementation variants considered during Version Lock v1
+    resolution.
+
+    Candidates are not final production locks.
+
+    A candidate may only become LOCKED after passing the mandatory
+    compatibility, security, licensing, platform, integrity and
+    reproducibility requirements defined by the Version Lock system.
+
+
+  # ==========================================================
+  # 2. CANDIDATE STATUS DEFINITIONS
+  # ==========================================================
+
+  statuses:
+
+    RESEARCH_REQUIRED:
+      description:
+        "Authoritative release information has not yet been collected."
+
+    CANDIDATE:
+      description:
+        "Candidate is technically eligible for evaluation."
+
+    COMPATIBILITY_PASS:
+      description:
+        "Candidate passed required compatibility checks."
+
+    SECURITY_PASS:
+      description:
+        "Candidate passed required security checks."
+
+    LICENSE_PASS:
+      description:
+        "Candidate passed license validation."
+
+    PLATFORM_PASS:
+      description:
+        "Candidate passed supported platform validation."
+
+    APPROVED_CANDIDATE:
+      description:
+        "Candidate passed all pre-lock evaluation stages."
+
+    REJECTED:
+      description:
+        "Candidate failed one or more mandatory requirements."
+
+    LOCKED:
+      description:
+        "Candidate has been promoted to the final Version Lock."
+
+    SUPERSEDED:
+      description:
+        "Candidate was replaced by another candidate."
+
+
+  # ==========================================================
+  # 3. CANDIDATE RECORD
+  # ==========================================================
+
+  candidate_schema:
+
+    required:
+
+      - "candidate_id"
+      - "component_id"
+      - "name"
+      - "source"
+      - "version"
+      - "revision"
+      - "artifact"
+      - "platform"
+      - "architecture"
+      - "status"
+      - "evaluation"
+
+    evaluation:
+
+      compatibility:
+        required: true
+
+      security:
+        required: true
+
+      license:
+        required: true
+
+      platform:
+        required: true
+
+      reproducibility:
+        required: true
+
+
+  # ==========================================================
+  # 4. CORE RUNTIME CANDIDATES
+  # ==========================================================
+
+  core_runtime:
+
+    python:
+
+      component_id: "SW-001"
+
+      candidates: []
+
+      selection_constraints:
+
+        version_family:
+          "Python 3.12+"
+
+        implementation:
+          "CPython"
+
+        platforms:
+          - "Windows"
+          - "Linux"
+          - "macOS"
+
+        architectures:
+          - "x86_64"
+          - "ARM64"
+
+      mandatory_validation:
+
+        - "AI ecosystem compatibility"
+        - "uv compatibility"
+        - "FastAPI compatibility"
+        - "Pydantic compatibility"
+        - "LangGraph compatibility"
+        - "Windows support"
+        - "Linux support"
+
+
+    cpython:
+
+      component_id: "CPYTHON-001"
+
+      candidates: []
+
+      required_identity:
+
+        - "release"
+        - "source_revision"
+        - "platform_artifact"
+        - "architecture"
+        - "artifact_digest"
+
+
+  # ==========================================================
+  # 5. PYTHON ECOSYSTEM
+  # ==========================================================
+
+  python:
+
+    uv:
+
+      component_id: "SW-026"
+
+      candidates: []
+
+      required_identity:
+
+        - "version"
+        - "platform"
+        - "architecture"
+        - "artifact_digest"
+
+
+    fastapi:
+
+      component_id: "SW-005"
+
+      candidates: []
+
+      compatibility_targets:
+
+        - "Python"
+        - "Pydantic"
+        - "Starlette"
+
+
+    pydantic:
+
+      component_id: "SW-006"
+
+      candidates: []
+
+      compatibility_targets:
+
+        - "Python"
+        - "FastAPI"
+        - "pydantic-core"
+
+
+    langgraph:
+
+      component_id: "SW-007"
+
+      candidates: []
+
+      compatibility_targets:
+
+        - "Python"
+        - "LangChain ecosystem"
+
+
+    pytest:
+
+      component_id: "SW-023"
+
+      candidates: []
+
+      compatibility_targets:
+
+        - "Python"
+
+
+    ruff:
+
+      component_id: "SW-025"
+
+      candidates: []
+
+      compatibility_targets:
+
+        - "Python"
+        - "uv"
+
+
+    opentelemetry:
+
+      component_id: "SW-022"
+
+      candidates: []
+
+      compatibility_targets:
+
+        - "Python"
+        - "OpenTelemetry API"
+        - "Collector if enabled"
+
+
+  # ==========================================================
+  # 6. DATA SERVICES
+  # ==========================================================
+
+  data:
+
+    qdrant:
+
+      component_id: "SW-008"
+
+      candidates: []
+
+      required_identity:
+
+        - "server_version"
+        - "container_image"
+        - "image_digest"
+        - "architecture"
+
+      compatibility_targets:
+
+        - "Qdrant client"
+        - "JAS memory layer"
+
+
+    postgresql:
+
+      component_id: "SW-009"
+
+      candidates: []
+
+      required_identity:
+
+        - "major_version"
+        - "minor_version"
+        - "container_image"
+        - "image_digest"
+
+      compatibility_targets:
+
+        - "Database driver"
+        - "JAS persistence layer"
+
+
+    redis:
+
+      component_id: "SW-010"
+
+      enabled: false
+
+      candidates: []
+
+      required_identity:
+
+        - "version"
+        - "image"
+        - "digest"
+
+
+    sqlite:
+
+      component_id: "SW-034"
+
+      enabled: false
+
+      candidates: []
+
+      required_identity:
+
+        - "runtime_version"
+        - "library_version"
+
+
+  # ==========================================================
+  # 7. BROWSER
+  # ==========================================================
+
+  browser:
+
+    playwright:
+
+      component_id: "SW-011"
+
+      candidates: []
+
+      required_identity:
+
+        - "package_version"
+        - "browser_revision"
+        - "browser_family"
+        - "integrity"
+
+
+    chromium:
+
+      component_id: "BROWSER-CHROMIUM"
+
+      candidates: []
+
+      required_identity:
+
+        - "revision"
+        - "build"
+        - "platform"
+        - "architecture"
+
+
+    firefox:
+
+      component_id: "BROWSER-FIREFOX"
+
+      enabled: false
+
+      candidates: []
+
+
+    webkit:
+
+      component_id: "BROWSER-WEBKIT"
+
+      enabled: false
+
+      candidates: []
+
+
+  # ==========================================================
+  # 8. FRONTEND
+  # ==========================================================
+
+  frontend:
+
+    nodejs:
+
+      component_id: "SW-027"
+
+      candidates: []
+
+      selection_policy:
+
+        preferred:
+          "Supported Node.js LTS line"
+
+      required_identity:
+
+        - "version"
+        - "platform"
+        - "architecture"
+
+
+    package_manager:
+
+      component_id: "SW-028"
+
+      candidates:
+
+        - candidate_id: "PM-PNPM"
+          name: "pnpm"
+          version: null
+          lockfile: "pnpm-lock.yaml"
+          status: "CANDIDATE"
+
+        - candidate_id: "PM-NPM"
+          name: "npm"
+          version: null
+          lockfile: "package-lock.json"
+          status: "CANDIDATE"
+
+      selected: null
+
+
+    typescript:
+
+      component_id: "FRONTEND-TS"
+
+      candidates: []
+
+      compatibility_targets:
+
+        - "Node.js"
+        - "React"
+        - "Vite"
+
+
+    react:
+
+      component_id: "SW-014"
+
+      candidates: []
+
+      compatibility_targets:
+
+        - "Node.js"
+        - "TypeScript"
+
+
+    vite:
+
+      component_id: "SW-015"
+
+      candidates: []
+
+      compatibility_targets:
+
+        - "Node.js"
+        - "TypeScript"
+        - "React"
+
+
+  # ==========================================================
+  # 9. AI / MODEL RUNTIMES
+  # ==========================================================
+
+  ai_runtimes:
+
+    transformers:
+
+      component_id: "MODEL-RUNTIME-TRANSFORMERS"
+
+      candidates: []
+
+      compatibility_targets:
+
+        - "Python"
+        - "PyTorch"
+        - "Model checkpoints"
+
+
+    onnxruntime:
+
+      component_id: "MODEL-RUNTIME-ONNX"
+
+      enabled: false
+
+      candidates: []
+
+
+  # ==========================================================
+  # 10. MODELS
+  # ==========================================================
+
+  models:
+
+    qwen3:
+
+      component_id: "MODEL-LLM-QWEN3"
+
+      candidates: []
+
+      selection_constraints:
+
+        family:
+          "Qwen3"
+
+        deployment:
+          "Local"
+
+        license:
+          "Approved license required"
+
+      required_identity:
+
+        - "model_id"
+        - "variant"
+        - "revision"
+        - "format"
+        - "quantization"
+        - "artifact_digest"
+        - "runtime"
+
+      compatibility_targets:
+
+        - "Python"
+        - "Inference runtime"
+        - "GPU profile"
+        - "CUDA if enabled"
+
+
+    bge_m3:
+
+      component_id: "MODEL-EMBED-BGE-M3"
+
+      candidates: []
+
+      required_identity:
+
+        - "model_id"
+        - "revision"
+        - "artifact_digest"
+
+
+    bge_reranker:
+
+      component_id: "MODEL-RERANK-BGE-V2-M3"
+
+      candidates: []
+
+      required_identity:
+
+        - "model_id"
+        - "revision"
+        - "artifact_digest"
+
+
+    whisper:
+
+      component_id: "MODEL-STT-WHISPER"
+
+      candidates: []
+
+      required_identity:
+
+        - "model"
+        - "revision"
+        - "artifact_digest"
+        - "runtime"
+
+
+    whisper_large_v3:
+
+      component_id: "MODEL-STT-WHISPER-LARGE-V3"
+
+      enabled: false
+
+      candidates: []
+
+
+    whisper_turbo:
+
+      component_id: "MODEL-STT-WHISPER-TURBO"
+
+      enabled: false
+
+      candidates: []
+
+
+    siglip2:
+
+      component_id: "MODEL-VISION-SIGLIP2"
+
+      candidates: []
+
+      required_identity:
+
+        - "variant"
+        - "revision"
+        - "artifact_digest"
+        - "runtime"
+
+
+    paligemma2:
+
+      component_id: "MODEL-VLM-PALIGEMMA2"
+
+      enabled: false
+
+      candidates: []
+
+
+    colpali:
+
+      component_id: "MODEL-COLPALI"
+
+      enabled: false
+
+      candidates: []
+
+
+    piper:
+
+      component_id: "MODEL-TTS-PIPER"
+
+      enabled: false
+
+      candidates: []
+
+      license_review_required: true
+
+
+  # ==========================================================
+  # 11. MCP
+  # ==========================================================
+
+  mcp:
+
+    sdk:
+
+      component_id: "SW-017"
+
+      candidates: []
+
+      protocol_target:
+        "2026-07-28"
+
+      required_identity:
+
+        - "sdk_version"
+        - "protocol_version"
+        - "runtime"
+        - "integrity"
+
+
+    servers:
+
+      candidates: []
+
+      required_identity:
+
+        - "server_id"
+        - "publisher"
+        - "version"
+        - "revision"
+        - "digest"
+        - "protocol_version"
+        - "sdk_version"
+        - "transport"
+        - "runtime"
+        - "permission_profile"
+
+
+      server_policy:
+
+        independent_lock_required: true
+
+        mutable_references_allowed: false
+
+
+  # ==========================================================
+  # 12. NATIVE TOOLCHAIN
+  # ==========================================================
+
+  native:
+
+    rust:
+
+      component_id: "SW-003"
+
+      enabled: false
+
+      candidates: []
+
+      required_identity:
+
+        - "rustc_version"
+        - "cargo_version"
+        - "target"
+        - "host"
+
+
+    cpp:
+
+      component_id: "SW-004"
+
+      enabled: false
+
+      candidates: []
+
+      required_identity:
+
+        - "compiler"
+        - "compiler_version"
+        - "toolset"
+        - "target"
+        - "ABI"
+
+
+    cmake:
+
+      component_id: "DEVOPS-CMAKE"
+
+      enabled: false
+
+      candidates: []
+
+
+    ninja:
+
+      component_id: "DEVOPS-NINJA"
+
+      enabled: false
+
+      candidates: []
+
+
+  # ==========================================================
+  # 13. GPU TOOLCHAIN
+  # ==========================================================
+
+  gpu:
+
+    enabled: false
+
+    cuda:
+
+      toolkit:
+
+        candidates: []
+
+        required_identity:
+
+          - "version"
+          - "platform"
+          - "architecture"
+
+
+      driver:
+
+        candidates: []
+
+        required_identity:
+
+          - "driver_version"
+          - "platform"
+          - "architecture"
+
+
+      cudnn:
+
+        candidates: []
+
+        required_identity:
+
+          - "version"
+          - "platform"
+          - "architecture"
+
+
+  # ==========================================================
+  # 14. CONTAINERS
+  # ==========================================================
+
+  containers:
+
+    docker:
+
+      component_id: "SW-021"
+
+      candidates: []
+
+      required_identity:
+
+        - "engine_version"
+        - "platform"
+
+
+    buildkit:
+
+      component_id: "DOCKER-BUILDKIT"
+
+      candidates: []
+
+
+    buildx:
+
+      component_id: "DOCKER-BUILDX"
+
+      candidates: []
+
+
+    compose:
+
+      component_id: "DOCKER-COMPOSE"
+
+      candidates: []
+
+
+    base_images:
+
+      candidates: []
+
+      required_identity:
+
+        - "registry"
+        - "repository"
+        - "tag"
+        - "digest"
+        - "architecture"
+
+
+  # ==========================================================
+  # 15. SOURCE CONTROL
+  # ==========================================================
+
+  source_control:
+
+    git:
+
+      component_id: "SW-029"
+
+      candidates: []
+
+      required_identity:
+
+        - "version"
+        - "platform"
+        - "architecture"
+
+
+    github:
+
+      component_id: "SW-030"
+
+      integration_only: true
+
+      candidates: []
+
+      note:
+        >
+        GitHub is an external service and is not locked in the same
+        manner as a local executable dependency. Relevant CLI/API
+        components may receive independent version locks.
+
+
+  # ==========================================================
+  # 16. SECURITY TOOLING
+  # ==========================================================
+
+  security:
+
+    sbom:
+
+      component_id: "SUPPLY-SBOM"
+
+      candidates: []
+
+      preferred_standard:
+        "CycloneDX"
+
+
+    signing:
+
+      component_id: "SUPPLY-SIGNING"
+
+      candidates: []
+
+      preferred_tools:
+
+        - "Sigstore"
+        - "Cosign"
+
+
+    dependency_scanner:
+
+      component_id: "SW-040"
+
+      candidates: []
+
+
+    provenance:
+
+      component_id: "SUPPLY-PROVENANCE"
+
+      candidates: []
+
+
+  # ==========================================================
+  # 17. CANDIDATE EVALUATION TEMPLATE
+  # ==========================================================
+
+  evaluation_template:
+
+    candidate_id: null
+
+    component_id: null
+
+    source:
+      registry: null
+      repository: null
+      release_page: null
+
+    identity:
+
+      version: null
+
+      revision: null
+
+      artifact: null
+
+      digest: null
+
+      platform: null
+
+      architecture: null
+
+
+    compatibility:
+
+      runtime: "PENDING"
+
+      dependencies: "PENDING"
+
+      models: "PENDING"
+
+      mcp: "PENDING"
+
+      platform: "PENDING"
+
+      hardware: "PENDING"
+
+
+    security:
+
+      vulnerability_status: "PENDING"
+
+      integrity_status: "PENDING"
+
+      provenance_status: "PENDING"
+
+      signature_status: "PENDING"
+
+
+    license:
+
+      status: "PENDING"
+
+      license: null
+
+
+    reproducibility:
+
+      status: "PENDING"
+
+      deterministic_install: false
+
+      immutable_identity: false
+
+
+    decision:
+
+      status: "RESEARCH_REQUIRED"
+
+      reason: null
+
+
+  # ==========================================================
+  # 18. CANDIDATE SELECTION RULES
+  # ==========================================================
+
+  selection_rules:
+
+    rule_001:
+      >
+      A candidate SHALL originate from an authoritative or
+      explicitly approved source.
+
+    rule_002:
+      >
+      A candidate SHALL satisfy the minimum supported runtime
+      requirements.
+
+    rule_003:
+      >
+      A candidate SHALL not introduce an unresolved mandatory
+      dependency conflict.
+
+    rule_004:
+      >
+      A candidate SHALL not introduce a known critical security
+      vulnerability.
+
+    rule_005:
+      >
+      A candidate SHALL have a valid license compatible with JAS.
+
+    rule_006:
+      >
+      A candidate SHALL be reproducibly installable.
+
+    rule_007:
+      >
+      A candidate SHALL have an immutable identity before promotion
+      to LOCKED.
+
+    rule_008:
+      >
+      A candidate SHALL pass platform validation for every platform
+      claimed as supported.
+
+    rule_009:
+      >
+      Model candidates SHALL be evaluated together with their
+      inference runtime and hardware requirements.
+
+    rule_010:
+      >
+      MCP server candidates SHALL be evaluated together with their
+      protocol, SDK, transport and permission requirements.
+
+
+  # ==========================================================
+  # 19. RESEARCH RECORD
+  # ==========================================================
+
+  research:
+
+    methodology:
+
+      source_priority:
+
+        1:
+          "Official project release documentation"
+
+        2:
+          "Official package registry"
+
+        3:
+          "Official repository"
+
+        4:
+          "Official security advisory"
+
+        5:
+          "Official container registry"
+
+        6:
+          "Trusted secondary technical source"
+
+      secondary_sources:
+        >
+        Secondary sources may be used for discovery and cross-checking,
+        but final version identity SHALL be established from an
+        authoritative source whenever possible.
+
+
+    records: []
+
+
+  # ==========================================================
+  # 20. CURRENT STATE
+  # ==========================================================
+
+  current_state:
+
+    candidate_collection_started: false
+
+    candidates_collected: 0
+
+    candidates_approved: 0
+
+    candidates_rejected: 0
+
+    components_ready_for_lock: 0
+
+    final_locked_components: 0
+
+    status:
+      "CANDIDATE_COLLECTION_NOT_STARTED"
+
+
+  # ==========================================================
+  # 21. NEXT PHASE
+  # ==========================================================
+
+  next_phase:
+
+    name:
+      "Authoritative Candidate Collection"
+
+    sequence:
+
+      - "Research official releases"
+      - "Record candidate versions"
+      - "Record immutable revisions"
+      - "Record platform artifacts"
+      - "Record dependency requirements"
+      - "Record security advisories"
+      - "Record license information"
+      - "Record model compatibility"
+      - "Record MCP compatibility"
+      - "Reject invalid candidates"
+      - "Promote technically valid candidates"
+      - "Pass candidates to Version Resolution Matrix"
+      - "Proceed toward final Version Lock"
+
+
+  governing_rule:
+    >
+    This document records candidates only. No candidate SHALL be
+    considered a production lock until it has passed the complete
+    Version Lock resolution and validation process.

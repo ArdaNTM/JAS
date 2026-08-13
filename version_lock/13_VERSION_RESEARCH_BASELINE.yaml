@@ -1,0 +1,732 @@
+# ============================================================
+# JARVIS / JAS
+# VERSION LOCK v1 — VERSION RESEARCH BASELINE
+# ============================================================
+
+version_research_baseline:
+
+  schema_version: "1.0"
+
+  project:
+    name: "JARVIS"
+    architecture: "JAS"
+    architecture_version: "JAS v1"
+
+  document:
+    id: "JAS-VL-013"
+    name: "Version Research Baseline"
+    version: "1.0"
+    status: "RESEARCH_BASELINE"
+    authority: "VERSION_LOCK_v1"
+
+  research:
+    verification_date: "2026-08-10"
+    verification_timezone: "Europe/Berlin"
+
+    purpose:
+      >
+      Records externally verified candidate versions discovered
+      during Version Lock v1 research.
+
+      Entries in this document are research candidates only.
+      They are not final production locks.
+
+    governing_documents:
+      - "10_VERSION_RESOLUTION_MATRIX.yaml"
+      - "11_RESOLUTION_CANDIDATES.yaml"
+      - "12_AUTHORITATIVE_VERSION_SOURCES.yaml"
+
+
+  # ==========================================================
+  # 1. RESEARCH STATUS
+  # ==========================================================
+
+  status_definitions:
+
+    VERIFIED_CANDIDATE:
+      >
+      Version was observed in an authoritative source and may
+      proceed to compatibility evaluation.
+
+    PARTIALLY_VERIFIED:
+      >
+      Version was observed but one or more required identity
+      fields remain unresolved.
+
+    COMPATIBILITY_REQUIRED:
+      >
+      Upstream identity is known but compatibility testing is
+      still required.
+
+    SECURITY_REQUIRED:
+      >
+      Security validation remains incomplete.
+
+    REJECTED:
+      >
+      Candidate failed a mandatory requirement.
+
+    APPROVED_CANDIDATE:
+      >
+      Candidate passed all required pre-lock evaluations.
+
+    LOCKED:
+      >
+      Candidate has been promoted to final Version Lock.
+
+
+  # ==========================================================
+  # 2. CORE RUNTIME
+  # ==========================================================
+
+  core_runtime:
+
+    python:
+
+      component_id: "SW-001"
+
+      source:
+        authority: "Python Software Foundation"
+        source_type: "Official Python release"
+        verification_status: "VERIFIED"
+
+      candidate:
+
+        version: "3.14.6"
+        implementation: "CPython"
+        release_series: "3.14"
+        release_status: "STABLE"
+
+      evidence:
+
+        release_date: "2026-06-10"
+
+        note:
+          >
+          Python 3.14.6 is the sixth maintenance release of the
+          Python 3.14 series.
+
+      compatibility:
+
+        fastapi: "PENDING"
+        pydantic: "PENDING"
+        langgraph: "PENDING"
+        uv: "PENDING"
+        ai_stack: "PENDING"
+
+      platform:
+
+        windows: "PENDING"
+        linux: "PENDING"
+        macos: "PENDING"
+
+      security:
+        status: "PENDING"
+
+      license:
+        status: "PENDING"
+
+      reproducibility:
+        status: "PENDING"
+
+      decision:
+        "VERIFIED_CANDIDATE"
+
+
+    cpython:
+
+      component_id: "CPYTHON-001"
+
+      candidate:
+
+        version: "3.14.6"
+        implementation: "CPython"
+
+      source:
+        authority: "Python Software Foundation"
+        status: "VERIFIED"
+
+      artifact_identity:
+        windows_x64: null
+        linux_x64: null
+        macos_x64: null
+        macos_arm64: null
+
+      digest:
+        status: "PENDING"
+
+      decision:
+        "PARTIALLY_VERIFIED"
+
+
+  # ==========================================================
+  # 3. PYTHON TOOLCHAIN
+  # ==========================================================
+
+  python_toolchain:
+
+    uv:
+
+      component_id: "SW-026"
+
+      source:
+        authority: "Astral"
+        source_type: "Official uv documentation / PyPI"
+        status: "VERIFIED"
+
+      candidate:
+
+        version: "0.11.29"
+
+      release:
+
+        release_date: "2026-07-15"
+
+      compatibility:
+
+        python_314: "PENDING"
+        windows: "SUPPORTED"
+        linux: "SUPPORTED"
+        macos: "SUPPORTED"
+
+      artifact_digest:
+        status: "PENDING"
+
+      decision:
+        "VERIFIED_CANDIDATE"
+
+
+  # ==========================================================
+  # 4. PYTHON DEPENDENCIES
+  # ==========================================================
+
+  python_dependencies:
+
+    fastapi:
+
+      component_id: "SW-005"
+
+      source:
+        registry: "PyPI"
+        status: "VERIFIED"
+
+      candidate:
+
+        version: "0.139.2"
+
+      release_date:
+        "2026-07-16"
+
+      requires_python:
+        ">=3.10"
+
+      license:
+        "MIT"
+
+      compatibility:
+
+        python_314: "PENDING"
+        pydantic: "PENDING"
+        starlette: "PENDING"
+
+      security:
+        "PENDING"
+
+      integrity:
+        "PENDING"
+
+      decision:
+        "VERIFIED_CANDIDATE"
+
+
+    pydantic:
+
+      component_id: "SW-006"
+
+      source:
+        registry: "PyPI"
+        status: "VERIFIED"
+
+      candidate:
+
+        version: "2.13.4"
+
+      release_date:
+        "2026-05-06"
+
+      requires_python:
+        ">=3.9"
+
+      license:
+        "MIT"
+
+      compatibility:
+
+        python_314: "SUPPORTED_BY_METADATA"
+        fastapi: "PENDING"
+        pydantic_core: "PENDING"
+
+      security:
+        "PENDING"
+
+      integrity:
+        "PENDING"
+
+      decision:
+        "VERIFIED_CANDIDATE"
+
+
+    langgraph:
+
+      component_id: "SW-007"
+
+      source:
+        registry: "PyPI"
+        status: "VERIFIED"
+
+      candidate:
+
+        version: "1.2.9"
+
+      release_date:
+        "2026-07-10"
+
+      requires_python:
+        ">=3.10"
+
+      license:
+        "MIT"
+
+      compatibility:
+
+        python_314: "PENDING"
+        langchain_ecosystem: "PENDING"
+
+      security:
+        "PENDING"
+
+      integrity:
+        "PENDING"
+
+      decision:
+        "VERIFIED_CANDIDATE"
+
+
+    pytest:
+
+      component_id: "SW-023"
+
+      source:
+        registry: "PyPI"
+        status: "VERIFIED"
+
+      candidate:
+
+        version: "9.1.1"
+
+      release_date:
+        "2026-06-19"
+
+      license:
+        "MIT"
+
+      compatibility:
+
+        python_314: "PENDING"
+
+      security:
+        "PENDING"
+
+      integrity:
+        "PENDING"
+
+      decision:
+        "VERIFIED_CANDIDATE"
+
+
+    ruff:
+
+      component_id: "SW-025"
+
+      source:
+        registry: "PyPI"
+        status: "VERIFIED"
+
+      candidate:
+
+        version: "0.15.22"
+
+      release_date:
+        "2026-07-16"
+
+      license:
+        "MIT"
+
+      compatibility:
+
+        python_314: "SUPPORTED"
+        windows: "SUPPORTED"
+        linux: "SUPPORTED"
+        macos: "SUPPORTED"
+
+      artifact_identity:
+
+        wheel_hashes:
+          status: "AVAILABLE"
+
+      security:
+        "PENDING"
+
+      decision:
+        "VERIFIED_CANDIDATE"
+
+
+  # ==========================================================
+  # 5. FRONTEND
+  # ==========================================================
+
+  frontend:
+
+    nodejs:
+
+      component_id: "SW-027"
+
+      source:
+        authority: "Node.js"
+        source_type: "Official Node.js releases"
+        status: "VERIFIED"
+
+      observed_release_lines:
+
+        - version: "24"
+          status: "LTS"
+          codename: "Krypton"
+
+        - version: "26"
+          status: "CURRENT"
+
+      observed_latest:
+
+        lts:
+          version: "24.18.0"
+
+        current:
+          version: "26.5.0"
+
+      selection_policy:
+        "Prefer supported LTS"
+
+      decision:
+        "COMPATIBILITY_REQUIRED"
+
+
+    typescript:
+
+      component_id: "FRONTEND-TS"
+
+      source:
+        registry: "npm"
+        status: "VERIFIED"
+
+      candidate:
+
+        version: "7.0.2"
+
+      release_channel:
+        "stable"
+
+      compatibility:
+
+        node_24: "PENDING"
+        node_26: "PENDING"
+        react: "PENDING"
+        vite: "PENDING"
+
+      decision:
+        "VERIFIED_CANDIDATE"
+
+
+    vite:
+
+      component_id: "SW-015"
+
+      source:
+        registry: "npm"
+        status: "VERIFIED"
+
+      candidate:
+
+        version: "8.1.5"
+
+      current_tag:
+        "latest"
+
+      previous_stable_line:
+        "7.3.6"
+
+      beta:
+        "8.2.0-beta.0"
+
+      compatibility:
+
+        node_24: "PENDING"
+        node_26: "PENDING"
+        typescript_7: "PENDING"
+        react: "PENDING"
+
+      decision:
+        "VERIFIED_CANDIDATE"
+
+
+    react:
+
+      component_id: "SW-014"
+
+      source:
+        registry: "npm"
+
+      candidate:
+        version: null
+
+      status:
+        "RESEARCH_REQUIRED"
+
+
+    frontend_package_manager:
+
+      component_id: "SW-028"
+
+      candidates:
+
+        pnpm:
+          version: null
+          status: "RESEARCH_REQUIRED"
+
+        npm:
+          version: null
+          status: "RESEARCH_REQUIRED"
+
+      selected:
+        null
+
+
+  # ==========================================================
+  # 6. COMPONENTS NOT YET RESEARCHED
+  # ==========================================================
+
+  pending_research:
+
+    core:
+
+      - "Docker"
+      - "BuildKit"
+      - "Buildx"
+      - "Docker Compose"
+      - "Git"
+
+    data:
+
+      - "Qdrant"
+      - "Qdrant client"
+      - "PostgreSQL"
+      - "Redis if enabled"
+
+    browser:
+
+      - "Playwright"
+      - "Chromium revision"
+
+    observability:
+
+      - "OpenTelemetry API"
+      - "OpenTelemetry SDK"
+      - "OpenTelemetry Collector"
+
+    ai_runtime:
+
+      - "Hugging Face Transformers"
+      - "PyTorch"
+      - "ONNX Runtime if enabled"
+
+    models:
+
+      - "Qwen3"
+      - "BAAI/bge-m3"
+      - "BAAI/bge-reranker-v2-m3"
+      - "OpenAI Whisper"
+      - "SigLIP 2"
+
+    voice:
+
+      - "VAD implementation"
+      - "Piper if enabled"
+
+    mcp:
+
+      - "MCP protocol"
+      - "MCP Python SDK"
+      - "Enabled MCP servers"
+
+    native:
+
+      - "Rust if enabled"
+      - "C/C++ toolchain if enabled"
+      - "CMake if enabled"
+      - "Ninja if enabled"
+
+    gpu:
+
+      - "CUDA if enabled"
+      - "NVIDIA driver if enabled"
+      - "cuDNN if enabled"
+
+
+  # ==========================================================
+  # 7. IMPORTANT VERSION-LOCK RULE
+  # ==========================================================
+
+  lock_policy:
+
+    observed_latest_version:
+      >
+      An observed latest version is a candidate only.
+
+    final_lock_requires:
+
+      - "Dependency compatibility"
+      - "Runtime compatibility"
+      - "Platform compatibility"
+      - "Security validation"
+      - "License validation"
+      - "Artifact integrity"
+      - "Reproducible installation"
+
+    mutable_references:
+
+      forbidden:
+
+        - "latest"
+        - "main"
+        - "master"
+        - "floating model tags"
+        - "unbounded dependency ranges"
+
+
+  # ==========================================================
+  # 8. RESEARCH RECORDS
+  # ==========================================================
+
+  research_records:
+
+    - component_id: "SW-001"
+      candidate: "3.14.6"
+      source: "Python.org"
+      status: "VERIFIED_CANDIDATE"
+
+    - component_id: "SW-026"
+      candidate: "0.11.29"
+      source: "PyPI / Astral"
+      status: "VERIFIED_CANDIDATE"
+
+    - component_id: "SW-005"
+      candidate: "0.139.2"
+      source: "PyPI"
+      status: "VERIFIED_CANDIDATE"
+
+    - component_id: "SW-006"
+      candidate: "2.13.4"
+      source: "PyPI"
+      status: "VERIFIED_CANDIDATE"
+
+    - component_id: "SW-007"
+      candidate: "1.2.9"
+      source: "PyPI"
+      status: "VERIFIED_CANDIDATE"
+
+    - component_id: "SW-023"
+      candidate: "9.1.1"
+      source: "PyPI"
+      status: "VERIFIED_CANDIDATE"
+
+    - component_id: "SW-025"
+      candidate: "0.15.22"
+      source: "PyPI"
+      status: "VERIFIED_CANDIDATE"
+
+    - component_id: "SW-027"
+      candidate: "24.18.0"
+      source: "Node.js"
+      status: "VERIFIED_CANDIDATE"
+
+    - component_id: "FRONTEND-TS"
+      candidate: "7.0.2"
+      source: "npm"
+      status: "VERIFIED_CANDIDATE"
+
+    - component_id: "SW-015"
+      candidate: "8.1.5"
+      source: "npm"
+      status: "VERIFIED_CANDIDATE"
+
+
+  # ==========================================================
+  # 9. CURRENT STATE
+  # ==========================================================
+
+  state:
+
+    research_started: true
+
+    verified_candidates_present: true
+
+    exact_dependency_graph_resolved: false
+
+    runtime_compatibility_resolved: false
+
+    model_compatibility_resolved: false
+
+    mcp_compatibility_resolved: false
+
+    security_validation_complete: false
+
+    license_validation_complete: false
+
+    artifact_digests_complete: false
+
+    final_lock_ready: false
+
+    status:
+      "RESEARCH_IN_PROGRESS"
+
+
+  # ==========================================================
+  # 10. NEXT PHASE
+  # ==========================================================
+
+  next_phase:
+
+    name:
+      "Compatibility Resolution"
+
+    sequence:
+
+      - "Resolve Python 3.14 compatibility across core Python stack"
+      - "Resolve FastAPI/Pydantic compatibility"
+      - "Resolve LangGraph dependency graph"
+      - "Resolve uv lock compatibility"
+      - "Resolve Node.js LTS selection"
+      - "Resolve TypeScript/React/Vite compatibility"
+      - "Resolve database versions"
+      - "Resolve Qdrant server/client compatibility"
+      - "Resolve Playwright/browser revision"
+      - "Resolve AI runtime versions"
+      - "Resolve Qwen3 exact variant and revision"
+      - "Resolve embedding/reranker model revisions"
+      - "Resolve Whisper model identity"
+      - "Resolve MCP SDK/protocol compatibility"
+      - "Resolve enabled MCP server versions"
+      - "Resolve native/GPU stack if enabled"
+      - "Perform security validation"
+      - "Perform license validation"
+      - "Perform artifact integrity validation"
+      - "Promote valid candidates to APPROVED_CANDIDATE"

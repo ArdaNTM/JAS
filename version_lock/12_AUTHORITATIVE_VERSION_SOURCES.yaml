@@ -1,0 +1,1213 @@
+# ============================================================
+# JARVIS / JAS
+# VERSION LOCK v1 — AUTHORITATIVE VERSION SOURCES
+# ============================================================
+
+version_lock_authoritative_version_sources:
+
+  schema_version: "1.0"
+
+  project:
+    name: "JARVIS"
+    architecture: "JAS"
+    architecture_version: "JAS v1"
+
+  document:
+    id: "JAS-VL-012"
+    name: "Authoritative Version Sources"
+    version: "1.0"
+    status: "CANDIDATE"
+    authority: "VERSION_LOCK_v1"
+
+
+  # ==========================================================
+  # 1. PURPOSE
+  # ==========================================================
+
+  purpose:
+    >
+    This document defines the authoritative sources from which
+    component versions, revisions, artifacts, release metadata,
+    security information and immutable identities SHALL be
+    resolved during Version Lock v1.
+
+    The purpose is to prevent arbitrary, unofficial or ambiguous
+    version selection.
+
+
+  # ==========================================================
+  # 2. SOURCE AUTHORITY LEVELS
+  # ==========================================================
+
+  authority_levels:
+
+    TIER_0:
+      name: "JAS Internal Authority"
+      trust: "HIGHEST"
+
+      examples:
+        - "JAS architecture"
+        - "Approved Stack"
+        - "Version Lock"
+        - "JAS release records"
+
+      usage:
+        >
+        Governs whether a technology is architecturally permitted
+        inside JAS.
+
+
+    TIER_1:
+      name: "Official Upstream Authority"
+      trust: "PRIMARY"
+
+      examples:
+        - "Official project repository"
+        - "Official release page"
+        - "Official package registry"
+        - "Official container registry"
+        - "Official model repository"
+
+      usage:
+        >
+        Primary source for exact upstream version and release
+        identity.
+
+
+    TIER_2:
+      name: "Official Security Authority"
+      trust: "PRIMARY"
+
+      examples:
+        - "Official security advisories"
+        - "CVE records"
+        - "OSV records"
+        - "Vendor security advisories"
+
+      usage:
+        >
+        Primary source for vulnerability and security validation.
+
+
+    TIER_3:
+      name: "Trusted Secondary Source"
+      trust: "SECONDARY"
+
+      examples:
+        - "Official ecosystem documentation mirrors"
+        - "Established technical databases"
+        - "Reputable engineering references"
+
+      usage:
+        >
+        Discovery and cross-validation only when Tier 0–2 sources
+        are insufficient.
+
+
+    TIER_4:
+      name: "Untrusted / Discovery Only"
+      trust: "LOW"
+
+      examples:
+        - "Forums"
+        - "Random blogs"
+        - "Unverified repositories"
+        - "Social media posts"
+
+      usage:
+        >
+        May be used for discovery only. SHALL NOT establish final
+        production Version Lock identity.
+
+
+  # ==========================================================
+  # 3. GENERAL SOURCE RULES
+  # ==========================================================
+
+  general_rules:
+
+    rule_001:
+      >
+      Final production versions SHALL be resolved from Tier 0 or
+      Tier 1 sources whenever possible.
+
+    rule_002:
+      >
+      Security status SHALL be validated using Tier 2 sources.
+
+    rule_003:
+      >
+      Secondary sources SHALL NOT override official upstream
+      release information.
+
+    rule_004:
+      >
+      A version mentioned only by an unofficial source SHALL remain
+      RESEARCH_REQUIRED.
+
+    rule_005:
+      >
+      Mutable references SHALL NOT be used as final production
+      identities.
+
+    rule_006:
+      >
+      Tags SHALL be cross-checked against immutable release
+      information whenever possible.
+
+    rule_007:
+      >
+      Git commit or equivalent immutable revision SHALL be recorded
+      for source-built or revision-based dependencies.
+
+    rule_008:
+      >
+      Artifact digest SHALL be recorded when the distribution
+      mechanism provides a stable digest.
+
+    rule_009:
+      >
+      Version resolution SHALL record the date of verification.
+
+    rule_010:
+      >
+      A source outage SHALL NOT be interpreted as proof that a
+      candidate version is valid.
+
+
+  # ==========================================================
+  # 4. PYTHON / PYPI
+  # ==========================================================
+
+  python:
+
+    runtime:
+
+      python:
+
+        authority:
+          "Python Software Foundation / python.org"
+
+        tier: "TIER_1"
+
+        source_type:
+          "Official release"
+
+        version_source:
+          "Official Python release information"
+
+        artifact_source:
+          "Official Python distribution artifacts"
+
+        security_source:
+          "Python security advisories"
+
+        immutable_identity:
+          - "Version"
+          - "Release artifact"
+          - "SHA-256 digest where available"
+
+
+    packages:
+
+      registry:
+        "PyPI"
+
+      tier: "TIER_1"
+
+      source_type:
+        "Official Python package registry"
+
+      required_metadata:
+
+        - "Package name"
+        - "Version"
+        - "Release date"
+        - "Requires-Python"
+        - "Dependencies"
+        - "Distribution files"
+        - "Hashes"
+        - "License metadata"
+
+
+      packages:
+
+        - "fastapi"
+        - "pydantic"
+        - "langgraph"
+        - "pytest"
+        - "ruff"
+        - "openai"
+        - "qdrant-client"
+        - "playwright"
+        - "transformers"
+        - "onnxruntime"
+        - "opentelemetry-api"
+        - "opentelemetry-sdk"
+
+
+  # ==========================================================
+  # 5. UV
+  # ==========================================================
+
+  uv:
+
+    authority:
+      "Astral"
+
+    tier: "TIER_1"
+
+    sources:
+
+      project:
+        "Official uv repository"
+
+      releases:
+        "Official uv releases"
+
+      artifacts:
+        "Official uv release artifacts"
+
+    required_identity:
+
+      - "Version"
+      - "Platform"
+      - "Architecture"
+      - "Artifact"
+      - "Digest where available"
+
+
+  # ==========================================================
+  # 6. PYTHON DEPENDENCY LOCK
+  # ==========================================================
+
+  uv_lock:
+
+    primary_source:
+      "JAS repository"
+
+    authority:
+      "JAS Version Lock"
+
+    tier: "TIER_0"
+
+    required_identity:
+
+      - "uv.lock revision"
+      - "Source commit"
+      - "Dependency graph"
+
+    rule:
+      >
+      The uv.lock file is authoritative for the exact resolved
+      Python dependency graph of a JAS release.
+
+
+  # ==========================================================
+  # 7. NODE.JS
+  # ==========================================================
+
+  nodejs:
+
+    authority:
+      "Node.js"
+
+    tier: "TIER_1"
+
+    sources:
+
+      releases:
+        "Official Node.js release information"
+
+      downloads:
+        "Official Node.js distribution artifacts"
+
+      security:
+        "Node.js security releases"
+
+    required_identity:
+
+      - "Version"
+      - "LTS status"
+      - "Platform"
+      - "Architecture"
+      - "Artifact"
+
+
+  # ==========================================================
+  # 8. NPM ECOSYSTEM
+  # ==========================================================
+
+  npm:
+
+    registry:
+      "npm registry"
+
+    tier: "TIER_1"
+
+    required_metadata:
+
+      - "Package name"
+      - "Version"
+      - "Dependencies"
+      - "Integrity"
+      - "Dist metadata"
+      - "License"
+
+    packages:
+
+      - "react"
+      - "react-dom"
+      - "typescript"
+      - "vite"
+
+
+  # ==========================================================
+  # 9. FRONTEND PACKAGE MANAGER
+  # ==========================================================
+
+  frontend_package_manager:
+
+    candidates:
+
+      pnpm:
+
+        authority:
+          "pnpm"
+
+        tier: "TIER_1"
+
+        source:
+          "Official pnpm repository and releases"
+
+        lockfile:
+          "pnpm-lock.yaml"
+
+
+      npm:
+
+        authority:
+          "npm / Node.js ecosystem"
+
+        tier: "TIER_1"
+
+        source:
+          "Official npm documentation and releases"
+
+        lockfile:
+          "package-lock.json"
+
+
+    final_selection:
+      status: "UNRESOLVED"
+
+    selection_authority:
+      "10_VERSION_RESOLUTION_MATRIX.yaml"
+
+
+  # ==========================================================
+  # 10. RUST
+  # ==========================================================
+
+  rust:
+
+    authority:
+      "Rust Project"
+
+    tier: "TIER_1"
+
+    sources:
+
+      releases:
+        "Official Rust release information"
+
+      toolchain:
+        "Official Rust toolchain distribution"
+
+      packages:
+        "crates.io"
+
+    required_identity:
+
+      - "rustc version"
+      - "cargo version"
+      - "toolchain"
+      - "target"
+      - "crate versions"
+
+
+  # ==========================================================
+  # 11. C / C++
+  # ==========================================================
+
+  cpp:
+
+    authority:
+
+      primary:
+        "Vendor / upstream project"
+
+      toolchain:
+        "Selected compiler vendor"
+
+    tier:
+      "TIER_1"
+
+    required_identity:
+
+      - "Compiler"
+      - "Compiler version"
+      - "Toolset"
+      - "Target"
+      - "ABI"
+
+
+  # ==========================================================
+  # 12. DOCKER
+  # ==========================================================
+
+  docker:
+
+    authority:
+      "Docker"
+
+    tier: "TIER_1"
+
+    sources:
+
+      engine:
+        "Official Docker releases"
+
+      buildkit:
+        "Official BuildKit project"
+
+      buildx:
+        "Official Docker Buildx project"
+
+      compose:
+        "Official Docker Compose project"
+
+    required_identity:
+
+      - "Version"
+      - "Platform"
+      - "Architecture"
+
+
+  # ==========================================================
+  # 13. CONTAINER IMAGES
+  # ==========================================================
+
+  containers:
+
+    registry_authority:
+
+      primary:
+        "Official upstream container registry"
+
+      fallback:
+        "Docker Official Images where applicable"
+
+    tier:
+      "TIER_1"
+
+    required_identity:
+
+      - "Registry"
+      - "Repository"
+      - "Tag"
+      - "Digest"
+      - "Architecture"
+
+    mutable_tag_policy:
+
+      allowed_for_development:
+        true
+
+      allowed_for_production:
+        false
+
+
+  # ==========================================================
+  # 14. POSTGRESQL
+  # ==========================================================
+
+  postgresql:
+
+    authority:
+      "PostgreSQL Global Development Group"
+
+    tier: "TIER_1"
+
+    sources:
+
+      releases:
+        "Official PostgreSQL release information"
+
+      container:
+        "Official PostgreSQL container distribution where applicable"
+
+      security:
+        "Official PostgreSQL security advisories"
+
+    required_identity:
+
+      - "Major version"
+      - "Minor version"
+      - "Distribution"
+      - "Container digest where applicable"
+
+
+  # ==========================================================
+  # 15. QDRANT
+  # ==========================================================
+
+  qdrant:
+
+    authority:
+      "Qdrant"
+
+    tier: "TIER_1"
+
+    sources:
+
+      releases:
+        "Official Qdrant repository/releases"
+
+      container:
+        "Official Qdrant container registry"
+
+      client:
+        "Official qdrant-client package"
+
+    required_identity:
+
+      - "Server version"
+      - "Client version"
+      - "Container digest"
+      - "API compatibility"
+
+
+  # ==========================================================
+  # 16. PLAYWRIGHT
+  # ==========================================================
+
+  playwright:
+
+    authority:
+      "Microsoft Playwright"
+
+    tier: "TIER_1"
+
+    sources:
+
+      python:
+        "PyPI"
+
+      node:
+        "npm registry"
+
+      repository:
+        "Official Playwright repository"
+
+      browsers:
+        "Playwright-managed browser artifacts"
+
+
+    required_identity:
+
+      - "Playwright version"
+      - "Browser family"
+      - "Browser revision"
+      - "Platform"
+      - "Architecture"
+
+
+  # ==========================================================
+  # 17. CHROMIUM
+  # ==========================================================
+
+  chromium:
+
+    authority:
+      "Chromium Project / Playwright distribution"
+
+    tier:
+      "TIER_1"
+
+    required_identity:
+
+      - "Revision"
+      - "Build"
+      - "Platform"
+      - "Architecture"
+
+
+    rule:
+      >
+      Chromium used by Playwright SHALL be resolved as the exact
+      browser revision associated with the selected Playwright
+      release unless an explicitly approved alternative is used.
+
+
+  # ==========================================================
+  # 18. AI / HUGGING FACE
+  # ==========================================================
+
+  huggingface:
+
+    authority:
+      "Hugging Face"
+
+    tier:
+      "TIER_1"
+
+    sources:
+
+      models:
+        "Official Hugging Face model repository"
+
+      transformers:
+        "Official Transformers repository / PyPI"
+
+      datasets:
+        "Official Hugging Face dataset repository where applicable"
+
+
+    required_model_identity:
+
+      - "Model ID"
+      - "Revision"
+      - "Commit SHA"
+      - "File identity"
+      - "Artifact digest where available"
+      - "License"
+
+
+  # ==========================================================
+  # 19. QWEN3
+  # ==========================================================
+
+  qwen3:
+
+    authority:
+      "Qwen / Alibaba Cloud"
+
+    tier:
+      "TIER_1"
+
+    primary_source:
+      "Official Qwen model repository"
+
+    secondary_source:
+      "Official Qwen project repository"
+
+    required_identity:
+
+      - "Model family"
+      - "Exact variant"
+      - "Revision"
+      - "Commit"
+      - "Artifact format"
+      - "Quantization"
+      - "Runtime"
+      - "Artifact digest where available"
+      - "License"
+
+
+    mutable_reference_policy:
+
+      forbidden:
+
+        - "main"
+        - "master"
+        - "latest"
+        - "Unpinned model reference"
+
+
+  # ==========================================================
+  # 20. EMBEDDING MODELS
+  # ==========================================================
+
+  embedding_models:
+
+    bge_m3:
+
+      authority:
+        "BAAI / Hugging Face"
+
+      tier:
+        "TIER_1"
+
+      source:
+        "Official BAAI/bge-m3 model repository"
+
+      required_identity:
+
+        - "Model ID"
+        - "Revision"
+        - "Commit"
+        - "Artifact digest"
+        - "License"
+
+
+  # ==========================================================
+  # 21. RERANKER MODELS
+  # ==========================================================
+
+  reranker_models:
+
+    bge_reranker_v2_m3:
+
+      authority:
+        "BAAI / Hugging Face"
+
+      tier:
+        "TIER_1"
+
+      source:
+        "Official BAAI/bge-reranker-v2-m3 model repository"
+
+      required_identity:
+
+        - "Model ID"
+        - "Revision"
+        - "Commit"
+        - "Artifact digest"
+        - "License"
+
+
+  # ==========================================================
+  # 22. WHISPER
+  # ==========================================================
+
+  whisper:
+
+    authority:
+      "OpenAI / official model distribution"
+
+    tier:
+      "TIER_1"
+
+    sources:
+
+      official_repository:
+        "Official Whisper repository"
+
+      model_distribution:
+        "Officially documented model distribution source"
+
+
+    required_identity:
+
+      - "Model"
+      - "Revision or release identity"
+      - "Artifact"
+      - "Digest where available"
+      - "License"
+
+
+  # ==========================================================
+  # 23. SIGLIP 2
+  # ==========================================================
+
+  siglip2:
+
+    authority:
+      "Google / Hugging Face"
+
+    tier:
+      "TIER_1"
+
+    source:
+      "Official SigLIP 2 model repository"
+
+    required_identity:
+
+      - "Model ID"
+      - "Variant"
+      - "Revision"
+      - "Commit"
+      - "Artifact digest"
+      - "License"
+
+
+  # ==========================================================
+  # 24. ONNX RUNTIME
+  # ==========================================================
+
+  onnxruntime:
+
+    authority:
+      "Microsoft ONNX Runtime"
+
+    tier:
+      "TIER_1"
+
+    sources:
+
+      repository:
+        "Official ONNX Runtime repository"
+
+      python:
+        "PyPI"
+
+      releases:
+        "Official ONNX Runtime releases"
+
+
+    required_identity:
+
+      - "Version"
+      - "Platform"
+      - "Architecture"
+      - "Execution provider"
+      - "Artifact"
+
+
+  # ==========================================================
+  # 25. CUDA
+  # ==========================================================
+
+  cuda:
+
+    authority:
+      "NVIDIA"
+
+    tier:
+      "TIER_1"
+
+    sources:
+
+      toolkit:
+        "Official NVIDIA CUDA Toolkit"
+
+      drivers:
+        "Official NVIDIA driver releases"
+
+      cudnn:
+        "Official NVIDIA cuDNN distribution"
+
+
+    required_identity:
+
+      - "CUDA version"
+      - "Driver version"
+      - "cuDNN version if used"
+      - "Platform"
+      - "Architecture"
+
+
+  # ==========================================================
+  # 26. MCP
+  # ==========================================================
+
+  mcp:
+
+    protocol:
+
+      authority:
+        "Model Context Protocol"
+
+      tier:
+        "TIER_1"
+
+      required_identity:
+
+        - "Protocol revision"
+        - "Specification version"
+
+
+    sdk:
+
+      authority:
+        "Official MCP SDK distribution"
+
+      tier:
+        "TIER_1"
+
+      required_identity:
+
+        - "SDK version"
+        - "Runtime"
+        - "Protocol compatibility"
+
+
+    servers:
+
+      authority:
+        "Individual MCP server publisher"
+
+      tier:
+        "TIER_1"
+
+      required_identity:
+
+        - "Server ID"
+        - "Publisher"
+        - "Version"
+        - "Revision"
+        - "Digest"
+        - "Protocol version"
+        - "Transport"
+        - "Runtime"
+
+
+  # ==========================================================
+  # 27. SECURITY DATABASES
+  # ==========================================================
+
+  security:
+
+    cve:
+
+      authority:
+        "NVD / CVE ecosystem"
+
+      tier:
+        "TIER_2"
+
+
+    osv:
+
+      authority:
+        "OSV"
+
+      tier:
+        "TIER_2"
+
+
+    vendor_advisories:
+
+      tier:
+        "TIER_2"
+
+      rule:
+        >
+        Vendor advisories SHALL take precedence for vulnerabilities
+        affecting their own products when they provide more precise
+        remediation information.
+
+
+  # ==========================================================
+  # 28. SBOM
+  # ==========================================================
+
+  sbom:
+
+    standard:
+
+      authority:
+        "CycloneDX"
+
+      tier:
+        "TIER_1"
+
+      required_identity:
+
+        - "Specification version"
+        - "Generator"
+        - "Generator version"
+
+
+  # ==========================================================
+  # 29. SIGNING / PROVENANCE
+  # ==========================================================
+
+  signing:
+
+    sigstore:
+
+      authority:
+        "Sigstore"
+
+      tier:
+        "TIER_1"
+
+
+    cosign:
+
+      authority:
+        "Sigstore / Cosign"
+
+      tier:
+        "TIER_1"
+
+
+    provenance:
+
+      preferred_standard:
+        "SLSA"
+
+      tier:
+        "TIER_1"
+
+
+  # ==========================================================
+  # 30. SOURCE VERIFICATION RECORD
+  # ==========================================================
+
+  verification_record:
+
+    required_fields:
+
+      - "component_id"
+      - "source_name"
+      - "source_tier"
+      - "source_reference"
+      - "verification_date"
+      - "verified_by"
+      - "version"
+      - "revision"
+      - "artifact"
+      - "digest"
+      - "verification_status"
+
+    records: []
+
+
+  # ==========================================================
+  # 31. SOURCE CONFLICT RESOLUTION
+  # ==========================================================
+
+  conflict_resolution:
+
+    priority:
+
+      1:
+        "JAS architectural authority"
+
+      2:
+        "Official upstream release"
+
+      3:
+        "Official package/container/model registry"
+
+      4:
+        "Official security advisory"
+
+      5:
+        "Trusted secondary source"
+
+      6:
+        "Discovery-only source"
+
+
+    conflict_rule:
+      >
+      When two sources disagree, the higher-authority source SHALL
+      determine the production resolution unless the disagreement
+      concerns a security issue, in which case the most precise
+      authoritative security advisory SHALL also be evaluated.
+
+
+  # ==========================================================
+  # 32. SOURCE AVAILABILITY
+  # ==========================================================
+
+  availability:
+
+    source_unavailable:
+
+      action:
+        "RESEARCH_REQUIRED"
+
+      production_lock_allowed:
+        false
+
+
+    source_removed:
+
+      action:
+        "HISTORICAL_REFERENCE_REQUIRED"
+
+      production_lock_allowed:
+        false
+
+
+    source_mutated:
+
+      action:
+        "INTEGRITY_REVIEW"
+
+
+  # ==========================================================
+  # 33. VERSION VERIFICATION TIMESTAMP
+  # ==========================================================
+
+  verification:
+
+    every_candidate:
+
+      verification_date_required: true
+
+      verification_time_required: true
+
+      source_reference_required: true
+
+      verifier_identity_required: true
+
+    stale_information:
+
+      review_required: true
+
+
+  # ==========================================================
+  # 34. CURRENT STATE
+  # ==========================================================
+
+  state:
+
+    source_policy_defined: true
+
+    source_hierarchy_defined: true
+
+    package_sources_defined: true
+
+    model_sources_defined: true
+
+    mcp_sources_defined: true
+
+    security_sources_defined: true
+
+    exact_source_references_collected: false
+
+    candidate_versions_verified: false
+
+    status:
+      "SOURCE_POLICY_READY"
+
+
+  # ==========================================================
+  # 35. NEXT PHASE
+  # ==========================================================
+
+  next_phase:
+
+    name:
+      "Authoritative Candidate Research"
+
+    sequence:
+
+      - "Query official runtime releases"
+      - "Query official package registries"
+      - "Query official model repositories"
+      - "Query official MCP sources"
+      - "Query official container registries"
+      - "Query official security advisories"
+      - "Record candidate versions"
+      - "Record immutable revisions"
+      - "Record artifact identities"
+      - "Record verification timestamps"
+      - "Cross-check compatibility"
+      - "Populate Resolution Candidates"
+      - "Populate Version Resolution Matrix"
+      - "Proceed toward final Version Lock"
+
+
+  governing_rule:
+    >
+    No production version SHALL be considered authoritative merely
+    because it appears in a secondary source. Final Version Lock
+    identity SHALL be established through the highest available
+    authoritative source.

@@ -1,0 +1,1281 @@
+# ============================================================
+# JARVIS / JAS
+# VERSION LOCK v1 — ARTIFACT AND CONTAINER LOCKS
+# ============================================================
+
+version_lock_artifact_and_container_locks:
+
+  schema_version: "1.0"
+
+  project:
+    name: "JARVIS"
+    architecture: "JAS"
+    architecture_version: "JAS v1"
+
+  lock:
+    version: "1.0"
+    status: "CANDIDATE"
+    authority: "VERSION_LOCK_v1"
+
+
+  # ==========================================================
+  # IMPORTANT
+  # ==========================================================
+  #
+  # This document governs immutable software artifacts used by
+  # JAS.
+  #
+  # Artifact identity SHALL be distinguished from a human-readable
+  # version or tag.
+  #
+  # Production artifact identity SHALL prefer:
+  #
+  #   registry
+  #   repository
+  #   tag
+  #   digest
+  #   architecture
+  #   operating-system target
+  #
+  # A mutable tag SHALL NOT constitute a final production lock.
+  #
+  # ==========================================================
+
+
+  # ==========================================================
+  # 1. ARTIFACT IDENTITY
+  # ==========================================================
+
+  identity:
+
+    required_for_production:
+
+      - "artifact_name"
+      - "artifact_type"
+      - "source"
+      - "version"
+      - "architecture"
+      - "platform"
+
+    immutable_identity:
+
+      preferred:
+
+        - "content_digest"
+
+      fallback:
+
+        - "immutable_source_revision"
+
+    digest:
+
+      preferred_algorithm: "SHA-256"
+
+      accepted_forms:
+
+        - "sha256:<digest>"
+
+      verification_required: true
+
+
+  # ==========================================================
+  # 2. CONTAINER ARTIFACT POLICY
+  # ==========================================================
+
+  containers:
+
+    production:
+
+      digest_required: true
+
+      mutable_tags_allowed: false
+
+      architecture_required: true
+
+      platform_required: true
+
+      registry_required: true
+
+      provenance_required: true
+
+      sbom_required: true
+
+      vulnerability_scan_required: true
+
+      signature_verification:
+
+        required: true
+
+        mechanism: null
+
+    development:
+
+      digest_required: false
+
+      digest_preferred: true
+
+      mutable_tags_allowed: true
+
+      restrictions:
+
+        - "Development only"
+        - "Never promote directly to production"
+        - "Re-resolve artifact before release"
+
+
+  # ==========================================================
+  # 3. OCI STANDARD
+  # ==========================================================
+
+  oci:
+
+    standard:
+
+      name: "OCI"
+
+      approved: true
+
+      version: null
+
+    artifact_types:
+
+      - "OCI Container Image"
+      - "OCI Image Index"
+      - "OCI Artifact"
+
+    manifest:
+
+      schema_version: null
+
+    production_requirements:
+
+      immutable_digest: true
+
+      architecture_metadata: true
+
+      layer_integrity: true
+
+      manifest_integrity: true
+
+
+  # ==========================================================
+  # 4. JAS INTERNAL BASE IMAGE
+  # ==========================================================
+
+  images:
+
+    jas_base:
+
+      id: "IMAGE-JAS-BASE"
+
+      name: "JAS Base Image"
+
+      type: "internal_container_image"
+
+      status: "CANDIDATE"
+
+      source:
+
+        registry: null
+
+        repository: null
+
+        tag: null
+
+        digest: null
+
+      platform:
+
+        os: "linux"
+
+        architecture: "amd64"
+
+      base_image:
+
+        repository: null
+
+        tag: null
+
+        digest: null
+
+      runtime:
+
+        python:
+
+          version: null
+
+          implementation: "CPython"
+
+        uv:
+
+          version: null
+
+      security:
+
+        non_root: true
+
+        read_only_root_filesystem: false
+
+        shell_available: true
+
+        package_install_at_runtime: false
+
+      provenance:
+
+        source_commit: null
+
+        build_id: null
+
+        builder: null
+
+        build_timestamp: null
+
+      sbom:
+
+        format: "CycloneDX"
+
+        artifact: null
+
+        digest: null
+
+      signature:
+
+        mechanism: null
+
+        identity: null
+
+        verified: false
+
+      vulnerability_scan:
+
+        scanner: null
+
+        scan_revision: null
+
+        status: "PENDING"
+
+      final_status: "PENDING_BASE_IMAGE_RESOLUTION"
+
+
+  # ==========================================================
+  # 5. PYTHON SERVICE IMAGE
+  # ==========================================================
+
+    jas_backend:
+
+      id: "IMAGE-JAS-BACKEND"
+
+      name: "JAS Backend Image"
+
+      type: "internal_container_image"
+
+      status: "CANDIDATE"
+
+      source:
+
+        registry: null
+
+        repository: null
+
+        tag: null
+
+        digest: null
+
+      platform:
+
+        os: "linux"
+
+        architecture: "amd64"
+
+      base:
+
+        image: "IMAGE-JAS-BASE"
+
+        digest: null
+
+      runtime:
+
+        python:
+
+          version: null
+
+        fastapi:
+          version: null
+
+        pydantic:
+          version: null
+
+        langgraph:
+          version: null
+
+      dependency_lock:
+
+        file: "uv.lock"
+
+        source_revision: null
+
+        digest: null
+
+      build:
+
+        builder: "Docker BuildKit"
+
+        buildx_version: null
+
+        buildkit_version: null
+
+        source_commit: null
+
+      provenance:
+
+        enabled: true
+
+        attestation: null
+
+      sbom:
+
+        required: true
+
+        format: "CycloneDX"
+
+        digest: null
+
+      signature:
+
+        required: true
+
+        verified: false
+
+      vulnerability_scan:
+
+        required: true
+
+        status: "PENDING"
+
+      final_status: "PENDING_BUILD"
+
+
+  # ==========================================================
+  # 6. QDRANT IMAGE
+  # ==========================================================
+
+    qdrant:
+
+      id: "IMAGE-QDRANT"
+
+      name: "Qdrant"
+
+      type: "external_container_image"
+
+      status: "BASELINE_REQUIRED"
+
+      source:
+
+        registry: null
+
+        repository: "qdrant/qdrant"
+
+        tag: null
+
+        digest: null
+
+      platform:
+
+        os: "linux"
+
+        architecture: null
+
+      version:
+
+        exact: null
+
+      deployment:
+
+        local: true
+
+        containerized: true
+
+      integrity:
+
+        digest_required: true
+
+        verified: false
+
+      security:
+
+        vulnerability_scan_required: true
+
+        signature_verification_required: true
+
+      final_status: "PENDING_VERSION_AND_DIGEST"
+
+
+  # ==========================================================
+  # 7. POSTGRESQL IMAGE
+  # ==========================================================
+
+    postgresql:
+
+      id: "IMAGE-POSTGRESQL"
+
+      name: "PostgreSQL"
+
+      type: "external_container_image"
+
+      status: "BASELINE_REQUIRED"
+
+      source:
+
+        registry: null
+
+        repository: "postgres"
+
+        tag: null
+
+        digest: null
+
+      platform:
+
+        os: "linux"
+
+        architecture: null
+
+      version:
+
+        major: null
+
+        minor: null
+
+        exact: null
+
+      deployment:
+
+        containerized: true
+
+      persistence:
+
+        volume_required: true
+
+        backup_required: true
+
+      integrity:
+
+        digest_required: true
+
+        verified: false
+
+      security:
+
+        vulnerability_scan_required: true
+
+        signature_verification_required: true
+
+      final_status: "PENDING_VERSION_AND_DIGEST"
+
+
+  # ==========================================================
+  # 8. REDIS IMAGE
+  # ==========================================================
+
+    redis:
+
+      id: "IMAGE-REDIS"
+
+      name: "Redis"
+
+      type: "external_container_image"
+
+      status: "OPTIONAL"
+
+      source:
+
+        registry: null
+
+        repository: "redis"
+
+        tag: null
+
+        digest: null
+
+      platform:
+
+        os: "linux"
+
+        architecture: null
+
+      version:
+
+        exact: null
+
+      deployment:
+
+        containerized: true
+
+        enabled: false
+
+      integrity:
+
+        digest_required: true
+
+        verified: false
+
+      final_status: "NOT_BASELINE_LOCKED"
+
+
+  # ==========================================================
+  # 9. OTEL COLLECTOR IMAGE
+  # ==========================================================
+
+    opentelemetry_collector:
+
+      id: "IMAGE-OTEL-COLLECTOR"
+
+      name: "OpenTelemetry Collector"
+
+      type: "external_container_image"
+
+      status: "OPTIONAL"
+
+      source:
+
+        registry: null
+
+        repository: null
+
+        tag: null
+
+        digest: null
+
+      platform:
+
+        os: "linux"
+
+        architecture: null
+
+      version:
+
+        exact: null
+
+      deployment:
+
+        containerized: true
+
+        enabled: false
+
+      configuration:
+
+        source_revision: null
+
+        configuration_digest: null
+
+      integrity:
+
+        digest_required: true
+
+        verified: false
+
+      final_status: "NOT_BASELINE_LOCKED"
+
+
+  # ==========================================================
+  # 10. MODEL SERVICE ARTIFACTS
+  # ==========================================================
+
+  model_artifacts:
+
+    policy:
+
+      model_files_are_not_container_locked_by_default: true
+
+      model_identity_source:
+        "03_MODEL_LOCKS.yaml"
+
+      rule:
+        >
+        Model checkpoint identity, revision and artifact digest are
+        governed by MODEL LOCKS. If a model is distributed inside
+        a container image, both the model identity and the
+        containing image identity SHALL be locked.
+
+
+    qwen3:
+
+      containerized:
+
+        enabled: false
+
+        image: null
+
+        digest: null
+
+      standalone_artifact:
+
+        governed_by: "03_MODEL_LOCKS.yaml"
+
+        artifact_digest: null
+
+
+    embeddings:
+
+      bge_m3:
+
+        containerized:
+          enabled: false
+          image: null
+          digest: null
+
+        artifact_digest: null
+
+      bge_reranker:
+
+        containerized:
+          enabled: false
+          image: null
+          digest: null
+
+        artifact_digest: null
+
+
+    whisper:
+
+      containerized:
+        enabled: false
+        image: null
+        digest: null
+
+      artifact_digest: null
+
+
+  # ==========================================================
+  # 11. BROWSER ARTIFACTS
+  # ==========================================================
+
+  browser_artifacts:
+
+    policy:
+
+      governed_by: "03_MODEL_LOCKS.yaml and 05_PLATFORM_LOCKS.yaml"
+
+      browser_revision_required: true
+
+      artifact_digest_required_where_available: true
+
+    chromium:
+
+      source: null
+
+      revision: null
+
+      build: null
+
+      platform: null
+
+      architecture: null
+
+      digest: null
+
+    firefox:
+
+      source: null
+
+      revision: null
+
+      build: null
+
+      platform: null
+
+      architecture: null
+
+      digest: null
+
+    webkit:
+
+      source: null
+
+      revision: null
+
+      build: null
+
+      platform: null
+
+      architecture: null
+
+      digest: null
+
+
+  # ==========================================================
+  # 12. NATIVE ARTIFACTS
+  # ==========================================================
+
+  native_artifacts:
+
+    policy:
+
+      languages:
+
+        primary:
+          - "Rust"
+
+        secondary:
+          - "C++"
+
+      artifact_identity_required: true
+
+      source_revision_required: true
+
+      platform_identity_required: true
+
+      architecture_identity_required: true
+
+      compiler_identity_required: true
+
+
+    rust:
+
+      artifacts: []
+
+      required_fields:
+
+        - "package_or_library"
+        - "version"
+        - "source_revision"
+        - "compiler_version"
+        - "target"
+        - "artifact_digest"
+
+
+    cpp:
+
+      artifacts: []
+
+      required_fields:
+
+        - "library"
+        - "version"
+        - "source_revision"
+        - "compiler"
+        - "compiler_version"
+        - "target"
+        - "artifact_digest"
+
+
+  # ==========================================================
+  # 13. CUDA ARTIFACTS
+  # ==========================================================
+
+  cuda:
+
+    status: "CONDITIONAL"
+
+    toolkit:
+
+      version: null
+
+      installer_artifact: null
+
+      installer_digest: null
+
+      platform: null
+
+      architecture: null
+
+    driver:
+
+      version: null
+
+      vendor: "NVIDIA"
+
+      installer_artifact: null
+
+      installer_digest: null
+
+    cudnn:
+
+      version: null
+
+      artifact: null
+
+      digest: null
+
+    compatibility:
+
+      pytorch:
+        version: null
+        cuda_build: null
+
+      qwen3_runtime:
+        version: null
+
+      whisper_runtime:
+        version: null
+
+      vision_runtime:
+        version: null
+
+    integrity:
+
+      verified: false
+
+    final_status: "PENDING_HARDWARE_PROFILE"
+
+
+  # ==========================================================
+  # 14. FRONTEND ARTIFACTS
+  # ==========================================================
+
+  frontend:
+
+    build_artifact:
+
+      type: "Static Web Application"
+
+      source_revision: null
+
+      build_revision: null
+
+      artifact_digest: null
+
+    package_lock:
+
+      manager: null
+
+      lockfile: null
+
+      lockfile_digest: null
+
+    node_runtime:
+
+      version: null
+
+      platform: null
+
+      architecture: null
+
+    typescript:
+
+      compiler_version: null
+
+    vite:
+
+      version: null
+
+    react:
+
+      version: null
+
+    final_status: "PENDING_FRONTEND_LOCK"
+
+
+  # ==========================================================
+  # 15. SBOM
+  # ==========================================================
+
+  sbom:
+
+    standard:
+
+      name: "CycloneDX"
+
+      version: null
+
+    required: true
+
+    artifacts:
+
+      source:
+
+        required: true
+
+        file: null
+
+        digest: null
+
+      container:
+
+        required: true
+
+        file: null
+
+        digest: null
+
+      release:
+
+        required: true
+
+        file: null
+
+        digest: null
+
+    contents_required:
+
+      - "Component name"
+      - "Version"
+      - "Package URL where applicable"
+      - "License"
+      - "Dependency relationship"
+      - "Artifact identity"
+      - "Digest where available"
+
+
+  # ==========================================================
+  # 16. BUILD PROVENANCE
+  # ==========================================================
+
+  provenance:
+
+    required_for_production: true
+
+    information:
+
+      - "Source repository"
+      - "Source commit"
+      - "Build system"
+      - "Builder identity"
+      - "Build timestamp"
+      - "Build configuration"
+      - "Dependency lock state"
+      - "Artifact digest"
+
+    attestation:
+
+      format: null
+
+      artifact: null
+
+      digest: null
+
+      verified: false
+
+
+  # ==========================================================
+  # 17. ARTIFACT SIGNING
+  # ==========================================================
+
+  signing:
+
+    required_for_production: true
+
+    preferred_direction:
+
+      - "Sigstore"
+      - "Cosign"
+
+    artifact_signatures:
+
+      - artifact_id: "IMAGE-JAS-BASE"
+        signature: null
+        verified: false
+
+      - artifact_id: "IMAGE-JAS-BACKEND"
+        signature: null
+        verified: false
+
+      - artifact_id: "IMAGE-QDRANT"
+        signature: null
+        verified: false
+
+      - artifact_id: "IMAGE-POSTGRESQL"
+        signature: null
+        verified: false
+
+    signing_identity:
+
+      issuer: null
+
+      identity: null
+
+    verification_policy:
+
+      missing_signature:
+        production_action: "BLOCK"
+
+      invalid_signature:
+        production_action: "BLOCK"
+
+
+  # ==========================================================
+  # 18. VULNERABILITY SCANNING
+  # ==========================================================
+
+  vulnerability_scanning:
+
+    required: true
+
+    scanner:
+
+      name: null
+
+      version: null
+
+      database_revision: null
+
+    scan_policy:
+
+      critical:
+        action: "BLOCK"
+
+      high:
+        action: "REVIEW_REQUIRED"
+
+      medium:
+        action: "TRACK"
+
+      low:
+        action: "TRACK"
+
+    scan_targets:
+
+      - "Container images"
+      - "Native artifacts"
+      - "Python dependencies"
+      - "Frontend dependencies"
+      - "System packages"
+
+    scan_results:
+
+      jas_base:
+        status: "PENDING"
+
+      jas_backend:
+        status: "PENDING"
+
+      qdrant:
+        status: "PENDING"
+
+      postgresql:
+        status: "PENDING"
+
+
+  # ==========================================================
+  # 19. IMAGE REBUILD POLICY
+  # ==========================================================
+
+  rebuild_policy:
+
+    rebuild_required_when:
+
+      - "Base image changes"
+      - "OS package changes"
+      - "Python runtime changes"
+      - "uv.lock changes"
+      - "Application source changes"
+      - "Native dependency changes"
+      - "Security patch requires rebuild"
+      - "Compiler/toolchain changes"
+
+    rebuild_process:
+
+      - "Resolve dependencies"
+      - "Build image"
+      - "Generate SBOM"
+      - "Generate provenance"
+      - "Run vulnerability scan"
+      - "Verify artifact"
+      - "Sign artifact"
+      - "Record digest"
+      - "Create new Version Lock candidate"
+
+    old_artifact:
+
+      retain: true
+
+      reason:
+        >
+        Previous release artifacts must remain recoverable for
+        deterministic rollback.
+
+
+  # ==========================================================
+  # 20. ARTIFACT RETENTION
+  # ==========================================================
+
+  retention:
+
+    production_artifacts:
+
+      retain: true
+
+      minimum_requirement:
+        >
+        Every production Version Lock SHALL remain reproducible
+        from retained source, dependency and artifact metadata.
+
+    previous_versions:
+
+      retain: true
+
+      deletion_policy:
+        >
+        Historical artifacts SHALL NOT be deleted merely because
+        a newer Version Lock has been released.
+
+    rollback:
+
+      previous_digest_required: true
+
+      previous_sbom_required: true
+
+      previous_provenance_required: true
+
+
+  # ==========================================================
+  # 21. ARTIFACT DRIFT DETECTION
+  # ==========================================================
+
+  drift_detection:
+
+    required: true
+
+    detect:
+
+      - "Image tag changed"
+      - "Image digest changed"
+      - "Manifest changed"
+      - "Layer digest changed"
+      - "Architecture changed"
+      - "Base image changed"
+      - "SBOM changed"
+      - "Provenance changed"
+      - "Signature changed"
+      - "Model artifact changed"
+
+    unauthorized_drift:
+
+      action: "COMPLIANCE_FAILURE"
+
+
+  # ==========================================================
+  # 22. RELEASE ARTIFACT RULE
+  # ==========================================================
+
+  release_rule:
+
+    production_release_requires:
+
+      - "Exact component versions"
+      - "Exact platform"
+      - "Immutable artifact identity"
+      - "Container digest where containerized"
+      - "Model artifact identity"
+      - "SBOM"
+      - "Build provenance"
+      - "Artifact verification"
+      - "Security scan"
+      - "Signature verification"
+
+    mutable_reference_prohibited:
+
+      - "latest"
+      - "main"
+      - "master"
+      - "floating image tags"
+      - "unversioned download URLs"
+
+
+  # ==========================================================
+  # 23. CURRENT ARTIFACT STATUS
+  # ==========================================================
+
+  status_summary:
+
+    baseline_required:
+
+      - "JAS Base Image"
+      - "JAS Backend Image"
+      - "Qdrant"
+      - "PostgreSQL"
+
+    optional:
+
+      - "Redis"
+      - "OpenTelemetry Collector"
+      - "GPU/CUDA artifacts"
+
+    separately_locked:
+
+      - "Qwen3 model artifacts"
+      - "BGE-M3 model artifacts"
+      - "BGE reranker artifacts"
+      - "Whisper artifacts"
+      - "SigLIP2 artifacts"
+      - "Playwright browser artifacts"
+
+    unresolved:
+
+      - "Base image"
+      - "Base image digest"
+      - "Backend image"
+      - "Qdrant version"
+      - "Qdrant digest"
+      - "PostgreSQL version"
+      - "PostgreSQL digest"
+      - "SBOM tooling version"
+      - "Provenance implementation"
+      - "Signing implementation"
+      - "Vulnerability scanner"
+      - "CUDA artifacts"
+
+
+  # ==========================================================
+  # 24. VALIDATION STATE
+  # ==========================================================
+
+  validation:
+
+    artifact_sources_validated: false
+
+    container_versions_resolved: false
+
+    container_digests_resolved: false
+
+    base_images_resolved: false
+
+    sbom_generated: false
+
+    provenance_generated: false
+
+    signatures_verified: false
+
+    vulnerability_scans_complete: false
+
+    native_artifacts_validated: false
+
+    cuda_artifacts_validated: false
+
+    final_lock_status: "CANDIDATE"
+
+
+  # ==========================================================
+  # 25. NEXT PHASE
+  # ==========================================================
+
+  next_phase:
+
+    name: "Exact Artifact Resolution"
+
+    sequence:
+
+      - "Select approved base image"
+      - "Resolve base image exact version"
+      - "Resolve base image digest"
+      - "Resolve JAS backend image"
+      - "Resolve Qdrant version"
+      - "Resolve Qdrant image digest"
+      - "Resolve PostgreSQL version"
+      - "Resolve PostgreSQL image digest"
+      - "Resolve optional Redis image if enabled"
+      - "Resolve OpenTelemetry Collector image if enabled"
+      - "Resolve native artifacts"
+      - "Resolve CUDA artifacts if GPU profile is enabled"
+      - "Generate SBOM"
+      - "Generate build provenance"
+      - "Perform vulnerability scan"
+      - "Verify artifact signatures"
+      - "Record immutable identities"
+      - "Promote validated artifacts to LOCKED"
+
+  governing_rule: >
+    A production artifact SHALL NOT be considered locked merely
+    because its version or image tag is known. Its immutable
+    artifact identity, platform, integrity and release metadata
+    must also be resolved.

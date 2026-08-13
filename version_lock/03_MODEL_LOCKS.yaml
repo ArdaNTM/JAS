@@ -1,0 +1,1091 @@
+```yaml
+# ============================================================
+# JARVIS / JAS
+# VERSION LOCK v1 — MODEL LOCKS
+# ============================================================
+
+version_lock_model_locks:
+
+  schema_version: "1.0"
+
+  project:
+    name: "JARVIS"
+    architecture: "JAS"
+    architecture_version: "JAS v1"
+
+  lock:
+    version: "1.0"
+    status: "CANDIDATE"
+    authority: "VERSION_LOCK_v1"
+
+  # ----------------------------------------------------------
+  # IMPORTANT
+  # ----------------------------------------------------------
+  #
+  # A model family name is NOT a production lock identity.
+  #
+  # Every production model SHALL identify, where applicable:
+  #
+  #   provider / organization
+  #   repository
+  #   exact variant
+  #   revision
+  #   artifact format
+  #   quantization
+  #   runtime
+  #   artifact digest
+  #   license
+  #
+  # Mutable references such as "main" SHALL NOT be used as the
+  # final production revision.
+  #
+  # ==========================================================
+
+
+  # ==========================================================
+  # 1. LOCAL PRIMARY LLM
+  # ==========================================================
+
+  llm:
+
+    - id: "MODEL-LLM-QWEN3"
+
+      family: "Qwen3"
+
+      provider:
+        organization: "Qwen"
+        publisher: "Alibaba Cloud / Qwen Team"
+
+      repository:
+        selected: null
+        candidate_repositories:
+          - "Qwen/Qwen3-8B"
+          - "Qwen/Qwen3-30B-A3B"
+
+      deployment:
+        type: "LOCAL"
+        production_required: true
+
+      status:
+        approved: true
+        lock_status: "CANDIDATE_LOCK"
+        final_status: "PENDING_VARIANT_SELECTION"
+
+      license:
+        declared_family_license: "Apache-2.0"
+        exact_artifact_validation_required: true
+        validation_status: "PENDING"
+
+      variant:
+        selected: null
+
+      candidate_variants:
+
+        - name: "Qwen3-8B"
+          repository: "Qwen/Qwen3-8B"
+          parameter_class: "8.2B"
+          architecture: "Dense"
+          context:
+            native_tokens: 32768
+            extended_tokens: 131072
+          status: "CANDIDATE"
+
+        - name: "Qwen3-30B-A3B"
+          repository: "Qwen/Qwen3-30B-A3B"
+          parameter_class: "30B total / 3B activated"
+          architecture: "MoE"
+          status: "CANDIDATE"
+
+      revision:
+        value: null
+        type: "HUGGINGFACE_COMMIT"
+        mutable_reference_prohibited: true
+
+      artifact:
+        format: null
+        source_format_candidates:
+          - "Safetensors"
+          - "GGUF"
+          - "Other approved runtime-specific artifact"
+        digest:
+          algorithm: "SHA-256"
+          value: null
+
+      quantization:
+        selected: null
+        candidates:
+          - "FP16"
+          - "BF16"
+          - "INT8"
+          - "INT4"
+          - "GGUF quantization"
+        status: "PENDING_HARDWARE_VALIDATION"
+
+      runtime:
+        selected: null
+        candidates:
+          - "Transformers"
+          - "vLLM"
+          - "SGLang"
+          - "Other approved local runtime"
+        version: null
+
+      tokenizer:
+        repository_revision: null
+        artifact_digest: null
+
+      hardware_profile:
+        selected: null
+        cpu_support: true
+        gpu_required: null
+        vram_requirement: null
+        architecture: null
+
+      evaluation:
+        reasoning: "PENDING"
+        coding: "PENDING"
+        tool_use: "PENDING"
+        agentic_workflows: "PENDING"
+        multilingual: "PENDING"
+        latency: "PENDING"
+        memory_usage: "PENDING"
+
+      rationale:
+        - >
+          Qwen3 is the approved local LLM family for JAS v1.
+        - >
+          The exact checkpoint must be selected according to the
+          JAS hardware profile and workload requirements.
+        - >
+          Qwen3 supports both reasoning and non-thinking modes.
+        - >
+          Qwen3 model repositories provide official Transformers
+          and vLLM usage paths.
+
+      source_validation:
+        official_model_card_verified: true
+        repository_revision_verified: false
+        artifact_digest_verified: false
+        license_verified: false
+
+      final_status: "PENDING_VARIANT_AND_ARTIFACT_SELECTION"
+
+
+  # ==========================================================
+  # 2. EMBEDDING MODEL
+  # ==========================================================
+
+  embeddings:
+
+    - id: "MODEL-EMBED-BGE-M3"
+
+      name: "BAAI/bge-m3"
+
+      provider:
+        organization: "BAAI"
+        publisher: "Beijing Academy of Artificial Intelligence"
+
+      repository:
+        id: "BAAI/bge-m3"
+        authority: "Hugging Face"
+
+      model_type: "Embedding / Multilingual Retrieval"
+
+      deployment:
+        type: "LOCAL"
+        production_required: true
+
+      status:
+        approved: true
+        lock_status: "CANDIDATE_LOCK"
+
+      license:
+        declared: "MIT"
+        validation_status: "PENDING_EXACT_ARTIFACT"
+
+      variant:
+        selected: "BAAI/bge-m3"
+
+      revision:
+        value: null
+        type: "HUGGINGFACE_COMMIT"
+        mutable_reference_prohibited: true
+
+      artifact:
+        format: "Safetensors"
+        digest:
+          algorithm: "SHA-256"
+          value: null
+
+      runtime:
+        selected: null
+        candidates:
+          - "Sentence Transformers"
+          - "Transformers"
+          - "ONNX Runtime"
+        version: null
+
+      dimensions:
+        selected: null
+        validation_required: true
+
+      context:
+        maximum_tokens: 8192
+
+      capabilities:
+        dense_retrieval: true
+        multi_vector_retrieval: true
+        sparse_retrieval: true
+        multilingual: true
+
+      evaluation:
+        retrieval_quality: "PENDING"
+        multilingual_quality: "PENDING"
+        latency: "PENDING"
+        memory_usage: "PENDING"
+        qdrant_compatibility: "PENDING"
+
+      rationale:
+        - >
+          BGE-M3 is the approved multilingual embedding model.
+        - >
+          The official model card identifies support for dense,
+          multi-vector and sparse retrieval.
+        - >
+          The model supports more than 100 languages.
+        - >
+          The model supports documents up to 8192 tokens.
+
+      source_validation:
+        model_card_verified: true
+        license_verified: true
+        revision_verified: false
+        artifact_digest_verified: false
+
+      final_status: "PENDING_REVISION_AND_ARTIFACT_LOCK"
+
+
+  # ==========================================================
+  # 3. RERANKER
+  # ==========================================================
+
+  reranking:
+
+    - id: "MODEL-RERANK-BGE-V2-M3"
+
+      name: "BAAI/bge-reranker-v2-m3"
+
+      provider:
+        organization: "BAAI"
+        publisher: "Beijing Academy of Artificial Intelligence"
+
+      repository:
+        id: "BAAI/bge-reranker-v2-m3"
+        authority: "Hugging Face"
+
+      model_type: "Multilingual Reranker"
+
+      deployment:
+        type: "LOCAL"
+        production_required: true
+
+      status:
+        approved: true
+        lock_status: "CANDIDATE_LOCK"
+
+      license:
+        declared: "Apache-2.0"
+        validation_status: "PENDING_EXACT_ARTIFACT"
+
+      variant:
+        selected: "BAAI/bge-reranker-v2-m3"
+
+      revision:
+        value: null
+        type: "HUGGINGFACE_COMMIT"
+        mutable_reference_prohibited: true
+
+      artifact:
+        format: "Safetensors"
+        digest:
+          algorithm: "SHA-256"
+          value: null
+
+      runtime:
+        selected: null
+        candidates:
+          - "Sentence Transformers"
+          - "Transformers"
+          - "Text Embeddings Inference"
+        version: null
+
+      architecture:
+        base_model: "bge-m3"
+        parameter_class: "0.6B"
+
+      capabilities:
+        multilingual: true
+        direct_query_document_relevance: true
+
+      evaluation:
+        reranking_quality: "PENDING"
+        multilingual_quality: "PENDING"
+        latency: "PENDING"
+        memory_usage: "PENDING"
+        retrieval_pipeline_compatibility: "PENDING"
+
+      rationale:
+        - >
+          The model is explicitly designed as a multilingual reranker.
+        - >
+          The official model card identifies BGE-M3 as its base model.
+        - >
+          The model is substantially smaller than the primary local LLM
+          and is appropriate for a dedicated reranking stage.
+
+      source_validation:
+        model_card_verified: true
+        license_verified: true
+        revision_verified: false
+        artifact_digest_verified: false
+
+      final_status: "PENDING_REVISION_AND_ARTIFACT_LOCK"
+
+
+  # ==========================================================
+  # 4. SPEECH-TO-TEXT
+  # ==========================================================
+
+  speech_to_text:
+
+    - id: "MODEL-STT-WHISPER"
+
+      family: "OpenAI Whisper"
+
+      provider:
+        organization: "OpenAI"
+
+      repository:
+        selected: "openai/whisper-large-v3"
+
+      model_type: "Automatic Speech Recognition"
+
+      deployment:
+        type: "LOCAL"
+        production_required: true
+
+      status:
+        approved: true
+        lock_status: "CANDIDATE_LOCK"
+
+      variant:
+        selected: "large-v3"
+
+      revision:
+        value: null
+        type: "HUGGINGFACE_COMMIT"
+        mutable_reference_prohibited: true
+
+      artifact:
+        format: "Safetensors"
+        digest:
+          algorithm: "SHA-256"
+          value: null
+
+      license:
+        declared: "Apache-2.0"
+        validation_status: "PENDING_EXACT_ARTIFACT"
+
+      capabilities:
+        multilingual: true
+        language_count: 99
+
+      runtime:
+        selected: null
+        candidates:
+          - "Transformers"
+          - "faster-whisper"
+          - "whisper.cpp"
+          - "Other approved Whisper runtime"
+        version: null
+
+      audio:
+        input_sample_rate: null
+        supported_formats: null
+
+      hardware_profile:
+        cpu_support: true
+        gpu_support: true
+        selected_device: null
+
+      evaluation:
+        german_accuracy: "PENDING"
+        turkish_accuracy: "PENDING"
+        english_accuracy: "PENDING"
+        noisy_audio: "PENDING"
+        latency: "PENDING"
+        realtime_factor: "PENDING"
+
+      rationale:
+        - >
+          Whisper Large V3 is the approved high-accuracy local STT model.
+        - >
+          The official model repository identifies support for 99 languages.
+        - >
+          The model is distributed through the official OpenAI model
+          repository on Hugging Face.
+
+      source_validation:
+        model_card_verified: true
+        license_verified: true
+        revision_verified: false
+        artifact_digest_verified: false
+
+      final_status: "PENDING_REVISION_AND_RUNTIME_SELECTION"
+
+
+    - id: "MODEL-STT-WHISPER-LARGE-V3"
+
+      family: "Whisper"
+
+      repository:
+        id: "openai/whisper-large-v3"
+
+      variant:
+        selected: "large-v3"
+
+      status:
+        approved: true
+        lock_status: "ALIAS_OF_MODEL-STT-WHISPER"
+
+      note:
+        >
+        This entry is an architectural alias and SHALL NOT receive
+        a second independent artifact lock.
+
+      final_status: "REFERENCE_ONLY"
+
+
+    - id: "MODEL-STT-WHISPER-TURBO"
+
+      family: "Whisper"
+
+      repository:
+        id: null
+
+      variant:
+        selected: "turbo"
+
+      status:
+        approved: "CONDITIONALLY_APPROVED"
+        lock_status: "DEFERRED"
+
+      purpose:
+        "Low-latency speech recognition"
+
+      reason:
+        >
+        Whisper Turbo remains conditional and shall only receive a
+        production lock if benchmark results demonstrate a meaningful
+        latency advantage for the selected JAS voice profile.
+
+      evaluation:
+        latency: "PENDING"
+        accuracy: "PENDING"
+        realtime_factor: "PENDING"
+
+      final_status: "NOT_BASELINE_LOCKED"
+
+
+  # ==========================================================
+  # 5. TEXT-TO-SPEECH
+  # ==========================================================
+
+  text_to_speech:
+
+    - id: "MODEL-TTS-PIPER"
+
+      name: "Piper"
+
+      model_type: "Text-to-Speech"
+
+      status:
+        approved: "CONDITIONALLY_APPROVED"
+        lock_status: "DEFERRED"
+
+      license:
+        declared: "GPL-3.0"
+        voice_license_review_required: true
+        status: "PENDING"
+
+      engine:
+        version: null
+
+      voice:
+        model: null
+        revision: null
+        digest: null
+        license: null
+
+      runtime:
+        version: null
+
+      reason:
+        >
+        Piper is not part of the unconditional baseline because
+        each selected voice model requires independent license and
+        quality validation.
+
+      evaluation:
+        german_quality: "PENDING"
+        turkish_quality: "PENDING"
+        english_quality: "PENDING"
+        latency: "PENDING"
+        naturalness: "PENDING"
+
+      final_status: "NOT_BASELINE_LOCKED"
+
+
+  # ==========================================================
+  # 6. VISION ENCODER
+  # ==========================================================
+
+  vision:
+
+    - id: "MODEL-VISION-SIGLIP2"
+
+      family: "SigLIP 2"
+
+      provider:
+        organization: "Google"
+
+      repository:
+        selected: null
+
+      model_type: "Vision-Language Encoder"
+
+      status:
+        approved: true
+        lock_status: "CANDIDATE_LOCK"
+
+      variant:
+        selected: null
+
+      candidate_families:
+        - "SigLIP2 FixRes"
+        - "SigLIP2 NaFlex"
+
+      revision:
+        value: null
+        type: "HUGGINGFACE_COMMIT"
+        mutable_reference_prohibited: true
+
+      artifact:
+        format: "Safetensors"
+        digest:
+          algorithm: "SHA-256"
+          value: null
+
+      license:
+        declared: null
+        validation_status: "PENDING_EXACT_CHECKPOINT"
+
+      runtime:
+        selected: null
+        candidates:
+          - "Transformers"
+          - "ONNX Runtime"
+        version: null
+
+      capabilities:
+        multilingual: true
+        zero_shot_classification: true
+        image_text_matching: true
+        dense_prediction_support: true
+
+      evaluation:
+        image_understanding: "PENDING"
+        OCR_assistance: "PENDING"
+        visual_retrieval: "PENDING"
+        latency: "PENDING"
+        memory_usage: "PENDING"
+
+      rationale:
+        - >
+          SigLIP 2 is the approved vision encoder family.
+        - >
+          The family contains both FixRes and NaFlex variants.
+        - >
+          Exact checkpoint selection must be made against the JAS
+          vision workload and hardware profile.
+
+      source_validation:
+        family_verified: true
+        exact_checkpoint_verified: false
+        revision_verified: false
+        license_verified: false
+        artifact_digest_verified: false
+
+      final_status: "PENDING_VARIANT_SELECTION"
+
+
+  # ==========================================================
+  # 7. VISION-LANGUAGE MODEL
+  # ==========================================================
+
+  vision_language:
+
+    - id: "MODEL-VLM-PALIGEMMA2"
+
+      family: "PaliGemma 2"
+
+      provider:
+        organization: "Google"
+
+      model_type: "Vision-Language Model"
+
+      status:
+        approved: "CONDITIONALLY_APPROVED"
+        lock_status: "DEFERRED"
+
+      license:
+        declared: "Gemma"
+        gated_access: true
+        validation_status: "PENDING"
+
+      variants:
+        available_classes:
+          - "3B"
+          - "10B"
+          - "28B"
+
+        resolutions:
+          - "224x224"
+          - "448x448"
+          - "896x896"
+
+      selected_variant: null
+
+      revision:
+        value: null
+        type: "HUGGINGFACE_COMMIT"
+
+      artifact:
+        format: null
+        digest: null
+
+      runtime:
+        selected: null
+        version: null
+
+      reason:
+        >
+        PaliGemma 2 remains conditional because the selected checkpoint,
+        gated access conditions and Gemma license requirements must be
+        validated against the JAS deployment profile.
+
+      evaluation:
+        document_understanding: "PENDING"
+        image_reasoning: "PENDING"
+        OCR_assistance: "PENDING"
+        latency: "PENDING"
+        memory_usage: "PENDING"
+
+      final_status: "NOT_BASELINE_LOCKED"
+
+
+  # ==========================================================
+  # 8. VISUAL DOCUMENT RETRIEVAL
+  # ==========================================================
+
+  visual_document_retrieval:
+
+    - id: "MODEL-COLPALI"
+
+      name: "ColPali"
+
+      model_type: "Visual Document Retrieval"
+
+      status:
+        approved: "CONDITIONALLY_APPROVED"
+        lock_status: "DEFERRED"
+
+      repository:
+        selected: null
+
+      adapter:
+        license: "MIT"
+
+      backbone:
+        license: "Gemma License"
+
+      selected_variant: null
+
+      revision:
+        adapter: null
+        backbone: null
+
+      artifact:
+        adapter_digest: null
+        backbone_digest: null
+
+      runtime:
+        selected: null
+        version: null
+
+      reason:
+        >
+        ColPali combines an adapter and a backbone with different
+        licensing implications. The complete artifact chain must be
+        reviewed before production locking.
+
+      evaluation:
+        document_retrieval: "PENDING"
+        multilingual_retrieval: "PENDING"
+        visual_search: "PENDING"
+        qdrant_compatibility: "PENDING"
+
+      final_status: "NOT_BASELINE_LOCKED"
+
+
+  # ==========================================================
+  # 9. MODEL RUNTIME REFERENCES
+  # ==========================================================
+
+  runtimes:
+
+    - id: "MODEL-RUNTIME-TRANSFORMERS"
+
+      name: "Hugging Face Transformers"
+
+      type: "model_runtime"
+
+      status:
+        approved: true
+        lock_status: "SEPARATE_COMPONENT_LOCK"
+
+      version:
+        selected: null
+
+      note:
+        >
+        Transformers SHALL be locked in 02_COMPONENT_LOCKS.yaml
+        when selected as the production runtime. It is referenced
+        here only as a model/runtime relationship.
+
+      final_status: "REFERENCE_TO_COMPONENT_LOCK"
+
+
+    - id: "MODEL-RUNTIME-ONNX"
+
+      name: "ONNX Runtime"
+
+      type: "inference_runtime"
+
+      status:
+        approved: "APPROVED_OPTIONAL"
+        lock_status: "SEPARATE_COMPONENT_LOCK"
+
+      version:
+        selected: null
+
+      final_status: "REFERENCE_TO_COMPONENT_LOCK"
+
+
+    - id: "MODEL-RUNTIME-LOCAL"
+
+      name: "Local Model Runtime"
+
+      type: "runtime_abstraction"
+
+      status:
+        approved: true
+        lock_status: "ARCHITECTURAL_REFERENCE"
+
+      note:
+        >
+        This is an architectural abstraction and SHALL NOT be treated
+        as an independently downloadable artifact.
+
+      final_status: "REFERENCE_ONLY"
+
+
+  # ==========================================================
+  # 10. MODEL IDENTITY REQUIREMENTS
+  # ==========================================================
+
+  identity_requirements:
+
+    mandatory_fields:
+
+      - "provider_or_organization"
+      - "repository"
+      - "model_family"
+      - "exact_variant"
+      - "revision"
+      - "artifact_format"
+      - "license"
+
+    conditional_fields:
+
+      - "quantization"
+      - "runtime"
+      - "artifact_digest"
+      - "tokenizer_revision"
+      - "tokenizer_digest"
+      - "adapter_revision"
+      - "backbone_revision"
+
+    prohibited_final_references:
+
+      - "main"
+      - "master"
+      - "latest"
+      - "unversioned mutable repository state"
+
+
+  # ==========================================================
+  # 11. MODEL ARTIFACT INTEGRITY
+  # ==========================================================
+
+  integrity:
+
+    required_for_production: true
+
+    preferred_algorithm:
+      "SHA-256"
+
+    verification_sequence:
+
+      - "Resolve immutable model revision"
+      - "Enumerate required artifacts"
+      - "Acquire artifact"
+      - "Calculate digest"
+      - "Compare expected digest"
+      - "Verify source authority"
+      - "Verify license"
+      - "Record artifact identity"
+
+    mismatch_action:
+      "FAIL_INSTALLATION"
+
+
+  # ==========================================================
+  # 12. MODEL LICENSE GOVERNANCE
+  # ==========================================================
+
+  license_governance:
+
+    validation_required: true
+
+    checks:
+
+      - "Model repository license"
+      - "Model weights license"
+      - "Tokenizer license where separately licensed"
+      - "Adapter license"
+      - "Backbone license"
+      - "Voice model license"
+      - "Gated-access terms"
+      - "Redistribution restrictions"
+
+    production_rule:
+      >
+      A model SHALL NOT become production LOCKED until the exact
+      selected artifact and its applicable license terms have been
+      validated.
+
+
+  # ==========================================================
+  # 13. HARDWARE COMPATIBILITY
+  # ==========================================================
+
+  hardware_validation:
+
+    required: true
+
+    dimensions:
+
+      - "CPU compatibility"
+      - "GPU compatibility"
+      - "VRAM requirement"
+      - "RAM requirement"
+      - "Storage requirement"
+      - "Inference latency"
+      - "Throughput"
+      - "Thermal stability"
+
+    profiles:
+
+      cpu:
+        enabled: true
+
+      gpu:
+        enabled: true
+
+      low_vram:
+        enabled: true
+
+      high_vram:
+        enabled: true
+
+      development:
+        enabled: true
+
+      production:
+        enabled: true
+
+
+  # ==========================================================
+  # 14. MODEL EVALUATION GATE
+  # ==========================================================
+
+  evaluation_gate:
+
+    required_before_lock:
+
+      - "Functional inference test"
+      - "Artifact integrity test"
+      - "License validation"
+      - "Runtime compatibility"
+      - "Hardware compatibility"
+      - "Latency benchmark"
+      - "Memory benchmark"
+      - "Quality benchmark"
+
+    llm_additional:
+
+      - "Reasoning evaluation"
+      - "Coding evaluation"
+      - "Tool-use evaluation"
+      - "Agent workflow evaluation"
+      - "Multilingual evaluation"
+
+    embedding_additional:
+
+      - "Retrieval benchmark"
+      - "Vector dimension verification"
+      - "Qdrant integration test"
+
+    reranker_additional:
+
+      - "Reranking benchmark"
+      - "Top-k relevance evaluation"
+
+    stt_additional:
+
+      - "WER evaluation"
+      - "Language-specific accuracy"
+      - "Noisy audio evaluation"
+      - "Realtime factor"
+
+    vision_additional:
+
+      - "Image-text matching"
+      - "Visual retrieval"
+      - "Document understanding"
+
+
+  # ==========================================================
+  # 15. CURRENT MODEL LOCK STATUS
+  # ==========================================================
+
+  summary:
+
+    production_candidate:
+
+      - "Qwen3 family"
+      - "BAAI/bge-m3"
+      - "BAAI/bge-reranker-v2-m3"
+      - "OpenAI Whisper Large V3"
+      - "SigLIP 2 family"
+
+
+    conditional:
+
+      - "Whisper Turbo"
+      - "Piper"
+      - "PaliGemma 2"
+      - "ColPali"
+
+
+    unresolved:
+
+      - "Qwen3 exact production variant"
+      - "Qwen3 immutable revision"
+      - "Qwen3 artifact format"
+      - "Qwen3 quantization"
+      - "Qwen3 runtime"
+      - "BGE-M3 immutable revision"
+      - "BGE-M3 artifact digest"
+      - "BGE reranker immutable revision"
+      - "BGE reranker artifact digest"
+      - "Whisper Large V3 immutable revision"
+      - "Whisper artifact digest"
+      - "SigLIP2 exact checkpoint"
+      - "SigLIP2 revision"
+      - "SigLIP2 artifact digest"
+
+
+  # ==========================================================
+  # 16. VALIDATION STATE
+  # ==========================================================
+
+  validation:
+
+    model_families_validated: true
+
+    exact_variants_locked: false
+
+    immutable_revisions_locked: false
+
+    artifact_digests_locked: false
+
+    runtime_versions_locked: false
+
+    hardware_profiles_locked: false
+
+    license_validation_complete: false
+
+    security_validation_complete: false
+
+    benchmark_validation_complete: false
+
+    final_lock_status: "CANDIDATE"
+
+
+  # ==========================================================
+  # 17. NEXT PHASE
+  # ==========================================================
+
+  next_phase:
+
+    name: "Exact Model Variant Resolution"
+
+    sequence:
+
+      - "Select Qwen3 production variant"
+      - "Select Qwen3 runtime"
+      - "Select Qwen3 artifact format"
+      - "Select Qwen3 quantization"
+      - "Resolve Qwen3 immutable repository revision"
+      - "Resolve Qwen3 artifact digest"
+      - "Resolve BGE-M3 immutable revision"
+      - "Resolve BGE-M3 artifact digest"
+      - "Resolve BGE reranker immutable revision"
+      - "Resolve BGE reranker artifact digest"
+      - "Resolve Whisper Large V3 immutable revision"
+      - "Resolve Whisper artifact digest"
+      - "Select SigLIP2 checkpoint"
+      - "Resolve SigLIP2 immutable revision"
+      - "Resolve SigLIP2 artifact digest"
+      - "Validate exact licenses"
+      - "Validate hardware compatibility"
+      - "Run model benchmarks"
+      - "Promote validated model identities to LOCKED"
+
+  governing_rule: >
+    A model family SHALL NEVER be considered production locked
+    without an exact checkpoint, immutable revision and verified
+    artifact identity where technically available.
+```

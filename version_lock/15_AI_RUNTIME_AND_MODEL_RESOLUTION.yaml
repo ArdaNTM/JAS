@@ -1,0 +1,1219 @@
+# ============================================================
+# JARVIS / JAS
+# VERSION LOCK v1 — AI RUNTIME AND MODEL RESOLUTION
+# ============================================================
+
+ai_runtime_and_model_resolution:
+
+  schema_version: "1.0"
+
+  project:
+    name: "JARVIS"
+    architecture: "JAS"
+    architecture_version: "JAS v1"
+
+  document:
+    id: "JAS-VL-015"
+    name: "AI Runtime and Model Resolution"
+    version: "1.0"
+    status: "IN_PROGRESS"
+    authority: "VERSION_LOCK_v1"
+
+
+  # ==========================================================
+  # 1. PURPOSE
+  # ==========================================================
+
+  purpose:
+    >
+    This document resolves the runtime, framework, hardware and
+    model compatibility chain required for local AI inference
+    within JAS.
+
+    The resolution unit is the complete execution chain:
+
+      Python
+        ->
+      PyTorch / inference runtime
+        ->
+      Transformers or model-specific runtime
+        ->
+      Model
+        ->
+      Hardware
+        ->
+      Operating System
+
+    No model SHALL be considered LOCKED independently of the
+    runtime used to execute it.
+
+
+  # ==========================================================
+  # 2. AI ARCHITECTURE
+  # ==========================================================
+
+  architecture:
+
+    primary_mode:
+      "Local inference"
+
+    orchestration_runtime:
+      "Python / CPython"
+
+    preferred_model_framework:
+      "Hugging Face Transformers"
+
+    preferred_tensor_runtime:
+      "PyTorch"
+
+    optional_inference_runtime:
+      "ONNX Runtime"
+
+    native_acceleration:
+      "CUDA when supported hardware is available"
+
+
+  # ==========================================================
+  # 3. CURRENT PYTHON CANDIDATES
+  # ==========================================================
+
+  python:
+
+    primary_candidate:
+
+      version:
+        "3.14.7"
+
+      implementation:
+        "CPython"
+
+      status:
+        "CANDIDATE"
+
+      reason:
+        >
+        Current maintenance release within the approved Python 3.12+
+        family.
+
+    fallback_candidate:
+
+      version:
+        "3.13.x"
+
+      status:
+        "FALLBACK_CANDIDATE"
+
+      reason:
+        >
+        Retained as fallback if the selected AI runtime has
+        insufficient Python 3.14 production support.
+
+    final_selection:
+      null
+
+    lock_blocker:
+      >
+      Python SHALL NOT be LOCKED until the selected PyTorch and
+      model runtime stack has passed compatibility validation.
+
+
+  # ==========================================================
+  # 4. PYTORCH
+  # ==========================================================
+
+  pytorch:
+
+    component_id:
+      "AI-RUNTIME-PYTORCH"
+
+    role:
+      "Primary tensor and local inference runtime"
+
+    source:
+      authority:
+        "PyTorch"
+
+      source_type:
+        "Official PyTorch release"
+
+    candidates: []
+
+
+    candidate_schema:
+
+      version:
+        null
+
+      release:
+        null
+
+      python_support:
+        null
+
+      cuda_support:
+        null
+
+      cpu_support:
+        null
+
+      platform_support:
+        windows: null
+        linux: null
+        macos: null
+
+      architecture_support:
+        x86_64: null
+        arm64: null
+
+      artifact:
+        null
+
+      digest:
+        null
+
+      status:
+        "RESEARCH_REQUIRED"
+
+
+    required_compatibility:
+
+      python:
+        "MANDATORY"
+
+      transformers:
+        "MANDATORY"
+
+      qwen3:
+        "MANDATORY"
+
+      bge_m3:
+        "MANDATORY"
+
+      bge_reranker:
+        "MANDATORY"
+
+      whisper:
+        "MANDATORY"
+
+      siglip2:
+        "MANDATORY"
+
+      cuda:
+        "CONDITIONAL"
+
+      cpu:
+        "MANDATORY_FALLBACK"
+
+
+  # ==========================================================
+  # 5. PYTORCH SELECTION POLICY
+  # ==========================================================
+
+  pytorch_selection:
+
+    priority:
+
+      - "Production Python compatibility"
+      - "Model compatibility"
+      - "Windows compatibility"
+      - "Linux compatibility"
+      - "CUDA compatibility if enabled"
+      - "CPU compatibility"
+      - "Transformers compatibility"
+      - "Security"
+      - "Reproducibility"
+      - "Performance"
+
+    rule:
+      >
+      The newest PyTorch release SHALL NOT automatically be selected.
+      The selected release must provide sufficient compatibility
+      across the complete JAS AI model portfolio.
+
+
+  # ==========================================================
+  # 6. TRANSFORMERS
+  # ==========================================================
+
+  transformers:
+
+    component_id:
+      "MODEL-RUNTIME-TRANSFORMERS"
+
+    role:
+      "Model loading and inference framework"
+
+    source:
+      authority:
+        "Hugging Face"
+
+      source_type:
+        "Official repository / PyPI"
+
+    candidates: []
+
+    required_compatibility:
+
+      python:
+        "MANDATORY"
+
+      pytorch:
+        "MANDATORY"
+
+      qwen3:
+        "MANDATORY"
+
+      bge_m3:
+        "MANDATORY"
+
+      bge_reranker:
+        "MANDATORY"
+
+      siglip2:
+        "MANDATORY"
+
+      whisper:
+        "MANDATORY"
+
+
+    candidate_schema:
+
+      version:
+        null
+
+      requires_python:
+        null
+
+      pytorch_requirement:
+        null
+
+      tokenizers_requirement:
+        null
+
+      safetensors_requirement:
+        null
+
+      status:
+        "RESEARCH_REQUIRED"
+
+
+  # ==========================================================
+  # 7. SAFETENSORS
+  # ==========================================================
+
+  safetensors:
+
+    component_id:
+      "AI-RUNTIME-SAFETENSORS"
+
+    role:
+      "Secure model weight serialization"
+
+    source:
+      "Hugging Face / PyPI"
+
+    candidates: []
+
+    required:
+      true
+
+    compatibility:
+
+      python:
+        "PENDING"
+
+      transformers:
+        "PENDING"
+
+      models:
+        "PENDING"
+
+    decision:
+      "RESEARCH_REQUIRED"
+
+
+  # ==========================================================
+  # 8. TOKENIZERS
+  # ==========================================================
+
+  tokenizers:
+
+    component_id:
+      "AI-RUNTIME-TOKENIZERS"
+
+    role:
+      "High-performance tokenizer implementation"
+
+    source:
+      "Hugging Face / PyPI"
+
+    candidates: []
+
+    compatibility:
+
+      python:
+        "PENDING"
+
+      transformers:
+        "PENDING"
+
+      qwen3:
+        "PENDING"
+
+    decision:
+      "RESEARCH_REQUIRED"
+
+
+  # ==========================================================
+  # 9. QWEN3
+  # ==========================================================
+
+  qwen3:
+
+    component_id:
+      "MODEL-LLM-QWEN3"
+
+    family:
+      "Qwen3"
+
+    deployment:
+      "LOCAL"
+
+    source:
+
+      organization:
+        "Qwen"
+
+      primary_repository:
+        "Hugging Face"
+
+      upstream_project:
+        "Qwen"
+
+    candidates: []
+
+
+    required_identity:
+
+      model_id:
+        null
+
+      exact_variant:
+        null
+
+      revision:
+        null
+
+      commit_sha:
+        null
+
+      artifact_format:
+        null
+
+      quantization:
+        null
+
+      tokenizer_revision:
+        null
+
+      configuration_revision:
+        null
+
+      weight_revision:
+        null
+
+      artifact_digest:
+        null
+
+      runtime:
+        null
+
+      license:
+        null
+
+
+    supported_runtime_candidates:
+
+      transformers:
+        status:
+          "PENDING"
+
+      pytorch:
+        status:
+          "PENDING"
+
+      alternative_runtime:
+        status:
+          "PENDING"
+
+
+    hardware:
+
+      cpu:
+        status:
+          "PENDING"
+
+      gpu:
+        status:
+          "PENDING"
+
+      vram_requirement:
+        null
+
+
+    version_change_policy:
+
+      trigger:
+        "Any Qwen3 model family release, variant change or revision change"
+
+      required_action:
+
+        - "Re-evaluate model identity"
+        - "Re-evaluate runtime compatibility"
+        - "Re-evaluate tokenizer compatibility"
+        - "Re-evaluate hardware requirements"
+        - "Re-evaluate artifact integrity"
+        - "Re-evaluate license"
+        - "Re-run Version Lock validation"
+
+    final_lock:
+      status:
+        "NOT_LOCKED"
+
+
+  # ==========================================================
+  # 10. EMBEDDING MODEL
+  # ==========================================================
+
+  bge_m3:
+
+    component_id:
+      "MODEL-EMBED-BGE-M3"
+
+    model:
+      "BAAI/bge-m3"
+
+    source:
+      "Hugging Face"
+
+    candidates: []
+
+    required_identity:
+
+      model_id:
+        "BAAI/bge-m3"
+
+      revision:
+        null
+
+      commit_sha:
+        null
+
+      artifact_digest:
+        null
+
+      format:
+        null
+
+      runtime:
+        null
+
+      license:
+        null
+
+
+    compatibility:
+
+      python:
+        "PENDING"
+
+      transformers:
+        "PENDING"
+
+      pytorch:
+        "PENDING"
+
+      cpu:
+        "PENDING"
+
+      gpu:
+        "PENDING"
+
+
+    decision:
+      "RESEARCH_REQUIRED"
+
+
+  # ==========================================================
+  # 11. RERANKER
+  # ==========================================================
+
+  bge_reranker:
+
+    component_id:
+      "MODEL-RERANK-BGE-V2-M3"
+
+    model:
+      "BAAI/bge-reranker-v2-m3"
+
+    source:
+      "Hugging Face"
+
+    candidates: []
+
+    required_identity:
+
+      model_id:
+        "BAAI/bge-reranker-v2-m3"
+
+      revision:
+        null
+
+      commit_sha:
+        null
+
+      artifact_digest:
+        null
+
+      runtime:
+        null
+
+      license:
+        null
+
+
+    compatibility:
+
+      python:
+        "PENDING"
+
+      transformers:
+        "PENDING"
+
+      pytorch:
+        "PENDING"
+
+      cpu:
+        "PENDING"
+
+      gpu:
+        "PENDING"
+
+
+    decision:
+      "RESEARCH_REQUIRED"
+
+
+  # ==========================================================
+  # 12. WHISPER
+  # ==========================================================
+
+  whisper:
+
+    component_id:
+      "MODEL-STT-WHISPER"
+
+    role:
+      "Speech-to-text"
+
+    deployment:
+      "LOCAL"
+
+    source:
+      "OpenAI"
+
+    candidates: []
+
+    model_identity:
+
+      model:
+        null
+
+      revision:
+        null
+
+      commit_sha:
+        null
+
+      artifact_digest:
+        null
+
+      runtime:
+        null
+
+
+    runtime_candidates:
+
+      transformers:
+        status:
+          "PENDING"
+
+      whisper_native:
+        status:
+          "PENDING"
+
+      other_approved_runtime:
+        status:
+          "PENDING"
+
+
+    hardware:
+
+      cpu:
+        "PENDING"
+
+      gpu:
+        "PENDING"
+
+
+    decision:
+      "RESEARCH_REQUIRED"
+
+
+  # ==========================================================
+  # 13. WHISPER LARGE V3
+  # ==========================================================
+
+  whisper_large_v3:
+
+    component_id:
+      "MODEL-STT-WHISPER-LARGE-V3"
+
+    enabled:
+      false
+
+    candidates: []
+
+    decision:
+      "PROFILE_DEPENDENT"
+
+
+  # ==========================================================
+  # 14. WHISPER TURBO
+  # ==========================================================
+
+  whisper_turbo:
+
+    component_id:
+      "MODEL-STT-WHISPER-TURBO"
+
+    enabled:
+      false
+
+    candidates: []
+
+    decision:
+      "PROFILE_DEPENDENT"
+
+
+  # ==========================================================
+  # 15. SIGLIP 2
+  # ==========================================================
+
+  siglip2:
+
+    component_id:
+      "MODEL-VISION-SIGLIP2"
+
+    role:
+      "Vision encoder"
+
+    source:
+      "Google / Hugging Face"
+
+    candidates: []
+
+    required_identity:
+
+      model_id:
+        null
+
+      variant:
+        null
+
+      revision:
+        null
+
+      commit_sha:
+        null
+
+      artifact_digest:
+        null
+
+      runtime:
+        null
+
+      license:
+        null
+
+
+    compatibility:
+
+      python:
+        "PENDING"
+
+      transformers:
+        "PENDING"
+
+      pytorch:
+        "PENDING"
+
+      cpu:
+        "PENDING"
+
+      gpu:
+        "PENDING"
+
+
+    decision:
+      "RESEARCH_REQUIRED"
+
+
+  # ==========================================================
+  # 16. ONNX RUNTIME
+  # ==========================================================
+
+  onnxruntime:
+
+    component_id:
+      "MODEL-RUNTIME-ONNX"
+
+    enabled:
+      false
+
+    role:
+      "Alternative portable inference runtime"
+
+    candidates: []
+
+    compatibility:
+
+      python:
+        "PENDING"
+
+      models:
+        "PENDING"
+
+      execution_providers:
+        "PENDING"
+
+
+    decision:
+      "OPTIONAL"
+
+
+  # ==========================================================
+  # 17. CUDA
+  # ==========================================================
+
+  cuda:
+
+    enabled:
+      false
+
+    toolkit:
+
+      candidates: []
+
+      selected:
+        null
+
+    driver:
+
+      candidates: []
+
+      selected:
+        null
+
+    cudnn:
+
+      candidates: []
+
+      selected:
+        null
+
+
+    compatibility:
+
+      pytorch:
+        "PENDING"
+
+      qwen3:
+        "PENDING"
+
+      whisper:
+        "PENDING"
+
+      siglip2:
+        "PENDING"
+
+
+    activation_condition:
+      >
+      CUDA resolution becomes mandatory when the final JAS hardware
+      profile specifies NVIDIA GPU acceleration.
+
+
+  # ==========================================================
+  # 18. CPU FALLBACK
+  # ==========================================================
+
+  cpu_inference:
+
+    mandatory:
+      true
+
+    purpose:
+      >
+      Every local AI component SHALL define whether CPU execution
+      is supported, unsupported or technically impractical.
+
+    models:
+
+      qwen3:
+        status:
+          "PENDING"
+
+      bge_m3:
+        status:
+          "PENDING"
+
+      bge_reranker:
+        status:
+          "PENDING"
+
+      whisper:
+        status:
+          "PENDING"
+
+      siglip2:
+        status:
+          "PENDING"
+
+
+  # ==========================================================
+  # 19. MODEL ARTIFACT POLICY
+  # ==========================================================
+
+  artifact_policy:
+
+    accepted_formats:
+
+      - "safetensors"
+      - "Approved runtime-specific immutable format"
+
+    prohibited:
+
+      - "Unverified model archive"
+      - "Mutable latest reference"
+      - "Unpinned branch"
+      - "Unknown publisher artifact"
+
+    required:
+
+      - "Exact model identifier"
+      - "Exact revision"
+      - "Immutable commit where available"
+      - "Artifact integrity"
+      - "License verification"
+
+
+  # ==========================================================
+  # 20. QUANTIZATION POLICY
+  # ==========================================================
+
+  quantization:
+
+    qwen3:
+
+      allowed:
+        - "FP32"
+        - "FP16"
+        - "BF16"
+        - "INT8"
+        - "INT4"
+
+      final_selection:
+        null
+
+      selection_basis:
+
+        - "Hardware VRAM"
+        - "Inference quality"
+        - "Latency"
+        - "Throughput"
+        - "Memory usage"
+        - "Runtime support"
+
+
+    other_models:
+
+      policy:
+        >
+        Quantization SHALL be selected only where the chosen runtime
+        and model artifacts explicitly support the selected format.
+
+
+  # ==========================================================
+  # 21. MODEL MEMORY / HARDWARE RESOLUTION
+  # ==========================================================
+
+  hardware_resolution:
+
+    status:
+      "NOT_STARTED"
+
+    required_inputs:
+
+      - "CPU model"
+      - "System RAM"
+      - "GPU model"
+      - "VRAM"
+      - "GPU architecture"
+      - "Operating system"
+      - "Driver version"
+
+    output:
+
+      model_fit:
+        null
+
+      recommended_quantization:
+        null
+
+      inference_runtime:
+        null
+
+
+  # ==========================================================
+  # 22. AI DEPENDENCY CHAIN
+  # ==========================================================
+
+  dependency_chain:
+
+    primary:
+
+      - "CPython"
+      - "Python"
+      - "uv"
+      - "PyTorch"
+      - "Transformers"
+      - "Safetensors"
+      - "Tokenizers"
+      - "Qwen3"
+
+
+    embedding:
+
+      - "CPython"
+      - "PyTorch"
+      - "Transformers"
+      - "BGE-M3"
+
+
+    reranking:
+
+      - "CPython"
+      - "PyTorch"
+      - "Transformers"
+      - "BGE-Reranker-v2-M3"
+
+
+    speech:
+
+      - "CPython"
+      - "PyTorch or approved Whisper runtime"
+      - "Whisper"
+
+
+    vision:
+
+      - "CPython"
+      - "PyTorch"
+      - "Transformers"
+      - "SigLIP 2"
+
+
+  # ==========================================================
+  # 23. AI LOCK BLOCKERS
+  # ==========================================================
+
+  blockers:
+
+    - id: "AI-BLOCK-001"
+      component: "PyTorch"
+      reason:
+        "Exact production version unresolved."
+
+    - id: "AI-BLOCK-002"
+      component: "Transformers"
+      reason:
+        "Exact production version unresolved."
+
+    - id: "AI-BLOCK-003"
+      component: "Qwen3"
+      reason:
+        "Exact variant and immutable revision unresolved."
+
+    - id: "AI-BLOCK-004"
+      component: "Qwen3"
+      reason:
+        "Inference runtime unresolved."
+
+    - id: "AI-BLOCK-005"
+      component: "Hardware"
+      reason:
+        "Final hardware profile has not been resolved."
+
+    - id: "AI-BLOCK-006"
+      component: "CUDA"
+      reason:
+        "CUDA profile is conditional and currently unresolved."
+
+    - id: "AI-BLOCK-007"
+      component: "Whisper"
+      reason:
+        "Exact runtime and model artifact unresolved."
+
+    - id: "AI-BLOCK-008"
+      component: "SigLIP 2"
+      reason:
+        "Exact variant and revision unresolved."
+
+
+  # ==========================================================
+  # 24. PROMOTION RULE
+  # ==========================================================
+
+  promotion:
+
+    model_to_approved_candidate:
+
+      mandatory:
+
+        - "Exact model ID"
+        - "Exact variant"
+        - "Exact revision"
+        - "Runtime compatibility PASS"
+        - "Python compatibility PASS"
+        - "Hardware compatibility PASS"
+        - "License PASS"
+        - "Artifact integrity PASS"
+
+
+    model_to_locked:
+
+      mandatory:
+
+        - "Immutable model revision"
+        - "Artifact digest where available"
+        - "Runtime version locked"
+        - "Tokenizer version/revision locked where applicable"
+        - "Quantization locked where applicable"
+        - "Hardware profile validated"
+        - "Reproducible model acquisition validated"
+
+
+  # ==========================================================
+  # 25. VERSION CHANGE POLICY
+  # ==========================================================
+
+  change_policy:
+
+    trigger_events:
+
+      - "New Qwen3 release"
+      - "Qwen3 variant change"
+      - "Qwen3 revision change"
+      - "PyTorch release affecting compatibility"
+      - "Transformers release affecting model support"
+      - "CUDA release affecting inference"
+      - "Whisper model release/change"
+      - "SigLIP 2 revision change"
+      - "BGE-M3 revision change"
+      - "BGE reranker revision change"
+
+    required_actions:
+
+      - "Reopen affected resolution records"
+      - "Re-run compatibility checks"
+      - "Re-run security checks"
+      - "Re-run artifact integrity checks"
+      - "Revalidate hardware requirements"
+      - "Update Version Lock candidate"
+      - "Do not silently replace locked artifacts"
+
+
+  # ==========================================================
+  # 26. CURRENT STATE
+  # ==========================================================
+
+  state:
+
+    ai_runtime_resolution_started:
+      true
+
+    pytorch_resolved:
+      false
+
+    transformers_resolved:
+      false
+
+    qwen3_resolved:
+      false
+
+    embedding_resolved:
+      false
+
+    reranker_resolved:
+      false
+
+    whisper_resolved:
+      false
+
+    siglip2_resolved:
+      false
+
+    cuda_resolved:
+      false
+
+    hardware_resolved:
+      false
+
+    final_ai_lock_ready:
+      false
+
+    status:
+      "AI_RESOLUTION_IN_PROGRESS"
+
+
+  # ==========================================================
+  # 27. NEXT PHASE
+  # ==========================================================
+
+  next_phase:
+
+    name:
+      "AI Candidate Research and Hardware Matching"
+
+    sequence:
+
+      - "Resolve PyTorch candidates"
+      - "Resolve Python compatibility"
+      - "Resolve Transformers candidates"
+      - "Resolve Safetensors"
+      - "Resolve Tokenizers"
+      - "Resolve Qwen3 exact variants"
+      - "Resolve Qwen3 revisions"
+      - "Resolve Qwen3 runtime"
+      - "Resolve BGE-M3 revision"
+      - "Resolve BGE reranker revision"
+      - "Resolve Whisper runtime"
+      - "Resolve Whisper model identity"
+      - "Resolve SigLIP 2 variant"
+      - "Resolve SigLIP 2 revision"
+      - "Determine JAS hardware profile"
+      - "Resolve CUDA if required"
+      - "Validate complete AI dependency graph"
+      - "Promote compatible candidates"
+      - "Prepare AI components for final Version Lock"

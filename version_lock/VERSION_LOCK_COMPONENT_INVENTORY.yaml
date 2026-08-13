@@ -1,0 +1,1832 @@
+# ============================================================
+# JARVIS / JAS
+# VERSION LOCK v1 — COMPONENT INVENTORY
+# RECONCILED BASELINE v1.1
+# ============================================================
+
+version_lock_component_inventory:
+  schema_version: "1.1"
+
+  project:
+    name: "JARVIS"
+    architecture: "JAS"
+    architecture_version: "JAS v1"
+
+  inventory:
+    version: "1.1"
+    status: "RECONCILED_BASELINE"
+    authority:
+      primary: "JAS v1"
+      secondary:
+        - "Approved Stack v1.0"
+        - "19_APPROVED_MODELS.md"
+        - "20_APPROVED_MCP_SERVERS.md"
+        - "21_APPROVED_SOFTWARE_MATRIX.md"
+        - "24_VERSION_SUPPORT_POLICY.md"
+
+  # ----------------------------------------------------------
+  # INVENTORY RULE
+  # ----------------------------------------------------------
+  #
+  # This document identifies every component that may participate
+  # in the JARVIS v1 production dependency graph.
+  #
+  # It does NOT yet select exact production versions.
+  #
+  # Exact:
+  #   versions
+  #   revisions
+  #   commits
+  #   artifact digests
+  #   container digests
+  #   model revisions
+  #   browser revisions
+  #
+  # are resolved during Version Resolution.
+  #
+  # INVENTORY != VERSION LOCK
+  #
+  # ----------------------------------------------------------
+
+  status_definitions:
+
+    LOCK_REQUIRED:
+      description: >
+        Component is part of the mandatory production baseline and
+        requires an exact immutable identity before release.
+
+    LOCK_REQUIRED_IF_USED:
+      description: >
+        Component requires an exact lock when the corresponding
+        optional, conditional or profile-dependent capability is enabled.
+
+    ARCHITECTURAL_REFERENCE:
+      description: >
+        Component represents an architectural abstraction, standard,
+        capability or interface rather than one immutable artifact.
+
+    CANDIDATE:
+      description: >
+        Technology is approved as a candidate but exact production
+        adoption requires implementation and compatibility validation.
+
+    INTERNAL:
+      description: >
+        JARVIS-owned component governed by the JARVIS release system.
+
+  # ============================================================
+  # 1. CORE RUNTIME
+  # ============================================================
+
+  core_runtime:
+
+    - id: "SW-001"
+      name: "Python"
+      type: "runtime"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      role: "Primary application/runtime language"
+      layer: "Core"
+      exact_version: null
+      lock_identity:
+        required:
+          - "version"
+          - "platform"
+          - "architecture"
+
+    - id: "CPYTHON-001"
+      name: "CPython"
+      type: "runtime_implementation"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      role: "Official Python runtime implementation"
+      layer: "Core Runtime"
+      exact_version: null
+      lock_identity:
+        required:
+          - "version"
+          - "platform"
+          - "architecture"
+
+    - id: "SW-002"
+      name: "TypeScript"
+      type: "programming_language"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      role: "Frontend implementation language"
+      layer: "Frontend"
+      exact_version: null
+
+    - id: "SW-003"
+      name: "Rust"
+      type: "native_toolchain"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "CONDITIONALLY_APPROVED"
+      role: "Native/security/performance components"
+      exact_version: null
+      lock_identity:
+        required:
+          - "rust_version"
+          - "cargo_version"
+          - "target"
+
+    - id: "SW-004"
+      name: "C/C++"
+      type: "native_toolchain"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "CONDITIONALLY_APPROVED"
+      role: "Native, codec, GPU and hardware integrations"
+      exact_version: null
+      lock_identity:
+        required:
+          - "compiler"
+          - "compiler_version"
+          - "target"
+
+  # ============================================================
+  # 2. BACKEND
+  # ============================================================
+
+  backend:
+
+    - id: "SW-005"
+      name: "FastAPI"
+      type: "python_dependency"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      role: "Primary HTTP/API framework"
+      exact_version: null
+
+    - id: "BACKEND-STARLETTE"
+      name: "Starlette"
+      type: "python_dependency"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED_UNDERLYING"
+      role: "ASGI foundation"
+      exact_version: null
+
+    - id: "BACKEND-UVICORN"
+      name: "Uvicorn"
+      type: "python_dependency"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED_CANDIDATE"
+      role: "ASGI server"
+      exact_version: null
+
+    - id: "SW-006"
+      name: "Pydantic"
+      type: "python_dependency"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      role: "Schema validation"
+      version_line: "v2"
+      exact_version: null
+
+    - id: "BACKEND-SQLALCHEMY"
+      name: "SQLAlchemy"
+      type: "python_dependency"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      role: "Database abstraction / ORM"
+      version_line: "2.x"
+      exact_version: null
+
+    - id: "BACKEND-ALEMBIC"
+      name: "Alembic"
+      type: "python_dependency"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED_CANDIDATE"
+      role: "Database migrations"
+      exact_version: null
+
+    - id: "BACKEND-REST"
+      name: "REST + OpenAPI"
+      type: "api_standard"
+      status: "ARCHITECTURAL_REFERENCE"
+      approved_status: "APPROVED"
+      role: "Primary external API contract"
+
+    - id: "BACKEND-WEBSOCKET"
+      name: "WebSocket"
+      type: "protocol"
+      status: "ARCHITECTURAL_REFERENCE"
+      approved_status: "APPROVED"
+      role: "Realtime bidirectional transport"
+
+    - id: "BACKEND-SSE"
+      name: "Server-Sent Events"
+      type: "protocol"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "OPTIONAL"
+      role: "Server-only streaming"
+
+    - id: "BACKEND-WORKERS"
+      name: "Dedicated Worker Runtime"
+      type: "architectural_runtime"
+      status: "INTERNAL"
+      approved_status: "REQUIRED"
+      role: "Long-running/background task execution"
+
+    - id: "BACKEND-MODULAR-MONOLITH"
+      name: "Modular Monolith"
+      type: "architecture"
+      status: "ARCHITECTURAL_REFERENCE"
+      approved_status: "APPROVED"
+      role: "Primary v1 backend architecture"
+
+  # ============================================================
+  # 3. AGENT ORCHESTRATION
+  # ============================================================
+
+  agent_orchestration:
+
+    - id: "SW-007"
+      name: "LangGraph"
+      type: "python_dependency"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      role: "Official agent orchestration engine"
+      exact_version: null
+      lock_identity:
+        required:
+          - "package_version"
+          - "resolved_dependencies"
+          - "integrity"
+
+    - id: "AGENT-STATE"
+      name: "LangGraph State"
+      type: "architectural_state_system"
+      status: "ARCHITECTURAL_REFERENCE"
+      approved_status: "APPROVED"
+      role: "Authoritative workflow execution context"
+
+    - id: "AGENT-CHECKPOINT"
+      name: "Persistent Checkpointing"
+      type: "capability"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "REQUIRED_FOR_LONG_RUNNING_WORKFLOWS"
+      role: "Workflow recovery and replay"
+
+    - id: "AGENT-HITL"
+      name: "Human-in-the-Loop Authorization"
+      type: "capability"
+      status: "INTERNAL"
+      approved_status: "REQUIRED_FOR_HIGH_RISK_ACTIONS"
+      role: "Human approval boundary"
+
+    - id: "AGENT-SCHEDULER"
+      name: "Task Scheduler"
+      type: "internal_service"
+      status: "INTERNAL"
+      approved_status: "APPROVED"
+      role: "Immediate, delayed, recurring and event-triggered execution"
+
+  # ============================================================
+  # 4. MEMORY / DATA
+  # ============================================================
+
+  memory_and_data:
+
+    - id: "SW-008"
+      name: "Qdrant"
+      type: "vector_database"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      role: "Vector memory / semantic retrieval"
+      exact_version: null
+      lock_identity:
+        required:
+          - "server_version"
+          - "container_image"
+          - "image_digest"
+
+    - id: "SW-009"
+      name: "PostgreSQL"
+      type: "database"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      role: "Authoritative relational database"
+      exact_version: null
+
+    - id: "SW-010"
+      name: "Redis"
+      type: "service"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED"
+      role: "Cache, coordination and event workloads"
+      exact_version: null
+
+    - id: "DATA-REDIS-STREAMS"
+      name: "Redis Streams"
+      type: "event_stream"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED"
+      role: "Selected event-stream workloads"
+
+    - id: "SW-034"
+      name: "SQLite"
+      type: "embedded_database"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED"
+      role: "Optional embedded/local state"
+      exact_version: null
+
+    - id: "SW-035"
+      name: "Object Storage"
+      type: "storage_service"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED"
+      role: "Binary/model/artifact/backup storage"
+      implementation: null
+
+  # ============================================================
+  # 5. BROWSER
+  # ============================================================
+
+  browser:
+
+    - id: "SW-011"
+      name: "Playwright"
+      type: "browser_automation_framework"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      role: "Primary browser automation engine"
+      exact_version: null
+      lock_identity:
+        required:
+          - "package_version"
+          - "browser_revision"
+          - "browser_family"
+          - "integrity"
+
+    - id: "BROWSER-ADAPTER"
+      name: "JARVIS Browser Adapter"
+      type: "internal_abstraction"
+      status: "INTERNAL"
+      approved_status: "REQUIRED"
+      role: "Replaceable browser abstraction boundary"
+
+    - id: "BROWSER-CHROMIUM"
+      name: "Chromium"
+      type: "browser_binary"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      role: "Primary browser target"
+      exact_revision: null
+
+    - id: "BROWSER-FIREFOX"
+      name: "Firefox"
+      type: "browser_binary"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED"
+      role: "Cross-browser compatibility"
+      exact_revision: null
+
+    - id: "BROWSER-WEBKIT"
+      name: "WebKit"
+      type: "browser_binary"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED"
+      role: "Cross-browser compatibility"
+      exact_revision: null
+
+    - id: "BROWSER-CHROME"
+      name: "Google Chrome"
+      type: "browser_channel"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "SUPPORTED"
+      role: "Branded Chromium execution"
+
+    - id: "BROWSER-EDGE"
+      name: "Microsoft Edge"
+      type: "browser_channel"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "SUPPORTED"
+      role: "Branded Chromium execution"
+
+  # ============================================================
+  # 6. VOICE / AUDIO
+  # ============================================================
+
+  voice_audio:
+
+    - id: "VOICE-VAD"
+      name: "Silero VAD"
+      type: "vad_engine"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      role: "Primary voice activity detection"
+      exact_version: null
+
+    - id: "VOICE-VAD-FALLBACK"
+      name: "WebRTC VAD"
+      type: "vad_engine"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "CONDITIONAL"
+      role: "VAD fallback"
+      exact_version: null
+
+    - id: "VOICE-STT"
+      name: "faster-whisper"
+      type: "stt_runtime"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      role: "Primary STT runtime"
+      exact_version: null
+
+    - id: "VOICE-STT-FALLBACK"
+      name: "whisper.cpp"
+      type: "stt_runtime"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED"
+      role: "STT fallback"
+      exact_version: null
+
+    - id: "MODEL-STT-WHISPER"
+      name: "OpenAI Whisper"
+      type: "speech_to_text_model_family"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      role: "STT model family"
+      exact_revision: null
+
+    - id: "MODEL-STT-WHISPER-LARGE-V3"
+      name: "Whisper Large V3"
+      type: "speech_to_text_model"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED"
+      role: "High-accuracy STT"
+      exact_revision: null
+
+    - id: "MODEL-STT-WHISPER-TURBO"
+      name: "Whisper Turbo"
+      type: "speech_to_text_model"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "CONDITIONALLY_APPROVED"
+      role: "Low-latency STT"
+      exact_revision: null
+
+    - id: "VOICE-TTS"
+      name: "Kokoro"
+      type: "tts_engine"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED_CANDIDATE"
+      role: "Primary v1 TTS technology path"
+      exact_version: null
+
+    - id: "VOICE-TTS-PIPER"
+      name: "Piper"
+      type: "tts_engine"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "CONDITIONAL_NOT_DEFAULT"
+      role: "Optional TTS implementation"
+      license: "GPL-3.0"
+      exact_version: null
+      voice_model: null
+      voice_revision: null
+
+    - id: "VOICE-TTS-CHATTERBOX"
+      name: "Chatterbox"
+      type: "tts_engine"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "EXPERIMENTAL"
+      role: "Experimental advanced TTS"
+
+    - id: "VOICE-WAKEWORD"
+      name: "Wake Word System"
+      type: "capability"
+      status: "ARCHITECTURAL_REFERENCE"
+      approved_status: "DEFERRED"
+      role: "Future wake-word subsystem"
+
+    - id: "VOICE-SPEAKER-ID"
+      name: "Speaker Identification"
+      type: "capability"
+      status: "ARCHITECTURAL_REFERENCE"
+      approved_status: "DEFERRED"
+
+  # ============================================================
+  # 7. COMPUTER VISION
+  # ============================================================
+
+  computer_vision:
+
+    - id: "CV-OPENCV"
+      name: "OpenCV"
+      type: "vision_library"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      role: "Foundational computer vision infrastructure"
+      exact_version: null
+
+    - id: "CV-DETECTION"
+      name: "Detection Provider Abstraction"
+      type: "architectural_capability"
+      status: "ARCHITECTURAL_REFERENCE"
+      approved_status: "APPROVED"
+      role: "Replaceable object detection interface"
+
+    - id: "CV-RTDETR"
+      name: "RT-DETR"
+      type: "object_detection_model"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED_CANDIDATE"
+      exact_revision: null
+
+    - id: "CV-GROUNDING-DINO"
+      name: "Grounding DINO"
+      type: "object_detection_model"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED_CANDIDATE"
+      exact_revision: null
+
+    - id: "CV-YOLO"
+      name: "Ultralytics YOLO"
+      type: "object_detection_framework"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "CONDITIONAL"
+      note: "Not default core dependency"
+
+    - id: "CV-PADDLEOCR"
+      name: "PaddleOCR"
+      type: "ocr_engine"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED_CANDIDATE"
+      exact_version: null
+
+    - id: "CV-TESSERACT"
+      name: "Tesseract"
+      type: "ocr_engine"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED"
+      role: "OCR fallback"
+      exact_version: null
+
+    - id: "CV-SEGMENTATION"
+      name: "Segmentation Provider Abstraction"
+      type: "architectural_capability"
+      status: "ARCHITECTURAL_REFERENCE"
+      approved_status: "APPROVED"
+
+    - id: "CV-SAM"
+      name: "Segment Anything"
+      type: "segmentation_model"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED_CANDIDATE"
+      exact_revision: null
+
+    - id: "CV-TRACKING"
+      name: "Vision Tracking"
+      type: "capability"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED"
+
+    - id: "CV-VISION-EMBEDDINGS"
+      name: "Vision Embedding Provider"
+      type: "architectural_capability"
+      status: "ARCHITECTURAL_REFERENCE"
+      approved_status: "APPROVED"
+
+    - id: "MODEL-VISION-SIGLIP2"
+      name: "SigLIP 2"
+      type: "vision_encoder"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      license: "Apache-2.0"
+      exact_variant: null
+      exact_revision: null
+      artifact_digest: null
+
+    - id: "CV-VLM"
+      name: "VLM Provider"
+      type: "architectural_capability"
+      status: "ARCHITECTURAL_REFERENCE"
+      approved_status: "APPROVED"
+
+    - id: "MODEL-VLM-PALIGEMMA2"
+      name: "PaliGemma 2"
+      type: "vision_language_model"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "CONDITIONALLY_APPROVED"
+      license: "Gemma"
+      exact_variant: null
+      exact_revision: null
+      artifact_digest: null
+
+    - id: "CV-TRANSFORMERS"
+      name: "Hugging Face Transformers"
+      type: "model_integration_framework"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED"
+      license: "Apache-2.0"
+      exact_version: null
+
+    - id: "CV-ONNXRUNTIME"
+      name: "ONNX Runtime"
+      type: "inference_runtime"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED_OPTIONAL"
+      exact_version: null
+
+  # ============================================================
+  # 8. FRONTEND
+  # ============================================================
+
+  frontend:
+
+    - id: "FRONTEND-TS"
+      name: "TypeScript"
+      type: "frontend_language"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      exact_version: null
+
+    - id: "SW-014"
+      name: "React"
+      type: "frontend_framework"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      role: "Primary UI framework"
+      exact_version: null
+
+    - id: "SW-015"
+      name: "Vite"
+      type: "frontend_build_tool"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      exact_version: null
+
+    - id: "FRONTEND-TANSTACK-QUERY"
+      name: "TanStack Query"
+      type: "frontend_dependency"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      role: "Server state management"
+      exact_version: null
+
+    - id: "FRONTEND-ZUSTAND"
+      name: "Zustand"
+      type: "frontend_dependency"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      role: "Client state management"
+      exact_version: null
+
+    - id: "FRONTEND-TAILWIND"
+      name: "Tailwind CSS"
+      type: "frontend_dependency"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      role: "Styling system"
+      exact_version: null
+
+    - id: "FRONTEND-DESIGN-SYSTEM"
+      name: "JARVIS Custom Design System"
+      type: "internal_design_system"
+      status: "INTERNAL"
+      approved_status: "REQUIRED"
+
+    - id: "SW-027"
+      name: "Node.js"
+      type: "runtime"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      role: "Frontend/tooling runtime"
+      exact_version: null
+
+    - id: "SW-028"
+      name: "JavaScript/TypeScript Package Manager"
+      type: "package_manager"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED_ECOSYSTEM_MANAGER"
+      exact_implementation: null
+      lockfile_required: true
+
+    - id: "FRONTEND-TAURI"
+      name: "Tauri 2"
+      type: "desktop_runtime"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "PREFERRED"
+      exact_version: null
+
+    - id: "FRONTEND-ELECTRON"
+      name: "Electron"
+      type: "desktop_runtime"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "CONDITIONAL_ALTERNATIVE"
+      exact_version: null
+
+    - id: "FRONTEND-NEXTJS"
+      name: "Next.js"
+      type: "frontend_framework"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "CONDITIONAL"
+      note: "Not default JARVIS runtime"
+
+  # ============================================================
+  # 9. PLUGIN SYSTEM
+  # ============================================================
+
+  plugins:
+
+    - id: "SW-016"
+      name: "JARVIS Plugin SDK"
+      type: "internal_sdk"
+      status: "INTERNAL"
+      approved_status: "APPROVED"
+      role: "Native extension API"
+
+    - id: "PLUGIN-MANAGER"
+      name: "Plugin Manager"
+      type: "internal_service"
+      status: "INTERNAL"
+      approved_status: "APPROVED"
+
+    - id: "PLUGIN-REGISTRY"
+      name: "Plugin Registry"
+      type: "internal_registry"
+      status: "INTERNAL"
+      approved_status: "APPROVED"
+
+    - id: "PLUGIN-GATEWAY"
+      name: "Plugin Gateway"
+      type: "internal_service"
+      status: "INTERNAL"
+      approved_status: "APPROVED"
+
+    - id: "PLUGIN-MANIFEST"
+      name: "Typed Plugin Manifest"
+      type: "internal_contract"
+      status: "INTERNAL"
+      approved_status: "APPROVED"
+
+    - id: "PLUGIN-TYPESCRIPT"
+      name: "TypeScript Plugin Runtime"
+      type: "plugin_runtime"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "CONDITIONAL"
+
+    - id: "PLUGIN-CONTAINER"
+      name: "Containerized Plugin Runtime"
+      type: "plugin_isolation"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "CONDITIONAL"
+
+  # ============================================================
+  # 10. MCP
+  # ============================================================
+
+  mcp:
+
+    - id: "SW-017"
+      name: "MCP Client SDK"
+      type: "protocol_sdk"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      role: "Primary MCP client"
+      protocol_version: "2026-07-28"
+      exact_sdk_version: null
+
+    - id: "MCP-GATEWAY"
+      name: "JARVIS MCP Gateway"
+      type: "internal_service"
+      status: "INTERNAL"
+      approved_status: "APPROVED"
+
+    - id: "MCP-CAPABILITY-REGISTRY"
+      name: "MCP Capability Registry"
+      type: "internal_registry"
+      status: "INTERNAL"
+      approved_status: "APPROVED"
+
+    - id: "MCP-PERMISSION"
+      name: "MCP Permission Layer"
+      type: "security_boundary"
+      status: "INTERNAL"
+      approved_status: "APPROVED"
+
+    - id: "MCP-STDIO"
+      name: "MCP stdio transport"
+      type: "transport"
+      status: "ARCHITECTURAL_REFERENCE"
+      approved_status: "APPROVED_FOR_LOCAL"
+
+    - id: "MCP-HTTP"
+      name: "MCP Streamable HTTP"
+      type: "transport"
+      status: "ARCHITECTURAL_REFERENCE"
+      approved_status: "APPROVED_FOR_REMOTE"
+
+    - id: "MCP-HTTP-SSE-LEGACY"
+      name: "Legacy HTTP+SSE"
+      type: "transport"
+      status: "ARCHITECTURAL_REFERENCE"
+      approved_status: "DEPRECATED"
+      production_target: false
+
+    - id: "SW-018"
+      name: "Approved MCP Servers"
+      type: "external_component_collection"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "CONDITIONAL"
+      per_server_lock_required: true
+
+    # ---- Approved server inventory ----
+
+    - id: "MCP-TIME"
+      name: "Time MCP Server"
+      type: "mcp_server"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED"
+      trust_tier: "T0"
+      exact_version: null
+
+    - id: "MCP-FILESYSTEM"
+      name: "Filesystem MCP Server"
+      type: "mcp_server"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "CONDITIONAL"
+      trust_tier: "T1/T3"
+      restrictions:
+        - "Restricted roots"
+        - "Least privilege"
+        - "Sandbox"
+
+    - id: "MCP-GIT"
+      name: "Git MCP Server"
+      type: "mcp_server"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "CONDITIONAL"
+      trust_tier: "T1/T3"
+
+    - id: "MCP-FETCH"
+      name: "Fetch MCP Server"
+      type: "mcp_server"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "CONDITIONAL"
+      trust_tier: "T2"
+
+    - id: "MCP-MEMORY"
+      name: "Memory MCP Server"
+      type: "mcp_server"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "CONDITIONAL"
+      trust_tier: "T1"
+
+    - id: "MCP-BROWSER"
+      name: "Browser / Chrome MCP Server"
+      type: "mcp_server"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "CONDITIONAL"
+      trust_tier: "T2/T4"
+
+    - id: "MCP-DATABASE"
+      name: "Database MCP Server"
+      type: "mcp_server"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "CONDITIONAL"
+      trust_tier: "T1/T3"
+      default_access: "READ_ONLY"
+
+    - id: "MCP-DOCKER"
+      name: "Docker MCP Server"
+      type: "mcp_server"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "CONDITIONAL"
+      trust_tier: "T4"
+
+    - id: "MCP-GITHUB"
+      name: "GitHub MCP Server"
+      type: "mcp_server"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "CONDITIONAL"
+      trust_tier: "T2/T3"
+
+    - id: "MCP-SEQUENTIAL-THINKING"
+      name: "Sequential Thinking MCP Server"
+      type: "mcp_server"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "EXPERIMENTAL"
+      deployment_scope: "Development only"
+
+    - id: "MCP-EVERYTHING"
+      name: "Everything MCP Server"
+      type: "mcp_server"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "EVALUATION"
+      deployment_scope: "Testing only"
+
+  # ============================================================
+  # 11. SECURITY
+  # ============================================================
+
+  security:
+
+    - id: "SEC-IDENTITY"
+      name: "Identity System"
+      type: "security_capability"
+      status: "INTERNAL"
+      approved_status: "APPROVED"
+
+    - id: "SEC-AUTHORIZATION"
+      name: "Central Authorization"
+      type: "security_capability"
+      status: "INTERNAL"
+      approved_status: "APPROVED"
+      default_policy: "DENY"
+
+    - id: "SEC-POLICY"
+      name: "Central Policy Engine"
+      type: "security_capability"
+      status: "INTERNAL"
+      approved_status: "APPROVED"
+
+    - id: "SEC-CAPABILITY"
+      name: "Capability Security"
+      type: "security_architecture"
+      status: "INTERNAL"
+      approved_status: "APPROVED"
+
+    - id: "SEC-SECRET"
+      name: "Central Secret Management"
+      type: "security_capability"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED"
+      implementation: null
+
+    - id: "SEC-SANDBOX"
+      name: "Sandboxing"
+      type: "security_capability"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED"
+      implementation: null
+
+    - id: "SEC-AUDIT"
+      name: "Security Audit System"
+      type: "internal_security_system"
+      status: "INTERNAL"
+      approved_status: "APPROVED"
+
+    - id: "SEC-CRYPTO"
+      name: "Cryptography"
+      type: "security_capability"
+      status: "ARCHITECTURAL_REFERENCE"
+      approved_status: "APPROVED"
+
+    - id: "SEC-SBOM"
+      name: "SBOM"
+      type: "supply_chain_security"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+
+    - id: "SEC-ARTIFACT-VERIFY"
+      name: "Artifact Verification"
+      type: "supply_chain_security"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+
+    - id: "SEC-ARTIFACT-SIGN"
+      name: "Artifact Signing"
+      type: "security_tooling"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED"
+      production_release_required: true
+
+  # ============================================================
+  # 12. DEVOPS / CONTAINERS
+  # ============================================================
+
+  devops:
+
+    - id: "SW-021"
+      name: "Docker"
+      type: "container_runtime"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      exact_version: null
+
+    - id: "DOCKER-BUILDKIT"
+      name: "Docker BuildKit"
+      type: "container_build_engine"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      exact_version: null
+
+    - id: "DOCKER-BUILDX"
+      name: "Docker Buildx"
+      type: "container_build_tool"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      exact_version: null
+
+    - id: "DOCKER-COMPOSE"
+      name: "Docker Compose"
+      type: "container_composition"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      exact_version: null
+
+    - id: "SW-031"
+      name: "OCI"
+      type: "artifact_standard"
+      status: "ARCHITECTURAL_REFERENCE"
+      approved_status: "APPROVED"
+
+    - id: "DEVOPS-CMAKE"
+      name: "CMake"
+      type: "native_build_system"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED_WHERE_JUSTIFIED"
+      exact_version: null
+
+    - id: "DEVOPS-NINJA"
+      name: "Ninja"
+      type: "native_build_tool"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED_WHERE_JUSTIFIED"
+      exact_version: null
+
+    - id: "DEVOPS-CUDA"
+      name: "NVIDIA CUDA Toolkit"
+      type: "gpu_toolchain"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "VERSION_LOCKED_BY_COMPONENT"
+      exact_version: null
+      lock_identity:
+        required:
+          - "cuda_version"
+          - "driver_compatibility"
+          - "architecture"
+
+    - id: "SW-029"
+      name: "Git"
+      type: "source_control"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      exact_version: null
+
+    - id: "SW-030"
+      name: "GitHub"
+      type: "external_platform"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "CONDITIONAL"
+      role: "Repository / CI platform"
+
+    - id: "DEVOPS-GITHUB-ACTIONS"
+      name: "GitHub Actions"
+      type: "ci_cd_platform"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED_DIRECTION"
+      role: "CI/CD"
+
+    - id: "DEVOPS-KUBERNETES"
+      name: "Kubernetes"
+      type: "orchestration_platform"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "CONDITIONAL"
+      role: "Large-scale/high-availability deployment"
+
+  # ============================================================
+  # 13. OBSERVABILITY
+  # ============================================================
+
+  observability:
+
+    - id: "SW-022"
+      name: "OpenTelemetry"
+      type: "observability_framework"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      exact_version: null
+
+    - id: "OTEL-COLLECTOR"
+      name: "OpenTelemetry Collector"
+      type: "telemetry_service"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED"
+      exact_version: null
+
+    - id: "SW-036"
+      name: "Structured Logging"
+      type: "observability_capability"
+      status: "ARCHITECTURAL_REFERENCE"
+      approved_status: "REQUIRED"
+
+    - id: "SW-037"
+      name: "Metrics"
+      type: "telemetry_signal"
+      status: "ARCHITECTURAL_REFERENCE"
+      approved_status: "REQUIRED"
+
+    - id: "SW-038"
+      name: "Tracing"
+      type: "telemetry_signal"
+      status: "ARCHITECTURAL_REFERENCE"
+      approved_status: "REQUIRED"
+
+    - id: "OBS-PROMETHEUS"
+      name: "Prometheus"
+      type: "metrics_backend"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED"
+      exact_version: null
+
+    - id: "OBS-GRAFANA"
+      name: "Grafana"
+      type: "observability_dashboard"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED"
+      exact_version: null
+
+    - id: "OBS-LOKI"
+      name: "Loki"
+      type: "log_backend"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "CONDITIONAL"
+      exact_version: null
+
+    - id: "OBS-TEMPO"
+      name: "Tempo"
+      type: "trace_backend"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "CONDITIONAL"
+      exact_version: null
+
+    - id: "OBS-MIMIR"
+      name: "Mimir"
+      type: "metrics_backend"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "CONDITIONAL"
+      exact_version: null
+
+  # ============================================================
+  # 14. TESTING / QUALITY
+  # ============================================================
+
+  testing:
+
+    - id: "SW-023"
+      name: "pytest"
+      type: "python_test_framework"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      exact_version: null
+
+    - id: "SW-024"
+      name: "Playwright Testing"
+      type: "e2e_framework"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED"
+      exact_version: null
+
+    - id: "SW-025"
+      name: "Ruff"
+      type: "python_quality_tool"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      exact_version: null
+
+    - id: "SW-039"
+      name: "Contract Testing"
+      type: "testing_framework"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      exact_implementation: null
+
+    - id: "SW-040"
+      name: "Dependency Scanning"
+      type: "security_testing_tool"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      exact_implementation: null
+
+    - id: "TEST-SAST"
+      name: "SAST"
+      type: "security_testing"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED"
+
+    - id: "TEST-SECRET-SCAN"
+      name: "Secret Scanning"
+      type: "security_testing"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED"
+
+    - id: "TEST-AI-EVAL"
+      name: "AI Evaluation Harness"
+      type: "evaluation_framework"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED"
+
+    - id: "TEST-AGENT-EVAL"
+      name: "Agent Scenario Evaluation"
+      type: "evaluation_framework"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED"
+
+    - id: "TEST-PERFORMANCE"
+      name: "Performance / Load Testing"
+      type: "testing_framework"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED"
+
+  # ============================================================
+  # 15. PYTHON / PACKAGE MANAGEMENT
+  # ============================================================
+
+  python_toolchain:
+
+    - id: "SW-026"
+      name: "uv"
+      type: "python_package_manager"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      role: "Python project/dependency/environment management"
+      exact_version: null
+
+    - id: "PYPROJECT"
+      name: "pyproject.toml"
+      type: "project_metadata"
+      status: "INTERNAL"
+      approved_status: "REQUIRED"
+
+    - id: "UV-LOCK"
+      name: "uv.lock"
+      type: "dependency_lockfile"
+      status: "INTERNAL"
+      approved_status: "REQUIRED"
+      lock_identity:
+        required:
+          - "file_revision"
+          - "source_commit"
+
+  # ============================================================
+  # 16. MODELS
+  # ============================================================
+
+  models:
+
+    - id: "MODEL-LLM-QWEN3"
+      name: "Qwen3"
+      type: "llm_family"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      deployment: "Local"
+      license: "Apache-2.0 on referenced checkpoints"
+      exact_variant: null
+      exact_revision: null
+      artifact_digest: null
+      quantization: null
+      runtime: null
+      hardware_profile: null
+
+    - id: "MODEL-LLM-CLOUD"
+      name: "Approved Cloud Frontier Model"
+      type: "cloud_llm"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "CONDITIONALLY_APPROVED"
+      provider: null
+      exact_model: null
+      api_version: null
+      model_revision: null
+
+    - id: "MODEL-EMBED-BGE-M3"
+      name: "BAAI/bge-m3"
+      type: "embedding_model"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      license: "MIT"
+      exact_revision: null
+      artifact_digest: null
+      runtime: null
+
+    - id: "MODEL-RERANK-BGE-V2-M3"
+      name: "BAAI/bge-reranker-v2-m3"
+      type: "reranker"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      license: "Apache-2.0"
+      exact_revision: null
+      artifact_digest: null
+      runtime: null
+
+    - id: "MODEL-STT-WHISPER"
+      name: "OpenAI Whisper"
+      type: "speech_to_text"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      deployment: "Local"
+      exact_model: null
+      exact_revision: null
+      artifact_digest: null
+      runtime: null
+
+    - id: "MODEL-STT-WHISPER-LARGE-V3"
+      name: "Whisper Large V3"
+      type: "speech_to_text"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED"
+      exact_revision: null
+      artifact_digest: null
+
+    - id: "MODEL-STT-WHISPER-TURBO"
+      name: "Whisper Turbo"
+      type: "speech_to_text"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "CONDITIONALLY_APPROVED"
+      exact_revision: null
+      artifact_digest: null
+
+    - id: "MODEL-TTS-PIPER"
+      name: "Piper"
+      type: "text_to_speech"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "CONDITIONALLY_APPROVED"
+      license: "GPL-3.0"
+      voice_license_review: true
+      exact_engine_version: null
+      voice_model: null
+      voice_revision: null
+      voice_digest: null
+
+    - id: "MODEL-VISION-SIGLIP2"
+      name: "SigLIP 2"
+      type: "vision_encoder"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      license: "Apache-2.0"
+      exact_variant: null
+      exact_revision: null
+      artifact_digest: null
+
+    - id: "MODEL-VLM-PALIGEMMA2"
+      name: "PaliGemma 2"
+      type: "vision_language_model"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "CONDITIONALLY_APPROVED"
+      license: "Gemma"
+      exact_variant: null
+      exact_revision: null
+      artifact_digest: null
+
+    - id: "MODEL-COLPALI"
+      name: "ColPali"
+      type: "visual_document_retrieval"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "CONDITIONALLY_APPROVED"
+      adapters_license: "MIT"
+      backbone_license: "Gemma License"
+      exact_variant: null
+      exact_revision: null
+      artifact_digest: null
+
+  # ============================================================
+  # 17. MODEL RUNTIMES
+  # ============================================================
+
+  model_runtimes:
+
+    - id: "MODEL-RUNTIME-LOCAL"
+      name: "Local Model Runtime"
+      type: "inference_runtime_abstraction"
+      status: "ARCHITECTURAL_REFERENCE"
+      approved_status: "APPROVED"
+
+    - id: "MODEL-RUNTIME-TRANSFORMERS"
+      name: "Hugging Face Transformers"
+      type: "model_framework"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED"
+      exact_version: null
+
+    - id: "MODEL-RUNTIME-ONNX"
+      name: "ONNX Runtime"
+      type: "inference_runtime"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED_OPTIONAL"
+      exact_version: null
+
+  # ============================================================
+  # 18. SUPPLY CHAIN
+  # ============================================================
+
+  supply_chain:
+
+    - id: "SUPPLY-SBOM"
+      name: "CycloneDX / SBOM Tooling"
+      type: "supply_chain_tool"
+      status: "LOCK_REQUIRED"
+      approved_status: "APPROVED"
+      exact_version: null
+
+    - id: "SUPPLY-PROVENANCE"
+      name: "Build Provenance / Attestation"
+      type: "build_security"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED"
+      exact_implementation: null
+
+    - id: "SUPPLY-SIGNING"
+      name: "Artifact Signing / Verification"
+      type: "security_tooling"
+      status: "LOCK_REQUIRED_IF_USED"
+      approved_status: "APPROVED"
+      preferred_direction:
+        - "Sigstore"
+        - "Cosign"
+      exact_version: null
+
+  # ============================================================
+  # 19. ARCHITECTURAL RELATIONSHIPS
+  # ============================================================
+
+  dependency_domains:
+
+    python:
+      runtime: "CPython"
+      package_manager: "uv"
+      metadata: "pyproject.toml"
+      lockfile: "uv.lock"
+
+    backend:
+      framework: "FastAPI"
+      asgi_foundation: "Starlette"
+      server: "Uvicorn"
+      validation: "Pydantic v2"
+      database: "PostgreSQL"
+      orm: "SQLAlchemy 2.x"
+      migrations: "Alembic"
+      cache: "Redis"
+      workers: "Dedicated Worker Runtime"
+
+    frontend:
+      runtime: "Node.js"
+      language: "TypeScript"
+      framework: "React"
+      build: "Vite"
+      server_state: "TanStack Query"
+      client_state: "Zustand"
+      styling: "Tailwind CSS"
+      package_manager: "UNRESOLVED"
+      lockfile: "Native ecosystem lockfile"
+
+    orchestration:
+      engine: "LangGraph"
+      persistent_checkpointing: true
+      human_approval: true
+
+    browser:
+      framework: "Playwright"
+      adapter: "JARVIS Browser Adapter"
+      browser_revision_required: true
+      default_isolation: true
+
+    voice:
+      vad: "Silero VAD"
+      stt_runtime: "faster-whisper"
+      stt_fallback: "whisper.cpp"
+      tts_primary: "Kokoro"
+      tts_optional: "Piper"
+
+    vision:
+      foundation: "OpenCV"
+      detection: "Provider Abstraction"
+      ocr: "PaddleOCR"
+      ocr_fallback: "Tesseract"
+      segmentation: "Provider Abstraction"
+      vlm: "Provider Abstraction"
+      inference_runtime: "Replaceable"
+
+    models:
+      registry: "19_APPROVED_MODELS.md"
+      exact_identity_required: true
+      revision_required: true
+      digest_required_where_available: true
+      hardware_metadata_required: true
+
+    mcp:
+      protocol: "2026-07-28"
+      sdk_version_required: true
+      server_version_required: true
+      revision_required: true
+      digest_required: true
+      transport_part_of_contract: true
+      permission_profile_required: true
+
+    plugins:
+      sdk: "JARVIS Plugin SDK"
+      api_version_required: true
+      artifact_hash_required: true
+      dependency_lock_required: true
+
+    containers:
+      runtime: "Docker"
+      builder: "BuildKit / Buildx"
+      composition: "Docker Compose"
+      artifact_standard: "OCI"
+      digest_required_for_release: true
+
+    observability:
+      framework: "OpenTelemetry"
+      transport: "OTLP"
+      collector: "OpenTelemetry Collector"
+      metrics_backend: "Prometheus"
+      dashboard: "Grafana"
+
+  # ============================================================
+  # 20. LOCK IDENTITY REQUIREMENTS
+  # ============================================================
+
+  lock_identity_requirements:
+
+    python_package:
+      required:
+        - "package_name"
+        - "exact_version"
+        - "resolved_dependency_state"
+        - "integrity"
+
+    service:
+      required:
+        - "service_name"
+        - "exact_version"
+        - "image"
+        - "image_digest"
+
+    browser:
+      required:
+        - "framework_version"
+        - "browser_family"
+        - "browser_revision"
+        - "platform"
+        - "architecture"
+
+    model:
+      required:
+        - "provider_or_organization"
+        - "model_family"
+        - "variant"
+        - "revision"
+        - "artifact_format"
+        - "quantization_if_applicable"
+        - "artifact_digest_if_available"
+        - "license"
+        - "hardware_profile"
+
+    mcp_server:
+      required:
+        - "server_id"
+        - "publisher"
+        - "source"
+        - "version"
+        - "revision"
+        - "digest"
+        - "protocol_version"
+        - "sdk_version"
+        - "transport"
+        - "runtime"
+        - "license"
+        - "permission_profile"
+        - "trust_tier"
+
+    plugin:
+      required:
+        - "plugin_id"
+        - "plugin_version"
+        - "plugin_api_version"
+        - "sdk_version"
+        - "artifact_hash"
+        - "runtime"
+        - "dependency_lock"
+
+    native_toolchain:
+      required:
+        - "compiler_or_toolchain"
+        - "version"
+        - "target"
+        - "platform"
+
+    container:
+      required:
+        - "image"
+        - "tag"
+        - "digest"
+        - "architecture"
+
+  # ============================================================
+  # 21. CURRENT PRODUCTION BASELINE
+  # ============================================================
+
+  mandatory_production_baseline:
+
+    runtime:
+      - "Python / CPython"
+      - "uv"
+
+    backend:
+      - "FastAPI"
+      - "Starlette"
+      - "Pydantic v2"
+      - "PostgreSQL"
+      - "SQLAlchemy 2.x"
+
+    agent:
+      - "LangGraph"
+
+    memory:
+      - "Qdrant"
+      - "PostgreSQL"
+
+    frontend:
+      - "TypeScript"
+      - "React"
+      - "Vite"
+      - "Node.js"
+
+    observability:
+      - "OpenTelemetry"
+
+    testing:
+      - "pytest"
+      - "Ruff"
+
+    devops:
+      - "Git"
+      - "Docker"
+
+  # ============================================================
+  # 22. PROFILE-DEPENDENT COMPONENTS
+  # ============================================================
+
+  profile_dependent:
+
+    - "Redis"
+    - "Redis Streams"
+    - "Object Storage"
+    - "Playwright"
+    - "Voice Stack"
+    - "Vision Stack"
+    - "Frontend Desktop Runtime"
+    - "MCP"
+    - "Local Models"
+    - "Cloud Models"
+    - "GPU / CUDA"
+    - "OpenTelemetry Collector"
+    - "Prometheus"
+    - "Grafana"
+    - "Containerized Plugins"
+    - "Kubernetes"
+
+  # ============================================================
+  # 23. CONDITIONAL / CANDIDATE COMPONENTS
+  # ============================================================
+
+  conditional:
+
+    - "Uvicorn"
+    - "Alembic"
+    - "Rust"
+    - "C/C++"
+    - "CMake"
+    - "Ninja"
+    - "JavaScript/TypeScript package manager"
+    - "Kokoro"
+    - "Piper"
+    - "Whisper Turbo"
+    - "RT-DETR"
+    - "Grounding DINO"
+    - "PaddleOCR"
+    - "Segment Anything"
+    - "Ultralytics YOLO"
+    - "PaliGemma 2"
+    - "ColPali"
+    - "ONNX Runtime"
+    - "Community MCP Servers"
+    - "Cloud Model Providers"
+    - "Tauri 2"
+    - "Electron"
+    - "Kubernetes"
+
+  # ============================================================
+  # 24. EXPERIMENTAL / EVALUATION
+  # ============================================================
+
+  experimental:
+
+    - "Chatterbox"
+    - "Coqui TTS"
+    - "Sequential Thinking MCP"
+
+  evaluation_only:
+
+    - "Everything MCP"
+
+  # ============================================================
+  # 25. EXPLICITLY EXCLUDED
+  # ============================================================
+
+  excluded_from_production_baseline:
+
+    - name: "Rejected technologies"
+      authority: "22_REJECTED_TECHNOLOGIES_AND_RATIONALE.md"
+      rule: "Cannot enter production without architectural re-approval."
+
+    - name: "Unapproved MCP servers"
+      rule: "Registry publication does not equal JARVIS approval."
+
+    - name: "Mutable latest tags"
+      rule: "Production artifacts require immutable identity."
+
+    - name: "Unpinned dependencies"
+      rule: "Production dependencies require appropriate lock mechanisms."
+
+    - name: "Direct model-to-tool execution"
+      rule: "All privileged tool execution must pass through policy boundaries."
+
+    - name: "Direct agent-to-Playwright dependency"
+      rule: "Browser access must pass through Browser Capability / Adapter."
+
+  # ============================================================
+  # 26. VERSION LOCK READINESS
+  # ============================================================
+
+  readiness:
+
+    inventory_reconciled: true
+
+    approved_stack_reconciled: true
+
+    exact_versions_locked: false
+    exact_revisions_locked: false
+    artifact_digests_locked: false
+    model_revisions_locked: false
+    mcp_server_revisions_locked: false
+    plugin_revisions_locked: false
+    browser_revisions_locked: false
+    frontend_package_manager_finalized: false
+    frontend_lockfile_generated: false
+    container_digests_locked: false
+    base_images_locked: false
+    native_toolchain_locked: false
+    cuda_toolchain_locked: false
+    hardware_profiles_locked: false
+    license_validation_completed: false
+    security_validation_completed: false
+    compatibility_validation_completed: false
+    final_version_lock_status: "NOT_YET_LOCKED"
+
+  # ============================================================
+  # 27. NEXT PHASE
+  # ============================================================
+
+  next_phase:
+
+    name: "Version Resolution"
+
+    sequence:
+
+      - "Freeze the reconciled component inventory"
+      - "Resolve exact runtime versions"
+      - "Resolve exact Python dependency versions"
+      - "Generate and validate uv.lock"
+      - "Resolve backend dependency compatibility"
+      - "Resolve frontend package manager"
+      - "Resolve frontend lockfile"
+      - "Resolve browser/framework compatibility"
+      - "Resolve voice runtime compatibility"
+      - "Resolve vision runtime compatibility"
+      - "Resolve model/runtime compatibility"
+      - "Resolve exact model variants"
+      - "Resolve model revisions"
+      - "Resolve model artifact digests"
+      - "Resolve MCP protocol/SDK compatibility"
+      - "Resolve MCP server versions"
+      - "Resolve MCP server revisions"
+      - "Resolve MCP server digests"
+      - "Resolve plugin API/SDK compatibility"
+      - "Resolve native toolchain compatibility"
+      - "Resolve CUDA/driver compatibility where required"
+      - "Resolve Docker/BuildKit/Buildx/Compose compatibility"
+      - "Resolve base images"
+      - "Resolve container digests"
+      - "Validate licenses"
+      - "Validate security"
+      - "Validate supply chain"
+      - "Validate platform compatibility"
+      - "Validate hardware profiles"
+      - "Run compatibility matrix"
+      - "Select final exact versions"
+      - "Generate VERSION LOCK v1"
+
+  governing_rules:
+
+    - "Latest upstream version is never automatically the JARVIS production version."
+    - "Every production dependency must have an appropriate lock identity."
+    - "Every model must be reconstructable from registry, revision and artifact source."
+    - "Every MCP production server is independently governed."
+    - "Browser binaries are part of the runtime dependency graph."
+    - "Plugins and MCP servers are not equivalent architectural components."
+    - "Optional components are not production dependencies until enabled by profile."
+    - "A component without successful validation cannot enter production."
+    - "Version changes are engineering changes."
+    - "The final release must be reproducible, auditable and reversible where practical."

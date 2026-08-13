@@ -1,0 +1,989 @@
+# ============================================================
+# JARVIS / JAS
+# VERSION LOCK v1 — COMPONENT LOCKS
+# ============================================================
+
+version_lock_component_locks:
+
+  schema_version: "1.0"
+
+  project:
+    name: "JARVIS"
+    architecture: "JAS"
+    architecture_version: "JAS v1"
+
+  lock:
+    version: "1.0"
+    status: "CANDIDATE"
+    authority: "VERSION_LOCK_v1"
+
+  # ----------------------------------------------------------
+  # IMPORTANT
+  # ----------------------------------------------------------
+  #
+  # This file contains CANDIDATE component versions.
+  #
+  # A candidate version is NOT automatically production-locked.
+  #
+  # Every candidate must pass:
+  #
+  #   - compatibility validation
+  #   - dependency resolution
+  #   - regression testing
+  #   - security validation
+  #   - license validation
+  #   - platform validation
+  #
+  # before becoming LOCKED.
+  #
+  # ==========================================================
+
+
+  # ==========================================================
+  # 1. CORE RUNTIME
+  # ==========================================================
+
+  core_runtime:
+
+    - id: "SW-001"
+      name: "Python"
+      component_type: "runtime"
+      approved_status: "APPROVED"
+      lock_status: "CANDIDATE_LOCK"
+
+      version:
+        selected: "3.13.14"
+        policy_family: "3.12+"
+
+      implementation:
+        name: "CPython"
+        version: "3.13.14"
+
+      platform_targets:
+        - "windows-x86_64"
+        - "linux-x86_64"
+        - "macos-arm64"
+
+      rationale:
+        - "Stable CPython release"
+        - "Long-term ecosystem compatibility"
+        - "Conservative compatibility target for JAS v1"
+        - "Avoids adopting Python 3.14 before the complete JAS dependency stack is validated"
+
+      validation_required:
+        - "AI framework compatibility"
+        - "LangGraph compatibility"
+        - "Pydantic compatibility"
+        - "FastAPI compatibility"
+        - "uv compatibility"
+        - "Windows validation"
+        - "Linux validation"
+        - "macOS validation"
+
+      source:
+        authority: "Python.org"
+
+      exact_artifact_digest: null
+
+      final_status: "PENDING_VALIDATION"
+
+
+    - id: "CPYTHON-001"
+      name: "CPython"
+      component_type: "runtime_implementation"
+      approved_status: "APPROVED"
+      lock_status: "CANDIDATE_LOCK"
+
+      version: "3.13.14"
+
+      source:
+        authority: "Python.org"
+
+      platform_targets:
+        - "windows-x86_64"
+        - "linux-x86_64"
+        - "macos-arm64"
+
+      artifact_digest:
+        required: true
+        value: null
+
+      final_status: "PENDING_VALIDATION"
+
+
+  # ==========================================================
+  # 2. PYTHON PACKAGE MANAGEMENT
+  # ==========================================================
+
+  python_toolchain:
+
+    - id: "SW-026"
+      name: "uv"
+      component_type: "python_package_manager"
+      approved_status: "APPROVED"
+      lock_status: "CANDIDATE_LOCK"
+
+      version:
+        selected: "0.11.29"
+
+      source:
+        authority: "PyPI / Astral"
+
+      platform_targets:
+        - "windows-x86_64"
+        - "windows-arm64"
+        - "linux-x86_64"
+        - "linux-arm64"
+        - "macos-arm64"
+        - "macos-x86_64"
+
+      artifact_digest:
+        required: true
+        value: null
+
+      rationale:
+        - "Current stable release observed during Version Resolution"
+        - "Officially supports Windows, Linux and macOS"
+        - "Designed for deterministic Python dependency management"
+
+      final_status: "PENDING_VALIDATION"
+
+
+  # ==========================================================
+  # 3. BACKEND
+  # ==========================================================
+
+  backend:
+
+    - id: "SW-005"
+      name: "FastAPI"
+      component_type: "python_dependency"
+      approved_status: "APPROVED"
+      lock_status: "CANDIDATE_LOCK"
+
+      version:
+        selected: "0.141.1"
+
+      source:
+        authority: "PyPI / FastAPI"
+
+      dependency_lock:
+        managed_by: "uv"
+        exact_transitive_state: "PENDING"
+
+      artifact:
+        distribution: "PyPI wheel"
+        digest: null
+
+      compatibility:
+        python: "3.13.14"
+        pydantic: "PENDING"
+        starlette: "PENDING"
+
+      rationale:
+        - "Current stable release observed during Version Resolution"
+        - "Official FastAPI release"
+        - "Production-oriented API framework"
+
+      final_status: "PENDING_DEPENDENCY_RESOLUTION"
+
+
+    - id: "SW-006"
+      name: "Pydantic"
+      component_type: "python_dependency"
+      approved_status: "APPROVED"
+      lock_status: "CANDIDATE_LOCK"
+
+      version:
+        selected: "2.13.4"
+
+      source:
+        authority: "PyPI / Pydantic"
+
+      dependency_lock:
+        managed_by: "uv"
+        exact_transitive_state: "PENDING"
+
+      artifact:
+        distribution: "PyPI wheel"
+        digest: null
+
+      compatibility:
+        python: "3.13.14"
+
+      rationale:
+        - "Current stable release observed during Version Resolution"
+        - "Supports CPython 3.13"
+        - "Provides typed validation boundary required by JAS"
+
+      final_status: "PENDING_DEPENDENCY_RESOLUTION"
+
+
+  # ==========================================================
+  # 4. AGENT ORCHESTRATION
+  # ==========================================================
+
+  agent_orchestration:
+
+    - id: "SW-007"
+      name: "LangGraph"
+      component_type: "python_dependency"
+      approved_status: "APPROVED"
+      lock_status: "CANDIDATE_LOCK"
+
+      version:
+        selected: "1.2.9"
+
+      source:
+        authority: "PyPI / LangChain"
+
+      dependency_lock:
+        managed_by: "uv"
+        exact_transitive_state: "PENDING"
+
+      artifact:
+        distribution: "PyPI wheel"
+        digest: null
+
+      compatibility:
+        python: "3.13.14"
+        langchain_dependencies: "PENDING"
+
+      rationale:
+        - "Current stable release observed during Version Resolution"
+        - "Official stable LangGraph release"
+        - "Supports stateful agent orchestration"
+
+      warning:
+        - "Full transitive dependency compatibility must be validated before LOCKED status"
+
+      final_status: "PENDING_DEPENDENCY_RESOLUTION"
+
+
+  # ==========================================================
+  # 5. MEMORY / DATA
+  # ==========================================================
+
+  memory_and_data:
+
+    - id: "SW-008"
+      name: "Qdrant"
+      component_type: "service"
+      approved_status: "APPROVED"
+      lock_status: "CANDIDATE_LOCK"
+
+      server:
+        version: "1.18.1"
+
+      deployment:
+        method: "container"
+        image: "qdrant/qdrant:v1.18.1"
+        digest: null
+
+      client:
+        package: "qdrant-client"
+        version: "1.18.0"
+        digest: null
+
+      protocol:
+        rest: true
+        grpc: true
+
+      platform:
+        container_architecture:
+          - "amd64"
+          - "arm64"
+
+      rationale:
+        - "Current stable Qdrant server release observed"
+        - "Matching current Python client family"
+        - "Official Qdrant artifacts"
+
+      upgrade_constraint:
+        rule: >
+          Qdrant upgrades SHALL follow the official upgrade sequence
+          and SHALL NOT skip required intermediate versions.
+
+      final_status: "PENDING_INTEGRATION_VALIDATION"
+
+
+    - id: "SW-009"
+      name: "PostgreSQL"
+      component_type: "database"
+      approved_status: "APPROVED"
+      lock_status: "CANDIDATE_LOCK"
+
+      version:
+        major: "18"
+        minor: "18.4"
+        exact: "18.4"
+
+      deployment:
+        method: "container"
+
+      image:
+        repository: "postgres"
+        tag: "18.4"
+        digest: null
+
+      platform:
+        architecture:
+          - "amd64"
+          - "arm64"
+
+      rationale:
+        - "Current supported PostgreSQL major release"
+        - "Current minor release for PostgreSQL 18"
+        - "Long support lifecycle"
+
+      final_status: "PENDING_SCHEMA_AND_INTEGRATION_VALIDATION"
+
+
+    - id: "SW-010"
+      name: "Redis"
+      component_type: "service"
+      approved_status: "APPROVED"
+      lock_status: "PROFILE_DEPENDENT"
+
+      selection:
+        exact_version: null
+        status: "DEFERRED"
+
+      reason: >
+        Redis is profile-dependent in the Approved Software Matrix.
+        It SHALL NOT be included in the mandatory baseline lock until
+        a JAS installation profile explicitly requires Redis.
+
+      final_status: "NOT_BASELINE_LOCKED"
+
+
+    - id: "SW-034"
+      name: "SQLite"
+      component_type: "embedded_database"
+      approved_status: "APPROVED"
+      lock_status: "PROFILE_DEPENDENT"
+
+      selection:
+        exact_version: null
+        status: "DEFERRED"
+
+      reason: >
+        SQLite is profile-dependent and is not part of the mandatory
+        baseline runtime unless explicitly selected by a profile.
+
+      final_status: "NOT_BASELINE_LOCKED"
+
+
+  # ==========================================================
+  # 6. BROWSER
+  # ==========================================================
+
+  browser:
+
+    - id: "SW-011"
+      name: "Playwright"
+      component_type: "python_dependency"
+      approved_status: "APPROVED"
+      lock_status: "CANDIDATE_LOCK"
+
+      version:
+        selected: null
+        status: "PENDING_RESEARCH"
+
+      browser:
+        chromium:
+          revision: null
+          status: "PENDING"
+        firefox:
+          revision: null
+          status: "PENDING"
+        webkit:
+          revision: null
+          status: "PENDING"
+
+      reason: >
+        Playwright package version and bundled browser revisions must
+        be resolved as one compatibility unit. Exact selection is
+        deferred until browser/runtime compatibility validation.
+
+      final_status: "PENDING_BROWSER_RESOLUTION"
+
+
+  # ==========================================================
+  # 7. FRONTEND RUNTIME
+  # ==========================================================
+
+  frontend:
+
+    - id: "SW-027"
+      name: "Node.js"
+      component_type: "runtime"
+      approved_status: "APPROVED"
+      lock_status: "CANDIDATE_LOCK"
+
+      version:
+        selected: "24.18.0"
+        release_line: "24.x"
+        status: "LTS"
+
+      source:
+        authority: "nodejs.org"
+
+      npm:
+        bundled_version: "11.15.0"
+
+      platform_targets:
+        - "windows-x86_64"
+        - "linux-x86_64"
+        - "macos-arm64"
+
+      artifact_digest:
+        required: true
+        value: null
+
+      rationale:
+        - "24.x is an LTS release line"
+        - "JAS Version Lock policy prefers LTS runtime lines"
+        - "26.x is Current rather than LTS"
+
+      final_status: "PENDING_FRONTEND_VALIDATION"
+
+
+    - id: "FRONTEND-TS"
+      name: "TypeScript"
+      component_type: "frontend_toolchain"
+      approved_status: "APPROVED"
+      lock_status: "CANDIDATE_LOCK"
+
+      version:
+        selected: "6.0.3"
+
+      source:
+        authority: "npm / Microsoft TypeScript"
+
+      rationale:
+        - "Current stable TypeScript release observed during Version Resolution"
+
+      compatibility:
+        node: "24.18.0"
+        vite: "PENDING"
+
+      final_status: "PENDING_FRONTEND_VALIDATION"
+
+
+    - id: "SW-014"
+      name: "React"
+      component_type: "frontend_dependency"
+      approved_status: "APPROVED"
+      lock_status: "CANDIDATE_LOCK"
+
+      version:
+        react: "19.2.7"
+        react_dom: "19.2.7"
+
+      source:
+        authority: "npm / React"
+
+      artifact:
+        provenance_required: true
+
+      rationale:
+        - "Current stable React release observed"
+        - "react and react-dom are aligned to the same release"
+
+      final_status: "PENDING_FRONTEND_VALIDATION"
+
+
+    - id: "SW-015"
+      name: "Vite"
+      component_type: "frontend_build_tool"
+      approved_status: "APPROVED"
+      lock_status: "CANDIDATE_LOCK"
+
+      version:
+        selected: "8.1.5"
+
+      source:
+        authority: "npm / Vite"
+
+      compatibility:
+        node: "24.18.0"
+        typescript: "6.0.3"
+        react: "19.2.7"
+
+      rationale:
+        - "Current stable Vite release observed"
+        - "Vite 8 is the current stable major line"
+        - "Beta releases are excluded"
+
+      final_status: "PENDING_FRONTEND_VALIDATION"
+
+
+    - id: "SW-028"
+      name: "JavaScript/TypeScript package manager"
+      component_type: "package_manager"
+      approved_status: "CONDITIONALLY_APPROVED"
+      lock_status: "DECISION_PENDING"
+
+      selected:
+        name: null
+        version: null
+
+      candidates:
+        - "pnpm"
+        - "npm"
+
+      decision_rule: >
+        The package manager SHALL be selected after frontend dependency
+        graph evaluation and reproducibility testing.
+
+      final_status: "NOT_YET_LOCKED"
+
+
+  # ==========================================================
+  # 8. CONTAINER / DEVOPS
+  # ==========================================================
+
+  devops:
+
+    - id: "SW-021"
+      name: "Docker Engine"
+      component_type: "container_runtime"
+      approved_status: "APPROVED"
+      lock_status: "CANDIDATE_LOCK"
+
+      version:
+        selected: "29.6.2"
+
+      source:
+        authority: "Docker"
+
+      platform_targets:
+        - "windows"
+        - "linux"
+        - "macos"
+
+      rationale:
+        - "Latest Docker Engine 29 maintenance release verified"
+        - "Includes current security and bug-fix updates"
+
+      final_status: "PENDING_PLATFORM_VALIDATION"
+
+
+    - id: "DOCKER-BUILDKIT"
+      name: "Docker BuildKit"
+      component_type: "container_build_engine"
+      approved_status: "APPROVED"
+      lock_status: "CANDIDATE_LOCK"
+
+      version:
+        selected: "0.31.1"
+
+      source:
+        authority: "Docker"
+
+      note: >
+        BuildKit 0.31.1 is the BuildKit version documented in the
+        Docker Engine 29.6.1 release notes. Exact standalone BuildKit
+        artifact identity must be validated if independently installed.
+
+      final_status: "PENDING_BUILD_VALIDATION"
+
+
+    - id: "DOCKER-BUILDX"
+      name: "Docker Buildx"
+      component_type: "container_build_tool"
+      approved_status: "APPROVED"
+      lock_status: "CANDIDATE_LOCK"
+
+      version:
+        selected: null
+        status: "PENDING_RESEARCH"
+
+      final_status: "PENDING_BUILD_VALIDATION"
+
+
+    - id: "DOCKER-COMPOSE"
+      name: "Docker Compose"
+      component_type: "container_composition"
+      approved_status: "APPROVED"
+      lock_status: "CANDIDATE_LOCK"
+
+      version:
+        selected: null
+        status: "PENDING_RESEARCH"
+
+      final_status: "PENDING_BUILD_VALIDATION"
+
+
+    - id: "SW-031"
+      name: "OCI"
+      component_type: "artifact_standard"
+      approved_status: "APPROVED"
+      lock_status: "ARCHITECTURAL_REFERENCE"
+
+      version:
+        selected: null
+
+      reason: >
+        OCI is a standards layer rather than a conventional package
+        dependency.
+
+      final_status: "REFERENCE_ONLY"
+
+
+  # ==========================================================
+  # 9. OBSERVABILITY
+  # ==========================================================
+
+  observability:
+
+    - id: "SW-022"
+      name: "OpenTelemetry Python API"
+      component_type: "observability_framework"
+      approved_status: "APPROVED"
+      lock_status: "CANDIDATE_LOCK"
+
+      version:
+        selected: "1.44.0"
+
+      source:
+        authority: "PyPI / OpenTelemetry"
+
+      artifact:
+        digest: null
+
+      final_status: "PENDING_TELEMETRY_VALIDATION"
+
+
+    - id: "SW-022-SDK"
+      name: "OpenTelemetry Python SDK"
+      component_type: "observability_framework"
+      approved_status: "APPROVED"
+      lock_status: "CANDIDATE_LOCK"
+
+      version:
+        selected: "1.44.0"
+
+      source:
+        authority: "PyPI / OpenTelemetry"
+
+      artifact:
+        digest: null
+
+      compatibility:
+        api_version: "1.44.0"
+
+      rationale:
+        - "API and SDK are kept on the same OpenTelemetry release line"
+
+      final_status: "PENDING_TELEMETRY_VALIDATION"
+
+
+  # ==========================================================
+  # 10. TESTING / QUALITY
+  # ==========================================================
+
+  testing:
+
+    - id: "SW-023"
+      name: "pytest"
+      component_type: "python_dependency"
+      approved_status: "APPROVED"
+      lock_status: "CANDIDATE_LOCK"
+
+      version:
+        selected: "9.1.1"
+
+      source:
+        authority: "PyPI / pytest"
+
+      artifact:
+        digest: null
+
+      compatibility:
+        python: "3.13.14"
+
+      rationale:
+        - "Current stable pytest release observed during Version Resolution"
+
+      final_status: "PENDING_TEST_SUITE_VALIDATION"
+
+
+    - id: "SW-025"
+      name: "Ruff"
+      component_type: "python_dev_dependency"
+      approved_status: "APPROVED"
+      lock_status: "CANDIDATE_LOCK"
+
+      version:
+        selected: "0.15.22"
+
+      source:
+        authority: "PyPI / Ruff"
+
+      artifact:
+        digest: null
+
+      compatibility:
+        python: "3.13.14"
+
+      rationale:
+        - "Current stable release observed during Version Resolution"
+
+      final_status: "PENDING_TOOLCHAIN_VALIDATION"
+
+
+    - id: "SW-039"
+      name: "Contract Testing Framework"
+      component_type: "testing_framework"
+      approved_status: "APPROVED"
+      lock_status: "DEFERRED"
+
+      reason: >
+        The Approved Software Matrix approves the capability but does
+        not mandate one concrete implementation. Exact technology
+        selection belongs to implementation/evaluation phase.
+
+      final_status: "NOT_BASELINE_LOCKED"
+
+
+    - id: "SW-040"
+      name: "Dependency Scanner"
+      component_type: "security_tool"
+      approved_status: "APPROVED"
+      lock_status: "DEFERRED"
+
+      reason: >
+        Exact implementation is not sufficiently resolved by the
+        Approved Software Matrix and must be selected before the
+        final production lock.
+
+      final_status: "PENDING_TOOL_SELECTION"
+
+
+  # ==========================================================
+  # 11. SOURCE CONTROL
+  # ==========================================================
+
+  source_control:
+
+    - id: "SW-029"
+      name: "Git"
+      component_type: "source_control"
+      approved_status: "APPROVED"
+      lock_status: "CANDIDATE_LOCK"
+
+      version:
+        selected: null
+        status: "PENDING_FINAL_RELEASE_RESEARCH"
+
+      source:
+        authority: "git-scm.com"
+
+      final_status: "PENDING_VALIDATION"
+
+
+    - id: "SW-030"
+      name: "GitHub"
+      component_type: "external_platform"
+      approved_status: "CONDITIONALLY_APPROVED"
+      lock_status: "EXTERNAL_SERVICE"
+
+      version:
+        selected: null
+
+      note: >
+        GitHub itself is an external service and does not receive a
+        conventional local software Version Lock. GitHub CLI/API
+        clients, Actions runtimes and integration components shall
+        be separately locked when used.
+
+      final_status: "SERVICE_REFERENCE"
+
+
+  # ==========================================================
+  # 12. INTERNAL COMPONENTS
+  # ==========================================================
+
+  internal:
+
+    - id: "SW-016"
+      name: "JARVIS Plugin SDK"
+      component_type: "internal_sdk"
+      approved_status: "APPROVED"
+      lock_status: "INTERNAL"
+
+      version_source:
+        authority: "JARVIS Release Version"
+
+      source_revision:
+        required: true
+        value: null
+
+      final_status: "GOVERNED_BY_JARVIS_RELEASE"
+
+
+    - id: "MCP-GATEWAY"
+      name: "JARVIS MCP Gateway"
+      component_type: "internal_service"
+      approved_status: "APPROVED"
+      lock_status: "INTERNAL"
+
+      version_source:
+        authority: "JARVIS Release Version"
+
+      source_revision:
+        required: true
+        value: null
+
+      final_status: "GOVERNED_BY_JARVIS_RELEASE"
+
+
+    - id: "SEC-AUTH"
+      name: "Authorization / Policy Engine"
+      component_type: "internal_architecture"
+      approved_status: "APPROVED"
+      lock_status: "INTERNAL"
+
+      version_source:
+        authority: "JARVIS Release Version"
+
+      final_status: "GOVERNED_BY_JARVIS_RELEASE"
+
+
+    - id: "SEC-AUDIT"
+      name: "Audit System"
+      component_type: "internal_architecture"
+      approved_status: "APPROVED"
+      lock_status: "INTERNAL"
+
+      version_source:
+        authority: "JARVIS Release Version"
+
+      final_status: "GOVERNED_BY_JARVIS_RELEASE"
+
+
+  # ==========================================================
+  # 13. LOCK STATUS SUMMARY
+  # ==========================================================
+
+  summary:
+
+    candidate_locked:
+
+      - "Python 3.13.14"
+      - "CPython 3.13.14"
+      - "uv 0.11.29"
+      - "FastAPI 0.141.1"
+      - "Pydantic 2.13.4"
+      - "LangGraph 1.2.9"
+      - "Qdrant Server 1.18.1"
+      - "qdrant-client 1.18.0"
+      - "PostgreSQL 18.4"
+      - "Node.js 24.18.0"
+      - "TypeScript 6.0.3"
+      - "React 19.2.7"
+      - "react-dom 19.2.7"
+      - "Vite 8.1.5"
+      - "Docker Engine 29.6.2"
+      - "Docker BuildKit 0.31.1"
+      - "OpenTelemetry API 1.44.0"
+      - "OpenTelemetry SDK 1.44.0"
+      - "pytest 9.1.1"
+      - "Ruff 0.15.22"
+
+
+    unresolved:
+
+      - "Playwright"
+      - "Chromium revision"
+      - "Firefox revision"
+      - "WebKit revision"
+      - "JavaScript package manager"
+      - "Docker Buildx"
+      - "Docker Compose"
+      - "Git"
+
+
+    profile_dependent:
+
+      - "Redis"
+      - "SQLite"
+      - "Object Storage"
+      - "Voice stack"
+      - "Vision stack"
+      - "MCP servers"
+      - "GPU/CUDA"
+      - "Secret management"
+
+
+    internal:
+
+      - "JARVIS Plugin SDK"
+      - "JARVIS MCP Gateway"
+      - "Authorization / Policy Engine"
+      - "Audit System"
+
+
+  # ==========================================================
+  # 14. VALIDATION STATUS
+  # ==========================================================
+
+  validation:
+
+    exact_versions_resolved: true
+
+    exact_revisions_resolved: false
+
+    artifact_digests_resolved: false
+
+    transitive_dependency_graph_resolved: false
+
+    platform_validation: false
+
+    security_validation: false
+
+    license_validation: false
+
+    regression_validation: false
+
+    performance_validation: false
+
+    final_lock_status: "CANDIDATE"
+
+
+  # ==========================================================
+  # 15. NEXT PHASE
+  # ==========================================================
+
+  next_phase:
+
+    name: "Dependency Graph Resolution"
+
+    sequence:
+
+      - "Create JAS pyproject.toml"
+      - "Resolve uv dependency graph"
+      - "Generate uv.lock"
+      - "Validate Python 3.13.14 compatibility"
+      - "Validate FastAPI/Pydantic/Starlette compatibility"
+      - "Validate LangGraph transitive dependencies"
+      - "Validate Qdrant server/client compatibility"
+      - "Resolve frontend package manager"
+      - "Resolve frontend dependency graph"
+      - "Resolve Playwright and browser revisions"
+      - "Resolve Docker Buildx"
+      - "Resolve Docker Compose"
+      - "Resolve Git"
+      - "Calculate artifact digests"
+      - "Run security scan"
+      - "Run license scan"
+      - "Run regression suite"
+      - "Run platform validation"
+      - "Promote validated entries to LOCKED"
+
+  governing_rule: >
+    No candidate component becomes production LOCKED until its
+    complete dependency, artifact, security, license, platform and
+    regression validation requirements have passed.

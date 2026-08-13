@@ -1,0 +1,1466 @@
+# ============================================================
+# JARVIS / JAS
+# VERSION LOCK v1 — CONTAINER, NATIVE TOOLCHAIN
+# AND SUPPLY CHAIN RESOLUTION
+# ============================================================
+
+container_native_supply_chain_resolution:
+
+  schema_version: "1.0"
+
+  project:
+    name: "JARVIS"
+    architecture: "JAS"
+    architecture_version: "JAS v1"
+
+  document:
+    id: "JAS-VL-018"
+    name: "Container Native Toolchain and Supply Chain Resolution"
+    version: "1.0"
+    status: "IN_PROGRESS"
+    authority: "VERSION_LOCK_v1"
+
+
+  # ==========================================================
+  # 1. PURPOSE
+  # ==========================================================
+
+  purpose:
+    >
+    This document resolves the container runtime, container build
+    toolchain, native compilation toolchains, GPU toolchain and
+    software supply-chain components required by JAS.
+
+    The resolution chain is:
+
+      Host
+        ->
+      Docker
+        ->
+      BuildKit / Buildx
+        ->
+      OCI image
+        ->
+      Base image
+        ->
+      Native toolchain where required
+        ->
+      Application artifacts
+        ->
+      SBOM
+        ->
+      Provenance
+        ->
+      Signature / Verification
+
+    Production artifacts SHALL be represented by immutable identities
+    wherever technically possible.
+
+
+  # ==========================================================
+  # 2. CONTAINER ARCHITECTURE
+  # ==========================================================
+
+  container_architecture:
+
+    runtime:
+      "Docker Engine"
+
+    build_engine:
+      "BuildKit"
+
+    build_frontend:
+      "Docker Buildx"
+
+    composition:
+      "Docker Compose"
+
+    artifact_standard:
+      "OCI"
+
+
+    policy:
+
+      mutable_tags:
+        prohibited_for_release:
+          true
+
+      release_identity:
+        required:
+          - "Image reference"
+          - "Image digest"
+          - "Architecture"
+          - "Build provenance"
+
+
+  # ==========================================================
+  # 3. DOCKER ENGINE
+  # ==========================================================
+
+  docker:
+
+    component_id:
+      "SW-021"
+
+    role:
+      "Container runtime"
+
+
+    source:
+
+      authority:
+        "Docker"
+
+      source_type:
+        "Official Docker Engine release"
+
+      status:
+        "RESEARCH_REQUIRED"
+
+
+    candidate:
+
+      version:
+        null
+
+      major:
+        null
+
+      status:
+        "UNRESOLVED"
+
+
+    selection_policy:
+
+      priority:
+
+        - "Supported release line"
+        - "BuildKit compatibility"
+        - "Buildx compatibility"
+        - "Compose compatibility"
+        - "Security maintenance"
+        - "Platform compatibility"
+        - "Reproducibility"
+
+
+    platform:
+
+      windows:
+        "PENDING"
+
+      linux:
+        "PENDING"
+
+      macos:
+        "PENDING"
+
+
+    architecture:
+
+      x86_64:
+        true
+
+      arm64:
+        true
+
+
+    lock_identity:
+
+      required:
+
+        - "engine_version"
+        - "platform"
+        - "architecture"
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 4. BUILDKIT
+  # ==========================================================
+
+  buildkit:
+
+    component_id:
+      "DOCKER-BUILDKIT"
+
+    role:
+      "Container image build engine"
+
+
+    source:
+
+      authority:
+        "Moby / Docker"
+
+      repository:
+        "moby/buildkit"
+
+      status:
+        "RESEARCH_REQUIRED"
+
+
+    candidate:
+
+      version:
+        null
+
+      revision:
+        null
+
+      commit_sha:
+        null
+
+      status:
+        "UNRESOLVED"
+
+
+    requirements:
+
+      - "Docker Engine compatibility"
+      - "Buildx compatibility"
+      - "OCI output compatibility"
+      - "Reproducible build support"
+      - "Provenance support"
+      - "SBOM integration"
+
+
+    lock_identity:
+
+      required:
+
+        - "version"
+        - "revision"
+        - "build identity"
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 5. BUILDX
+  # ==========================================================
+
+  buildx:
+
+    component_id:
+      "DOCKER-BUILDX"
+
+    role:
+      "Docker build orchestration"
+
+
+    source:
+
+      authority:
+        "Docker"
+
+      repository:
+        "docker/buildx"
+
+      status:
+        "RESEARCH_REQUIRED"
+
+
+    candidate:
+
+      version:
+        null
+
+      revision:
+        null
+
+      commit_sha:
+        null
+
+      status:
+        "UNRESOLVED"
+
+
+    requirements:
+
+      - "Docker Engine compatibility"
+      - "BuildKit compatibility"
+      - "Multi-platform build support"
+      - "OCI image output"
+      - "Provenance"
+      - "SBOM"
+
+
+    lock_identity:
+
+      required:
+
+        - "version"
+        - "revision"
+        - "commit_sha"
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 6. DOCKER COMPOSE
+  # ==========================================================
+
+  compose:
+
+    component_id:
+      "DOCKER-COMPOSE"
+
+    role:
+      "Multi-service local orchestration"
+
+
+    source:
+
+      authority:
+        "Docker"
+
+      repository:
+        "docker/compose"
+
+      status:
+        "RESEARCH_REQUIRED"
+
+
+    candidate:
+
+      version:
+        null
+
+      revision:
+        null
+
+      commit_sha:
+        null
+
+      status:
+        "UNRESOLVED"
+
+
+    requirements:
+
+      - "Docker Engine compatibility"
+      - "Compose specification compatibility"
+      - "Healthcheck support"
+      - "Environment isolation"
+      - "Volume management"
+      - "Network management"
+
+
+    production_policy:
+
+      >
+      Compose may be used for development, integration testing and
+      controlled self-hosted deployment.
+
+      Production image identity SHALL remain independent from the
+      Compose file itself.
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 7. OCI
+  # ==========================================================
+
+  oci:
+
+    component_id:
+      "SW-031"
+
+    role:
+      "Container artifact standard"
+
+
+    status:
+      "ARCHITECTURAL_REFERENCE"
+
+
+    standards:
+
+      image_spec:
+        "OCI Image Specification"
+
+      runtime_spec:
+        "OCI Runtime Specification"
+
+      distribution_spec:
+        "OCI Distribution Specification"
+
+
+    lock_policy:
+
+      >
+      OCI specifications are standards rather than conventional
+      package dependencies. The exact specification revision used
+      by the build/release pipeline SHALL be recorded when required
+      for reproducibility.
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 8. BASE IMAGE POLICY
+  # ==========================================================
+
+  base_images:
+
+    policy:
+
+      requirements:
+
+        - "Official or explicitly approved publisher"
+        - "Supported OS release"
+        - "Exact image tag"
+        - "Immutable digest"
+        - "Architecture"
+        - "License"
+        - "Security status"
+        - "SBOM availability where possible"
+
+
+      prohibited:
+
+        - "latest"
+        - "Unverified community image"
+        - "Floating branch"
+        - "Mutable production reference"
+
+
+    application_base:
+
+      candidate:
+        null
+
+      image:
+        null
+
+      tag:
+        null
+
+      digest:
+        null
+
+      architecture:
+        null
+
+
+    python_base:
+
+      candidate:
+        null
+
+      image:
+        null
+
+      tag:
+        null
+
+      digest:
+        null
+
+
+    node_base:
+
+      candidate:
+        null
+
+      image:
+        null
+
+      tag:
+        null
+
+      digest:
+        null
+
+
+    gpu_base:
+
+      enabled:
+        false
+
+      candidate:
+        null
+
+      image:
+        null
+
+      tag:
+        null
+
+      digest:
+        null
+
+
+  # ==========================================================
+  # 9. PYTHON CONTAINER
+  # ==========================================================
+
+  python_container:
+
+    runtime:
+      "CPython"
+
+    package_manager:
+      "uv"
+
+    dependency_lock:
+      "uv.lock"
+
+
+    requirements:
+
+      - "Python version matches AI runtime resolution"
+      - "uv version matches Python toolchain lock"
+      - "uv.lock committed"
+      - "No dependency drift"
+      - "Reproducible installation"
+      - "Non-root runtime where possible"
+
+
+    build_strategy:
+
+      >
+      Python dependencies SHALL be resolved from the canonical
+      project metadata and uv.lock state rather than installed
+      from unconstrained package specifications.
+
+
+    final_image:
+      null
+
+    final_digest:
+      null
+
+
+  # ==========================================================
+  # 10. NODE CONTAINER
+  # ==========================================================
+
+  node_container:
+
+    runtime:
+      "Node.js 24 LTS candidate"
+
+
+    package_manager:
+      "pnpm"
+
+
+    dependency_lock:
+      "pnpm-lock.yaml"
+
+
+    requirements:
+
+      - "Exact Node version"
+      - "Exact pnpm version"
+      - "Committed pnpm lockfile"
+      - "Frozen installation"
+      - "Production dependency separation"
+      - "Non-root runtime where possible"
+
+
+    final_image:
+      null
+
+    final_digest:
+      null
+
+
+  # ==========================================================
+  # 11. NATIVE TOOLCHAIN
+  # ==========================================================
+
+  native_toolchain:
+
+    enabled:
+      true
+
+
+    purpose:
+
+      - "Native Python extensions"
+      - "Performance-critical components"
+      - "Codec integration"
+      - "GPU integrations"
+      - "System libraries"
+
+
+    toolchains:
+
+      c_cpp:
+
+        status:
+          "CONDITIONALLY_REQUIRED"
+
+        compiler:
+          null
+
+        compiler_version:
+          null
+
+        standard:
+          null
+
+        target:
+          null
+
+        platform:
+          null
+
+
+      rust:
+
+        status:
+          "CONDITIONALLY_REQUIRED"
+
+        rust_version:
+          null
+
+        cargo_version:
+          null
+
+        target:
+          null
+
+
+      cmake:
+
+        status:
+          "CONDITIONALLY_REQUIRED"
+
+        version:
+          null
+
+
+      ninja:
+
+        status:
+          "CONDITIONALLY_REQUIRED"
+
+        version:
+          null
+
+
+    policy:
+
+      >
+      Native toolchains SHALL NOT be included merely because they
+      are approved technologies. They become lock-required when a
+      concrete JAS component actually requires native compilation.
+
+
+  # ==========================================================
+  # 12. C / C++ TOOLCHAIN
+  # ==========================================================
+
+  cpp:
+
+    component_id:
+      "SW-004"
+
+    status:
+      "CONDITIONAL"
+
+
+    supported_families:
+
+      windows:
+
+        - "MSVC"
+
+      linux:
+
+        - "GCC"
+        - "Clang"
+
+      macos:
+
+        - "Clang"
+
+
+    final_compiler:
+      null
+
+    final_version:
+      null
+
+    target:
+      null
+
+    standard:
+      null
+
+
+    lock_identity:
+
+      required:
+
+        - "compiler"
+        - "compiler_version"
+        - "target"
+        - "platform"
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 13. RUST
+  # ==========================================================
+
+  rust:
+
+    component_id:
+      "SW-003"
+
+    status:
+      "CONDITIONAL"
+
+
+    candidate:
+
+      channel:
+        "stable"
+
+      exact_version:
+        null
+
+      rustc_version:
+        null
+
+      cargo_version:
+        null
+
+
+    target:
+      null
+
+
+    lock_identity:
+
+      required:
+
+        - "rust_version"
+        - "cargo_version"
+        - "target"
+        - "platform"
+
+
+    policy:
+
+      >
+      Rust SHALL only be locked if a concrete JAS component requires
+      Rust compilation or execution.
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 14. CMAKE
+  # ==========================================================
+
+  cmake:
+
+    component_id:
+      "DEVOPS-CMAKE"
+
+    status:
+      "CONDITIONAL"
+
+
+    role:
+      "Native build configuration"
+
+
+    candidate:
+      version:
+        null
+
+
+    requirements:
+
+      - "Only if required by native dependency"
+      - "Platform compatibility"
+      - "Compiler compatibility"
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 15. NINJA
+  # ==========================================================
+
+  ninja:
+
+    component_id:
+      "DEVOPS-NINJA"
+
+    status:
+      "CONDITIONAL"
+
+
+    role:
+      "Native build execution"
+
+
+    candidate:
+      version:
+        null
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 16. CUDA
+  # ==========================================================
+
+  cuda:
+
+    component_id:
+      "DEVOPS-CUDA"
+
+    status:
+      "CONDITIONAL"
+
+
+    enabled:
+      false
+
+
+    purpose:
+      "GPU acceleration for local AI inference"
+
+
+    components:
+
+      toolkit:
+
+        version:
+          null
+
+        status:
+          "UNRESOLVED"
+
+
+      driver:
+
+        version:
+          null
+
+        status:
+          "UNRESOLVED"
+
+
+      cudnn:
+
+        version:
+          null
+
+        status:
+          "UNRESOLVED"
+
+
+    hardware_dependency:
+
+      gpu:
+        null
+
+      architecture:
+        null
+
+      vram:
+        null
+
+
+    compatibility:
+
+      pytorch:
+        "PENDING"
+
+      qwen3:
+        "PENDING"
+
+      whisper:
+        "PENDING"
+
+      siglip2:
+        "PENDING"
+
+
+    policy:
+
+      >
+      CUDA SHALL NOT be locked until the final supported hardware
+      profile and PyTorch runtime have been selected.
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 17. GPU CONTAINER
+  # ==========================================================
+
+  gpu_container:
+
+    enabled:
+      false
+
+
+    requirements:
+
+      - "NVIDIA driver compatibility"
+      - "CUDA compatibility"
+      - "PyTorch compatibility"
+      - "Container runtime support"
+      - "GPU architecture compatibility"
+
+
+    runtime:
+
+      candidate:
+        "NVIDIA Container Toolkit"
+
+      version:
+        null
+
+
+    lock_identity:
+
+      required:
+
+        - "toolkit_version"
+        - "driver_compatibility"
+        - "host_platform"
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 18. SBOM
+  # ==========================================================
+
+  sbom:
+
+    component_id:
+      "SUPPLY-SBOM"
+
+    role:
+      "Software Bill of Materials"
+
+
+    preferred_standard:
+      "CycloneDX"
+
+
+    candidate_tooling:
+      null
+
+
+    supported_inputs:
+
+      - "Container image"
+      - "Python dependencies"
+      - "Node dependencies"
+      - "Native dependencies"
+      - "Model artifacts where applicable"
+
+
+    required_metadata:
+
+      - "Component name"
+      - "Version"
+      - "Package URL where available"
+      - "License"
+      - "Dependency relationship"
+      - "Artifact identity"
+
+
+    release_policy:
+
+      required:
+        true
+
+      generated_for:
+        - "Production container"
+        - "Production release artifact"
+
+
+    final_tool_version:
+      null
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 19. PROVENANCE
+  # ==========================================================
+
+  provenance:
+
+    component_id:
+      "SUPPLY-PROVENANCE"
+
+    role:
+      "Build provenance and attestation"
+
+
+    status:
+      "APPROVED_CAPABILITY"
+
+
+    requirements:
+
+      - "Source revision"
+      - "Build environment"
+      - "Builder identity"
+      - "Build configuration"
+      - "Input artifacts"
+      - "Output artifact identity"
+
+
+    preferred_direction:
+
+      - "SLSA-aligned provenance"
+      - "OCI attestation"
+      - "BuildKit provenance"
+
+
+    implementation:
+      null
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 20. ARTIFACT SIGNING
+  # ==========================================================
+
+  signing:
+
+    component_id:
+      "SUPPLY-SIGNING"
+
+    role:
+      "Artifact signing and verification"
+
+
+    approved_families:
+
+      - "Sigstore"
+      - "Cosign"
+
+
+    selected_tool:
+      null
+
+
+    selected_version:
+      null
+
+
+    signing_targets:
+
+      - "Container images"
+      - "Release artifacts"
+      - "Selected model artifacts where applicable"
+
+
+    verification:
+
+      required:
+        true
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 21. CONTAINER IMAGE IDENTITY
+  # ==========================================================
+
+  image_identity:
+
+    required:
+
+      - "Registry"
+      - "Repository"
+      - "Tag"
+      - "Digest"
+      - "Architecture"
+      - "OS"
+      - "Build provenance"
+      - "SBOM reference"
+      - "Signature"
+
+
+    production_reference:
+
+      preferred:
+        "repository@sha256:digest"
+
+      tag:
+        "Human-readable release metadata only"
+
+
+    prohibited:
+
+      - "image:latest"
+      - "image:stable"
+      - "Floating version tag without digest"
+
+
+  # ==========================================================
+  # 22. MULTI-ARCHITECTURE
+  # ==========================================================
+
+  architectures:
+
+    primary:
+
+      - "linux/amd64"
+
+    secondary:
+
+      - "linux/arm64"
+
+
+    policy:
+
+      >
+      Multi-architecture images SHALL only be published when every
+      architecture has passed dependency, runtime and security
+      validation.
+
+
+    amd64:
+      status:
+        "PRIMARY"
+
+
+    arm64:
+      status:
+        "SECONDARY"
+
+
+  # ==========================================================
+  # 23. BUILD REPRODUCIBILITY
+  # ==========================================================
+
+  reproducibility:
+
+    requirements:
+
+      - "Pinned base image"
+      - "Pinned dependency lockfiles"
+      - "Pinned build tools"
+      - "Immutable source revision"
+      - "Deterministic build inputs"
+      - "Recorded build metadata"
+      - "SBOM"
+      - "Provenance"
+      - "Artifact digest"
+
+
+    target:
+
+      >
+      Given identical source revision, lockfiles, build arguments,
+      base image digests and toolchain identities, the build SHALL
+      produce an equivalent release artifact.
+
+
+  # ==========================================================
+  # 24. SUPPLY-CHAIN SECURITY
+  # ==========================================================
+
+  security:
+
+    dependency_integrity:
+
+      python:
+        "uv.lock + package integrity"
+
+      frontend:
+        "pnpm-lock.yaml + package integrity"
+
+      containers:
+        "Image digest"
+
+      native:
+        "Compiler/toolchain identity"
+
+      models:
+        "Model revision + artifact digest"
+
+
+    vulnerability_scanning:
+
+      required:
+        true
+
+      timing:
+
+        - "Pre-release"
+        - "Dependency update"
+        - "Base image update"
+        - "Security advisory"
+
+
+    prohibited:
+
+      - "Unverified dependency"
+      - "Unpinned release artifact"
+      - "Mutable production image"
+      - "Unsigned high-trust artifact where signing is available"
+
+
+  # ==========================================================
+  # 25. UPDATE POLICY
+  # ==========================================================
+
+  update_policy:
+
+    docker:
+      trigger:
+        "New supported Docker Engine release"
+
+    buildkit:
+      trigger:
+        "New BuildKit release affecting compatibility/security"
+
+    buildx:
+      trigger:
+        "New Buildx release affecting build pipeline"
+
+    compose:
+      trigger:
+        "New Compose release affecting deployment"
+
+    base_image:
+      trigger:
+        "New security or supported OS release"
+
+    cuda:
+      trigger:
+        "New driver/toolkit compatibility change"
+
+    native_toolchain:
+      trigger:
+        "New compiler security or compatibility change"
+
+    sbom:
+      trigger:
+        "Tooling security or format change"
+
+    signing:
+      trigger:
+        "Signing infrastructure or verification change"
+
+
+    rule:
+      >
+      Updates SHALL reopen the affected resolution record.
+      No infrastructure component SHALL be silently upgraded
+      underneath an existing Version Lock.
+
+
+  # ==========================================================
+  # 26. HARD BLOCKERS
+  # ==========================================================
+
+  blockers:
+
+    - id: "INFRA-BLOCK-001"
+      component: "Docker"
+      reason:
+        "Exact supported production engine version unresolved."
+
+    - id: "INFRA-BLOCK-002"
+      component: "BuildKit"
+      reason:
+        "Exact builder version/revision unresolved."
+
+    - id: "INFRA-BLOCK-003"
+      component: "Buildx"
+      reason:
+        "Exact build orchestration version/revision unresolved."
+
+    - id: "INFRA-BLOCK-004"
+      component: "Docker Compose"
+      reason:
+        "Exact version/revision unresolved."
+
+    - id: "INFRA-BLOCK-005"
+      component: "Base Images"
+      reason:
+        "Exact image and digest unresolved."
+
+    - id: "INFRA-BLOCK-006"
+      component: "Native Toolchain"
+      reason:
+        "Concrete native requirements not fully resolved."
+
+    - id: "INFRA-BLOCK-007"
+      component: "CUDA"
+      reason:
+        "Hardware profile and AI runtime compatibility unresolved."
+
+    - id: "SUPPLY-BLOCK-001"
+      component: "SBOM"
+      reason:
+        "Exact production SBOM tooling unresolved."
+
+    - id: "SUPPLY-BLOCK-002"
+      component: "Provenance"
+      reason:
+        "Exact implementation unresolved."
+
+    - id: "SUPPLY-BLOCK-003"
+      component: "Signing"
+      reason:
+        "Exact signing implementation unresolved."
+
+
+  # ==========================================================
+  # 27. PROMOTION CRITERIA
+  # ==========================================================
+
+  promotion:
+
+    infrastructure_to_candidate:
+
+      mandatory:
+
+        - "Official/approved source"
+        - "Supported release"
+        - "Compatibility validation"
+        - "Security validation"
+
+
+    infrastructure_to_locked:
+
+      mandatory:
+
+        - "Exact version"
+        - "Immutable revision where applicable"
+        - "Platform"
+        - "Architecture"
+        - "Integrity"
+        - "Reproducible installation"
+        - "Rollback path"
+
+
+    container_to_locked:
+
+      mandatory:
+
+        - "Base image digest"
+        - "Dependency lockfiles"
+        - "Build tool identities"
+        - "Source revision"
+        - "Image digest"
+        - "SBOM"
+        - "Provenance"
+        - "Signature"
+
+
+  # ==========================================================
+  # 28. CURRENT STATE
+  # ==========================================================
+
+  state:
+
+    docker_resolved:
+      false
+
+    buildkit_resolved:
+      false
+
+    buildx_resolved:
+      false
+
+    compose_resolved:
+      false
+
+    oci_defined:
+      true
+
+    base_images_resolved:
+      false
+
+    native_toolchain_resolved:
+      false
+
+    cuda_resolved:
+      false
+
+    sbom_resolved:
+      false
+
+    provenance_resolved:
+      false
+
+    signing_resolved:
+      false
+
+    container_digest_locked:
+      false
+
+    final_infrastructure_lock_ready:
+      false
+
+    status:
+      "CONTAINER_NATIVE_SUPPLY_CHAIN_RESOLUTION_IN_PROGRESS"
+
+
+  # ==========================================================
+  # 29. NEXT PHASE
+  # ==========================================================
+
+  next_phase:
+
+    name:
+      "Security, Platform and Release Resolution"
+
+    sequence:
+
+      - "Resolve host platform matrix"
+      - "Resolve operating-system support"
+      - "Resolve secret management"
+      - "Resolve sandbox implementation"
+      - "Resolve authorization boundaries"
+      - "Resolve audit requirements"
+      - "Resolve dependency scanning"
+      - "Resolve vulnerability policy"
+      - "Resolve release signing"
+      - "Resolve rollback strategy"
+      - "Resolve production release identity"
+      - "Validate all Version Lock dependencies"

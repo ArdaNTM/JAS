@@ -1,0 +1,2024 @@
+# ============================================================
+# JARVIS / JAS
+# VERSION LOCK v1
+# FINAL EXACT VERSION RESOLUTION
+# ============================================================
+
+final_exact_version_resolution:
+
+  schema_version: "1.0"
+
+  project:
+    name: "JARVIS"
+    architecture: "JAS"
+    architecture_version: "JAS v1"
+
+
+  # ==========================================================
+  # 1. DOCUMENT
+  # ==========================================================
+
+  document:
+
+    id: "JAS-VL-024"
+
+    name:
+      "Final Exact Version Resolution"
+
+    version: "1.0"
+
+    status:
+      "RESOLUTION_IN_PROGRESS"
+
+    final_version_lock:
+      false
+
+    authority:
+      - "JAS v1"
+      - "Approved Stack v1.0"
+      - "19_APPROVED_MODELS.md"
+      - "20_APPROVED_MCP_SERVERS.md"
+      - "21_VERSION_LOCK_CANDIDATE.yaml"
+      - "22_CANDIDATE_EVIDENCE_AND_EXACT_VERSION_RESOLUTION.yaml"
+      - "23_FINAL_COMPATIBILITY_AND_LOCK_PREPARATION.yaml"
+
+
+  # ==========================================================
+  # 2. RESOLUTION POLICY
+  # ==========================================================
+
+  policy:
+
+    exact_version_required:
+      true
+
+    exact_revision_required:
+      true
+
+    digest_required_where_available:
+      true
+
+    newest_version_is_not_automatically_selected:
+      true
+
+    compatibility_over_recency:
+      true
+
+    hardware_compatibility_over_model_size:
+      true
+
+    official_source_preferred:
+      true
+
+    immutable_identity_required_for_release:
+      true
+
+    candidate_is_not_lock:
+      true
+
+    mutable_latest_tags_forbidden:
+      true
+
+
+  # ==========================================================
+  # 3. RESOLUTION STATES
+  # ==========================================================
+
+  states:
+
+    UNRESOLVED:
+      meaning:
+        "No candidate can yet be selected safely."
+
+    CANDIDATE:
+      meaning:
+        "Candidate discovered but not fully validated."
+
+    RESOLVED:
+      meaning:
+        "Exact candidate selected with sufficient evidence."
+
+    COMPATIBILITY_BLOCKED:
+      meaning:
+        "Exact version cannot be finalized because a connected component is unresolved."
+
+    HARDWARE_BLOCKED:
+      meaning:
+        "Resolution depends on an unresolved hardware profile."
+
+    LICENSE_BLOCKED:
+      meaning:
+        "License review prevents promotion."
+
+    SECURITY_BLOCKED:
+      meaning:
+        "Security validation prevents promotion."
+
+    READY_FOR_LOCK:
+      meaning:
+        "Candidate may be transferred to final VERSION_LOCK.yaml."
+
+
+  # ==========================================================
+  # 4. HARDWARE PROFILE
+  # ==========================================================
+
+  hardware_profile:
+
+    status:
+      "RESOLVED"
+
+    host:
+
+      operating_system:
+        "Windows 11"
+
+      architecture:
+        "x86_64"
+
+      system_ram_gb:
+        16
+
+
+    gpu:
+
+      vendor:
+        "NVIDIA"
+
+      model:
+        "GeForce GTX 1660 Ti"
+
+      vram_gb:
+        6
+
+      architecture:
+        "Turing"
+
+      compute_capability:
+        "7.5"
+
+
+    deployment_role:
+
+      development:
+        true
+
+      local_llm_inference:
+        true
+
+      production_reference:
+        "Current personal development hardware"
+
+
+    evidence:
+
+      source:
+        "Existing JAS hardware profile; host nvidia-smi validation on 2026-08-12"
+
+      exact_driver_version:
+        "610.62"
+
+      driver_validation:
+        "VALIDATED_2026-08-12"
+
+
+  # ==========================================================
+  # 5. PRIMARY LOCAL MODEL RUNTIME
+  # ==========================================================
+
+  local_model_runtime:
+
+    implementation:
+      "Ollama"
+
+    role:
+      "Primary local LLM inference runtime"
+
+    host_platform:
+      "Windows 11"
+
+    gpu_backend:
+      "NVIDIA GPU acceleration"
+
+    primary_llm_runtime:
+      true
+
+    containerized:
+      false
+
+    status:
+      "RESOLVED"
+
+    validation:
+
+      ollama_version:
+        null
+
+      gpu_detection:
+        "PENDING"
+
+      runtime_test:
+        "PENDING"
+
+
+  # ==========================================================
+  # 6. QWEN3 FAMILY RESOLUTION
+  # ==========================================================
+
+  qwen3:
+
+    approved_family:
+      "Qwen3"
+
+    family_status:
+      "RESOLVED"
+
+
+    exact_model_family:
+      "Qwen3-4B-Instruct-2507"
+
+    exact_upstream_model_id:
+      "Qwen/Qwen3-4B-Instruct-2507"
+
+    exact_ollama_model:
+      "qwen3:4b-instruct-2507-q4_K_M"
+
+
+    parameter_count:
+      "4.02B"
+
+    quantization:
+      "Q4_K_M"
+
+    model_size_approx_gb:
+      2.5
+
+    context_length:
+      262144
+
+    mode:
+      "Instruct / non-thinking"
+
+    license:
+      "Apache-2.0"
+
+
+    ollama:
+
+      registry:
+        "Ollama Library"
+
+      tag:
+        "qwen3:4b-instruct-2507-q4_K_M"
+
+      digest:
+        "0edcdef34593"
+
+      digest_status:
+        "RECORDED"
+
+      exact_local_artifact_identity:
+        true
+
+
+    upstream:
+
+      model_id:
+        "Qwen/Qwen3-4B-Instruct-2507"
+
+      revision:
+        null
+
+      artifact_digest:
+        null
+
+      revision_status:
+        "PENDING_UPSTREAM_REVISION_CAPTURE"
+
+
+    runtime:
+      "Ollama"
+
+
+    hardware_fit:
+      "PASS"
+
+    vram_fit:
+      "PASS"
+
+    capability_fit:
+      "CANDIDATE"
+
+    production_validation:
+      "PENDING"
+
+
+    decision:
+      >
+      Qwen3-4B-Instruct-2507 Q4_K_M is the selected local
+      inference candidate for the current GTX 1660 Ti 6 GB
+      hardware profile.
+
+
+    status:
+      "RESOLVED_CANDIDATE"
+
+
+  # ==========================================================
+  # 7. QWEN3 ALTERNATIVES
+  # ==========================================================
+
+  qwen3_alternatives:
+
+    qwen3_0_6b:
+
+      status:
+        "AVAILABLE_BUT_NOT_SELECTED"
+
+      reason:
+        "Lower capability than the selected JAS baseline."
+
+
+    qwen3_1_7b:
+
+      status:
+        "AVAILABLE_BUT_NOT_SELECTED"
+
+      reason:
+        "Lower capability than the selected 4B baseline."
+
+
+    qwen3_4b_base:
+
+      status:
+        "AVAILABLE_BUT_NOT_SELECTED"
+
+      reason:
+        >
+        The Instruct-2507 variant is preferred for the JAS
+        assistant workload.
+
+
+    qwen3_8b:
+
+      status:
+        "NOT_SELECTED"
+
+      reason:
+        >
+        Ollama lists the Q4_K_M artifact at approximately
+        5.2 GB, leaving substantially less VRAM headroom on
+        the 6 GB GPU.
+
+
+    qwen3_14b:
+
+      status:
+        "NOT_SELECTED"
+
+      reason:
+        >
+        Model artifact size exceeds the available 6 GB VRAM
+        baseline.
+
+
+    qwen3_30b:
+
+      status:
+        "NOT_SELECTED"
+
+      reason:
+        "Model artifact is far beyond the local VRAM baseline."
+
+
+    qwen3_32b:
+
+      status:
+        "NOT_SELECTED"
+
+      reason:
+        "Model artifact is far beyond the local VRAM baseline."
+
+
+    qwen3_235b:
+
+      status:
+        "NOT_SELECTED"
+
+      reason:
+        "Model artifact is far beyond the local hardware baseline."
+
+
+  # ==========================================================
+  # 8. QWEN3 MODEL IMMUTABILITY
+  # ==========================================================
+
+  model_immutability:
+
+    runtime:
+      "Ollama"
+
+    model_tag:
+      "qwen3:4b-instruct-2507-q4_K_M"
+
+    ollama_digest:
+      "0edcdef34593"
+
+    mutable_latest_tag:
+      false
+
+    immutable_identity_available:
+      true
+
+    upstream_revision:
+      null
+
+    upstream_artifact_digest:
+      null
+
+    lock_preference:
+      >
+      The final local-model lock shall record the exact Ollama
+      model tag and immutable Ollama digest. The upstream model
+      revision shall also be recorded when captured.
+
+    status:
+      "CANDIDATE_READY_FOR_LOCK"
+
+
+  # ==========================================================
+  # 9. PYTORCH RELATIONSHIP
+  # ==========================================================
+
+  pytorch:
+
+    role:
+      "Optional model-development / alternative-runtime dependency"
+
+    primary_qwen3_inference_dependency:
+      false
+
+    primary_runtime:
+      "Ollama"
+
+    exact_version:
+      null
+
+    cuda_build:
+      null
+
+    status:
+      "NOT_REQUIRED_FOR_PRIMARY_OLLAMA_LLM_PATH"
+
+    may_be_enabled_later:
+      true
+
+    trigger:
+      - "Direct Transformers inference"
+      - "Custom PyTorch model development"
+      - "Alternative local inference runtime"
+      - "JAS vision/model research requiring PyTorch"
+
+
+  # ==========================================================
+  # 10. TRANSFORMERS RELATIONSHIP
+  # ==========================================================
+
+  transformers:
+
+    role:
+      >
+      Optional model-development and alternative inference
+      framework.
+
+    primary_qwen3_inference_dependency:
+      false
+
+    exact_version:
+      null
+
+    status:
+      "OPTIONAL"
+
+    lock_required_if_enabled:
+      true
+
+
+  # ==========================================================
+  # 11. CUDA RELATIONSHIP
+  # ==========================================================
+
+  cuda:
+
+    role:
+      >
+      GPU compute technology supporting the NVIDIA acceleration
+      stack.
+
+    primary_ollama_runtime:
+      true
+
+    exact_toolkit_version:
+      null
+
+    toolkit_installation_required_for_primary_ollama_path:
+      false
+
+    reason:
+      >
+      JAS uses Ollama as the primary local inference runtime.
+      The JAS application does not directly compile or execute
+      CUDA kernels for the primary LLM path.
+
+    driver_compatibility:
+      "REQUIRED"
+
+    direct_jas_cuda_dependency:
+      false
+
+    status:
+      "RUNTIME_MANAGED_PENDING_DRIVER_VALIDATION"
+
+    lock_policy:
+      >
+      CUDA Toolkit SHALL NOT be promoted into the mandatory
+      JAS application Version Lock merely because the host GPU
+      uses NVIDIA acceleration. It becomes a direct lock target
+      if JAS itself introduces a CUDA-dependent build/runtime
+      component.
+
+
+  # ==========================================================
+  # 12. NVIDIA DRIVER
+  # ==========================================================
+
+  nvidia_driver:
+
+    gpu:
+      "GeForce GTX 1660 Ti"
+
+    exact_version:
+      "610.62"
+
+    host_driver_required:
+      true
+
+    ollama_gpu_acceleration:
+      "REQUIRED_FOR_GPU_PATH"
+
+    validation_command:
+      "nvidia-smi"
+
+    current_status:
+      "VALIDATED_2026-08-12"
+
+    lock_identity:
+
+      required:
+
+        - "driver_version"
+        - "platform"
+        - "architecture"
+
+    status:
+      "RESOLVED_HOST_DRIVER"
+
+
+  # ==========================================================
+  # 13. NVIDIA CONTAINER TOOLKIT
+  # ==========================================================
+
+  nvidia_container_toolkit:
+
+    primary_ollama_path:
+      false
+
+    reason:
+      >
+      Current primary Ollama deployment is native on Windows
+      rather than a Docker-hosted GPU inference container.
+
+    required_if:
+
+      - "Ollama is moved into Linux containers"
+      - "GPU inference services are containerized"
+      - "CUDA workloads are executed through Docker GPU runtime"
+
+
+    exact_version:
+      null
+
+    status:
+      "CONDITIONAL"
+
+
+  # ==========================================================
+  # 14. P0 RESOLUTION
+  # ==========================================================
+
+  p0_resolution:
+
+    hardware_profile:
+      "RESOLVED"
+
+    local_runtime:
+      "RESOLVED"
+
+    qwen3_family:
+      "RESOLVED"
+
+    qwen3_exact_variant:
+      "RESOLVED_CANDIDATE"
+
+    qwen3_quantization:
+      "RESOLVED"
+
+    qwen3_runtime:
+      "RESOLVED"
+
+    qwen3_immutable_ollama_identity:
+      "RESOLVED"
+
+    qwen3_upstream_revision:
+      "PENDING"
+
+    pytorch:
+      "REMOVED_FROM_PRIMARY_LLM_LOCK_PATH"
+
+    transformers:
+      "REMOVED_FROM_PRIMARY_LLM_LOCK_PATH"
+
+    cuda_toolkit:
+      "NOT_DIRECTLY_LOCKED_FOR_PRIMARY_OLLAMA_PATH"
+
+    nvidia_driver:
+      "RESOLVED_HOST_DRIVER"
+
+    nvidia_container_toolkit:
+      "CONDITIONAL"
+
+
+  # ==========================================================
+  # 15. PYTHON
+  # ==========================================================
+
+  python:
+
+    implementation:
+      "CPython"
+
+    minimum:
+      "3.12"
+
+    candidate:
+      null
+
+    exact_version:
+      null
+
+    platform:
+      "linux/amd64"
+
+    note:
+      >
+      Linux/amd64 refers to the planned JAS production/container
+      environment and is separate from the current Windows host.
+
+    pytorch_compatibility:
+      "NOT_REQUIRED_FOR_PRIMARY_OLLAMA_PATH"
+
+    fastapi_compatibility:
+      "PENDING"
+
+    langgraph_compatibility:
+      "PENDING"
+
+    uv_compatibility:
+      "PENDING"
+
+    status:
+      "UNRESOLVED"
+
+
+  # ==========================================================
+  # 16. UV
+  # ==========================================================
+
+  uv:
+
+    exact_version:
+      null
+
+    python_compatibility:
+      "PENDING"
+
+    lockfile:
+      "uv.lock"
+
+    frozen_resolution:
+      true
+
+    status:
+      "UNRESOLVED"
+
+
+  # ==========================================================
+  # 17. FASTAPI
+  # ==========================================================
+
+  fastapi:
+
+    exact_version:
+      null
+
+    python_requirement:
+      null
+
+    pydantic_constraint:
+      null
+
+    starlette:
+      "RESOLVED_BY_FASTAPI_DEPENDENCY_GRAPH"
+
+    policy:
+      >
+      Starlette SHALL NOT be independently promoted to a top-level
+      Version Lock entry unless the final dependency graph requires
+      an explicit direct dependency.
+
+    status:
+      "UNRESOLVED"
+
+
+  # ==========================================================
+  # 18. PYDANTIC
+  # ==========================================================
+
+  pydantic:
+
+    major_line:
+      "2.x"
+
+    exact_version:
+      null
+
+    python_compatibility:
+      "PENDING"
+
+    fastapi_compatibility:
+      "PENDING"
+
+    status:
+      "UNRESOLVED"
+
+
+  # ==========================================================
+  # 19. LANGGRAPH
+  # ==========================================================
+
+  langgraph:
+
+    exact_version:
+      null
+
+    python_compatibility:
+      "PENDING"
+
+    dependency_graph:
+      "PENDING"
+
+    fastapi_independence:
+      true
+
+    qwen_runtime_independence:
+      >
+      "Application-level integration; not a direct model-runtime dependency"
+
+    status:
+      "UNRESOLVED"
+
+
+  # ==========================================================
+  # 20. PLAYWRIGHT
+  # ==========================================================
+
+  playwright:
+
+    python_package:
+
+      candidate:
+        "1.61.0"
+
+      exact_version:
+        null
+
+      status:
+        "CANDIDATE"
+
+
+    browser_binding:
+
+      chromium:
+
+        exact_revision:
+          null
+
+        exact_build:
+          null
+
+        artifact_identity:
+          null
+
+        status:
+          "UNRESOLVED"
+
+
+    browser_lock_rule:
+      >
+      Playwright package version and browser artifact identity
+      SHALL be resolved as a coupled deployment contract.
+
+
+    status:
+      "COMPATIBILITY_BLOCKED"
+
+
+  # ==========================================================
+  # 21. FRONTEND
+  # ==========================================================
+
+  frontend:
+
+    node:
+
+      candidate:
+        "24.18.1"
+
+      exact_version:
+        null
+
+      status:
+        "CANDIDATE"
+
+
+    pnpm:
+
+      candidate:
+        "11.17.0"
+
+      exact_version:
+        null
+
+      status:
+        "CANDIDATE"
+
+
+    typescript:
+
+      candidate:
+        "7.0.2"
+
+      exact_version:
+        null
+
+      status:
+        "CANDIDATE"
+
+
+    react:
+
+      candidate:
+        "19.2.8"
+
+      exact_version:
+        null
+
+      status:
+        "CANDIDATE"
+
+
+    react_dom:
+
+      exact_version:
+        null
+
+      compatibility:
+        "MUST_MATCH_REACT_POLICY"
+
+      status:
+        "UNRESOLVED"
+
+
+    vite:
+
+      candidate:
+        "8.1.5"
+
+      exact_version:
+        null
+
+      node_compatibility:
+        "PENDING"
+
+      status:
+        "CANDIDATE"
+
+
+    lockfile:
+      "pnpm-lock.yaml"
+
+    frozen_install:
+      true
+
+    status:
+      "BLOCKED"
+
+
+  # ==========================================================
+  # 22. POSTGRESQL
+  # ==========================================================
+
+  postgresql:
+
+    candidate_major:
+      "18"
+
+    candidate_version:
+      "18.4"
+
+    exact_image:
+      null
+
+    digest:
+      null
+
+    architecture:
+      "linux/amd64"
+
+    migration_validation:
+      "PENDING"
+
+    application_driver:
+      "PENDING"
+
+    status:
+      "CANDIDATE"
+
+
+  # ==========================================================
+  # 23. QDRANT
+  # ==========================================================
+
+  qdrant:
+
+    candidate_version:
+      "1.18.2"
+
+    exact_image:
+      null
+
+    digest:
+      null
+
+    architecture:
+      "linux/amd64"
+
+    client_version:
+      null
+
+    api_compatibility:
+      "PENDING"
+
+    status:
+      "CANDIDATE"
+
+
+  # ==========================================================
+  # 24. EMBEDDING MODEL
+  # ==========================================================
+
+  embedding:
+
+    model:
+      "BAAI/bge-m3"
+
+    exact_revision:
+      null
+
+    digest:
+      null
+
+    runtime:
+      null
+
+    precision:
+      null
+
+    status:
+      "UNRESOLVED"
+
+
+  # ==========================================================
+  # 25. RERANKER MODEL
+  # ==========================================================
+
+  reranker:
+
+    model:
+      "BAAI/bge-reranker-v2-m3"
+
+    exact_revision:
+      null
+
+    digest:
+      null
+
+    runtime:
+      null
+
+    precision:
+      null
+
+    status:
+      "UNRESOLVED"
+
+
+  # ==========================================================
+  # 26. WHISPER
+  # ==========================================================
+
+  whisper:
+
+    approved_family:
+      "OpenAI Whisper"
+
+    exact_model:
+      null
+
+    revision:
+      null
+
+    digest:
+      null
+
+    runtime:
+      null
+
+    hardware_profile:
+      "PENDING"
+
+    status:
+      "UNRESOLVED"
+
+
+  # ==========================================================
+  # 27. OPENCV
+  # ==========================================================
+
+  opencv:
+
+    exact_version:
+      null
+
+    python_binding:
+      "opencv-python"
+
+    platform_artifact:
+      null
+
+    native_dependencies:
+      "PENDING"
+
+    status:
+      "UNRESOLVED"
+
+
+  # ==========================================================
+  # 28. MCP
+  # ==========================================================
+
+  mcp:
+
+    protocol_version:
+      "2026-07-28"
+
+    protocol_status:
+      "CANDIDATE"
+
+
+    sdk:
+
+      name:
+        "MCP Python SDK"
+
+      exact_version:
+        null
+
+      runtime:
+        "Python"
+
+      protocol_compatibility:
+        "PENDING"
+
+      status:
+        "UNRESOLVED"
+
+
+    enabled_servers:
+
+      time:
+
+        enabled:
+          false
+
+        version:
+          null
+
+        revision:
+          null
+
+        digest:
+          null
+
+        status:
+          "PROFILE_DEPENDENT"
+
+
+      filesystem:
+
+        enabled:
+          false
+
+        version:
+          null
+
+        revision:
+          null
+
+        digest:
+          null
+
+        permission_profile:
+          "Restricted roots / least privilege / sandbox"
+
+        status:
+          "PROFILE_DEPENDENT"
+
+
+      git:
+
+        enabled:
+          false
+
+        version:
+          null
+
+        revision:
+          null
+
+        digest:
+          null
+
+        status:
+          "PROFILE_DEPENDENT"
+
+
+      fetch:
+
+        enabled:
+          false
+
+        version:
+          null
+
+        revision:
+          null
+
+        digest:
+          null
+
+        status:
+          "PROFILE_DEPENDENT"
+
+
+      memory:
+
+        enabled:
+          false
+
+        version:
+          null
+
+        revision:
+          null
+
+        digest:
+          null
+
+        status:
+          "PROFILE_DEPENDENT"
+
+
+  # ==========================================================
+  # 29. DOCKER
+  # ==========================================================
+
+  docker:
+
+    engine:
+
+      candidate:
+        "29.6.2"
+
+      exact_version:
+        null
+
+      platform:
+        "linux/amd64"
+
+      status:
+        "CANDIDATE"
+
+
+    buildkit:
+
+      candidate:
+        "0.31.1"
+
+      exact_version:
+        null
+
+      status:
+        "CANDIDATE"
+
+
+    buildx:
+
+      exact_version:
+        null
+
+      status:
+        "UNRESOLVED"
+
+
+    compose:
+
+      exact_version:
+        null
+
+      status:
+        "UNRESOLVED"
+
+
+  # ==========================================================
+  # 30. BASE IMAGES
+  # ==========================================================
+
+  base_images:
+
+    python:
+
+      repository:
+        null
+
+      tag:
+        null
+
+      digest:
+        null
+
+      architecture:
+        "linux/amd64"
+
+      python_version:
+        null
+
+      status:
+        "UNRESOLVED"
+
+
+    node:
+
+      repository:
+        null
+
+      tag:
+        null
+
+      digest:
+        null
+
+      architecture:
+        "linux/amd64"
+
+      node_version:
+        null
+
+      status:
+        "UNRESOLVED"
+
+
+    gpu:
+
+      repository:
+        null
+
+      tag:
+        null
+
+      digest:
+        null
+
+      cuda_version:
+        null
+
+      architecture:
+        "linux/amd64"
+
+      status:
+        "CONDITIONAL"
+
+
+  # ==========================================================
+  # 31. OPENTELEMETRY
+  # ==========================================================
+
+  opentelemetry:
+
+    sdk_version:
+      null
+
+    api_version:
+      null
+
+    collector_version:
+      null
+
+    protocol:
+      "OTLP"
+
+    status:
+      "UNRESOLVED"
+
+
+  # ==========================================================
+  # 32. TESTING
+  # ==========================================================
+
+  pytest:
+
+    exact_version:
+      null
+
+    python_compatibility:
+      "PENDING"
+
+    status:
+      "UNRESOLVED"
+
+
+  ruff:
+
+    exact_version:
+      null
+
+    python_compatibility:
+      "PENDING"
+
+    status:
+      "UNRESOLVED"
+
+
+  # ==========================================================
+  # 33. SECURITY TOOLING
+  # ==========================================================
+
+  security:
+
+    dependency_scanner:
+
+      implementation:
+        null
+
+      version:
+        null
+
+      status:
+        "UNRESOLVED"
+
+
+    secret_management:
+
+      implementation:
+        null
+
+      status:
+        "UNRESOLVED"
+
+
+    sandbox:
+
+      implementation:
+        null
+
+      status:
+        "UNRESOLVED"
+
+
+  # ==========================================================
+  # 34. SUPPLY CHAIN
+  # ==========================================================
+
+  supply_chain:
+
+    sbom:
+
+      format:
+        "CycloneDX"
+
+      tool:
+        null
+
+      version:
+        null
+
+      status:
+        "UNRESOLVED"
+
+
+    provenance:
+
+      implementation:
+        null
+
+      standard:
+        "SLSA-aligned"
+
+      status:
+        "UNRESOLVED"
+
+
+    signing:
+
+      tool:
+        "Cosign"
+
+      version:
+        null
+
+      status:
+        "CANDIDATE"
+
+
+  # ==========================================================
+  # 35. P0 RESOLUTION TABLE
+  # ==========================================================
+
+  resolution_table:
+
+    P0:
+
+      hardware_profile:
+
+        state:
+          "RESOLVED"
+
+        blocking_reason:
+          null
+
+
+      local_model_runtime:
+
+        state:
+          "RESOLVED"
+
+        selected:
+          "Ollama"
+
+
+      qwen3:
+
+        state:
+          "RESOLVED_CANDIDATE"
+
+        selected:
+          "Qwen3-4B-Instruct-2507 Q4_K_M"
+
+
+      pytorch:
+
+        state:
+          "NOT_REQUIRED_FOR_PRIMARY_OLLAMA_PATH"
+
+
+      cuda:
+
+        state:
+          "RUNTIME_MANAGED"
+
+        candidate:
+          null
+
+
+      nvidia_driver:
+
+        state:
+          "PENDING_HOST_VALIDATION"
+
+
+      nvidia_container_toolkit:
+
+        state:
+          "CONDITIONAL"
+
+
+  # ==========================================================
+  # 36. P1 RESOLUTION TABLE
+  # ==========================================================
+
+  P1:
+
+    python:
+      state:
+        "BLOCKED"
+
+    uv:
+      state:
+        "BLOCKED"
+
+    fastapi:
+      state:
+        "BLOCKED"
+
+    pydantic:
+      state:
+        "BLOCKED"
+
+    langgraph:
+      state:
+        "BLOCKED"
+
+    playwright:
+      state:
+        "CANDIDATE"
+
+    chromium:
+      state:
+        "BLOCKED"
+
+    frontend:
+      state:
+        "BLOCKED"
+
+    mcp:
+      state:
+        "BLOCKED"
+
+    containers:
+      state:
+        "BLOCKED"
+
+
+  # ==========================================================
+  # 37. P2 RESOLUTION TABLE
+  # ==========================================================
+
+  P2:
+
+    postgres:
+      state:
+        "CANDIDATE"
+
+    qdrant:
+      state:
+        "CANDIDATE"
+
+    opentelemetry:
+      state:
+        "BLOCKED"
+
+    pytest:
+      state:
+        "BLOCKED"
+
+    ruff:
+      state:
+        "BLOCKED"
+
+    security:
+      state:
+        "BLOCKED"
+
+    supply_chain:
+      state:
+        "BLOCKED"
+
+
+  # ==========================================================
+  # 38. AUTHORITATIVE EVIDENCE REGISTER
+  # ==========================================================
+
+  authoritative_evidence:
+
+    qwen3:
+
+      source:
+        "Official Qwen model repository / model documentation"
+
+      exact_model:
+        "Qwen/Qwen3-4B-Instruct-2507"
+
+      status:
+        "VERIFIED"
+
+
+    ollama_qwen3:
+
+      source:
+        "Official Ollama Library"
+
+      exact_tag:
+        "qwen3:4b-instruct-2507-q4_K_M"
+
+      digest:
+        "0edcdef34593"
+
+      status:
+        "VERIFIED"
+
+
+    fastapi:
+
+      source:
+        "Official FastAPI documentation"
+
+      status:
+        "PENDING_FINAL_VERSION_RESOLUTION"
+
+
+    playwright:
+
+      source:
+        "Official Playwright release documentation"
+
+      status:
+        "PENDING_FINAL_VERSION_RESOLUTION"
+
+
+    cuda:
+
+      source:
+        "Official NVIDIA CUDA documentation"
+
+      status:
+        "PENDING_RUNTIME_PATH_VALIDATION"
+
+
+    pytorch:
+
+      source:
+        "Official PyTorch documentation"
+
+      status:
+        "NOT_REQUIRED_FOR_PRIMARY_OLLAMA_PATH"
+
+
+  # ==========================================================
+  # 39. CURRENT EXACT RESOLUTIONS
+  # ==========================================================
+
+  resolved_exact_versions:
+
+    fully_resolved:
+      []
+
+    resolved_candidates:
+
+      - component:
+          "Qwen3"
+
+        exact_model:
+          "Qwen/Qwen3-4B-Instruct-2507"
+
+        runtime:
+          "Ollama"
+
+        ollama_tag:
+          "qwen3:4b-instruct-2507-q4_K_M"
+
+        ollama_digest:
+          "0edcdef34593"
+
+        state:
+          "RESOLVED_CANDIDATE"
+
+
+    partially_resolved:
+
+      - component:
+          "PostgreSQL"
+
+        candidate:
+          "18.4"
+
+        state:
+          "CANDIDATE_NOT_LOCKED"
+
+
+      - component:
+          "Qdrant"
+
+        candidate:
+          "1.18.2"
+
+        state:
+          "CANDIDATE_NOT_LOCKED"
+
+
+      - component:
+          "Playwright"
+
+        candidate:
+          "1.61.0"
+
+        state:
+          "CANDIDATE_NOT_LOCKED"
+
+
+      - component:
+          "Docker"
+
+        candidate:
+          "29.6.2"
+
+        state:
+          "CANDIDATE_NOT_LOCKED"
+
+
+      - component:
+          "BuildKit"
+
+        candidate:
+          "0.31.1"
+
+        state:
+          "CANDIDATE_NOT_LOCKED"
+
+
+  # ==========================================================
+  # 40. CRITICAL DECISIONS
+  # ==========================================================
+
+  critical_decisions:
+
+    qwen3_family:
+      decision:
+        "RETAIN"
+
+      reason:
+        >
+        Qwen3 remains the approved JAS model family.
+
+
+    qwen3_exact_variant:
+      decision:
+        "SELECT_QWEN3_4B_INSTRUCT_2507"
+
+      reason:
+        >
+        The current 6 GB GTX 1660 Ti hardware profile favors the
+        4B Q4_K_M variant over larger Qwen3 variants.
+
+
+    qwen3_runtime:
+      decision:
+        "OLLAMA"
+
+      reason:
+        >
+        Ollama is the current primary local inference runtime
+        for the JAS development environment.
+
+
+    pytorch:
+      decision:
+        "DO_NOT_MAKE_PRIMARY_LLM_LOCK_DEPENDENCY"
+
+      reason:
+        >
+        Qwen3 primary inference is performed through Ollama rather
+        than direct PyTorch inference.
+
+
+    cuda_toolkit:
+      decision:
+        "DO_NOT_MAKE_PRIMARY_APPLICATION_LOCK_DEPENDENCY"
+
+      reason:
+        >
+        JAS does not directly build or execute CUDA code for the
+        primary Ollama LLM path.
+
+
+    newer_qwen_families:
+      decision:
+        "DO_NOT_AUTO_PROMOTE"
+
+      reason:
+        >
+        Newer model families do not automatically replace the
+        approved Qwen3 architectural baseline.
+
+
+  # ==========================================================
+  # 41. REQUIRED HOST VALIDATION
+  # ==========================================================
+
+  required_host_validation:
+
+    commands:
+
+      - command:
+          "nvidia-smi"
+
+        purpose:
+          "Capture exact NVIDIA driver version and GPU state."
+
+
+      - command:
+          "ollama --version"
+
+        purpose:
+          "Capture exact Ollama runtime version."
+
+
+      - command:
+          "ollama list"
+
+        purpose:
+          "Capture installed model identity."
+
+
+      - command:
+          "ollama show qwen3:4b-instruct-2507-q4_K_M"
+
+        purpose:
+          "Capture local model metadata and verify selected artifact."
+
+
+    required_runtime_tests:
+
+      - "GPU detection"
+      - "Model load"
+      - "First-token latency"
+      - "Generation latency"
+      - "VRAM utilization"
+      - "OOM stability"
+      - "Long-context behavior"
+      - "Tool-calling behavior"
+      - "Structured output behavior"
+
+
+    status:
+      "PENDING_RUNTIME_TEST"
+
+
+  # ==========================================================
+  # 42. FINAL LOCK READINESS
+  # ==========================================================
+
+  readiness:
+
+    hardware_profile_complete:
+      true
+
+    qwen3_variant_selected:
+      true
+
+    qwen3_runtime_selected:
+      true
+
+    qwen3_immutable_identity_recorded:
+      true
+
+    qwen3_upstream_revision_recorded:
+      false
+
+    exact_versions_complete:
+      false
+
+    revisions_complete:
+      false
+
+    digests_complete:
+      false
+
+    python_lockfile_complete:
+      false
+
+    frontend_lockfile_complete:
+      false
+
+    browser_identity_complete:
+      false
+
+    mcp_identity_complete:
+      false
+
+    security_complete:
+      false
+
+    supply_chain_complete:
+      false
+
+    host_runtime_validation_complete:
+      false
+
+    final_version_lock_ready:
+      false
+
+
+  # ==========================================================
+  # 43. NEXT REQUIRED ACTIONS
+  # ==========================================================
+
+  next_actions:
+
+    P0:
+
+      - "Run nvidia-smi"
+      - "Run ollama --version"
+      - "Run ollama list"
+      - "Run ollama show qwen3:4b-instruct-2507-q4_K_M"
+      - "Validate Ollama GPU detection"
+      - "Validate Qwen3 runtime behavior"
+      - "Capture exact NVIDIA driver version"
+      - "Capture exact Ollama version"
+
+
+    P1:
+
+      - "Select exact CPython version"
+      - "Select exact uv version"
+      - "Resolve FastAPI"
+      - "Resolve Pydantic"
+      - "Resolve LangGraph"
+      - "Resolve Playwright"
+      - "Resolve Playwright browser identity"
+      - "Resolve React"
+      - "Resolve react-dom"
+      - "Resolve Vite"
+      - "Resolve TypeScript"
+      - "Resolve pnpm"
+      - "Resolve MCP SDK"
+      - "Resolve enabled MCP servers"
+
+
+    P2:
+
+      - "Resolve PostgreSQL image and digest"
+      - "Resolve Qdrant image and digest"
+      - "Resolve OpenTelemetry"
+      - "Resolve pytest"
+      - "Resolve Ruff"
+      - "Resolve security tooling"
+      - "Resolve SBOM tooling"
+      - "Resolve provenance"
+      - "Resolve signing"
+
+
+  # ==========================================================
+  # 44. CURRENT STATE
+  # ==========================================================
+
+  state:
+
+    status:
+      "EXACT_VERSION_RESOLUTION_IN_PROGRESS"
+
+    p0_hardware:
+      "RESOLVED"
+
+    p0_model:
+      "RESOLVED_CANDIDATE"
+
+    p0_runtime:
+      "RESOLVED"
+
+    p0_host_validation:
+      "PENDING"
+
+    p1_resolution:
+      "NOT_COMPLETE"
+
+    p2_resolution:
+      "NOT_COMPLETE"
+
+    candidate_freeze:
+      false
+
+    final_version_lock:
+      false
+
+    next_document:
+      "25_VERSION_LOCK_FREEZE_AND_RELEASE_GATE.yaml"

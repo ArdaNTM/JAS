@@ -1,0 +1,1614 @@
+# ============================================================
+# JARVIS / JAS
+# VERSION LOCK v1 — MCP RESOLUTION
+# ============================================================
+
+mcp_resolution:
+
+  schema_version: "1.0"
+
+  project:
+    name: "JARVIS"
+    architecture: "JAS"
+    architecture_version: "JAS v1"
+
+  document:
+    id: "JAS-VL-017"
+    name: "MCP Resolution"
+    version: "1.0"
+    status: "IN_PROGRESS"
+    authority: "VERSION_LOCK_v1"
+
+
+  # ==========================================================
+  # 1. PURPOSE
+  # ==========================================================
+
+  purpose:
+    >
+    This document resolves the Model Context Protocol runtime,
+    SDK, protocol, server and transport dependencies used by JAS.
+
+    MCP compatibility SHALL be evaluated as a complete chain:
+
+      MCP Protocol
+        ->
+      MCP SDK
+        ->
+      JAS MCP Client
+        ->
+      MCP Server
+        ->
+      Transport
+        ->
+      Permission Profile
+        ->
+      Runtime / Host
+
+    Each enabled MCP server SHALL receive an independent lock
+    identity.
+
+    A generic "MCP server version" SHALL NOT be considered a
+    sufficient production lock.
+
+
+  # ==========================================================
+  # 2. MCP PROTOCOL
+  # ==========================================================
+
+  protocol:
+
+    authority:
+      "Model Context Protocol"
+
+    selected_revision:
+      "2026-07-28"
+
+    status:
+      "APPROVED_CANDIDATE"
+
+    release_date:
+      "2026-07-28"
+
+    source:
+      "Official Model Context Protocol specification"
+
+    architecture:
+
+      stateless_core:
+        true
+
+      sessionless_2026_path:
+        true
+
+      server_discover:
+        true
+
+      multi_round_trip_requests:
+        true
+
+      header_based_routing:
+        true
+
+      cacheable_list_results:
+        true
+
+
+    compatibility:
+
+      legacy_2025_11_25:
+        "SUPPORTED_BY_COMPATIBLE_SDK"
+
+      selected_2026_07_28:
+        "PRIMARY"
+
+      future_revision:
+        "NOT_LOCKED"
+
+
+    protocol_change_policy:
+
+      >
+      A future MCP specification revision SHALL NOT automatically
+      replace the locked protocol revision.
+
+      A protocol upgrade requires compatibility review of the
+      JAS client, every enabled MCP server, transport behavior,
+      authorization and security controls.
+
+
+  # ==========================================================
+  # 3. MCP PYTHON SDK
+  # ==========================================================
+
+  python_sdk:
+
+    component_id:
+      "SW-017"
+
+    package:
+      "mcp"
+
+    language:
+      "Python"
+
+    role:
+      "JAS MCP client SDK"
+
+
+    source:
+
+      authority:
+        "Model Context Protocol"
+
+      registry:
+        "PyPI"
+
+      repository:
+        "modelcontextprotocol/python-sdk"
+
+
+    stable_line:
+
+      major:
+        "2.x"
+
+      status:
+        "STABLE"
+
+      protocol:
+        "2026-07-28"
+
+      python_requirement:
+        ">=3.10"
+
+
+    candidate:
+
+      exact_version:
+        null
+
+      status:
+        "RESEARCH_REQUIRED"
+
+
+    compatibility:
+
+      python_314:
+        "SUPPORTED_BY_PROJECT_METADATA"
+
+      protocol_2026_07_28:
+        "SUPPORTED"
+
+      streamable_http:
+        "SUPPORTED"
+
+      stdio:
+        "SUPPORTED"
+
+      sse:
+        "SUPPORTED"
+
+
+    architecture_notes:
+
+      >
+      The current v2 SDK is a major rework of the Python SDK and
+      supports MCP 2026-07-28 as well as earlier protocol revisions.
+
+      The v2 architecture replaces the former FastMCP naming and
+      introduces the MCPServer abstraction.
+
+
+    lock_identity:
+
+      required:
+
+        - "package_version"
+        - "resolved_dependency_state"
+        - "integrity"
+        - "python_runtime"
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 4. MCP CLIENT ARCHITECTURE
+  # ==========================================================
+
+  client:
+
+    implementation:
+      "JAS-owned MCP Client"
+
+    sdk:
+      "Official MCP Python SDK"
+
+    protocol:
+      "2026-07-28"
+
+    responsibilities:
+
+      - "Server discovery"
+      - "Protocol compatibility"
+      - "Capability discovery"
+      - "Transport management"
+      - "Permission enforcement"
+      - "Credential isolation"
+      - "Server lifecycle"
+      - "Timeout management"
+      - "Failure handling"
+      - "Audit logging"
+
+
+    security_boundary:
+
+      >
+      External MCP servers SHALL NOT receive unrestricted access to
+      the JAS process, filesystem, network, credentials or internal
+      services.
+
+      Every server SHALL operate through the JAS MCP security boundary.
+
+
+  # ==========================================================
+  # 5. APPROVED TRANSPORTS
+  # ==========================================================
+
+  transports:
+
+    stdio:
+
+      status:
+        "APPROVED"
+
+      primary_use:
+        "Local MCP servers"
+
+      isolation:
+        "Process boundary"
+
+
+    streamable_http:
+
+      status:
+        "APPROVED"
+
+      primary_use:
+        "Remote MCP servers"
+
+      protocol:
+        "2026-07-28"
+
+
+    sse:
+
+      status:
+        "LEGACY / COMPATIBILITY"
+
+      policy:
+        >
+        SSE SHALL NOT be selected for new JAS production deployments
+        when Streamable HTTP is available.
+
+      reason:
+        >
+        MCP 2026-07-28 formally deprecates the legacy HTTP+SSE
+        transport with a migration window.
+
+
+  # ==========================================================
+  # 6. REFERENCE SERVER RELEASE BASELINE
+  # ==========================================================
+
+  reference_servers:
+
+    upstream_repository:
+      "modelcontextprotocol/servers"
+
+
+    latest_observed_release:
+
+      release:
+        "2026.7.10"
+
+      commit:
+        "9a96ea6"
+
+      status:
+        "VERIFIED_CANDIDATE"
+
+
+    previous_relevant_release:
+
+      release:
+        "2026.7.4"
+
+      status:
+        "HISTORICAL_REFERENCE"
+
+
+    policy:
+      >
+      Server versions SHALL be resolved per package rather than
+      assuming that every server has the same release cadence.
+
+
+  # ==========================================================
+  # 7. TIME SERVER
+  # ==========================================================
+
+  time:
+
+    component_id:
+      "MCP-TIME"
+
+    server:
+      "mcp-server-time"
+
+    capability:
+      "Time and timezone conversion"
+
+    trust_tier:
+      "T0"
+
+    enabled:
+      false
+
+
+    source:
+
+      repository:
+        "modelcontextprotocol/servers"
+
+      package:
+        "mcp-server-time"
+
+
+    candidate:
+
+      version:
+        "2026.7.10"
+
+      release:
+        "2026.7.10"
+
+      status:
+        "CANDIDATE"
+
+
+    identity:
+
+      revision:
+        null
+
+      commit_sha:
+        null
+
+      digest:
+        null
+
+
+    transport:
+      "STDIO"
+
+
+    permission_profile:
+
+      network:
+        "NONE"
+
+      filesystem:
+        "NONE"
+
+      credentials:
+        "NONE"
+
+
+    compatibility:
+
+      protocol_2026_07_28:
+        "PENDING_RUNTIME_VALIDATION"
+
+      python_runtime:
+        "PENDING"
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 8. FILESYSTEM SERVER
+  # ==========================================================
+
+  filesystem:
+
+    component_id:
+      "MCP-FILESYSTEM"
+
+    server:
+      "@modelcontextprotocol/server-filesystem"
+
+    capability:
+      "Filesystem access"
+
+    trust_tier:
+      "T1/T3"
+
+    enabled:
+      false
+
+
+    source:
+
+      repository:
+        "modelcontextprotocol/servers"
+
+      package:
+        "@modelcontextprotocol/server-filesystem"
+
+
+    candidate:
+
+      version:
+        "2026.7.10"
+
+      release:
+        "2026.7.10"
+
+      status:
+        "CANDIDATE"
+
+
+    identity:
+
+      revision:
+        null
+
+      commit_sha:
+        null
+
+      digest:
+        null
+
+
+    runtime:
+      "Node.js"
+
+
+    transport:
+      "STDIO"
+
+
+    permission_profile:
+
+      roots:
+        "Explicit allowlist"
+
+      write_access:
+        "Explicitly granted only"
+
+      network:
+        "NONE"
+
+      credentials:
+        "NONE"
+
+
+    restrictions:
+
+      - "Restricted roots"
+      - "Least privilege"
+      - "No unrestricted filesystem access"
+      - "Sandbox where required"
+
+
+    compatibility:
+
+      node:
+        "PENDING"
+
+      protocol_2026_07_28:
+        "PENDING_RUNTIME_VALIDATION"
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 9. GIT SERVER
+  # ==========================================================
+
+  git:
+
+    component_id:
+      "MCP-GIT"
+
+    server:
+      "mcp-server-git"
+
+    capability:
+      "Git repository operations"
+
+    trust_tier:
+      "T1/T3"
+
+    enabled:
+      false
+
+
+    source:
+
+      repository:
+        "modelcontextprotocol/servers"
+
+      package:
+        "mcp-server-git"
+
+
+    candidate:
+
+      version:
+        "2026.7.10"
+
+      release:
+        "2026.7.10"
+
+      status:
+        "CANDIDATE"
+
+
+    identity:
+
+      revision:
+        null
+
+      commit_sha:
+        null
+
+      digest:
+        null
+
+
+    runtime:
+      "Python"
+
+
+    transport:
+      "STDIO"
+
+
+    permission_profile:
+
+      repositories:
+        "Approved repositories only"
+
+      write_access:
+        "Explicitly granted"
+
+      network:
+        "Restricted"
+
+
+    compatibility:
+
+      python:
+        "PENDING"
+
+      protocol_2026_07_28:
+        "PENDING_RUNTIME_VALIDATION"
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 10. FETCH SERVER
+  # ==========================================================
+
+  fetch:
+
+    component_id:
+      "MCP-FETCH"
+
+    server:
+      "mcp-server-fetch"
+
+    capability:
+      "HTTP retrieval and content conversion"
+
+    trust_tier:
+      "T2"
+
+    enabled:
+      false
+
+
+    source:
+
+      repository:
+        "modelcontextprotocol/servers"
+
+      package:
+        "mcp-server-fetch"
+
+
+    candidate:
+
+      version:
+        "2026.7.10"
+
+      release:
+        "2026.7.10"
+
+      status:
+        "CANDIDATE"
+
+
+    identity:
+
+      revision:
+        null
+
+      commit_sha:
+        null
+
+      digest:
+        null
+
+
+    runtime:
+      "Python"
+
+
+    transport:
+      "STDIO"
+
+
+    permission_profile:
+
+      network:
+        "Public network"
+
+      filesystem:
+        "NONE"
+
+      credentials:
+        "NONE"
+
+
+    security_requirements:
+
+      - "URL validation"
+      - "SSRF protection"
+      - "Redirect policy"
+      - "Response size limits"
+      - "Timeouts"
+      - "Content-type validation"
+
+
+    compatibility:
+
+      python:
+        "PENDING"
+
+      protocol_2026_07_28:
+        "PENDING_RUNTIME_VALIDATION"
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 11. MEMORY SERVER
+  # ==========================================================
+
+  memory:
+
+    component_id:
+      "MCP-MEMORY"
+
+    server:
+      "@modelcontextprotocol/server-memory"
+
+    capability:
+      "Knowledge-graph memory"
+
+    trust_tier:
+      "T1"
+
+    enabled:
+      false
+
+
+    source:
+
+      repository:
+        "modelcontextprotocol/servers"
+
+      package:
+        "@modelcontextprotocol/server-memory"
+
+
+    candidate:
+
+      version:
+        "2026.7.4"
+
+      status:
+        "CANDIDATE"
+
+
+    identity:
+
+      revision:
+        null
+
+      commit_sha:
+        null
+
+      digest:
+        null
+
+
+    runtime:
+      "Node.js"
+
+
+    transport:
+      "STDIO"
+
+
+    permission_profile:
+
+      persistence:
+        "Isolated"
+
+      network:
+        "NONE"
+
+      credentials:
+        "NONE"
+
+
+    compatibility:
+
+      node:
+        "PENDING"
+
+      protocol_2026_07_28:
+        "PENDING_RUNTIME_VALIDATION"
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 12. SEQUENTIAL THINKING SERVER
+  # ==========================================================
+
+  sequential_thinking:
+
+    component_id:
+      "MCP-SEQUENTIAL-THINKING"
+
+    server:
+      "@modelcontextprotocol/server-sequential-thinking"
+
+    capability:
+      "Reasoning utility"
+
+    trust_tier:
+      "DEVELOPMENT_ONLY"
+
+    enabled:
+      false
+
+
+    source:
+
+      repository:
+        "modelcontextprotocol/servers"
+
+
+    candidate:
+
+      version:
+        "2026.7.4"
+
+      status:
+        "EXPERIMENTAL_CANDIDATE"
+
+
+    deployment_scope:
+      "Development only"
+
+
+    identity:
+
+      revision:
+        null
+
+      commit_sha:
+        null
+
+      digest:
+        null
+
+
+    transport:
+      "STDIO"
+
+
+    license:
+      "MIT"
+
+
+    production:
+      false
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 13. EVERYTHING SERVER
+  # ==========================================================
+
+  everything:
+
+    component_id:
+      "MCP-EVERYTHING"
+
+    server:
+      "@modelcontextprotocol/server-everything"
+
+    capability:
+      "MCP protocol test suite"
+
+    trust_tier:
+      "TESTING_ONLY"
+
+    enabled:
+      false
+
+
+    source:
+
+      repository:
+        "modelcontextprotocol/servers"
+
+
+    candidate:
+
+      version:
+        "2026.7.4"
+
+      status:
+        "EVALUATION_CANDIDATE"
+
+
+    purpose:
+      >
+      Protocol conformance and client testing.
+
+      This server SHALL NOT be included in the production MCP
+      capability baseline.
+
+
+    identity:
+
+      revision:
+        null
+
+      commit_sha:
+        null
+
+      digest:
+        null
+
+
+    production:
+      false
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 14. BROWSER / CHROME MCP
+  # ==========================================================
+
+  browser:
+
+    component_id:
+      "MCP-BROWSER"
+
+    capability:
+      "Browser automation"
+
+    trust_tier:
+      "T2/T4"
+
+    enabled:
+      false
+
+
+    source:
+      null
+
+    upstream_project:
+      null
+
+    candidate:
+      null
+
+    status:
+      "EXTERNAL_IMPLEMENTATION_RESEARCH_REQUIRED"
+
+
+    reason:
+      >
+      The current official modelcontextprotocol/servers reference
+      server list does not define a canonical Browser/Chrome server.
+      JAS therefore SHALL NOT invent or assume a package identity.
+
+
+    requirements:
+
+      - "Explicit publisher"
+      - "Exact package/repository"
+      - "Version"
+      - "Immutable revision"
+      - "Digest"
+      - "Runtime"
+      - "Transport"
+      - "Browser compatibility"
+      - "Permission profile"
+      - "Security review"
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 15. DATABASE MCP
+  # ==========================================================
+
+  database:
+
+    component_id:
+      "MCP-DATABASE"
+
+    capability:
+      "Database access"
+
+    trust_tier:
+      "T1/T3"
+
+    enabled:
+      false
+
+
+    source:
+      null
+
+    candidate:
+      null
+
+    status:
+      "EXTERNAL_IMPLEMENTATION_RESEARCH_REQUIRED"
+
+
+    default_access:
+      "READ_ONLY"
+
+
+    restrictions:
+
+      - "Read-only by default"
+      - "Explicit database allowlist"
+      - "No unrestricted administrative credentials"
+      - "Query timeout"
+      - "Result-size limits"
+      - "Audit logging"
+
+
+    reason:
+      >
+      No canonical implementation is selected by the official
+      reference-server inventory for this JAS component.
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 16. DOCKER MCP
+  # ==========================================================
+
+  docker:
+
+    component_id:
+      "MCP-DOCKER"
+
+    capability:
+      "Container management"
+
+    trust_tier:
+      "T4"
+
+    enabled:
+      false
+
+
+    source:
+      null
+
+    candidate:
+      null
+
+    status:
+      "EXTERNAL_IMPLEMENTATION_RESEARCH_REQUIRED"
+
+
+    default_access:
+      "ADMIN/DEV ONLY"
+
+
+    restrictions:
+
+      - "Never enabled in untrusted production contexts"
+      - "Explicit authorization"
+      - "Host isolation"
+      - "Container allowlist"
+      - "No unrestricted host filesystem access"
+      - "No unrestricted Docker socket exposure"
+
+
+    reason:
+      >
+      Docker is a high-privilege capability and no canonical
+      implementation is selected by the official reference-server
+      inventory for JAS.
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 17. GITHUB MCP
+  # ==========================================================
+
+  github:
+
+    component_id:
+      "MCP-GITHUB"
+
+    capability:
+      "GitHub repository and platform operations"
+
+    trust_tier:
+      "T2/T3"
+
+    enabled:
+      false
+
+
+    source:
+      null
+
+    candidate:
+      null
+
+    status:
+      "EXTERNAL_IMPLEMENTATION_RESEARCH_REQUIRED"
+
+
+    default_access:
+      "SCOPED_CREDENTIALS"
+
+
+    restrictions:
+
+      - "Scoped credentials"
+      - "Repository allowlist"
+      - "Least privilege"
+      - "Audit logging"
+      - "No unrestricted organization administration"
+
+
+    reason:
+      >
+      The official reference-server repository does not currently
+      identify a canonical GitHub server in its reference-server
+      list.
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 18. SERVER IDENTITY
+  # ==========================================================
+
+  server_lock_identity:
+
+    required_fields:
+
+      - "server_id"
+      - "publisher"
+      - "package_or_repository"
+      - "version"
+      - "revision"
+      - "commit_sha"
+      - "artifact_digest"
+      - "protocol_version"
+      - "sdk_version"
+      - "runtime"
+      - "transport"
+      - "license"
+      - "permission_profile"
+
+
+    immutable_identity:
+
+      preferred:
+
+        - "Container image digest"
+        - "Signed release artifact"
+        - "Git commit SHA"
+        - "Package integrity hash"
+
+
+      forbidden:
+
+        - "latest"
+        - "main"
+        - "master"
+        - "floating npm package"
+        - "unversioned Git URL"
+        - "unverified archive"
+
+
+  # ==========================================================
+  # 19. PERMISSION PROFILES
+  # ==========================================================
+
+  permission_profiles:
+
+    T0:
+
+      description:
+        "No external side effects"
+
+      examples:
+        - "Time"
+
+      network:
+        "None"
+
+      filesystem:
+        "None"
+
+      credentials:
+        "None"
+
+
+    T1:
+
+      description:
+        "Restricted local capability"
+
+      examples:
+        - "Memory"
+        - "Git"
+
+      policy:
+        "Explicit allowlist"
+
+
+    T2:
+
+      description:
+        "Controlled network capability"
+
+      examples:
+        - "Fetch"
+        - "Browser"
+
+      policy:
+        "Network restrictions and auditing"
+
+
+    T3:
+
+      description:
+        "Sensitive data capability"
+
+      examples:
+        - "Filesystem"
+        - "Database"
+        - "GitHub"
+
+      policy:
+        "Explicit authorization and least privilege"
+
+
+    T4:
+
+      description:
+        "Administrative / high-risk capability"
+
+      examples:
+        - "Docker"
+        - "Privileged browser operations"
+
+      policy:
+        "Explicit session authorization and elevated audit requirements"
+
+
+  # ==========================================================
+  # 20. MCP SERVER LIFECYCLE
+  # ==========================================================
+
+  lifecycle:
+
+    installation:
+
+      required:
+        - "Exact package/version"
+        - "Integrity verification"
+        - "Runtime verification"
+        - "Permission profile"
+
+
+    startup:
+
+      required:
+
+        - "Identity verification"
+        - "Protocol verification"
+        - "Transport verification"
+        - "Permission verification"
+
+
+    runtime:
+
+      monitoring:
+
+        - "Startup"
+        - "Shutdown"
+        - "Crash"
+        - "Latency"
+        - "Tool failures"
+        - "Protocol errors"
+        - "Authorization failures"
+
+
+    upgrade:
+
+      rule:
+        >
+        MCP server upgrades SHALL require compatibility validation
+        before activation.
+
+
+    rollback:
+
+      required:
+        true
+
+      identity:
+        - "Previous version"
+        - "Previous revision"
+        - "Previous digest"
+        - "Previous configuration"
+
+
+  # ==========================================================
+  # 21. MCP SECURITY
+  # ==========================================================
+
+  security:
+
+    mandatory_controls:
+
+      - "Server identity verification"
+      - "Least privilege"
+      - "Explicit capability allowlist"
+      - "Credential isolation"
+      - "Transport validation"
+      - "Timeouts"
+      - "Resource limits"
+      - "Audit logging"
+      - "Supply-chain verification"
+
+
+    high_risk_capabilities:
+
+      docker:
+        "EXPLICIT_AUTHORIZATION_REQUIRED"
+
+      filesystem:
+        "EXPLICIT_ROOT_ALLOWLIST_REQUIRED"
+
+      database:
+        "READ_ONLY_DEFAULT"
+
+      github:
+        "SCOPED_CREDENTIALS_REQUIRED"
+
+      browser:
+        "EXPLICIT_SESSION_REQUIRED"
+
+
+  # ==========================================================
+  # 22. MCP COMPATIBILITY MATRIX
+  # ==========================================================
+
+  compatibility_matrix:
+
+    protocol_sdk:
+
+      protocol_2026_07_28:
+        "PASS"
+
+      python_sdk:
+        "PENDING_EXACT_VERSION"
+
+
+    reference_servers:
+
+      time:
+        "PENDING"
+
+      filesystem:
+        "PENDING"
+
+      git:
+        "PENDING"
+
+      fetch:
+        "PENDING"
+
+      memory:
+        "PENDING"
+
+      sequential_thinking:
+        "PENDING"
+
+      everything:
+        "PENDING"
+
+
+    external_servers:
+
+      browser:
+        "BLOCKED"
+
+      database:
+        "BLOCKED"
+
+      docker:
+        "BLOCKED"
+
+      github:
+        "BLOCKED"
+
+
+  # ==========================================================
+  # 23. HARD BLOCKERS
+  # ==========================================================
+
+  blockers:
+
+    - id: "MCP-BLOCK-001"
+      component: "Python SDK"
+      reason:
+        "Exact stable SDK version and immutable dependency state unresolved."
+
+    - id: "MCP-BLOCK-002"
+      component: "Reference Servers"
+      reason:
+        "Exact revisions and artifact digests unresolved."
+
+    - id: "MCP-BLOCK-003"
+      component: "Browser MCP"
+      reason:
+        "Canonical implementation not selected."
+
+    - id: "MCP-BLOCK-004"
+      component: "Database MCP"
+      reason:
+        "Canonical implementation not selected."
+
+    - id: "MCP-BLOCK-005"
+      component: "Docker MCP"
+      reason:
+        "High-privilege implementation not selected."
+
+    - id: "MCP-BLOCK-006"
+      component: "GitHub MCP"
+      reason:
+        "Canonical implementation not selected."
+
+
+  # ==========================================================
+  # 24. PROMOTION CRITERIA
+  # ==========================================================
+
+  promotion:
+
+    server_to_approved_candidate:
+
+      mandatory:
+
+        - "Known publisher"
+        - "Known source repository"
+        - "Exact version"
+        - "Protocol compatibility"
+        - "Runtime compatibility"
+        - "Transport compatibility"
+        - "License validation"
+        - "Security validation"
+
+
+    server_to_locked:
+
+      mandatory:
+
+        - "Immutable revision"
+        - "Artifact digest where available"
+        - "Exact SDK version"
+        - "Exact protocol revision"
+        - "Exact runtime"
+        - "Exact transport"
+        - "Permission profile"
+        - "Reproducible installation"
+        - "Rollback artifact"
+
+
+  # ==========================================================
+  # 25. CURRENT DECISION
+  # ==========================================================
+
+  current_decision:
+
+    protocol:
+      version:
+        "2026-07-28"
+
+      status:
+        "APPROVED_CANDIDATE"
+
+
+    python_sdk:
+      major:
+        "2.x"
+
+      status:
+        "CANDIDATE"
+
+      exact_version:
+        null
+
+
+    reference_servers:
+
+      time:
+        "2026.7.10"
+
+      filesystem:
+        "2026.7.10"
+
+      git:
+        "2026.7.10"
+
+      fetch:
+        "2026.7.10"
+
+      memory:
+        "2026.7.4"
+
+      sequential_thinking:
+        "2026.7.4"
+
+      everything:
+        "2026.7.4"
+
+
+    external_servers:
+
+      browser:
+        "UNRESOLVED"
+
+      database:
+        "UNRESOLVED"
+
+      docker:
+        "UNRESOLVED"
+
+      github:
+        "UNRESOLVED"
+
+
+  # ==========================================================
+  # 26. CURRENT STATE
+  # ==========================================================
+
+  state:
+
+    protocol_resolved:
+      true
+
+    sdk_major_resolved:
+      true
+
+    sdk_exact_version_resolved:
+      false
+
+    reference_server_candidates_resolved:
+      true
+
+    reference_server_immutable_identities_resolved:
+      false
+
+    external_server_candidates_resolved:
+      false
+
+    permission_profiles_defined:
+      true
+
+    security_validation_complete:
+      false
+
+    final_mcp_lock_ready:
+      false
+
+    status:
+      "MCP_RESOLUTION_IN_PROGRESS"
+
+
+  # ==========================================================
+  # 27. NEXT PHASE
+  # ==========================================================
+
+  next_phase:
+
+    name:
+      "Container, Native Toolchain and Supply Chain Resolution"
+
+    sequence:
+
+      - "Resolve Docker exact version"
+      - "Resolve BuildKit"
+      - "Resolve Buildx"
+      - "Resolve Docker Compose"
+      - "Resolve OCI requirements"
+      - "Resolve native compiler requirements"
+      - "Resolve CMake if required"
+      - "Resolve Ninja if required"
+      - "Resolve Rust if enabled"
+      - "Resolve C/C++ toolchain if enabled"
+      - "Resolve CUDA if enabled"
+      - "Resolve container base images"
+      - "Resolve image digests"
+      - "Resolve SBOM tooling"
+      - "Resolve artifact signing"
+      - "Resolve provenance tooling"
+      - "Validate supply-chain integrity"
+      - "Promote compatible infrastructure candidates"

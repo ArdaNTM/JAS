@@ -1,0 +1,1402 @@
+# ============================================================
+# JARVIS / JAS
+# VERSION LOCK v1 — BUILD TOOLCHAIN LOCKS
+# ============================================================
+
+version_lock_build_toolchain_locks:
+
+  schema_version: "1.0"
+
+  project:
+    name: "JARVIS"
+    architecture: "JAS"
+    architecture_version: "JAS v1"
+
+  lock:
+    version: "1.0"
+    status: "CANDIDATE"
+    authority: "VERSION_LOCK_v1"
+
+
+  # ==========================================================
+  # IMPORTANT
+  # ==========================================================
+  #
+  # This document defines the exact build and development
+  # toolchain identities required to reproduce JAS builds.
+  #
+  # Build tools are themselves versioned dependencies.
+  #
+  # A source tree cannot be considered reproducible if the
+  # compiler, package manager, build engine or frontend compiler
+  # is allowed to float independently.
+  #
+  # Exact versions remain unresolved until compatibility,
+  # platform and security validation are completed.
+  #
+  # ==========================================================
+
+
+  # ==========================================================
+  # 1. PYTHON TOOLCHAIN
+  # ==========================================================
+
+  python:
+
+    runtime:
+
+      name: "CPython"
+
+      version:
+        policy: "Python 3.12+"
+        exact: null
+
+      implementation: "CPython"
+
+      architecture: null
+
+    package_manager:
+
+      name: "uv"
+
+      approved: true
+
+      version: null
+
+      executable_digest: null
+
+      source:
+        registry: null
+        package: null
+
+      lockfile:
+        name: "uv.lock"
+        required: true
+        revision: null
+        digest: null
+
+    project_metadata:
+
+      file: "pyproject.toml"
+
+      required: true
+
+      source_revision: null
+
+      digest: null
+
+    environment:
+
+      mechanism: "Python virtual environment"
+
+      managed_by: "uv"
+
+      isolated: true
+
+      global_installation:
+
+        production: false
+
+        development: false
+
+    dependency_resolution:
+
+      deterministic: true
+
+      lockfile_required: true
+
+      source_revision_required: true
+
+      integrity_verification: true
+
+    build_backend:
+
+      selected: null
+
+      version: null
+
+    wheel_building:
+
+      enabled: true
+
+      reproducible_build_required: true
+
+    validation:
+
+      runtime_version: false
+
+      uv_version: false
+
+      lockfile_integrity: false
+
+      package_resolution: false
+
+      build_backend: false
+
+    final_status: "PENDING_EXACT_VERSION"
+
+
+  # ==========================================================
+  # 2. PYTHON DEVELOPMENT TOOLS
+  # ==========================================================
+
+  python_development_tools:
+
+    pytest:
+
+      id: "TOOL-PYTEST"
+
+      approved: true
+
+      version: null
+
+      package_version: null
+
+      lock_required: true
+
+      role:
+        - "Unit testing"
+        - "Integration testing"
+        - "Regression testing"
+
+      final_status: "PENDING_VERSION"
+
+
+    ruff:
+
+      id: "TOOL-RUFF"
+
+      approved: true
+
+      version: null
+
+      package_version: null
+
+      lock_required: true
+
+      role:
+        - "Linting"
+        - "Formatting"
+        - "Static quality checks"
+
+      configuration:
+
+        file: "pyproject.toml"
+
+        source_revision: null
+
+        digest: null
+
+      final_status: "PENDING_VERSION"
+
+
+    dependency_scanner:
+
+      id: "TOOL-DEPENDENCY-SCANNER"
+
+      approved: true
+
+      implementation: null
+
+      version: null
+
+      database_revision: null
+
+      lock_required: true
+
+      role:
+        - "Dependency vulnerability scanning"
+        - "Supply-chain validation"
+
+      final_status: "PENDING_TOOL_SELECTION"
+
+
+  # ==========================================================
+  # 3. FRONTEND RUNTIME
+  # ==========================================================
+
+  frontend:
+
+    nodejs:
+
+      id: "TOOL-NODEJS"
+
+      approved: true
+
+      version_policy: "Supported LTS line"
+
+      exact_version: null
+
+      architecture: null
+
+      platform: null
+
+      executable_digest: null
+
+      role:
+        - "Frontend build runtime"
+        - "TypeScript tooling runtime"
+        - "Vite runtime"
+
+      validation:
+
+        version: false
+
+        platform: false
+
+        architecture: false
+
+      final_status: "PENDING_VERSION"
+
+
+    typescript:
+
+      id: "TOOL-TYPESCRIPT"
+
+      approved: true
+
+      exact_version: null
+
+      compiler_version: null
+
+      package_manager: null
+
+      package_lockfile: null
+
+      configuration:
+
+        file: "tsconfig.json"
+
+        source_revision: null
+
+        digest: null
+
+      role:
+        - "Typed frontend development"
+        - "Frontend compilation"
+
+      final_status: "PENDING_VERSION"
+
+
+    vite:
+
+      id: "TOOL-VITE"
+
+      approved: true
+
+      exact_version: null
+
+      package_manager: null
+
+      lockfile: null
+
+      role:
+        - "Frontend development server"
+        - "Frontend build"
+
+      final_status: "PENDING_VERSION"
+
+
+    react:
+
+      id: "TOOL-REACT"
+
+      approved: true
+
+      exact_version: null
+
+      package_manager: null
+
+      lockfile: null
+
+      role:
+        - "JAS frontend"
+
+      final_status: "PENDING_VERSION"
+
+
+  # ==========================================================
+  # 4. FRONTEND PACKAGE MANAGER
+  # ==========================================================
+
+  javascript_package_manager:
+
+    status: "UNRESOLVED"
+
+    candidates:
+
+      pnpm:
+
+        approved_status: "CANDIDATE"
+
+        version: null
+
+        lockfile:
+          name: "pnpm-lock.yaml"
+          required: true
+          digest: null
+
+      npm:
+
+        approved_status: "CANDIDATE"
+
+        version: null
+
+        lockfile:
+          name: "package-lock.json"
+          required: true
+          digest: null
+
+    selection:
+
+      selected: null
+
+      selection_status: "PENDING"
+
+    selection_criteria:
+
+      - "Deterministic dependency resolution"
+      - "Workspace support"
+      - "Monorepo compatibility"
+      - "Windows compatibility"
+      - "Linux compatibility"
+      - "CI/CD compatibility"
+      - "Lockfile quality"
+      - "Developer tooling"
+      - "Long-term maintenance"
+
+    rule:
+      >
+      Exactly one JavaScript package manager SHALL be selected for
+      the production frontend toolchain. Multiple package managers
+      SHALL NOT be used interchangeably.
+
+    final_status: "PENDING_SELECTION"
+
+
+  # ==========================================================
+  # 5. RUST TOOLCHAIN
+  # ==========================================================
+
+  rust:
+
+    id: "TOOL-RUST"
+
+    approved_status: "CONDITIONALLY_APPROVED"
+
+    enabled: false
+
+    toolchain:
+
+      channel: "stable"
+
+      exact_version: null
+
+      rustc_version: null
+
+      cargo_version: null
+
+      rustup_version: null
+
+    targets:
+
+      windows_x86_64:
+        target: "x86_64-pc-windows-msvc"
+        enabled: false
+
+      linux_x86_64:
+        target: "x86_64-unknown-linux-gnu"
+        enabled: false
+
+      linux_arm64:
+        target: "aarch64-unknown-linux-gnu"
+        enabled: false
+
+      macos_arm64:
+        target: "aarch64-apple-darwin"
+        enabled: false
+
+    compiler:
+
+      frontend: "rustc"
+
+      linker: null
+
+    package_manager:
+
+      name: "Cargo"
+
+      version: null
+
+    lockfile:
+
+      name: "Cargo.lock"
+
+      required_for_applications: true
+
+      revision: null
+
+      digest: null
+
+    build:
+
+      reproducible: true
+
+      source_revision_required: true
+
+    native_extensions:
+
+      python_integration:
+
+        mechanism: null
+
+        implementation: null
+
+    validation:
+
+      compiler_version: false
+
+      target: false
+
+      cargo_lock: false
+
+      native_integration: false
+
+    final_status: "CONDITIONAL"
+
+
+  # ==========================================================
+  # 6. C/C++ TOOLCHAIN
+  # ==========================================================
+
+  cpp:
+
+    id: "TOOL-CPP"
+
+    approved_status: "CONDITIONALLY_APPROVED"
+
+    enabled: false
+
+    policy:
+
+      new_native_code:
+
+        preferred_language: "Rust"
+
+      cpp_usage:
+
+        permitted_when:
+          - "Existing upstream dependency"
+          - "CUDA integration"
+          - "Vendor SDK"
+          - "Required AI library"
+          - "Hardware-specific implementation"
+
+    compiler:
+
+      windows:
+
+        family: null
+
+        version: null
+
+        toolset: null
+
+      linux:
+
+        family: null
+
+        version: null
+
+        toolset: null
+
+      macos:
+
+        family: null
+
+        version: null
+
+        toolset: null
+
+    standard:
+
+      selected: null
+
+    target:
+
+      windows_x86_64: null
+
+      linux_x86_64: null
+
+      linux_arm64: null
+
+      macos_arm64: null
+
+    validation:
+
+      compiler: false
+
+      standard: false
+
+      target: false
+
+      ABI: false
+
+    final_status: "CONDITIONAL"
+
+
+  # ==========================================================
+  # 7. CMAKE
+  # ==========================================================
+
+  cmake:
+
+    id: "TOOL-CMAKE"
+
+    approved_status: "APPROVED_WHERE_JUSTIFIED"
+
+    enabled: false
+
+    version: null
+
+    exact_version_required: true
+
+    platforms:
+
+      windows: true
+
+      linux: true
+
+      macos: true
+
+    role:
+      - "Native build configuration"
+      - "Cross-platform native projects"
+
+    generator:
+
+      selected: null
+
+    toolchain_file:
+
+      selected: null
+
+      source_revision: null
+
+      digest: null
+
+    final_status: "LOCK_REQUIRED_IF_USED"
+
+
+  # ==========================================================
+  # 8. NINJA
+  # ==========================================================
+
+  ninja:
+
+    id: "TOOL-NINJA"
+
+    approved_status: "APPROVED_WHERE_JUSTIFIED"
+
+    enabled: false
+
+    version: null
+
+    exact_version_required: true
+
+    role:
+      - "Native build execution"
+
+    final_status: "LOCK_REQUIRED_IF_USED"
+
+
+  # ==========================================================
+  # 9. DOCKER ENGINE
+  # ==========================================================
+
+  docker:
+
+    engine:
+
+      id: "TOOL-DOCKER"
+
+      approved: true
+
+      version: null
+
+      platform: null
+
+      architecture: null
+
+      daemon_version: null
+
+      client_version: null
+
+    buildkit:
+
+      id: "TOOL-BUILDKIT"
+
+      approved: true
+
+      version: null
+
+      digest: null
+
+    buildx:
+
+      id: "TOOL-BUILDX"
+
+      approved: true
+
+      version: null
+
+      plugin_digest: null
+
+    compose:
+
+      id: "TOOL-DOCKER-COMPOSE"
+
+      approved: true
+
+      version: null
+
+      specification_version: null
+
+      binary_or_plugin_revision: null
+
+    build_policy:
+
+      builder:
+
+        required: "BuildKit"
+
+      buildx:
+
+        required: true
+
+      legacy_builder:
+
+        allowed: false
+
+      reproducibility:
+
+        required: true
+
+      provenance:
+
+        required: true
+
+      sbom:
+
+        required: true
+
+    validation:
+
+      docker_engine: false
+
+      buildkit: false
+
+      buildx: false
+
+      compose: false
+
+      provenance: false
+
+      sbom: false
+
+    final_status: "PENDING_EXACT_VERSION"
+
+
+  # ==========================================================
+  # 10. GIT
+  # ==========================================================
+
+  git:
+
+    id: "TOOL-GIT"
+
+    approved: true
+
+    version: null
+
+    executable_digest: null
+
+    platform: null
+
+    architecture: null
+
+    configuration:
+
+      global_configuration_allowed: false
+
+      project_configuration:
+
+        source_revision: null
+
+        digest: null
+
+    repository:
+
+      canonical_branch: null
+
+      protected_branch: null
+
+    reproducibility:
+
+      source_commit_required: true
+
+      dirty_worktree:
+
+        production_build: false
+
+        development_build: "WARNING"
+
+    signing:
+
+      commits:
+
+        required_for_release: false
+
+        mechanism: null
+
+      tags:
+
+        required_for_release: true
+
+        mechanism: null
+
+    validation:
+
+      version: false
+
+      repository_state: false
+
+      signing: false
+
+    final_status: "PENDING_VERSION"
+
+
+  # ==========================================================
+  # 11. GITHUB / CI TOOLCHAIN
+  # ==========================================================
+
+  github:
+
+    platform:
+
+      approved_status: "CONDITIONALLY_APPROVED"
+
+      role:
+        - "Repository hosting"
+        - "CI/CD"
+        - "Source control integration"
+
+    cli:
+
+      enabled: false
+
+      version: null
+
+      executable_digest: null
+
+    actions:
+
+      enabled: true
+
+      runner:
+
+        operating_system: null
+
+        architecture: null
+
+        image_version: null
+
+      action_dependencies:
+
+        policy:
+          immutable_reference_required: true
+
+        actions: []
+
+    workflow:
+
+      source_revision_required: true
+
+      workflow_files:
+
+        - ".github/workflows/"
+
+    credentials:
+
+      source: "JAS Secret Management"
+
+      plaintext_storage: false
+
+    validation:
+
+      cli_version: false
+
+      runner_identity: false
+
+      action_identity: false
+
+      credential_policy: false
+
+    final_status: "PENDING_CI_LOCK"
+
+
+  # ==========================================================
+  # 12. DOCUMENTATION TOOLCHAIN
+  # ==========================================================
+
+  documentation:
+
+    markdown:
+
+      format: "CommonMark / GitHub-compatible Markdown"
+
+      compiler_required: false
+
+      exact_version: null
+
+    yaml:
+
+      parser:
+
+        implementation: null
+
+        version: null
+
+      validation_required: true
+
+    json:
+
+      parser:
+
+        implementation: null
+
+        version: null
+
+      schema_validation_required: true
+
+    configuration:
+
+      source_revision_required: true
+
+    final_status: "PENDING_VALIDATOR_SELECTION"
+
+
+  # ==========================================================
+  # 13. DEVELOPMENT SHELL
+  # ==========================================================
+
+  shell:
+
+    windows:
+
+      name: "PowerShell"
+
+      version: null
+
+      role:
+
+        - "Bootstrap"
+        - "Installation"
+        - "Diagnostics"
+        - "Automation"
+
+      application_logic_allowed: false
+
+
+    linux:
+
+      name: "Bash"
+
+      version: null
+
+      role:
+
+        - "Bootstrap"
+        - "Installation"
+        - "Diagnostics"
+        - "Automation"
+
+      application_logic_allowed: false
+
+
+    macos:
+
+      name: "Bash"
+
+      version: null
+
+      role:
+
+        - "Bootstrap"
+        - "Installation"
+        - "Diagnostics"
+        - "Automation"
+
+      application_logic_allowed: false
+
+
+  # ==========================================================
+  # 14. BOOTSTRAP TOOLCHAIN
+  # ==========================================================
+
+  bootstrap:
+
+    role:
+      >
+      Bootstrap is responsible for detecting the platform,
+      validating prerequisites, creating environments, installing
+      approved dependencies and verifying Version Lock compliance.
+
+    implementation:
+
+      language: "Python"
+
+      version: null
+
+    platform_adapters:
+
+      windows:
+        shell: "PowerShell"
+
+      linux:
+        shell: "Bash"
+
+      macos:
+        shell: "Bash"
+
+    required_operations:
+
+      - "Platform detection"
+      - "Runtime validation"
+      - "Environment creation"
+      - "Dependency installation"
+      - "Lockfile verification"
+      - "Artifact verification"
+      - "Health checks"
+      - "Rollback"
+
+    bootstrap_version:
+
+      source: "JARVIS release version"
+
+      exact_version: null
+
+    validation:
+
+      self_check: false
+
+      platform_check: false
+
+      dependency_check: false
+
+      lock_check: false
+
+    final_status: "INTERNAL_COMPONENT"
+
+
+  # ==========================================================
+  # 15. BUILD REPRODUCIBILITY
+  # ==========================================================
+
+  reproducibility:
+
+    required: true
+
+    build_identity:
+
+      includes:
+
+        - "Source commit"
+        - "Python version"
+        - "uv version"
+        - "uv.lock revision"
+        - "Node.js version"
+        - "Frontend lockfile"
+        - "TypeScript version"
+        - "Vite version"
+        - "Rust toolchain where used"
+        - "C/C++ compiler where used"
+        - "CMake version where used"
+        - "Ninja version where used"
+        - "Docker version"
+        - "BuildKit version"
+        - "Buildx version"
+        - "Base image digest"
+        - "Target platform"
+
+    dirty_source:
+
+      production:
+        allowed: false
+
+      development:
+        allowed: true
+
+    deterministic_build:
+
+      required: true
+
+      reproducibility_target: "FUNCTIONALLY_IDENTICAL"
+
+
+  # ==========================================================
+  # 16. TOOLCHAIN DRIFT DETECTION
+  # ==========================================================
+
+  drift_detection:
+
+    required: true
+
+    detect:
+
+      - "Python version drift"
+      - "uv version drift"
+      - "uv.lock drift"
+      - "Node.js version drift"
+      - "TypeScript version drift"
+      - "Vite version drift"
+      - "Frontend lockfile drift"
+      - "Rust compiler drift"
+      - "Cargo lock drift"
+      - "C/C++ compiler drift"
+      - "CMake drift"
+      - "Ninja drift"
+      - "Docker Engine drift"
+      - "BuildKit drift"
+      - "Buildx drift"
+      - "Git version drift"
+      - "CI runner drift"
+
+    severity:
+
+      runtime: "CRITICAL"
+
+      package_manager: "HIGH"
+
+      compiler: "HIGH"
+
+      container_builder: "HIGH"
+
+      frontend_toolchain: "HIGH"
+
+      git: "MEDIUM"
+
+    unauthorized_drift:
+
+      action: "COMPLIANCE_FAILURE"
+
+
+  # ==========================================================
+  # 17. LOCK IDENTITY REQUIREMENTS
+  # ==========================================================
+
+  lock_identity_requirements:
+
+    python_runtime:
+
+      required:
+
+        - "implementation"
+        - "exact_version"
+        - "platform"
+        - "architecture"
+
+    python_package_manager:
+
+      required:
+
+        - "name"
+        - "exact_version"
+        - "executable_identity"
+
+    python_dependencies:
+
+      required:
+
+        - "uv.lock"
+        - "source_revision"
+        - "integrity"
+
+    node:
+
+      required:
+
+        - "exact_version"
+        - "platform"
+        - "architecture"
+
+    frontend_tool:
+
+      required:
+
+        - "package_name"
+        - "exact_version"
+        - "frontend_lockfile"
+
+    rust:
+
+      required:
+
+        - "rustc_version"
+        - "cargo_version"
+        - "target"
+
+    cpp:
+
+      required:
+
+        - "compiler"
+        - "compiler_version"
+        - "target"
+
+    docker:
+
+      required:
+
+        - "engine_version"
+        - "buildkit_version"
+        - "buildx_version"
+        - "compose_version"
+
+    git:
+
+      required:
+
+        - "git_version"
+        - "source_commit"
+
+
+  # ==========================================================
+  # 18. PRODUCTION BUILD BASELINE
+  # ==========================================================
+
+  production_baseline:
+
+    mandatory:
+
+      - "CPython"
+      - "uv"
+      - "uv.lock"
+      - "pytest"
+      - "Ruff"
+      - "Git"
+      - "Docker"
+      - "BuildKit"
+      - "Buildx"
+
+    frontend:
+
+      enabled: true
+
+      mandatory:
+
+        - "Node.js"
+        - "TypeScript"
+        - "React"
+        - "Vite"
+
+      package_manager:
+
+        selected: null
+
+    conditional:
+
+      - "Rust"
+      - "C/C++"
+      - "CMake"
+      - "Ninja"
+      - "GitHub CLI"
+      - "CUDA toolchain"
+
+    policy:
+
+      >
+      Conditional tools SHALL NOT be installed or locked merely
+      because they appear in the Approved Stack. They become
+      Version Lock requirements only when the corresponding JAS
+      capability is enabled.
+
+
+  # ==========================================================
+  # 19. TOOLCHAIN INSTALLATION POLICY
+  # ==========================================================
+
+  installation:
+
+    bootstrap_managed: true
+
+    manual_installation:
+
+      production:
+        prohibited: true
+
+      development:
+        allowed: true
+
+        warning:
+          >
+          Manually installed tool versions SHALL NOT override
+          Version Lock during a compliant build.
+
+    installation_sources:
+
+      allowed:
+
+        - "Official upstream distribution"
+        - "Approved package registry"
+        - "Approved OS package repository"
+        - "JAS-controlled artifact"
+
+      prohibited:
+
+        - "Unverified binaries"
+        - "Unknown mirrors"
+        - "Mutable third-party installers"
+
+
+  # ==========================================================
+  # 20. TOOLCHAIN UPGRADE POLICY
+  # ==========================================================
+
+  upgrades:
+
+    automatic:
+
+      production: false
+
+      development: false
+
+    required_process:
+
+      - "Identify new release"
+      - "Review changelog"
+      - "Review security impact"
+      - "Check compatibility"
+      - "Run test suite"
+      - "Run build verification"
+      - "Run platform validation"
+      - "Update Version Lock candidate"
+      - "Approve"
+      - "Promote"
+
+    rollback:
+
+      supported: true
+
+      previous_version_required: true
+
+      previous_lock_required: true
+
+
+  # ==========================================================
+  # 21. CURRENT STATUS
+  # ==========================================================
+
+  status_summary:
+
+    mandatory:
+
+      - "CPython"
+      - "uv"
+      - "uv.lock"
+      - "pytest"
+      - "Ruff"
+      - "Git"
+      - "Docker"
+      - "BuildKit"
+      - "Buildx"
+      - "Node.js"
+      - "TypeScript"
+      - "React"
+      - "Vite"
+
+    unresolved:
+
+      - "Exact CPython version"
+      - "Exact uv version"
+      - "Exact pytest version"
+      - "Exact Ruff version"
+      - "Exact Node.js version"
+      - "Exact TypeScript version"
+      - "Exact React version"
+      - "Exact Vite version"
+      - "Frontend package manager"
+      - "Exact Docker Engine version"
+      - "Exact BuildKit version"
+      - "Exact Buildx version"
+      - "Exact Docker Compose version"
+
+    conditional:
+
+      - "Rust"
+      - "C/C++"
+      - "CMake"
+      - "Ninja"
+      - "GitHub CLI"
+      - "CUDA"
+
+
+  # ==========================================================
+  # 22. VALIDATION STATE
+  # ==========================================================
+
+  validation:
+
+    python_toolchain_validated: false
+
+    frontend_toolchain_validated: false
+
+    native_toolchain_validated: false
+
+    docker_toolchain_validated: false
+
+    git_toolchain_validated: false
+
+    ci_toolchain_validated: false
+
+    reproducibility_validated: false
+
+    drift_detection_validated: false
+
+    final_lock_status: "CANDIDATE"
+
+
+  # ==========================================================
+  # 23. NEXT PHASE
+  # ==========================================================
+
+  next_phase:
+
+    name: "Exact Build Toolchain Resolution"
+
+    sequence:
+
+      - "Resolve exact CPython version"
+      - "Resolve exact uv version"
+      - "Resolve exact pytest version"
+      - "Resolve exact Ruff version"
+      - "Select frontend package manager"
+      - "Resolve exact Node.js version"
+      - "Resolve exact TypeScript version"
+      - "Resolve exact React version"
+      - "Resolve exact Vite version"
+      - "Resolve exact Docker Engine version"
+      - "Resolve BuildKit version"
+      - "Resolve Buildx version"
+      - "Resolve Docker Compose version"
+      - "Resolve conditional Rust toolchain if required"
+      - "Resolve conditional C/C++ compiler if required"
+      - "Resolve CMake/Ninja if required"
+      - "Resolve CI runner identity"
+      - "Validate reproducible builds"
+      - "Promote validated toolchain entries to LOCKED"
+
+  governing_rule: >
+    A build SHALL NOT be considered reproducible when any mandatory
+    compiler, runtime, package manager, build engine or frontend
+    compiler is allowed to float outside the Version Lock.

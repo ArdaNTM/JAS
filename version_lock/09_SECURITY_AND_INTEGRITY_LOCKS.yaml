@@ -1,0 +1,1362 @@
+# ============================================================
+# JARVIS / JAS
+# VERSION LOCK v1 — SECURITY AND INTEGRITY LOCKS
+# ============================================================
+
+version_lock_security_and_integrity_locks:
+
+  schema_version: "1.0"
+
+  project:
+    name: "JARVIS"
+    architecture: "JAS"
+    architecture_version: "JAS v1"
+
+  lock:
+    version: "1.0"
+    status: "CANDIDATE"
+    authority: "VERSION_LOCK_v1"
+
+
+  # ==========================================================
+  # IMPORTANT
+  # ==========================================================
+  #
+  # This document defines the security and integrity state
+  # required for components entering Version Lock v1.
+  #
+  # It does NOT replace the Security Architecture.
+  #
+  # Security Architecture defines WHAT security controls JAS
+  # requires.
+  #
+  # Version Lock defines WHICH exact security-related artifacts,
+  # tools, revisions and verification states are used.
+  #
+  # ==========================================================
+
+
+  # ==========================================================
+  # 1. SECURITY LOCK PRINCIPLE
+  # ==========================================================
+
+  principle:
+
+    production_component:
+
+      identity_required: true
+
+      integrity_required: true
+
+      provenance_required: true
+
+      vulnerability_assessment_required: true
+
+      license_validation_required: true
+
+    immutable_identity:
+
+      preferred:
+
+        - "SHA-256 digest"
+        - "Immutable source revision"
+        - "Cryptographically verifiable artifact identity"
+
+    mutable_identity_prohibited:
+
+      - "latest"
+      - "main"
+      - "master"
+      - "floating tag"
+      - "Unverified download"
+
+
+  # ==========================================================
+  # 2. INTEGRITY MODEL
+  # ==========================================================
+
+  integrity:
+
+    algorithms:
+
+      primary: "SHA-256"
+
+      acceptable_additional:
+
+        - "SHA-512"
+
+    verification:
+
+      pre_installation: true
+
+      post_installation: true
+
+      pre_release: true
+
+      runtime_startup: true
+
+    mismatch:
+
+      action: "BLOCK"
+
+      classification: "INTEGRITY_FAILURE"
+
+
+    artifact_identity:
+
+      required_fields:
+
+        - "artifact_name"
+        - "version"
+        - "source"
+        - "platform"
+        - "architecture"
+        - "digest"
+
+      digest_required_for:
+
+        - "Container images"
+        - "Native binaries"
+        - "Downloaded model artifacts"
+        - "Release packages"
+        - "Signed distribution artifacts"
+
+      digest_preferred_for:
+
+        - "Python packages"
+        - "Frontend packages"
+        - "Build tools"
+
+
+  # ==========================================================
+  # 3. SOURCE PROVENANCE
+  # ==========================================================
+
+  provenance:
+
+    required: true
+
+    source_identity:
+
+      required:
+
+        - "Publisher"
+        - "Repository"
+        - "Source URL"
+        - "Source revision"
+
+    immutable_revision:
+
+      required_for:
+
+        - "Git dependencies"
+        - "Source-built native libraries"
+        - "JAS source"
+        - "Model repositories"
+        - "Build configurations"
+
+    provenance_record:
+
+      source_repository: null
+
+      source_revision: null
+
+      source_commit: null
+
+      source_digest: null
+
+      build_system: null
+
+      builder_identity: null
+
+      build_timestamp: null
+
+
+    unverified_source:
+
+      production:
+        allowed: false
+
+      development:
+        allowed: true
+
+        warning:
+          >
+          Unverified development artifacts SHALL NOT be promoted
+          into production Version Lock.
+
+
+  # ==========================================================
+  # 4. DIGITAL SIGNATURE POLICY
+  # ==========================================================
+
+  signatures:
+
+    production:
+
+      required: true
+
+    preferred_ecosystem:
+
+      - "Sigstore"
+      - "Cosign"
+
+    supported_signature_types:
+
+      - "Artifact signature"
+      - "Container signature"
+      - "Release signature"
+      - "Package signature where supported"
+
+    verification:
+
+      before_installation: true
+
+      before_release: true
+
+      during_compliance_check: true
+
+    invalid_signature:
+
+      action: "BLOCK"
+
+    missing_signature:
+
+      action: "REVIEW_REQUIRED"
+
+      production_default:
+        "BLOCK"
+
+
+    signature_record:
+
+      artifact_id: null
+
+      signer_identity: null
+
+      issuer: null
+
+      signature_reference: null
+
+      verification_status: false
+
+      verification_timestamp: null
+
+
+  # ==========================================================
+  # 5. SOFTWARE SUPPLY CHAIN
+  # ==========================================================
+
+  supply_chain:
+
+    protection_required: true
+
+    controls:
+
+      - "Dependency locking"
+      - "Artifact integrity verification"
+      - "Source provenance"
+      - "SBOM generation"
+      - "Vulnerability scanning"
+      - "License validation"
+      - "Signature verification"
+      - "Immutable release identity"
+      - "Drift detection"
+
+
+    dependency_confusion:
+
+      protection:
+
+        enabled: true
+
+      controls:
+
+        - "Approved registries"
+        - "Explicit package source"
+        - "Namespace validation"
+        - "Lockfile verification"
+
+
+    typosquatting:
+
+      detection:
+
+        required: true
+
+      action:
+        "REVIEW_REQUIRED"
+
+
+    malicious_package:
+
+      detection_sources:
+
+        - "Package registry advisories"
+        - "Security scanners"
+        - "CVE"
+        - "OSV"
+        - "JAS security review"
+
+      action_if_confirmed:
+        "BLOCK"
+
+
+  # ==========================================================
+  # 6. VULNERABILITY MANAGEMENT
+  # ==========================================================
+
+  vulnerabilities:
+
+    monitoring:
+
+      continuous: true
+
+    sources:
+
+      - "CVE"
+      - "OSV"
+      - "Vendor security advisories"
+      - "Package registry advisories"
+      - "Container vulnerability databases"
+      - "JAS security review"
+
+
+    severity:
+
+      critical:
+
+        action: "BLOCK"
+
+        exception:
+          allowed: false
+
+
+      high:
+
+        action: "REVIEW_REQUIRED"
+
+        exception:
+          allowed: true
+
+          mitigation_required: true
+
+          expiration_required: true
+
+
+      medium:
+
+        action: "TRACK"
+
+        remediation_required: true
+
+
+      low:
+
+        action: "TRACK"
+
+
+    vulnerability_record:
+
+      component_id: null
+
+      vulnerability_id: null
+
+      severity: null
+
+      detected_at: null
+
+      affected_version: null
+
+      fixed_version: null
+
+      mitigation: null
+
+      status: null
+
+      expiration: null
+
+
+  # ==========================================================
+  # 7. SECURITY EXCEPTIONS
+  # ==========================================================
+
+  exceptions:
+
+    allowed: true
+
+    requirements:
+
+      - "Explicit reason"
+      - "Security impact assessment"
+      - "Mitigation"
+      - "Owner"
+      - "Approval"
+      - "Expiration date"
+      - "Tracking identifier"
+
+    permanent_exception:
+
+      allowed: false
+
+    expired_exception:
+
+      action: "COMPLIANCE_FAILURE"
+
+
+    record:
+
+      id: null
+
+      component: null
+
+      reason: null
+
+      vulnerability: null
+
+      mitigation: null
+
+      owner: null
+
+      approved_by: null
+
+      approval_revision: null
+
+      created_at: null
+
+      expires_at: null
+
+      status: null
+
+
+  # ==========================================================
+  # 8. LICENSE INTEGRITY
+  # ==========================================================
+
+  licensing:
+
+    validation_required: true
+
+    source_required: true
+
+    license_identity_required: true
+
+    every_production_dependency:
+
+      license_required: true
+
+      license_source_required: true
+
+
+    prohibited_unknown_license:
+
+      action: "BLOCK"
+
+
+    review_required:
+
+      - "Copyleft licenses"
+      - "Dual licenses"
+      - "Custom licenses"
+      - "Model-specific licenses"
+      - "Voice-model licenses"
+      - "Commercial restrictions"
+      - "Gated-access terms"
+
+
+    license_record:
+
+      component_id: null
+
+      component_version: null
+
+      license: null
+
+      license_source: null
+
+      distribution_allowed: null
+
+      modification_allowed: null
+
+      commercial_use_allowed: null
+
+      review_status: null
+
+      review_revision: null
+
+
+  # ==========================================================
+  # 9. MODEL SECURITY
+  # ==========================================================
+
+  models:
+
+    governed_by:
+      "03_MODEL_LOCKS.yaml"
+
+    additional_security_requirements:
+
+      artifact_digest_required: true
+
+      source_revision_required: true
+
+      license_validation_required: true
+
+      provenance_required: true
+
+
+    model_integrity:
+
+      checkpoint_digest_required: true
+
+      tokenizer_integrity_required: true
+
+      configuration_integrity_required: true
+
+      auxiliary_files_integrity_required: true
+
+
+    model_loading:
+
+      untrusted_model_code:
+
+        allowed: false
+
+      remote_code_execution:
+
+        default: "DISABLED"
+
+        exception:
+          requires:
+            - "Explicit approval"
+            - "Security review"
+            - "Sandboxing"
+
+
+    model_registry:
+
+      approved_sources_only: true
+
+      mutable_references:
+
+        prohibited:
+
+          - "latest"
+          - "main"
+          - "floating revision"
+
+
+    current_models:
+
+      qwen3:
+
+        security_status: "PENDING"
+
+        artifact_verified: false
+
+        revision_verified: false
+
+        license_verified: false
+
+        provenance_verified: false
+
+
+      bge_m3:
+
+        security_status: "PENDING"
+
+        artifact_verified: false
+
+        revision_verified: false
+
+        license_verified: false
+
+        provenance_verified: false
+
+
+      bge_reranker:
+
+        security_status: "PENDING"
+
+        artifact_verified: false
+
+        revision_verified: false
+
+        license_verified: false
+
+        provenance_verified: false
+
+
+      whisper:
+
+        security_status: "PENDING"
+
+        artifact_verified: false
+
+        revision_verified: false
+
+        license_verified: false
+
+        provenance_verified: false
+
+
+      siglip2:
+
+        security_status: "PENDING"
+
+        artifact_verified: false
+
+        revision_verified: false
+
+        license_verified: false
+
+        provenance_verified: false
+
+
+  # ==========================================================
+  # 10. MCP SECURITY
+  # ==========================================================
+
+  mcp:
+
+    governed_by:
+      "04_MCP_LOCKS.yaml"
+
+    server_identity:
+
+      required:
+
+        - "Server ID"
+        - "Publisher"
+        - "Version"
+        - "Revision"
+        - "Digest"
+        - "Protocol version"
+        - "SDK version"
+        - "Transport"
+
+
+    trust:
+
+      publisher_verification_required: true
+
+      server_integrity_required: true
+
+      protocol_validation_required: true
+
+      permission_profile_required: true
+
+
+    transport:
+
+      encrypted_transport_required: true
+
+      local_transport:
+
+        allowed: true
+
+        isolation_required: true
+
+
+    permissions:
+
+      least_privilege: true
+
+      default_deny: true
+
+      wildcard_permissions:
+
+        allowed: false
+
+
+    server_updates:
+
+      automatic:
+
+        allowed: false
+
+      review_required: true
+
+
+    malicious_server:
+
+      detection:
+
+        required: true
+
+      action:
+        "BLOCK"
+
+
+  # ==========================================================
+  # 11. CONTAINER SECURITY
+  # ==========================================================
+
+  containers:
+
+    governed_by:
+      "06_ARTIFACT_AND_CONTAINER_LOCKS.yaml"
+
+
+    image:
+
+      digest_required: true
+
+      signature_verification_required: true
+
+      provenance_required: true
+
+      sbom_required: true
+
+
+    base_image:
+
+      approved_source_required: true
+
+      digest_required: true
+
+      security_scan_required: true
+
+
+    runtime:
+
+      privileged:
+
+        production: false
+
+      host_network:
+
+        production: false
+
+      host_pid:
+
+        production: false
+
+      host_filesystem:
+
+        production: false
+
+
+    filesystem:
+
+      writable_root:
+
+        allowed: true
+
+        justification_required: true
+
+
+    capabilities:
+
+      default:
+
+        drop_all: true
+
+      additional_capabilities:
+
+        allowed: false
+
+
+    user:
+
+      root:
+
+        production: false
+
+      non_root_required: true
+
+
+  # ==========================================================
+  # 12. NATIVE CODE SECURITY
+  # ==========================================================
+
+  native:
+
+    governed_by:
+
+      - "02_CORE_RUNTIME_AND_PROGRAMMING_LANGUAGES.md"
+      - "05_PLATFORM_LOCKS.yaml"
+      - "07_BUILD_TOOLCHAIN_LOCKS.yaml"
+
+
+    rust:
+
+      preferred: true
+
+      memory_safety:
+
+        required: true
+
+      unsafe_code:
+
+        allowed: true
+
+        justification_required: true
+
+        review_required: true
+
+
+    cpp:
+
+      allowed: true
+
+      security_review_required: true
+
+      memory_safety_validation_required: true
+
+      compiler_hardening_required: true
+
+
+    binary:
+
+      signature_required: true
+
+      digest_required: true
+
+      provenance_required: true
+
+
+  # ==========================================================
+  # 13. PYTHON PACKAGE SECURITY
+  # ==========================================================
+
+  python_packages:
+
+    governed_by:
+      "08_DEPENDENCY_LOCK_POLICY.yaml"
+
+
+    installation:
+
+      trusted_sources_only: true
+
+      lockfile_required: true
+
+      hash_verification: true
+
+
+    package_integrity:
+
+      package_hash_required: true
+
+      mismatch_action: "BLOCK"
+
+
+    malicious_code:
+
+      runtime_code_execution:
+
+        review_required: true
+
+
+    native_extensions:
+
+      additional_validation_required: true
+
+      platform_artifact_required: true
+
+
+  # ==========================================================
+  # 14. FRONTEND PACKAGE SECURITY
+  # ==========================================================
+
+  frontend_packages:
+
+    lockfile_required: true
+
+    frozen_install_required: true
+
+    integrity_validation_required: true
+
+    lifecycle_scripts:
+
+      allowed: true
+
+      review_required: true
+
+    untrusted_postinstall:
+
+      action: "REVIEW_REQUIRED"
+
+
+    package_source:
+
+      approved_registry_required: true
+
+
+  # ==========================================================
+  # 15. SECRET AND CREDENTIAL INTEGRITY
+  # ==========================================================
+
+  secrets:
+
+    plaintext_storage:
+
+      source_control: false
+
+      Version_Lock: false
+
+      container_image: false
+
+      build_artifact: false
+
+
+    secret_identity:
+
+      secret_value:
+
+        never_locked: true
+
+      secret_reference:
+
+        allowed: true
+
+
+    secret_sources:
+
+      approved:
+
+        - "OS credential store"
+        - "Dedicated secret manager"
+        - "Container secret mechanism"
+        - "Cloud secret manager"
+        - "Encrypted local vault"
+
+
+    secret_rotation:
+
+      required: true
+
+      version_lock_reference:
+
+        allowed: true
+
+        secret_value_included: false
+
+
+  # ==========================================================
+  # 16. BUILD SECURITY
+  # ==========================================================
+
+  build:
+
+    isolated_environment:
+
+      required: true
+
+    network_access:
+
+      allowed: true
+
+      dependency_resolution_only: true
+
+      runtime_dependency_installation: false
+
+
+    build_inputs:
+
+      must_be_locked:
+
+        - "Source revision"
+        - "Toolchain"
+        - "Dependencies"
+        - "Base image"
+        - "Build configuration"
+
+
+    build_outputs:
+
+      must_have:
+
+        - "Artifact digest"
+        - "SBOM"
+        - "Provenance"
+
+
+    reproducibility:
+
+      required: true
+
+      clean_build_required: true
+
+
+  # ==========================================================
+  # 17. SBOM SECURITY REQUIREMENTS
+  # ==========================================================
+
+  sbom:
+
+    standard:
+
+      name: "CycloneDX"
+
+      required: true
+
+      version: null
+
+
+    generated_for:
+
+      - "Application"
+      - "Container image"
+      - "Release artifact"
+
+
+    required_information:
+
+      - "Component"
+      - "Version"
+      - "Source"
+      - "License"
+      - "Dependency relationship"
+      - "Integrity"
+      - "Platform where applicable"
+
+
+    integrity:
+
+      sbom_digest_required: true
+
+      source_revision_required: true
+
+
+  # ==========================================================
+  # 18. BUILD PROVENANCE SECURITY
+  # ==========================================================
+
+  build_provenance:
+
+    required: true
+
+    provenance_fields:
+
+      - "Source repository"
+      - "Source revision"
+      - "Builder"
+      - "Build system"
+      - "Build timestamp"
+      - "Build configuration"
+      - "Dependency lock state"
+      - "Output digest"
+
+
+    verification:
+
+      required: true
+
+      invalid_provenance:
+
+        action: "BLOCK"
+
+
+  # ==========================================================
+  # 19. RUNTIME INTEGRITY
+  # ==========================================================
+
+  runtime:
+
+    startup_verification:
+
+      required: true
+
+    checks:
+
+      - "Python runtime identity"
+      - "Dependency lock state"
+      - "Installed package integrity"
+      - "Configuration integrity"
+      - "Model artifact integrity"
+      - "MCP component identity"
+      - "Native library identity"
+
+
+    unexpected_change:
+
+      action: "FAIL_CLOSED"
+
+
+    fail_closed:
+
+      required_for:
+
+        - "Security-critical components"
+        - "Authentication"
+        - "Authorization"
+        - "Secrets"
+        - "Model loading"
+        - "MCP capability execution"
+
+
+  # ==========================================================
+  # 20. DRIFT DETECTION
+  # ==========================================================
+
+  drift:
+
+    detection_required: true
+
+    categories:
+
+      dependency:
+
+        - "Package version"
+        - "Package hash"
+        - "Lockfile"
+        - "Dependency graph"
+
+
+      artifact:
+
+        - "Binary digest"
+        - "Container digest"
+        - "Model digest"
+        - "SBOM digest"
+
+
+      source:
+
+        - "Git commit"
+        - "Git dependency revision"
+
+
+      security:
+
+        - "Signature"
+        - "Provenance"
+        - "Vulnerability status"
+
+
+      configuration:
+
+        - "Security policy"
+        - "Permission profile"
+        - "Sandbox configuration"
+
+
+    unauthorized_drift:
+
+      action: "COMPLIANCE_FAILURE"
+
+
+  # ==========================================================
+  # 21. SECURITY AUDIT TRAIL
+  # ==========================================================
+
+  audit:
+
+    required: true
+
+    events:
+
+      - "Dependency added"
+      - "Dependency removed"
+      - "Dependency upgraded"
+      - "Dependency downgraded"
+      - "Security exception created"
+      - "Security exception expired"
+      - "Artifact signature verified"
+      - "Artifact signature rejected"
+      - "Vulnerability detected"
+      - "Vulnerability resolved"
+      - "Version Lock promoted"
+      - "Version Lock revoked"
+      - "Integrity mismatch detected"
+
+
+    audit_record:
+
+      event_id: null
+
+      timestamp: null
+
+      actor: null
+
+      component: null
+
+      previous_state: null
+
+      new_state: null
+
+      reason: null
+
+      source_revision: null
+
+
+  # ==========================================================
+  # 22. RELEASE GATE
+  # ==========================================================
+
+  release_gate:
+
+    production_release:
+
+      all_required_controls_must_pass: true
+
+
+    mandatory_checks:
+
+      - "Exact identity"
+      - "Integrity verification"
+      - "Source provenance"
+      - "License validation"
+      - "Vulnerability scan"
+      - "SBOM"
+      - "Build provenance"
+      - "Signature verification"
+      - "Dependency lock validation"
+      - "Platform compatibility"
+
+
+    blocking_conditions:
+
+      - "Critical vulnerability"
+      - "Integrity mismatch"
+      - "Invalid signature"
+      - "Unknown license"
+      - "Unknown source"
+      - "Mutable production reference"
+      - "Missing mandatory provenance"
+      - "Unresolved critical dependency"
+      - "Unauthorized drift"
+
+
+  # ==========================================================
+  # 23. SECURITY STATUS MATRIX
+  # ==========================================================
+
+  component_security_status:
+
+    CPython:
+      identity_verified: false
+      integrity_verified: false
+      signature_verified: false
+      vulnerability_scan: "PENDING"
+
+    uv:
+      identity_verified: false
+      integrity_verified: false
+      signature_verified: false
+      vulnerability_scan: "PENDING"
+
+    FastAPI:
+      identity_verified: false
+      integrity_verified: false
+      signature_verified: false
+      vulnerability_scan: "PENDING"
+
+    Pydantic:
+      identity_verified: false
+      integrity_verified: false
+      signature_verified: false
+      vulnerability_scan: "PENDING"
+
+    LangGraph:
+      identity_verified: false
+      integrity_verified: false
+      signature_verified: false
+      vulnerability_scan: "PENDING"
+
+    Qdrant:
+      identity_verified: false
+      integrity_verified: false
+      signature_verified: false
+      vulnerability_scan: "PENDING"
+
+    PostgreSQL:
+      identity_verified: false
+      integrity_verified: false
+      signature_verified: false
+      vulnerability_scan: "PENDING"
+
+    Playwright:
+      identity_verified: false
+      integrity_verified: false
+      signature_verified: false
+      vulnerability_scan: "PENDING"
+
+    Docker:
+      identity_verified: false
+      integrity_verified: false
+      signature_verified: false
+      vulnerability_scan: "PENDING"
+
+    Git:
+      identity_verified: false
+      integrity_verified: false
+      signature_verified: false
+      vulnerability_scan: "PENDING"
+
+
+  # ==========================================================
+  # 24. VALIDATION STATE
+  # ==========================================================
+
+  validation:
+
+    integrity_policy_defined: true
+
+    provenance_policy_defined: true
+
+    signature_policy_defined: true
+
+    vulnerability_policy_defined: true
+
+    license_policy_defined: true
+
+    model_security_policy_defined: true
+
+    mcp_security_policy_defined: true
+
+    container_security_policy_defined: true
+
+    native_security_policy_defined: true
+
+    runtime_integrity_policy_defined: true
+
+    drift_detection_defined: true
+
+    release_gate_defined: true
+
+    exact_artifacts_verified: false
+
+    signatures_verified: false
+
+    vulnerabilities_scanned: false
+
+    licenses_validated: false
+
+    final_lock_status: "CANDIDATE"
+
+
+  # ==========================================================
+  # 25. NEXT PHASE
+  # ==========================================================
+
+  next_phase:
+
+    name: "Security and Integrity Resolution"
+
+    sequence:
+
+      - "Resolve exact artifact identities"
+      - "Verify package integrity"
+      - "Verify model artifacts"
+      - "Verify MCP server identities"
+      - "Verify container digests"
+      - "Validate source provenance"
+      - "Validate licenses"
+      - "Run vulnerability scans"
+      - "Generate SBOM"
+      - "Generate build provenance"
+      - "Verify signatures"
+      - "Validate runtime integrity"
+      - "Validate drift detection"
+      - "Resolve security exceptions if required"
+      - "Execute production release gate"
+      - "Promote validated security state to LOCKED"
+
+  governing_rule: >
+    A component SHALL NOT enter the final production Version Lock
+    solely because its version is known. Its identity, integrity,
+    provenance, security posture and release eligibility must also
+    be validated.

@@ -1,0 +1,1283 @@
+# ============================================================
+# JARVIS / JAS
+# VERSION LOCK v1 — SECURITY, PLATFORM AND RELEASE RESOLUTION
+# ============================================================
+
+security_platform_release_resolution:
+
+  schema_version: "1.0"
+
+  project:
+    name: "JARVIS"
+    architecture: "JAS"
+    architecture_version: "JAS v1"
+
+  document:
+    id: "JAS-VL-019"
+    name: "Security Platform and Release Resolution"
+    version: "1.0"
+    status: "IN_PROGRESS"
+    authority: "VERSION_LOCK_v1"
+
+
+  # ==========================================================
+  # 1. PURPOSE
+  # ==========================================================
+
+  purpose:
+    >
+    This document resolves the security, host-platform, credential,
+    sandbox, authorization, auditing, vulnerability management and
+    release requirements of JAS.
+
+    The objective is to establish the conditions under which a
+    candidate component may be promoted into the final Version Lock.
+
+    Security is treated as a release gate rather than as an optional
+    post-release activity.
+
+
+  # ==========================================================
+  # 2. PLATFORM BASELINE
+  # ==========================================================
+
+  platform_baseline:
+
+    primary_development_platform:
+      os_family:
+        "Windows"
+
+      architecture:
+        "x86_64"
+
+      status:
+        "PRIMARY_DEVELOPMENT"
+
+
+    primary_runtime_platform:
+      os_family:
+        "Linux"
+
+      architecture:
+        "x86_64"
+
+      status:
+        "PRIMARY_DEPLOYMENT"
+
+
+    secondary_runtime_platforms:
+
+      - os_family: "Linux"
+        architecture: "arm64"
+        status: "SECONDARY"
+
+      - os_family: "macOS"
+        architecture: "arm64"
+        status: "SECONDARY"
+
+
+    policy:
+      >
+      The primary production runtime SHALL be Linux x86_64 unless
+      a concrete JAS deployment profile explicitly requires another
+      architecture.
+
+      Secondary platforms SHALL NOT automatically inherit production
+      support status.
+
+
+  # ==========================================================
+  # 3. PLATFORM COMPATIBILITY
+  # ==========================================================
+
+  compatibility:
+
+    windows_x86_64:
+
+      python:
+        "SUPPORTED_TARGET"
+
+      node:
+        "SUPPORTED_TARGET"
+
+      docker:
+        "SUPPORTED_TARGET"
+
+      playwright:
+        "SUPPORTED_TARGET"
+
+      local_ai:
+        "PENDING_GPU_PROFILE"
+
+
+    linux_x86_64:
+
+      python:
+        "PRIMARY"
+
+      node:
+        "PRIMARY"
+
+      docker:
+        "PRIMARY"
+
+      playwright:
+        "PRIMARY"
+
+      local_ai:
+        "PRIMARY_TARGET"
+
+
+    linux_arm64:
+
+      python:
+        "SECONDARY"
+
+      node:
+        "SECONDARY"
+
+      docker:
+        "SECONDARY"
+
+      playwright:
+        "PENDING"
+
+      local_ai:
+        "PENDING"
+
+
+    macos_arm64:
+
+      python:
+        "SECONDARY"
+
+      node:
+        "SECONDARY"
+
+      docker:
+        "SECONDARY"
+
+      playwright:
+        "SECONDARY"
+
+      local_ai:
+        "HARDWARE_DEPENDENT"
+
+
+  # ==========================================================
+  # 4. DOCKER SECURITY BASELINE
+  # ==========================================================
+
+  docker:
+
+    component_id:
+      "SW-021"
+
+
+    candidate:
+
+      version:
+        "29.6.2"
+
+      status:
+        "SECURITY_VALIDATION_CANDIDATE"
+
+
+    rationale:
+      >
+      Docker Engine 29.6.2 is the latest observed 29.x release.
+      Docker 29.6.1 contained multiple security fixes and updated
+      BuildKit to 0.31.1.
+
+
+    security:
+
+      rootless:
+        "SUPPORTED"
+
+      seccomp:
+        "ENABLED_BY_DEFAULT_WHERE_SUPPORTED"
+
+      apparmor:
+        "PLATFORM_DEPENDENT"
+
+      capabilities:
+        "DROP_UNNECESSARY_CAPABILITIES"
+
+      privileged_containers:
+        "PROHIBITED_BY_DEFAULT"
+
+
+    production_policy:
+
+      privileged:
+        false
+
+      host_docker_socket:
+        "PROHIBITED_BY_DEFAULT"
+
+      host_network:
+        "EXPLICIT_AUTHORIZATION"
+
+      host_pid:
+        "PROHIBITED"
+
+      host_filesystem_mount:
+        "EXPLICIT_ALLOWLIST"
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 5. BUILD SECURITY
+  # ==========================================================
+
+  build_security:
+
+    buildkit:
+
+      candidate:
+        "0.31.1"
+
+      source_relationship:
+        "Bundled/updated by Docker Engine 29.6.1"
+
+      status:
+        "CANDIDATE"
+
+      provenance:
+        "SUPPORTED"
+
+      sbom:
+        "SUPPORTED"
+
+
+    buildx:
+
+      exact_version:
+        null
+
+      status:
+        "RESEARCH_REQUIRED"
+
+      policy:
+        >
+        Buildx SHALL be locked independently when it is installed
+        independently from the Docker Engine distribution.
+
+
+    build_context:
+
+      remote_contexts:
+        "PROHIBITED_BY_DEFAULT"
+
+      untrusted_context:
+        "PROHIBITED"
+
+      secret_mounts:
+        "EXPLICIT"
+
+
+  # ==========================================================
+  # 6. SECRET MANAGEMENT
+  # ==========================================================
+
+  secret_management:
+
+    component_id:
+      "SW-020"
+
+
+    status:
+      "REQUIRED"
+
+
+    approved_strategies:
+
+      local_development:
+
+        - "OS credential store"
+        - "Encrypted local secret store"
+        - "Environment injection for ephemeral development only"
+
+
+      production:
+
+        - "Dedicated secret manager"
+        - "OS credential store"
+        - "Container secret mechanism"
+        - "Cloud secret manager"
+
+
+    prohibited:
+
+      - "Plaintext credentials in source code"
+      - "Credentials committed to Git"
+      - "Credentials inside Docker image"
+      - "Credentials inside public logs"
+      - "Long-lived unrestricted tokens"
+
+
+    rotation:
+
+      required:
+        true
+
+      policy:
+        "Credential rotation SHALL invalidate previous credentials."
+
+
+    audit:
+
+      secret_access:
+        true
+
+
+    final_implementation:
+      null
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 7. SANDBOXING
+  # ==========================================================
+
+  sandbox:
+
+    component_id:
+      "SEC-SANDBOX"
+
+
+    status:
+      "REQUIRED_WHERE_UNTRUSTED_CAPABILITY_EXISTS"
+
+
+    isolation_levels:
+
+      process:
+        "REQUIRED"
+
+      container:
+        "PREFERRED_FOR_HIGHER_RISK_COMPONENTS"
+
+      filesystem:
+        "RESTRICTED_ROOTS"
+
+      network:
+        "DEFAULT_DENY_FOR_LOCAL_CAPABILITIES"
+
+
+    high_risk_components:
+
+      - "MCP Filesystem"
+      - "MCP Docker"
+      - "Browser automation"
+      - "External MCP servers"
+      - "Untrusted plugins"
+      - "Downloaded artifacts"
+
+
+    final_implementation:
+      null
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 8. AUTHORIZATION
+  # ==========================================================
+
+  authorization:
+
+    component_id:
+      "SEC-AUTH"
+
+
+    implementation:
+      "JAS Internal Authorization / Policy Engine"
+
+
+    status:
+      "INTERNAL"
+
+
+    principles:
+
+      - "Least privilege"
+      - "Explicit capability grants"
+      - "Deny by default"
+      - "Per-tool authorization"
+      - "Per-resource authorization"
+      - "Credential scoping"
+      - "Session-aware authorization"
+
+
+    capability_classes:
+
+      read:
+        default:
+          "ALLOWED_WHERE_POLICY_PERMITS"
+
+      write:
+        default:
+          "DENIED"
+
+      execute:
+        default:
+          "DENIED"
+
+      admin:
+        default:
+          "DENIED"
+
+
+    final_lock:
+      "JAS_RELEASE_CONTROLLED"
+
+
+  # ==========================================================
+  # 9. AUDIT
+  # ==========================================================
+
+  audit:
+
+    component_id:
+      "SEC-AUDIT"
+
+
+    implementation:
+      "JAS Internal Audit System"
+
+
+    status:
+      "INTERNAL"
+
+
+    mandatory_events:
+
+      - "Authentication"
+      - "Authorization decision"
+      - "Capability invocation"
+      - "MCP server startup"
+      - "MCP server shutdown"
+      - "Tool execution"
+      - "Filesystem access"
+      - "Network access"
+      - "Credential access"
+      - "Configuration change"
+      - "Version change"
+      - "Release"
+      - "Rollback"
+
+
+    audit_properties:
+
+      timestamp:
+        true
+
+      actor:
+        true
+
+      component:
+        true
+
+      action:
+        true
+
+      result:
+        true
+
+      correlation_id:
+        true
+
+
+    tamper_resistance:
+      "REQUIRED"
+
+
+    final_lock:
+      "JAS_RELEASE_CONTROLLED"
+
+
+  # ==========================================================
+  # 10. DEPENDENCY SECURITY
+  # ==========================================================
+
+  dependency_scanning:
+
+    component_id:
+      "SW-040"
+
+
+    status:
+      "REQUIRED"
+
+
+    coverage:
+
+      python:
+        true
+
+      frontend:
+        true
+
+      containers:
+        true
+
+      native:
+        true
+
+      mcp:
+        true
+
+      models:
+        true
+
+
+    scan_events:
+
+      - "Pull request"
+      - "Dependency update"
+      - "Release candidate"
+      - "Scheduled security scan"
+      - "Critical advisory"
+
+
+    policy:
+
+      critical:
+        "RELEASE_BLOCK"
+
+      high:
+        "RELEASE_BLOCK_UNLESS_EXPLICITLY_ACCEPTED"
+
+      medium:
+        "REVIEW_REQUIRED"
+
+      low:
+        "TRACK"
+
+
+    exception_policy:
+
+      allowed:
+        true
+
+      requirements:
+
+        - "Documented rationale"
+        - "Risk owner"
+        - "Expiration date"
+        - "Compensating control"
+
+
+  # ==========================================================
+  # 11. LICENSE VALIDATION
+  # ==========================================================
+
+  licensing:
+
+    required:
+      true
+
+
+    every_locked_component:
+
+      required_fields:
+
+        - "license"
+        - "license_source"
+        - "license_version_if_applicable"
+
+
+    review_required_for:
+
+      - "GPL"
+      - "AGPL"
+      - "Commercial licenses"
+      - "Gated model licenses"
+      - "Voice model licenses"
+      - "Dual licenses"
+      - "Unknown licenses"
+
+
+    known_special_cases:
+
+      piper:
+        status:
+          "SPECIAL_REVIEW_REQUIRED"
+
+      paligemma:
+        status:
+          "SPECIAL_REVIEW_REQUIRED"
+
+      colpali:
+        status:
+          "SPECIAL_REVIEW_REQUIRED"
+
+
+    policy:
+      >
+      A technically compatible component SHALL NOT enter final
+      Version Lock until its applicable license has been reviewed.
+
+
+  # ==========================================================
+  # 12. MODEL SECURITY
+  # ==========================================================
+
+  model_security:
+
+    requirements:
+
+      - "Trusted publisher"
+      - "Exact model identifier"
+      - "Exact revision"
+      - "Artifact digest where available"
+      - "License verification"
+      - "Source verification"
+
+
+    prohibited:
+
+      - "latest model alias"
+      - "Unverified model mirror"
+      - "Untracked local checkpoint"
+      - "Unsigned release artifact where signing is available"
+
+
+    qwen3:
+
+      status:
+        "REQUIRES_EXACT_VARIANT_LOCK"
+
+      required:
+
+        - "Exact Qwen3 variant"
+        - "Revision"
+        - "Artifact identity"
+        - "Quantization"
+        - "Runtime"
+        - "License"
+
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 13. MCP SECURITY
+  # ==========================================================
+
+  mcp_security:
+
+    default_policy:
+      "DENY"
+
+
+    server_requirements:
+
+      - "Known publisher"
+      - "Exact version"
+      - "Immutable revision"
+      - "Protocol compatibility"
+      - "Transport identity"
+      - "Permission profile"
+      - "Security review"
+
+
+    high_risk:
+
+      filesystem:
+        "ROOT_ALLOWLIST"
+
+      docker:
+        "EXPLICIT_ADMIN_AUTHORIZATION"
+
+      database:
+        "READ_ONLY_DEFAULT"
+
+      github:
+        "SCOPED_CREDENTIALS"
+
+      browser:
+        "EXPLICIT_SESSION"
+
+
+    unapproved_server:
+      "BLOCK"
+
+
+  # ==========================================================
+  # 14. RELEASE ARTIFACT SECURITY
+  # ==========================================================
+
+  release_artifacts:
+
+    required:
+
+      - "Version"
+      - "Source revision"
+      - "Build identity"
+      - "Dependency lock state"
+      - "Container digest where applicable"
+      - "SBOM"
+      - "Provenance"
+      - "Signature"
+      - "Release metadata"
+
+
+    artifact_types:
+
+      source_release:
+        true
+
+      python_package:
+        true
+
+      frontend_bundle:
+        true
+
+      container_image:
+        true
+
+      model_artifact:
+        "WHERE_DISTRIBUTED"
+
+
+  # ==========================================================
+  # 15. SIGNING
+  # ==========================================================
+
+  signing:
+
+    preferred:
+      "Sigstore / Cosign"
+
+
+    candidate:
+      "Cosign"
+
+
+    status:
+      "CANDIDATE"
+
+
+    rule:
+      >
+      Container images SHALL be signed by digest rather than mutable
+      tags. Cosign documentation explicitly recommends signing image
+      digests to avoid signing a mutable target.
+
+
+    verification:
+
+      required:
+        true
+
+
+    trusted_identity:
+
+      issuer:
+        null
+
+      identity:
+        null
+
+
+    final_version:
+      null
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 16. PROVENANCE
+  # ==========================================================
+
+  provenance:
+
+    standard_direction:
+      "SLSA-aligned provenance"
+
+
+    container_provenance:
+      "OCI attestation / BuildKit provenance"
+
+
+    required_inputs:
+
+      - "Source revision"
+      - "Builder"
+      - "Build configuration"
+      - "Dependency lockfiles"
+      - "Base image digest"
+      - "Output digest"
+
+
+    verification:
+      required:
+        true
+
+
+    final_implementation:
+      null
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 17. SBOM
+  # ==========================================================
+
+  sbom:
+
+    preferred_format:
+      "CycloneDX"
+
+
+    alternative:
+      "SPDX"
+
+
+    production_requirement:
+      true
+
+
+    required_for:
+
+      - "Container images"
+      - "Production releases"
+      - "Native binaries"
+
+
+    model_sbom:
+      "WHERE_PRACTICAL"
+
+
+    final_tool:
+      null
+
+    final_version:
+      null
+
+    final_lock:
+      false
+
+
+  # ==========================================================
+  # 18. RELEASE CHANNELS
+  # ==========================================================
+
+  release_channels:
+
+    development:
+
+      mutable_dependencies:
+        "ALLOWED_WITH_WARNING"
+
+      production_artifacts:
+        false
+
+
+    staging:
+
+      immutable_artifacts:
+        true
+
+      security_scan:
+        true
+
+      provenance:
+        true
+
+
+    production:
+
+      immutable_artifacts:
+        true
+
+      signed_artifacts:
+        true
+
+      sbom:
+        true
+
+      provenance:
+        true
+
+      vulnerability_scan:
+        true
+
+      rollback:
+        true
+
+
+  # ==========================================================
+  # 19. VERSION LOCK PROMOTION GATES
+  # ==========================================================
+
+  promotion_gates:
+
+    gate_01_source:
+      requirement:
+        "Known authoritative source"
+
+
+    gate_02_version:
+      requirement:
+        "Exact version"
+
+
+    gate_03_revision:
+      requirement:
+        "Immutable revision where applicable"
+
+
+    gate_04_integrity:
+      requirement:
+        "Integrity or digest"
+
+
+    gate_05_compatibility:
+      requirement:
+        "Runtime compatibility validated"
+
+
+    gate_06_security:
+      requirement:
+        "Security validation passed"
+
+
+    gate_07_license:
+      requirement:
+        "License validation passed"
+
+
+    gate_08_reproducibility:
+      requirement:
+        "Reproducible installation/build"
+
+
+    gate_09_provenance:
+      requirement:
+        "Build provenance recorded"
+
+
+    gate_10_release:
+      requirement:
+        "Rollback-capable release artifact"
+
+
+    all_required:
+      true
+
+
+  # ==========================================================
+  # 20. VERSION CHANGE POLICY
+  # ==========================================================
+
+  version_change_policy:
+
+    patch:
+
+      default:
+        "REVIEW_REQUIRED"
+
+
+    minor:
+
+      default:
+        "COMPATIBILITY_REVIEW_REQUIRED"
+
+
+    major:
+
+      default:
+        "FULL_RESOLUTION_REQUIRED"
+
+
+    security_patch:
+
+      critical:
+        "EXPEDITED_REVALIDATION"
+
+      high:
+        "REVALIDATION_REQUIRED"
+
+
+    model_change:
+
+      any_revision_change:
+        "FULL_MODEL_REVALIDATION"
+
+
+    mcp_protocol_change:
+
+      any_protocol_revision_change:
+        "FULL_MCP_REVALIDATION"
+
+
+    rule:
+      >
+      No dependency SHALL be upgraded merely because a newer version
+      exists. Every upgrade reopens the affected compatibility and
+      security resolution.
+
+
+  # ==========================================================
+  # 21. ROLLBACK
+  # ==========================================================
+
+  rollback:
+
+    required:
+      true
+
+
+    release_record:
+
+      required:
+
+        - "Previous version"
+        - "Previous revision"
+        - "Previous digest"
+        - "Previous configuration"
+        - "Migration state"
+
+
+    database:
+
+      migration_rollback:
+        "EXPLICITLY_TESTED_WHERE_POSSIBLE"
+
+
+    model:
+
+      previous_model_artifact:
+        "RETAINED"
+
+
+    container:
+
+      previous_digest:
+        "RETAINED"
+
+
+  # ==========================================================
+  # 22. PRODUCTION READINESS
+  # ==========================================================
+
+  production_readiness:
+
+    source_control:
+      required:
+        true
+
+    dependency_lockfiles:
+      required:
+        true
+
+    exact_versions:
+      required:
+        true
+
+    immutable_artifacts:
+      required:
+        true
+
+    vulnerability_scan:
+      required:
+        true
+
+    sbom:
+      required:
+        true
+
+    provenance:
+      required:
+        true
+
+    signing:
+      required:
+        true
+
+    rollback:
+      required:
+        true
+
+    audit:
+      required:
+        true
+
+
+  # ==========================================================
+  # 23. CURRENT CANDIDATES
+  # ==========================================================
+
+  current_candidates:
+
+    docker:
+      "29.6.2"
+
+    buildkit:
+      "0.31.1"
+
+    buildx:
+      null
+
+    compose:
+      null
+
+    secret_management:
+      null
+
+    sandbox:
+      null
+
+    dependency_scanner:
+      null
+
+    sbom:
+      "CycloneDX"
+
+    signing:
+      "Cosign"
+
+    provenance:
+      "SLSA-aligned / OCI attestation"
+
+
+  # ==========================================================
+  # 24. HARD BLOCKERS
+  # ==========================================================
+
+  blockers:
+
+    - id: "SEC-BLOCK-001"
+      component: "Secret Management"
+      reason:
+        "Concrete implementation not selected."
+
+    - id: "SEC-BLOCK-002"
+      component: "Sandbox"
+      reason:
+        "Concrete production isolation mechanism not selected."
+
+    - id: "SEC-BLOCK-003"
+      component: "Dependency Scanner"
+      reason:
+        "Exact tooling not selected."
+
+    - id: "SEC-BLOCK-004"
+      component: "SBOM"
+      reason:
+        "Exact production tooling not selected."
+
+    - id: "SEC-BLOCK-005"
+      component: "Signing"
+      reason:
+        "Exact Cosign version and trust identity not locked."
+
+    - id: "SEC-BLOCK-006"
+      component: "Provenance"
+      reason:
+        "Exact implementation not locked."
+
+    - id: "SEC-BLOCK-007"
+      component: "Platform"
+      reason:
+        "Final hardware/GPU profile unresolved."
+
+
+  # ==========================================================
+  # 25. FINAL VERSION LOCK STATUS
+  # ==========================================================
+
+  state:
+
+    platform_baseline_defined:
+      true
+
+    docker_candidate_defined:
+      true
+
+    buildkit_candidate_defined:
+      true
+
+    buildx_resolved:
+      false
+
+    compose_resolved:
+      false
+
+    secret_management_resolved:
+      false
+
+    sandbox_resolved:
+      false
+
+    authorization_defined:
+      true
+
+    audit_defined:
+      true
+
+    dependency_scanning_resolved:
+      false
+
+    license_policy_defined:
+      true
+
+    sbom_policy_defined:
+      true
+
+    provenance_policy_defined:
+      true
+
+    signing_policy_defined:
+      true
+
+    rollback_defined:
+      true
+
+    production_ready:
+      false
+
+    final_version_lock_ready:
+      false
+
+    status:
+      "SECURITY_PLATFORM_RELEASE_RESOLUTION_IN_PROGRESS"
+
+
+  # ==========================================================
+  # 26. NEXT PHASE
+  # ==========================================================
+
+  next_phase:
+
+    name:
+      "Cross-Domain Compatibility Validation"
+
+    sequence:
+
+      - "Validate Python runtime against AI stack"
+      - "Validate model/runtime/CUDA chain"
+      - "Validate backend/data chain"
+      - "Validate browser/runtime chain"
+      - "Validate frontend/runtime chain"
+      - "Validate MCP protocol/SDK/server chain"
+      - "Validate Docker/BuildKit/Buildx chain"
+      - "Validate security controls"
+      - "Validate exact licenses"
+      - "Validate supply-chain identities"
+      - "Resolve remaining blockers"
+      - "Generate Version Lock Candidate"
