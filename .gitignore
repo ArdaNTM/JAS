@@ -5,3 +5,14 @@ __pycache__/
 .DS_Store
 
 Thumbs.db
+# AURA Core generated/local files
+core/.venv/
+core/.pytest_cache/
+core/**/__pycache__/
+core/**/*.pyc
+core/frontend/node_modules/
+core/frontend/dist/
+core/.env
+core/.env.*
+core/*.bak
+core/**/*.bak
