@@ -1,4 +1,4 @@
-﻿from enum import StrEnum
+from enum import StrEnum
 
 from aura_core.config.kernel import KernelConfig
 from aura_core.kernel.capabilities import CapabilityRegistry
@@ -14,7 +14,6 @@ from aura_core.kernel.services import (
 )
 from aura_core.mcp.provider import ProviderRegistry
 from aura_core.observability.logging import configure_logging
-
 
 class KernelState(StrEnum):
     CREATED = "created"

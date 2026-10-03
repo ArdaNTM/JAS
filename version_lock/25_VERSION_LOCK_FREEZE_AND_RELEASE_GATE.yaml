@@ -1,0 +1,15 @@
+release_gate:
+  status: INTEGRATED_NOT_FINALIZED
+  invariant: >-
+    No release may bypass AURA's capability, permission, and MCP gateway
+    boundary. Runtime providers are not version-lock authority.
+  required_inputs:
+    - core/release-manifest.json
+    - core/uv.lock
+    - aura-ui/package-lock.json
+  verifier: core/scripts/verify_release_lock.py
+  finalization_requirements:
+    - immutable container image digests
+    - resolved provider and browser artifact identities
+    - Qwen3 local manifest identity and runtime validation evidence
+    - signed release manifest

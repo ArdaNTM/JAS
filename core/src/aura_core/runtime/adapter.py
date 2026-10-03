@@ -61,6 +61,10 @@ class AdapterBackend(InferenceBackend):
             )
 
         content = message["content"]
+        if isinstance(content, str):
+            import re
+            content = re.sub(r"^```(?:json)?\s*\n?", "", content.strip(), flags=re.IGNORECASE)
+            content = re.sub(r"\n?```\s*$", "", content.strip())
 
         if not isinstance(content, str):
             raise BackendInvalidResponseError(

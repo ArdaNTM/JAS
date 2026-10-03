@@ -1,8 +1,10 @@
+import hmac
 import logging
+import os
 from time import perf_counter
 from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel, ConfigDict, Field
 from fastapi import Request
 from fastapi.responses import JSONResponse
@@ -25,6 +27,7 @@ from aura_core.observability.metrics import RequestMetrics
 from aura_core.agent.runtime import Plan, PlanStep, StepResult, Task
 from aura_core.application.tasks import AgentTaskService, SubmittedTask
 from aura_core.kernel.permissions import RiskLevel
+from aura_core.application.live_events import LiveEventBroker
 
 
 logger = logging.getLogger("aura_core.http")
@@ -63,6 +66,7 @@ def create_api(
     backend_config: BackendConfig | None = None,
     transport: JsonTransport | None = None,
     task_service: AgentTaskService | None = None,
+    live_events: LiveEventBroker | None = None,
 ) -> FastAPI:
     resolved_backend_config = (
         backend_config or BackendConfig.from_environment()
@@ -85,6 +89,8 @@ def create_api(
     metrics = RequestMetrics()
     app.state.metrics = metrics
     app.state.task_service = task_service
+    app.state.live_events = live_events or LiveEventBroker()
+    app.state.event_token = os.getenv("AURA_EVENT_STREAM_TOKEN")
 
     @app.middleware("http")
     async def log_request(
@@ -153,6 +159,21 @@ def create_api(
     @app.get("/metrics")
     def get_metrics() -> dict[str, int | float]:
         return metrics.snapshot()
+
+    @app.websocket("/api/ws/events")
+    async def websocket_events(websocket: WebSocket) -> None:
+        """Authenticated, read-only event projection for the production UI."""
+        expected_token = app.state.event_token
+        supplied_token = websocket.headers.get("X-AURA-Event-Token", "")
+        if not expected_token or not hmac.compare_digest(supplied_token, expected_token):
+            await websocket.close(code=1008)
+            return
+        await websocket.accept()
+        try:
+            async for event in app.state.live_events.stream():
+                await websocket.send_json(event)
+        except WebSocketDisconnect:
+            return
 
     @app.post(
         "/v1/inference",

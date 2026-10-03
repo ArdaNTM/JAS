@@ -1,0 +1,16 @@
+{
+  "version": "1.0.0-final",
+  "status": "production-locked",
+  "timestamp": "2026-10-03T12:10:19.361567+00:00",
+  "commit": "51cd3a48d15643afbe8f0628f4fb516fc6306551",
+  "core_digest": "sha256:b4d78f0c750c5052188b64868221b65f39c7220918498064c0f85d1aa0e35eb2",
+  "governance": "JAS-Framework",
+  "capabilities": [
+    "Deterministic Kernel",
+    "Permission Engine",
+    "MCP Gateway",
+    "WebSocket Live Hub",
+    "Multi-Provider LLM Router",
+    "Sandbox File/Browser"
+  ]
+}
