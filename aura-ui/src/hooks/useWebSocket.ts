@@ -1,37 +1,89 @@
-﻿import { useEffect, useState, useRef } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 export interface AuraEvent {
-  event: string;
+  event?: string;
+  type?: string;
   message?: string;
   status?: string;
   step?: string;
-  data?: any;
+  data?: Record<string, unknown>;
 }
 
-export function useWebSocket(url: string) {
-  const [events, setEvents] = useState<AuraEvent[]>([]);
-  const [isConnected, setIsConnected] = useState(false);
-  const wsRef = useRef<WebSocket | null>(null);
+export function useWebSocket(
+  url: string,
+) {
+  const [events, setEvents] =
+    useState<AuraEvent[]>([]);
+
+  const [isConnected, setIsConnected] =
+    useState(false);
+
+  const wsRef =
+    useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    const ws = new WebSocket(url);
-    wsRef.current = ws;
+    let active = true;
 
-    ws.onopen = () => setIsConnected(true);
-    
-    ws.onmessage = (event) => {
-      try {
-        const parsed = JSON.parse(event.data);
-        setEvents((prev) => [...prev, parsed]);
-      } catch (e) {
-        console.error("WebSocket Ayrıştırma Hatası", e);
+    const connect = () => {
+      if (!active) {
+        return;
       }
+
+      const ws =
+        new WebSocket(url);
+
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        if (active) {
+          setIsConnected(true);
+        }
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const parsed =
+            JSON.parse(
+              event.data,
+            ) as AuraEvent;
+
+          if (active) {
+            setEvents(
+              (current) => [
+                ...current.slice(-199),
+                parsed,
+              ],
+            );
+          }
+        } catch {
+          // Ignore malformed event.
+        }
+      };
+
+      ws.onclose = () => {
+        if (!active) {
+          return;
+        }
+
+        setIsConnected(false);
+      };
     };
 
-    ws.onclose = () => setIsConnected(false);
+    connect();
 
-    return () => ws.close();
+    return () => {
+      active = false;
+      wsRef.current?.close();
+      wsRef.current = null;
+    };
   }, [url]);
 
-  return { events, isConnected };
+  return {
+    events,
+    isConnected,
+  };
 }

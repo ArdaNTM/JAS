@@ -1,38 +1,41 @@
-﻿const { app, BrowserWindow } = require('electron');
-const path = require('path');
+const { app, BrowserWindow } = require("electron");
+const path = require("path");
 
 let mainWindow;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    title: "AURA - Personal AI OS",
+    width: 1440,
+    height: 920,
+    minWidth: 1120,
+    minHeight: 720,
+    title: "AURA Operations Console",
+    autoHideMenuBar: true,
+    backgroundColor: "#02070d",
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
     },
-    autoHideMenuBar: true
   });
 
-  // Geliştirme aşamasında Vite'in yerel sunucusuna bağlan
-  mainWindow.loadURL('http://localhost:5173');
+  if (process.env.AURA_DESKTOP_MODE === "production") {
+    mainWindow.loadFile(path.join(__dirname, "dist", "index.html"));
+  } else {
+    mainWindow.loadURL("http://127.0.0.1:5173");
+  }
 
-  mainWindow.on('closed', () => {
+  mainWindow.on("closed", () => {
     mainWindow = null;
   });
 }
 
 app.whenReady().then(createWindow);
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") app.quit();
 });
 
-app.on('activate', () => {
-  if (mainWindow === null) {
-    createWindow();
-  }
+app.on("activate", () => {
+  if (!mainWindow) createWindow();
 });

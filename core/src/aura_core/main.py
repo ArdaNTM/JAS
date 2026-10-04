@@ -1,63 +1,73 @@
-﻿from __future__ import annotations
+from __future__ import annotations
+
 import os
-from fastapi import FastAPI, HTTPException, status
+
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from uuid import UUID, uuid4
 
-# Gerçek AURA Core bileşenleri ve API'leri
-from aura_core.application.live_api import router as live_router
-from aura_core.application.approval_api import router as approval_router
-from aura_core.application.health import router as health_router
-from aura_core.security.auth import verify_ws_token
+from aura_core.agent.runtime import AgentExecutor
+from aura_core.application.composition import create_composed_app
+from aura_core.application.tasks import AgentTaskService
+from aura_core.config.kernel import KernelConfig
+from aura_core.kernel.runtime import AuraKernel
+from aura_core.mcp.gateway import MCPGateway
 
-app = FastAPI(
-    title="AURA Core - J.A.R.V.I.S. Production Engine",
-    version="1.0.0-final",
-    docs_url="/docs",
-    redoc_url="/redoc"
-)
 
-# CORS Sınırlandırması (Production-Secure)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE"],
-    allow_headers=["*"],
-)
+def build_app():
+    """The only supported AURA HTTP composition root."""
 
-# Rotaların Dahil Edilmesi
-app.include_router(live_router, prefix="/api")
-app.include_router(approval_router, prefix="/api")
-app.include_router(health_router, prefix="/api")
+    kernel_config = KernelConfig.from_environment()
 
-class TaskCreateRequest(BaseModel):
-    goal: str
-    provider_id: str | None = None
+    kernel = AuraKernel(kernel_config)
+    kernel.bootstrap()
+    kernel.start()
 
-@app.post("/api/tasks", status_code=status.HTTP_201_CREATED)
-async def create_real_task(request: TaskCreateRequest):
-    """
-    AURA Deterministic Kernel & Agent Runtime Üzerinden Gerçek Görev Başlatıcı
-    """
-    if not request.goal.strip():
-        raise HTTPException(status_code=400, detail="Görev hedefi (goal) boş olamaz.")
-    
-    task_id = uuid4()
-    # AURA Core Kernel ve Agent Runtime Entegrasyon Noktası
-    return {
-        "task_id": str(task_id),
-        "status": "initialized",
-        "goal": request.goal,
-        "governance": "JAS-Framework-1.0",
-        "boundary": "permission-engine-active"
-    }
+    if (
+        kernel.capability_registry is None
+        or kernel.provider_registry is None
+        or kernel.permission_engine is None
+    ):
+        raise RuntimeError("AURA kernel registries were not initialized")
 
-@app.get("/api/tasks/{task_id}")
-async def get_task_status(task_id: UUID):
-    return {
-        "task_id": str(task_id),
-        "status": "running",
-        "message": "Task is monitored under AURA Live Event Hub."
-    }
+    gateway = MCPGateway(
+        capability_registry=kernel.capability_registry,
+        provider_registry=kernel.provider_registry,
+        permission_engine=kernel.permission_engine,
+    )
+
+    task_service = AgentTaskService(
+        AgentExecutor(
+            gateway=gateway,
+            event_bus=kernel.event_bus,
+        )
+    )
+
+    app = create_composed_app(
+        config=kernel_config.runtime,
+        backend_config=kernel_config.backend,
+        task_service=task_service,
+        event_bus=kernel.event_bus,
+        permission_engine=kernel.permission_engine,
+        kernel=kernel,
+    )
+
+    origins = [
+        "http://127.0.0.1:5173",
+        "http://localhost:5173",
+    ]
+
+    # Electron production shell uses a file:// origin. It is deliberately opt-in.
+    if os.getenv("AURA_ALLOW_FILE_ORIGIN") == "1":
+        origins.append("null")
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=False,
+        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_headers=["Content-Type", "X-Request-ID"],
+    )
+
+    return app
+
+
+app = build_app()

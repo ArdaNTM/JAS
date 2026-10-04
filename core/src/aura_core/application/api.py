@@ -87,6 +87,7 @@ def create_api(
         version="0.1.0",
     )
     metrics = RequestMetrics()
+    app.state.readiness = readiness
     app.state.metrics = metrics
     app.state.task_service = task_service
     app.state.live_events = live_events or LiveEventBroker()
