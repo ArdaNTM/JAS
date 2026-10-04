@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-10-03T16:03:50.108844+00:00",
-  "git_commit": "7419ef35b9616e0c6e77058e12291cb1ee3a474f",
+  "generated_at": "2026-10-04T11:48:03.623567+00:00",
+  "git_commit": "5c2f44e693c4647f8fbd4d0322fa074f798624b0",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:a9fafd74052d87e6f3d3c967992258c867bbf21b18f6d90800d309a034e1ea42",
-  "file_count": 105,
+  "release_digest": "sha256:ebcc844e1663a23a56ec24e9056d9645ebd0a408d3d567a1d985efdcc464eb85",
+  "file_count": 102,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -19,10 +19,6 @@
     {
       "path": "aura-ui/src/api/client.ts",
       "sha256": "c21afa55294f56136227a6e941b1e1c5d0befbe974f791a7c0aae62fa2618ca0"
-    },
-    {
-      "path": "aura-ui/src/api/client.ts.aura-fix-backup",
-      "sha256": "4dc5af386e0290f2e71d2c6eea158a8fa975b52144e14953234ca01effcc41ac"
     },
     {
       "path": "aura-ui/src/App.css",
@@ -53,16 +49,8 @@
       "sha256": "0bf1fbb632aac8a3549c279de7d24ffc235101cd29a6b0d45c2304c302b098a3"
     },
     {
-      "path": "aura-ui/src/components/TaskConsole.tsx.aura-fix-backup",
-      "sha256": "0dec77b76ce6fd0287372d9beea5aed787938f14e77ae08dd9fb384eaf931400"
-    },
-    {
       "path": "aura-ui/src/hooks/useTaskEvents.ts",
       "sha256": "42b8a713ce55e1907c5812f57ac061fa70856cba62c67ef20d58eaeae86ccbbd"
-    },
-    {
-      "path": "aura-ui/src/hooks/useTaskEvents.ts.aura-fix-backup",
-      "sha256": "84570207048add9cf5cfbc292807279985a9d556445a83157f227ccee0975f82"
     },
     {
       "path": "aura-ui/src/hooks/useWebSocket.ts",
