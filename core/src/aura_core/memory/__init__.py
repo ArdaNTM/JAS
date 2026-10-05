@@ -1,5 +1,21 @@
-"""Provider-independent short and long term memory contracts."""
+﻿from .models import (
+    MemoryRecord,
+    MemoryQuery,
+    MemorySearchResult,
+    Embedding,
+)
+from .embeddings import (
+    EmbeddingProvider,
+    OllamaEmbeddingProvider,
+)
+from .semantic_store import SemanticMemoryStore
 
-from aura_core.memory.store import InMemoryStore, MemoryQuery, MemoryRecord, QdrantStore
-
-__all__ = ["InMemoryStore", "MemoryQuery", "MemoryRecord", "QdrantStore"]
+__all__ = [
+    "MemoryRecord",
+    "MemoryQuery",
+    "MemorySearchResult",
+    "Embedding",
+    "EmbeddingProvider",
+    "OllamaEmbeddingProvider",
+    "SemanticMemoryStore",
+]

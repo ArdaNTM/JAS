@@ -1,4 +1,4 @@
-﻿from contextlib import AsyncExitStack
+from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from typing import Any
 
@@ -85,11 +85,21 @@ class MCPConnection:
     ) -> Any:
         """Invoke an MCP tool."""
 
-        return await self.session.call_tool(
+        result = await self.session.call_tool(
             name,
             arguments=arguments,
         )
 
+        structured = getattr(
+            result,
+            "structured_content",
+            None,
+        )
+
+        if structured is not None:
+            return structured
+
+        return result
     async def close(self) -> None:
         """Close the MCP connection and all managed resources."""
 

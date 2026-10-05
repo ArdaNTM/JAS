@@ -30,7 +30,15 @@ class OllamaProvider:
         }
 
         if options:
-            payload["options"] = dict(options)
+            options = dict(options)
+
+            response_format = options.pop("format", None)
+
+            if response_format is not None:
+                payload["format"] = response_format
+
+            if options:
+                payload["options"] = options
 
         async with httpx.AsyncClient(
             timeout=self.timeout

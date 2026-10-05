@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from contextlib import asynccontextmanager
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -9,7 +10,15 @@ from aura_core.application.composition import create_composed_app
 from aura_core.application.tasks import AgentTaskService
 from aura_core.config.kernel import KernelConfig
 from aura_core.kernel.runtime import AuraKernel
+from aura_core.kernel.permissions import (
+    AuthorizationDecision,
+    AuthorizationLevel,
+    PermissionPolicy,
+)
 from aura_core.mcp.gateway import MCPGateway
+from aura_core.mcp.tool_registry import MCPToolRegistry
+from aura_core.research.config import ResearchMCPConfig
+from aura_core.research.provider_bootstrap import register_research_mcp
 
 
 def build_app():
@@ -19,14 +28,17 @@ def build_app():
 
     kernel = AuraKernel(kernel_config)
     kernel.bootstrap()
-    kernel.start()
 
     if (
         kernel.capability_registry is None
         or kernel.provider_registry is None
         or kernel.permission_engine is None
+        or kernel.service_registry is None
     ):
         raise RuntimeError("AURA kernel registries were not initialized")
+
+    research_config = ResearchMCPConfig.from_env()
+    research_tools = MCPToolRegistry()
 
     gateway = MCPGateway(
         capability_registry=kernel.capability_registry,
@@ -49,6 +61,43 @@ def build_app():
         permission_engine=kernel.permission_engine,
         kernel=kernel,
     )
+
+    @asynccontextmanager
+    async def lifespan(_app):
+        research_provider = None
+
+        try:
+            research_provider = await register_research_mcp(
+                config=research_config,
+                services=kernel.service_registry,
+                providers=kernel.provider_registry,
+                capabilities=kernel.capability_registry,
+                tools=research_tools,
+            )
+            kernel.permission_engine.add_policy(
+                PermissionPolicy(
+                    policy_id="local-user:internet.search:public-web",
+                    policy_version="1.0.0",
+                    principal_id="local-user",
+                    capability_id="internet.search",
+                    operation_id="internet.search",
+                    resource_scope="public-web",
+                    authorization_level=AuthorizationLevel.EXECUTE,
+                    decision=AuthorizationDecision.ALLOW,
+                )
+            )
+
+            kernel.start()
+            yield
+
+        finally:
+            if research_provider is not None:
+                await research_provider.close()
+
+            if kernel.state.value == "running":
+                kernel.stop()
+
+    app.router.lifespan_context = lifespan
 
     origins = [
         "http://127.0.0.1:5173",
