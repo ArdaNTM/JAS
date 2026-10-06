@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import asyncio
 import hashlib
@@ -25,14 +25,25 @@ from ..memory.models import MemoryRecord
 from ..memory.semantic_store import SemanticMemoryStore
 from ..models.multi_router import LLMProvider
 
+from .admission import (
+    AdmissionController,
+    AdmissionDecision,
+)
 from .contracts import ResearchToolSpec
+from .episodic import EpisodicMemory
 from .models import (
     LearningObjective,
     LearningPolicy,
     LearningRun,
+    LearningRuntimeState,
     LearningStatus,
 )
 from .planner import ResearchPlanner
+from .reflection import (
+    ReflectionInput,
+    ReflectionSynthesizer,
+    reflection_memory_record,
+)
 
 
 class LearningEngine:
@@ -69,44 +80,26 @@ class LearningEngine:
             exist_ok=True,
         )
 
-    # --------------------------------------------------------
-    # Deterministic IDs
-    # --------------------------------------------------------
+        self.admission = AdmissionController()
+        self.runtime_states: dict[
+            str,
+            LearningRuntimeState,
+        ] = {}
 
-    @staticmethod
-    def _source_id(uri: str) -> str:
-        return str(
-            uuid5(
-                NAMESPACE_URL,
-                f"aura-source:{uri.strip()}",
-            )
+        self.episodic_memory = EpisodicMemory(
+            memory
         )
 
-    @staticmethod
-    def _fact_id(
-        subject: str,
-        predicate: str,
-        object_value: str,
-    ) -> str:
-        digest = hashlib.sha256(
-            "|".join(
-                (
-                    subject.strip(),
-                    predicate.strip(),
-                    object_value.strip(),
-                )
-            ).encode("utf-8")
-        ).hexdigest()
-
-        return str(
-            uuid5(
-                NAMESPACE_URL,
-                f"aura-fact:{digest}",
+        self.reflection = (
+            ReflectionSynthesizer(
+                llm=llm
             )
+            if llm is not None
+            else None
         )
 
-    @staticmethod
     def _run_id(
+        self,
         objective: LearningObjective,
     ) -> str:
         return str(
@@ -116,296 +109,81 @@ class LearningEngine:
             )
         )
 
-    # --------------------------------------------------------
-    # Persistent checkpoint
-    # --------------------------------------------------------
-
-    def _checkpoint_path(
+    def runtime_state(
         self,
-        objective_id: str,
-    ) -> Path:
-        digest = hashlib.sha256(
-            objective_id.encode("utf-8")
-        ).hexdigest()
-
-        return (
-            self.checkpoint_root
-            / f"{digest}.json"
-        )
-
-    def _load_checkpoint(
-        self,
-        objective_id: str,
-    ) -> dict[str, Any]:
-        path = self._checkpoint_path(
-            objective_id
-        )
-
-        if not path.exists():
-            return {
-                "objective_id": objective_id,
-                "queries": [],
-                "sources": [],
-                "records": [],
-                "facts": [],
-                "completed": False,
-            }
-
+        run_id: str,
+    ) -> LearningRuntimeState:
         try:
-            data = json.loads(
-                path.read_text(
-                    encoding="utf-8"
-                )
-            )
+            return self.runtime_states[run_id]
+        except KeyError as exc:
+            raise KeyError(
+                f"Unknown learning run: {run_id}"
+            ) from exc
 
-            if not isinstance(data, dict):
-                raise ValueError
-
-            return data
-        except Exception:
-            return {
-                "objective_id": objective_id,
-                "queries": [],
-                "sources": [],
-                "records": [],
-                "facts": [],
-                "completed": False,
-            }
-
-    def _save_checkpoint(
-        self,
-        objective_id: str,
-        state: dict[str, Any],
-    ) -> None:
-        path = self._checkpoint_path(
-            objective_id
-        )
-
-        tmp = path.with_suffix(
-            ".tmp"
-        )
-
-        tmp.write_text(
-            json.dumps(
-                state,
-                ensure_ascii=False,
-                indent=2,
-                sort_keys=True,
-            ),
-            encoding="utf-8",
-        )
-
-        tmp.replace(path)
-
-    # --------------------------------------------------------
-    # MCP
-    # --------------------------------------------------------
-
-    async def _invoke(
+    async def _reflect(
         self,
         *,
-        principal_id: str,
-        capability_id: str,
-        operation_id: str,
-        tool_name: str,
-        arguments: dict[str, Any],
-        resource_scope: str,
-        risk_level: RiskLevel,
-        task_id: str,
-    ) -> Any:
-        request = MCPGatewayRequest(
-            request_id=(
-                f"learning:{task_id}:"
-                f"{capability_id}:"
-                f"{operation_id}"
+        objective: LearningObjective,
+        run: LearningRun,
+        facts: list[str],
+    ) -> None:
+        if self.reflection is None:
+            return
+
+        episode = ReflectionInput(
+            run_id=run.run_id,
+            objective_id=objective.objective_id,
+            objective_title=(
+                objective.title
+                or objective.description
             ),
-            principal_id=principal_id,
-            capability_id=capability_id,
-            operation_id=operation_id,
-            resource_scope=resource_scope,
-            risk_level=risk_level,
-            tool_name=tool_name,
-
-            # IMPORTANT:
-            # MCPGatewayRequest uses "arguments".
-            # Never use "args".
-            arguments=arguments,
-
-            session_id=f"learning:{task_id}",
-            task_id=task_id,
+            objective_description=(
+                objective.description
+            ),
+            status=run.status.value,
+            steps=run.steps,
+            sources=run.sources,
+            records=run.records,
+            error=run.error,
+            facts=tuple(facts),
         )
 
-        return await self.gateway.invoke(
-            request
-        )
-
-    @staticmethod
-    def _payload(
-        response: Any,
-    ) -> Any:
-        if hasattr(response, "result"):
-            decision = getattr(
-                response,
-                "decision",
-                None,
+        try:
+            result = await self.reflection.reflect(
+                episode
             )
 
-            if (
-                decision is not None
-                and decision
-                is not AuthorizationDecision.ALLOW
-            ):
-                reason = getattr(
-                    response,
-                    "reason",
-                    "MCP invocation denied",
+            await self.episodic_memory.remember(
+                reflection_memory_record(
+                    result,
+                    objective_id=objective.objective_id,
                 )
+            )
 
-                raise PermissionError(
-                    reason
-                )
+        except asyncio.CancelledError:
+            raise
 
-            response = response.result
+        except Exception:
+            # Reflection is post-run learning. A reflection failure
+            # must never invalidate already persisted knowledge.
+            pass
 
-        structured = getattr(
-            response,
-            "structuredContent",
-            None,
-        )
+    async def _recall_reflections(
+        self,
+        objective: LearningObjective,
+    ) -> list[str]:
+        try:
+            entries = await self.episodic_memory.recall(
+                objective.description
+            )
 
-        if structured is not None:
-            return structured
+            return [
+                entry.record.content
+                for entry in entries
+            ]
 
-        content = getattr(
-            response,
-            "content",
-            None,
-        )
-
-        if content:
-            for item in content:
-                text = getattr(
-                    item,
-                    "text",
-                    None,
-                )
-
-                if not text:
-                    continue
-
-                try:
-                    return json.loads(text)
-                except (TypeError, ValueError):
-                    return text
-
-        return response
-
-    # --------------------------------------------------------
-    # Result normalization
-    # --------------------------------------------------------
-
-    @staticmethod
-    def _search_items(
-        payload: Any,
-    ) -> list[Any]:
-        if isinstance(payload, list):
-            return payload
-
-        if isinstance(payload, dict):
-            for key in (
-                "results",
-                "items",
-                "hits",
-                "data",
-            ):
-                value = payload.get(key)
-
-                if isinstance(value, list):
-                    return value
-
-        return []
-
-    @staticmethod
-    def _candidate(
-        item: Any,
-    ) -> tuple[str, str]:
-        if not isinstance(item, dict):
-            return "", ""
-
-        uri = (
-            item.get("url")
-            or item.get("uri")
-            or item.get("link")
-            or item.get("href")
-            or ""
-        )
-
-        title = (
-            item.get("title")
-            or item.get("name")
-            or uri
-        )
-
-        return str(uri), str(title)
-
-    @staticmethod
-    def _fetch_text(
-        payload: Any,
-    ) -> str:
-        if isinstance(payload, str):
-            return payload
-
-        if isinstance(payload, dict):
-            for key in (
-                "content",
-                "text",
-                "body",
-                "data",
-                "result",
-            ):
-                value = payload.get(key)
-
-                if isinstance(value, str):
-                    return value
-
-                if isinstance(value, dict):
-                    nested = LearningEngine._fetch_text(
-                        value
-                    )
-
-                    if nested:
-                        return nested
-
-                if isinstance(value, list):
-                    parts = []
-
-                    for item in value:
-                        if isinstance(item, dict):
-                            text = item.get(
-                                "text"
-                            )
-
-                            if isinstance(
-                                text,
-                                str,
-                            ):
-                                parts.append(
-                                    text
-                                )
-                        elif isinstance(
-                            item,
-                            str,
-                        ):
-                            parts.append(item)
-
-                    if parts:
-                        return "\n".join(parts)
-
-        return ""
-
-    # --------------------------------------------------------
-    # LLM fact extraction
-    # --------------------------------------------------------
+        except Exception:
+            return []
 
     async def _extract_facts(
         self,
@@ -417,31 +195,13 @@ class LearningEngine:
             return []
 
         prompt = f"""
-You are AURA's deterministic knowledge extraction component.
+Extract only directly supported facts from the source.
+Return ONLY JSON:
+{{"facts":[{{"subject":"string","predicate":"string","object":"string","confidence":0.0,"quote":"exact source quote"}}]}}
 
-Extract ONLY facts directly supported by the supplied source.
-
-Return ONLY valid JSON.
-
-Schema:
-{{
-  "facts": [
-    {{
-      "subject": "string",
-      "predicate": "string",
-      "object": "string",
-      "confidence": 0.0,
-      "quote": "exact source quote"
-    }}
-  ]
-}}
-
-Rules:
-- Do not invent facts.
-- Do not infer facts not supported by the text.
-- quote MUST occur verbatim in the source.
-- confidence must be between 0 and 1.
-- If no reliable facts exist return {{"facts":[]}}.
+Do not invent facts.
+Do not infer unsupported facts.
+quote must occur verbatim in the source.
 
 SOURCE:
 {content}
@@ -466,9 +226,6 @@ SOURCE:
             else []
         )
 
-        if not isinstance(values, list):
-            return []
-
         facts: list[KnowledgeFact] = []
 
         for item in values:
@@ -478,15 +235,12 @@ SOURCE:
             subject = str(
                 item.get("subject", "")
             ).strip()
-
             predicate = str(
                 item.get("predicate", "")
             ).strip()
-
             object_value = str(
                 item.get("object", "")
             ).strip()
-
             quote = str(
                 item.get("quote", "")
             ).strip()
@@ -511,10 +265,7 @@ SOURCE:
                         0.5,
                     )
                 )
-            except (
-                TypeError,
-                ValueError,
-            ):
+            except (TypeError, ValueError):
                 confidence = 0.5
 
             confidence = max(
@@ -522,13 +273,20 @@ SOURCE:
                 min(1.0, confidence),
             )
 
+            fact_id = str(
+                uuid5(
+                    NAMESPACE_URL,
+                    (
+                        "aura-fact:"
+                        f"{subject}|{predicate}|"
+                        f"{object_value}"
+                    ),
+                )
+            )
+
             facts.append(
                 KnowledgeFact(
-                    fact_id=self._fact_id(
-                        subject,
-                        predicate,
-                        object_value,
-                    ),
+                    fact_id=fact_id,
                     subject=subject,
                     predicate=predicate,
                     object=object_value,
@@ -544,19 +302,7 @@ SOURCE:
                 )
             )
 
-        unique: dict[str, KnowledgeFact] = {
-            fact.fact_id: fact
-            for fact in facts
-        }
-
-        return [
-            unique[key]
-            for key in sorted(unique)
-        ]
-
-    # --------------------------------------------------------
-    # Main learning run
-    # --------------------------------------------------------
+        return facts
 
     async def run(
         self,
@@ -566,49 +312,67 @@ SOURCE:
         resource_scope: str = "research",
         risk_level: RiskLevel = RiskLevel.LOW,
     ) -> LearningRun:
+        run_id = self._run_id(objective)
 
         run = LearningRun(
-            run_id=self._run_id(objective),
+            run_id=run_id,
             objective_id=objective.objective_id,
             status=LearningStatus.RUNNING,
         )
 
-        checkpoint = self._load_checkpoint(
-            objective.objective_id
+        runtime_state = LearningRuntimeState(
+            run_id=run_id,
+            objective_id=objective.objective_id,
         )
 
-        if checkpoint.get("completed"):
-            run.status = LearningStatus.COMPLETED
-            return run
+        runtime_state.budget.units = (
+            self.policy.max_budget_units
+        )
 
-        started = time.monotonic()
+        self.runtime_states[run_id] = runtime_state
+        runtime_state.start()
+
+        facts_for_reflection: list[str] = []
 
         try:
             await self.knowledge.initialize()
-            await self.memory.initialize()
+            await self.episodic_memory.initialize()
+
+            previous_reflections = (
+                await self._recall_reflections(
+                    objective
+                )
+            )
 
             queries = self.planner.plan_queries(
                 objective.description,
                 self.policy.max_steps,
             )
 
-            processed_queries = set(
-                checkpoint.get(
-                    "queries",
-                    [],
+            if previous_reflections:
+                query_context = " ".join(
+                    previous_reflections[:3]
                 )
-            )
 
-            processed_sources = set(
-                checkpoint.get(
-                    "sources",
-                    [],
-                )
-            )
+                if query_context:
+                    extra = self.planner.plan_queries(
+                        (
+                            f"{objective.description}\n"
+                            f"Previous lessons:\n"
+                            f"{query_context}"
+                        ),
+                        max(
+                            1,
+                            self.policy.max_steps
+                            - len(queries),
+                        ),
+                    )
 
-            checkpoint["objective_id"] = (
-                objective.objective_id
-            )
+                    queries = list(
+                        dict.fromkeys(
+                            queries + extra
+                        )
+                    )
 
             for query in queries:
                 if run.steps >= self.policy.max_steps:
@@ -616,20 +380,22 @@ SOURCE:
 
                 if (
                     time.monotonic()
-                    - started
-                    >= self.policy.max_runtime_seconds
+                    >= time.monotonic()
+                    + self.policy.max_runtime_seconds
                 ):
                     break
 
-                if query in processed_queries:
-                    continue
+                if not runtime_state.budget.can_spend():
+                    break
 
-                processed_queries.add(query)
-                checkpoint["queries"] = sorted(
-                    processed_queries
-                )
+                runtime_state.budget.spend()
+                runtime_state.budget.queries += 1
 
-                response = await self._invoke(
+                request = MCPGatewayRequest(
+                    request_id=(
+                        f"learning:{run_id}:search:"
+                        f"{runtime_state.steps}"
+                    ),
                     principal_id=principal_id,
                     capability_id=(
                         self.tool_spec.search_capability_id
@@ -637,46 +403,89 @@ SOURCE:
                     operation_id=(
                         self.tool_spec.search_operation_id
                     ),
+                    resource_scope=resource_scope,
+                    risk_level=risk_level,
                     tool_name=(
                         self.tool_spec.search_tool_name
                     ),
-                    arguments={
-                        "query": query,
-                    },
-                    resource_scope=resource_scope,
-                    risk_level=risk_level,
-                    task_id=run.run_id,
+                    arguments={"query": query},
+                    session_id=f"learning:{run_id}",
+                    task_id=run_id,
                 )
 
-                payload = self._payload(
-                    response
+                response = await self.gateway.invoke(
+                    request
                 )
 
-                items = self._search_items(
-                    payload
-                )
+                if (
+                    getattr(
+                        response,
+                        "decision",
+                        AuthorizationDecision.ALLOW,
+                    )
+                    is not AuthorizationDecision.ALLOW
+                ):
+                    raise PermissionError(
+                        getattr(
+                            response,
+                            "reason",
+                            "Learning research denied",
+                        )
+                    )
 
                 run.steps += 1
+                runtime_state.consume_step()
+
+                payload = getattr(
+                    response,
+                    "result",
+                    response,
+                )
+
+                if isinstance(payload, dict):
+                    items = payload.get(
+                        "results",
+                        payload.get(
+                            "items",
+                            [],
+                        ),
+                    )
+                elif isinstance(payload, list):
+                    items = payload
+                else:
+                    items = []
 
                 for item in items:
                     if run.sources >= self.policy.max_sources:
                         break
 
-                    uri, title = self._candidate(
-                        item
+                    uri = str(
+                        item.get(
+                            "url",
+                            item.get(
+                                "uri",
+                                item.get(
+                                    "link",
+                                    "",
+                                ),
+                            ),
+                        )
                     )
 
                     if not uri:
                         continue
 
-                    source_id = self._source_id(
-                        uri
-                    )
+                    if not runtime_state.budget.can_spend():
+                        break
 
-                    if source_id in processed_sources:
-                        continue
+                    runtime_state.budget.spend()
+                    runtime_state.budget.fetches += 1
 
-                    fetch_response = await self._invoke(
+                    fetch_request = MCPGatewayRequest(
+                        request_id=(
+                            f"learning:{run_id}:fetch:"
+                            f"{run.sources}"
+                        ),
                         principal_id=principal_id,
                         capability_id=(
                             self.tool_spec.fetch_capability_id
@@ -684,25 +493,92 @@ SOURCE:
                         operation_id=(
                             self.tool_spec.fetch_operation_id
                         ),
+                        resource_scope=resource_scope,
+                        risk_level=risk_level,
                         tool_name=(
                             self.tool_spec.fetch_tool_name
                         ),
-                        arguments={
-                            "url": uri,
-                        },
-                        resource_scope=resource_scope,
-                        risk_level=risk_level,
-                        task_id=run.run_id,
+                        arguments={"url": uri},
+                        session_id=f"learning:{run_id}",
+                        task_id=run_id,
                     )
 
-                    fetched = self._fetch_text(
-                        self._payload(
-                            fetch_response
+                    fetched_response = (
+                        await self.gateway.invoke(
+                            fetch_request
                         )
-                    ).strip()
+                    )
 
-                    if not fetched:
+                    if (
+                        getattr(
+                            fetched_response,
+                            "decision",
+                            AuthorizationDecision.ALLOW,
+                        )
+                        is not AuthorizationDecision.ALLOW
+                    ):
                         continue
+
+                    fetched = getattr(
+                        fetched_response,
+                        "result",
+                        fetched_response,
+                    )
+
+                    if isinstance(fetched, str):
+                        content = fetched
+                    elif isinstance(fetched, dict):
+                        content = str(
+                            fetched.get(
+                                "content",
+                                fetched.get(
+                                    "text",
+                                    fetched.get(
+                                        "body",
+                                        "",
+                                    ),
+                                ),
+                            )
+                        )
+                    else:
+                        content = ""
+
+                    content = content.strip()
+
+                    if not content:
+                        continue
+
+                    admission = (
+                        self.admission.evaluate(
+                            content
+                        )
+                    )
+
+                    if (
+                        admission.decision
+                        is not AdmissionDecision.ACCEPT
+                    ):
+                        continue
+
+                    if (
+                        runtime_state.budget.new_records
+                        >= self.policy.max_new_records
+                    ):
+                        break
+
+                    title = str(
+                        item.get(
+                            "title",
+                            uri,
+                        )
+                    )
+
+                    source_id = str(
+                        uuid5(
+                            NAMESPACE_URL,
+                            f"aura-source:{uri}",
+                        )
+                    )
 
                     source = KnowledgeSource(
                         source_id=source_id,
@@ -710,58 +586,58 @@ SOURCE:
                         source_type="mcp",
                         title=title,
                         metadata={
-                            "objective_id":
-                                objective.objective_id,
-                            "learning_run_id":
-                                run.run_id,
+                            "objective_id": (
+                                objective.objective_id
+                            ),
+                            "learning_run_id": run_id,
+                            "content_hash": (
+                                admission.content_hash
+                            ),
                         },
                     )
 
-                    payload_bytes = fetched.encode(
-                        "utf-8"
-                    )
+                    self.admission.commit(admission)
 
                     await self.knowledge.ingest_source(
                         source,
-                        payload_bytes,
+                        content.encode("utf-8"),
                     )
+
+                    extracted = await self._extract_facts(
+                        source=source,
+                        content=content,
+                    )
+
+                    for fact in extracted:
+                        await self.knowledge.ingest_fact(
+                            fact
+                        )
+
+                        facts_for_reflection.append(
+                            (
+                                f"{fact.subject} "
+                                f"{fact.predicate} "
+                                f"{fact.object}"
+                            )
+                        )
 
                     record = KnowledgeRecord.create(
                         namespace="research",
-                        content=fetched,
+                        content=content,
                         source_id=source.source_id,
                         kind="research",
                         title=title,
                         confidence=0.5,
                         metadata={
-                            "objective_id":
-                                objective.objective_id,
-                            "learning_run_id":
-                                run.run_id,
-                            "uri": uri,
+                            "objective_id": (
+                                objective.objective_id
+                            ),
+                            "learning_run_id": run_id,
+                            "content_hash": (
+                                admission.content_hash
+                            ),
                         },
                     )
-
-                    facts = await self._extract_facts(
-                        source=source,
-                        content=fetched,
-                    )
-
-                    for fact in facts:
-                        await self.knowledge.ingest_fact(
-                            fact
-                        )
-
-                    record.facts = [
-                        fact.fact_id
-                        for fact in facts
-                    ]
-
-                    record.evidence = [
-                        evidence
-                        for fact in facts
-                        for evidence in fact.evidence
-                    ]
 
                     await self.knowledge.ingest_record(
                         record
@@ -770,77 +646,49 @@ SOURCE:
                     await self.memory.put(
                         MemoryRecord(
                             record_id=record.record_id,
-                            namespace=record.namespace,
-                            content=record.content,
-                            source=source.uri,
+                            namespace="research",
+                            content=content,
+                            source=uri,
                             metadata={
-                                "source_id":
-                                    source.source_id,
-                                "objective_id":
-                                    objective.objective_id,
-                                "learning_run_id":
-                                    run.run_id,
-                                "fact_count":
-                                    str(len(facts)),
+                                "objective_id": (
+                                    objective.objective_id
+                                ),
+                                "learning_run_id": run_id,
+                                "content_hash": (
+                                    admission.content_hash
+                                ),
                             },
                             created_at=record.created_at,
                         )
                     )
 
-                    processed_sources.add(
-                        source_id
-                    )
-
-                    checkpoint["sources"] = sorted(
-                        processed_sources
-                    )
-
-                    checkpoint["records"] = sorted(
-                        set(
-                            checkpoint.get(
-                                "records",
-                                [],
-                            )
-                        )
-                        | {record.record_id}
-                    )
-
-                    checkpoint["facts"] = sorted(
-                        set(
-                            checkpoint.get(
-                                "facts",
-                                [],
-                            )
-                        )
-                        | {
-                            fact.fact_id
-                            for fact in facts
-                        }
-                    )
-
-                    self._save_checkpoint(
-                        objective.objective_id,
-                        checkpoint,
-                    )
-
                     run.sources += 1
                     run.records += 1
-
-            checkpoint["completed"] = True
-            self._save_checkpoint(
-                objective.objective_id,
-                checkpoint,
-            )
+                    runtime_state.consume_source()
+                    runtime_state.consume_record()
+                    runtime_state.budget.new_records += 1
 
             run.status = LearningStatus.COMPLETED
+            runtime_state.succeed()
+
+            await self._reflect(
+                objective=objective,
+                run=run,
+                facts=facts_for_reflection,
+            )
+
             return run
 
         except asyncio.CancelledError:
             run.status = LearningStatus.STOPPED
-            self._save_checkpoint(
-                objective.objective_id,
-                checkpoint,
+            runtime_state.stop()
+
+            await self._reflect(
+                objective=objective,
+                run=run,
+                facts=facts_for_reflection,
             )
+
             raise
 
         except Exception as exc:
@@ -849,9 +697,20 @@ SOURCE:
                 f"{type(exc).__name__}: {exc}"
             )
 
-            self._save_checkpoint(
-                objective.objective_id,
-                checkpoint,
+            runtime_state.fail(
+                run.error,
+                cooldown_seconds=(
+                    self.policy.cooldown_seconds
+                ),
+                max_consecutive_failures=(
+                    self.policy.max_consecutive_failures
+                ),
+            )
+
+            await self._reflect(
+                objective=objective,
+                run=run,
+                facts=facts_for_reflection,
             )
 
             return run

@@ -182,3 +182,1005 @@
     border-right-color: var(--border);
   }
 }
+
+
+/* ============================================================
+   AURA RESEARCH OUTPUT + VOICE
+   ============================================================ */
+
+/* AURA_RESEARCH_VOICE_CSS_START */
+
+html,
+body,
+#root {
+    width: 100%;
+    min-width: 100%;
+    height: 100%;
+    min-height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+html,
+body {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+.research-output-panel {
+    width: min(760px, 88vw);
+    max-height: 34vh;
+    margin: 16px auto 0;
+    padding: 16px 18px;
+    overflow: hidden;
+    box-sizing: border-box;
+
+    border: 1px solid rgba(120, 210, 255, 0.35);
+    border-radius: 12px;
+
+    background: rgba(4, 12, 22, 0.88);
+    backdrop-filter: blur(10px);
+
+    text-align: left;
+}
+
+.research-output-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+
+    margin-bottom: 10px;
+
+    font-family: "Consolas", monospace;
+    font-size: 12px;
+    letter-spacing: 0.18em;
+}
+
+.research-output-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.research-output-button {
+    cursor: pointer;
+
+    border: 1px solid rgba(120, 210, 255, 0.4);
+    border-radius: 6px;
+
+    padding: 6px 10px;
+
+    background: rgba(10, 25, 40, 0.9);
+    color: inherit;
+
+    font: inherit;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+}
+
+.research-output-button:hover {
+    background: rgba(20, 50, 75, 0.95);
+}
+
+.research-output-content {
+    max-height: 27vh;
+    overflow-y: auto;
+
+    padding-right: 10px;
+
+    white-space: pre-wrap;
+    word-break: break-word;
+
+    font-family:
+        "Inter",
+        "Segoe UI",
+        sans-serif;
+
+    font-size: 14px;
+    line-height: 1.65;
+}
+
+.research-output-content::-webkit-scrollbar {
+    width: 7px;
+}
+
+.research-output-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.research-output-content::-webkit-scrollbar-thumb {
+    border-radius: 8px;
+    background: rgba(120, 210, 255, 0.35);
+}
+
+.voice-button {
+    cursor: pointer;
+}
+
+.voice-button.active {
+    animation: aura-mic-pulse 1s infinite;
+}
+
+@keyframes aura-mic-pulse {
+    0% {
+        opacity: 0.65;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0.65;
+    }
+}
+
+/*
+ * Do not use zoom: 1.5 here.
+ * The existing browser / OS scale is intentionally preserved.
+ */
+
+@media (max-width: 900px) {
+    .research-output-panel {
+        width: 92vw;
+        max-height: 38vh;
+    }
+
+    .research-output-content {
+        max-height: 30vh;
+    }
+}
+
+/* AURA_RESEARCH_VOICE_CSS_END */
+/* ============================================================
+   AURA RESEARCH OUTPUT
+   ============================================================ */
+
+/* AURA_RESEARCH_OUTPUT_CSS_START */
+
+.research-output-panel {
+  width: min(760px, 92vw);
+  max-height: 30vh;
+  margin-top: 1rem;
+  padding: 1rem;
+  overflow: hidden;
+  border: 1px solid rgba(34, 211, 238, 0.28);
+  border-radius: 0.75rem;
+  background: rgba(2, 12, 23, 0.82);
+  backdrop-filter: blur(10px);
+}
+
+.research-output-header {
+  margin-bottom: 0.65rem;
+  font-family: Consolas, monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  color: rgb(103, 232, 249);
+}
+
+.research-output-content {
+  max-height: 24vh;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: Consolas, monospace;
+  font-size: 0.78rem;
+  line-height: 1.6;
+  color: rgb(165, 243, 252);
+}
+
+/* AURA_RESEARCH_OUTPUT_CSS_END */
+
+/* ============================================================
+   AURA JARVIS / RESEARCH OUTPUT
+   ============================================================ */
+
+/* AURA_JARVIS_RESEARCH_CSS_START */
+
+.research-output-panel {
+  width: min(760px, 92vw);
+  max-height: 30vh;
+  margin-top: 1rem;
+  overflow: hidden;
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  border-radius: 0.75rem;
+  background: rgba(2, 8, 18, 0.86);
+  backdrop-filter: blur(12px);
+}
+
+.research-output-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid rgba(34, 211, 238, 0.18);
+  font-family: Consolas, monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.2em;
+  color: rgb(103, 232, 249);
+}
+
+.research-output-read {
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  padding: 0.3rem 0.55rem;
+  font-family: Consolas, monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.15em;
+  color: rgb(103, 232, 249);
+  cursor: pointer;
+}
+
+.research-output-read:hover {
+  border-color: rgb(103, 232, 249);
+}
+
+.research-output-content {
+  max-height: 24vh;
+  overflow-y: auto;
+  padding: 0.9rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: Consolas, monospace;
+  font-size: 0.78rem;
+  line-height: 1.6;
+  color: rgb(165, 243, 252);
+}
+
+/* AURA_JARVIS_RESEARCH_CSS_END */
+
+/* ============================================================
+   AURA_STRUCTURAL_RESEARCH_OUTPUT_CSS
+   ============================================================ */
+
+.aura-research-output {
+  width: min(760px, 92vw);
+  max-height: 30vh;
+  margin-top: 1rem;
+  overflow: hidden;
+
+  border: 1px solid rgba(34, 211, 238, 0.28);
+  border-radius: 0.75rem;
+
+  background: rgba(2, 8, 18, 0.88);
+  backdrop-filter: blur(14px);
+
+  box-shadow:
+    0 0 25px rgba(34, 211, 238, 0.08);
+}
+
+.aura-research-output-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0.7rem 0.9rem;
+
+  border-bottom:
+    1px solid rgba(34, 211, 238, 0.18);
+
+  font-family:
+    Consolas,
+    "Courier New",
+    monospace;
+
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+
+  color:
+    rgb(103, 232, 249);
+}
+
+.aura-research-read {
+  padding:
+    0.3rem
+    0.6rem;
+
+  border:
+    1px solid
+    rgba(34, 211, 238, 0.4);
+
+  background:
+    transparent;
+
+  font-family:
+    Consolas,
+    "Courier New",
+    monospace;
+
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+
+  color:
+    rgb(103, 232, 249);
+
+  cursor:
+    pointer;
+}
+
+.aura-research-read:hover {
+  border-color:
+    rgb(103, 232, 249);
+
+  box-shadow:
+    0 0 14px
+    rgba(34, 211, 238, 0.18);
+}
+
+.aura-research-output-body {
+  max-height: 24vh;
+
+  overflow-y:
+    auto;
+
+  padding:
+    0.9rem;
+
+  white-space:
+    pre-wrap;
+
+  overflow-wrap:
+    anywhere;
+
+  font-family:
+    Consolas,
+    "Courier New",
+    monospace;
+
+  font-size:
+    0.78rem;
+
+  line-height:
+    1.6;
+
+  color:
+    rgb(165, 243, 252);
+}
+
+/* ============================================================
+   AURA_RESEARCH_OUTPUT_CSS_V2
+   ============================================================ */
+
+.aura-research-output {
+  width: min(760px, 92vw);
+  max-height: 32vh;
+  margin-top: 12px;
+  overflow: hidden;
+
+  border: 1px solid rgba(34, 211, 238, 0.28);
+  border-radius: 12px;
+
+  background: rgba(2, 8, 18, 0.90);
+  backdrop-filter: blur(14px);
+
+  box-shadow:
+    0 0 26px rgba(34, 211, 238, 0.08);
+}
+
+.aura-research-output-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 9px 12px;
+
+  border-bottom:
+    1px solid rgba(34, 211, 238, 0.18);
+
+  font-family:
+    Consolas,
+    "Courier New",
+    monospace;
+
+  font-size: 11px;
+  letter-spacing: 0.16em;
+
+  color: rgb(103, 232, 249);
+}
+
+.aura-research-read {
+  padding: 4px 8px;
+
+  border:
+    1px solid rgba(34, 211, 238, 0.40);
+
+  border-radius: 5px;
+
+  background: transparent;
+
+  font-family:
+    Consolas,
+    "Courier New",
+    monospace;
+
+  font-size: 10px;
+  letter-spacing: 0.12em;
+
+  color: rgb(103, 232, 249);
+
+  cursor: pointer;
+}
+
+.aura-research-read:hover {
+  border-color: rgb(103, 232, 249);
+
+  box-shadow:
+    0 0 14px
+    rgba(34, 211, 238, 0.18);
+}
+
+.aura-research-output-body {
+  max-height: 26vh;
+
+  overflow-y: auto;
+
+  padding: 12px;
+
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+
+  font-family:
+    Consolas,
+    "Courier New",
+    monospace;
+
+  font-size: 12px;
+  line-height: 1.55;
+
+  color: rgb(165, 243, 252);
+}
+
+
+
+.aura-research-output {
+  width: min(760px, 92vw);
+  max-height: 32vh;
+  margin: 12px auto 0;
+  overflow: hidden;
+  border: 1px solid rgba(34, 211, 238, 0.28);
+  border-radius: 12px;
+  background: rgba(2, 8, 18, 0.90);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 0 26px rgba(34, 211, 238, 0.08);
+  z-index: 20;
+}
+
+.aura-research-output-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+  border-bottom: 1px solid rgba(34, 211, 238, 0.18);
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: rgb(103, 232, 249);
+}
+
+.aura-research-read {
+  padding: 4px 9px;
+  border: 1px solid rgba(34, 211, 238, 0.40);
+  border-radius: 5px;
+  background: transparent;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 10px;
+  letter-spacing: 0.10em;
+  color: rgb(103, 232, 249);
+  cursor: pointer;
+}
+
+.aura-research-read:hover {
+  border-color: rgb(103, 232, 249);
+  box-shadow: 0 0 14px rgba(34, 211, 238, 0.18);
+}
+
+.aura-research-output-body {
+  max-height: 26vh;
+  overflow-y: auto;
+  padding: 12px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.55;
+  color: rgb(165, 243, 252);
+}
+
+@media (max-width: 900px) {
+  .aura-research-output {
+    width: 92vw;
+    max-height: 38vh;
+  }
+
+  .aura-research-output-body {
+    max-height: 32vh;
+  }
+}
+
+
+
+.aura-research-output {
+  width: min(760px, 92vw);
+  margin: 16px auto 0;
+  border: 1px solid rgba(34, 211, 238, 0.28);
+  border-radius: 12px;
+  background: rgba(2, 8, 18, 0.94);
+  overflow: hidden;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 50;
+}
+
+.aura-research-output-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-width: 0;
+  width: 100%;
+  padding: 10px 14px;
+  box-sizing: border-box;
+  border-bottom: 1px solid rgba(34, 211, 238, 0.18);
+}
+
+.aura-research-output-header > span {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  line-height: 1.3;
+  color: rgb(103, 232, 249);
+}
+
+.aura-research-read {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 66px;
+  height: 28px;
+  margin: 0;
+  padding: 0 12px;
+  box-sizing: border-box;
+  border: 1px solid rgba(34, 211, 238, 0.45);
+  border-radius: 5px;
+  background: rgba(8, 47, 73, 0.55);
+  color: rgb(103, 232, 249);
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.aura-research-read:hover {
+  border-color: rgb(103, 232, 249);
+  box-shadow: 0 0 16px rgba(34, 211, 238, 0.22);
+}
+
+.aura-research-output-body {
+  width: 100%;
+  max-height: 30vh;
+  overflow-y: auto;
+  padding: 14px;
+  box-sizing: border-box;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  color: rgb(165, 243, 252);
+}
+
+html[data-aura-speaking="true"] .aura-research-read {
+  border-color: rgb(134, 239, 172);
+  color: rgb(134, 239, 172);
+  box-shadow: 0 0 18px rgba(134, 239, 172, 0.18);
+}
+
+@media (max-width: 700px) {
+  .aura-research-output {
+    width: 94vw;
+  }
+
+  .aura-research-output-header {
+    gap: 10px;
+    padding: 9px 10px;
+  }
+
+  .aura-research-output-header > span {
+    font-size: 9px;
+    letter-spacing: 0.09em;
+  }
+
+  .aura-research-read {
+    min-width: 58px;
+    padding: 0 8px;
+  }
+}
+
+/* ============================================================
+   AURA_RESEARCH_OUTPUT_CSS_V62
+   ============================================================ */
+
+.aura-research-output {
+  width: min(760px, 92vw);
+  margin: 16px auto 0;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 50;
+  overflow: hidden;
+  border: 1px solid rgba(34, 211, 238, 0.28);
+  border-radius: 12px;
+  background: rgba(2, 8, 18, 0.94);
+}
+
+.aura-research-output-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(34, 211, 238, 0.18);
+}
+
+.aura-research-output-title {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-sizing: border-box;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 11px;
+  line-height: 1.3;
+  letter-spacing: 0.14em;
+  color: rgb(103, 232, 249);
+}
+
+.aura-research-read {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-width: 68px;
+  height: 28px;
+  margin: 0;
+  padding: 0 12px;
+  box-sizing: border-box;
+  border: 1px solid rgba(34, 211, 238, 0.45);
+  border-radius: 5px;
+  background: rgba(8, 47, 73, 0.55);
+  color: rgb(103, 232, 249);
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.aura-research-read:hover {
+  border-color: rgb(103, 232, 249);
+  box-shadow: 0 0 16px rgba(34, 211, 238, 0.22);
+}
+
+.aura-research-output-body {
+  width: 100%;
+  max-height: 30vh;
+  box-sizing: border-box;
+  padding: 14px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  color: rgb(165, 243, 252);
+}
+
+html[data-aura-speaking="true"] .aura-research-read {
+  border-color: rgb(134, 239, 172);
+  color: rgb(134, 239, 172);
+  box-shadow: 0 0 18px rgba(134, 239, 172, 0.18);
+}
+
+@media (max-width: 700px) {
+  .aura-research-output {
+    width: 94vw;
+  }
+
+  .aura-research-output-header {
+    gap: 10px;
+    padding: 9px 10px;
+  }
+
+  .aura-research-output-title {
+    font-size: 9px;
+    letter-spacing: 0.09em;
+  }
+
+  .aura-research-read {
+    min-width: 58px;
+    padding: 0 9px;
+  }
+}
+
+/* AURA_RESEARCH_OUTPUT_CSS_V62_END */
+
+/* ============================================================
+   AURA_CONVERSATIONAL_RESEARCH_CSS_V63
+   ============================================================ */
+
+.aura-conversation-panel {
+  width: min(820px, 92vw);
+  margin: 16px auto 0;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 60;
+  overflow: hidden;
+  border: 1px solid rgba(34, 211, 238, 0.28);
+  border-radius: 12px;
+  background: rgba(2, 8, 18, 0.95);
+  box-shadow:
+    0 0 24px rgba(34, 211, 238, 0.08);
+}
+
+.aura-conversation-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(34, 211, 238, 0.18);
+}
+
+.aura-conversation-title {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgb(103, 232, 249);
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 11px;
+  line-height: 1.3;
+  letter-spacing: 0.16em;
+}
+
+.aura-conversation-read {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-width: 68px;
+  height: 28px;
+  margin: 0;
+  padding: 0 12px;
+  box-sizing: border-box;
+  border: 1px solid rgba(34, 211, 238, 0.45);
+  border-radius: 5px;
+  background: rgba(8, 47, 73, 0.55);
+  color: rgb(103, 232, 249);
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.aura-conversation-read:hover {
+  border-color: rgb(103, 232, 249);
+  box-shadow:
+    0 0 16px rgba(34, 211, 238, 0.22);
+}
+
+.aura-conversation-response {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px;
+  color: rgb(224, 242, 254);
+  font-family: Inter, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.aura-conversation-source {
+  width: 100%;
+  box-sizing: border-box;
+  border-top: 1px solid rgba(34, 211, 238, 0.12);
+}
+
+.aura-source-label {
+  display: block;
+  padding: 9px 14px 5px;
+  color: rgba(103, 232, 249, 0.7);
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+}
+
+.aura-research-result {
+  max-height: 32vh;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 14px 14px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  color: rgb(165, 243, 252);
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+html[data-aura-speaking="true"] .aura-conversation-panel {
+  border-color: rgba(134, 239, 172, 0.4);
+  box-shadow:
+    0 0 28px rgba(134, 239, 172, 0.12);
+}
+
+html[data-aura-speaking="true"] .aura-conversation-read {
+  border-color: rgb(134, 239, 172);
+  color: rgb(134, 239, 172);
+  box-shadow:
+    0 0 18px rgba(134, 239, 172, 0.18);
+}
+
+@media (max-width: 700px) {
+  .aura-conversation-panel {
+    width: 94vw;
+  }
+
+  .aura-conversation-header {
+    gap: 10px;
+    padding: 9px 10px;
+  }
+
+  .aura-conversation-title {
+    font-size: 9px;
+    letter-spacing: 0.1em;
+  }
+
+  .aura-conversation-read {
+    min-width: 58px;
+    padding: 0 9px;
+  }
+
+  .aura-conversation-response {
+    font-size: 13px;
+  }
+}
+
+/* AURA_CONVERSATIONAL_RESEARCH_CSS_V63_END */
+
+/* AURA_JARVIS_CSS_V64 */
+
+.aura-jarvis-response {
+    position: fixed;
+    left: 24px;
+    bottom: 112px;
+    width: min(560px, calc(100vw - 48px));
+    z-index: 1200;
+    box-sizing: border-box;
+    padding: 14px 18px;
+    border: 1px solid rgba(120, 210, 255, 0.28);
+    border-radius: 12px;
+    background: rgba(4, 12, 22, 0.92);
+    backdrop-filter: blur(14px);
+    box-shadow:
+        0 0 24px rgba(50, 180, 255, 0.12),
+        inset 0 0 18px rgba(50, 180, 255, 0.04);
+    color: #dff7ff;
+    pointer-events: none;
+}
+
+.aura-jarvis-response-label {
+    margin-bottom: 7px;
+    font-size: 10px;
+    line-height: 1.2;
+    letter-spacing: 0.18em;
+    font-weight: 700;
+    opacity: 0.7;
+}
+
+.aura-jarvis-response-text {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+@media (max-width: 720px) {
+    .aura-jarvis-response {
+        left: 14px;
+        right: 14px;
+        bottom: 96px;
+        width: auto;
+    }
+}
+
+/* AURA_JARVIS_CSS_V64 */
+/*  */
+/* AURA_JARVIS_CSS_V652_START */
+
+.aura-jarvis-response {
+    position: fixed;
+    left: 24px;
+    bottom: 112px;
+    z-index: 3000;
+    width: min(560px, calc(100vw - 48px));
+    box-sizing: border-box;
+    padding: 14px 18px;
+    border: 1px solid rgba(100, 210, 255, 0.28);
+    border-radius: 12px;
+    background: rgba(4, 10, 18, 0.95);
+    backdrop-filter: blur(14px);
+    box-shadow:
+        0 0 24px rgba(40, 180, 255, 0.12),
+        inset 0 0 18px rgba(40, 180, 255, 0.04);
+    color: #dff7ff;
+    pointer-events: none;
+}
+
+.aura-jarvis-response-label {
+    display: block;
+    margin: 0 0 7px 0;
+    padding: 0;
+    font-size: 10px;
+    line-height: 1.2;
+    letter-spacing: 0.18em;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.aura-jarvis-response-text {
+    display: block;
+    margin: 0;
+    padding: 0;
+    font-size: 14px;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+@media (max-width: 720px) {
+
+    .aura-jarvis-response {
+        left: 14px;
+        right: 14px;
+        bottom: 96px;
+        width: auto;
+    }
+}
+
+/* AURA_JARVIS_CSS_V652_END */

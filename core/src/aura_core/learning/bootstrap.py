@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import os
 from dataclasses import dataclass
@@ -29,13 +29,11 @@ class LearningRuntimeConfig:
     embedding_model: str
     ollama_url: str
     qdrant_collection: str
-
     interval_seconds: float
     max_sources: int
     max_steps: int
     max_iterations: int
     max_runtime_seconds: float
-
     checkpoint_root: Path
 
     @classmethod
@@ -167,6 +165,7 @@ def create_learning_runtime(
         ),
         max_sources=cfg.max_sources,
         max_steps=cfg.max_steps,
+        max_iterations=cfg.max_iterations,
         max_runtime_seconds=(
             cfg.max_runtime_seconds
         ),
@@ -208,6 +207,9 @@ def create_learning_runtime(
         engine=engine,
         objectives=list(
             objectives or []
+        ),
+        interval_seconds=(
+            cfg.interval_seconds
         ),
     )
 

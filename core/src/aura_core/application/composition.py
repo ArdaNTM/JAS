@@ -1,7 +1,4 @@
-from __future__ import annotations
-
-from contextlib import asynccontextmanager
-from typing import AsyncIterator
+﻿from __future__ import annotations
 
 from fastapi import FastAPI
 from starlette.routing import WebSocketRoute
@@ -9,12 +6,16 @@ from starlette.routing import WebSocketRoute
 from aura_core.application.api import create_api
 from aura_core.application.approval_api import router as approval_router
 from aura_core.application.event_bridge import EventBusLiveBridge
-from aura_core.kernel.diagnostics import DiagnosticsService
-from aura_core.application.health_api import health, health_live, health_ready, router as health_router
+from aura_core.application.health_api import (
+    health,
+    health_live,
+    health_ready,
+    router as health_router,
+)
 from aura_core.application.live_api import router as live_router
 from aura_core.application.live_events import LiveEventBroker
 from aura_core.application.ws_api import router as ws_router
-from aura_core.kernel.runtime import KernelState
+from aura_core.kernel.diagnostics import DiagnosticsService
 from aura_core.security.ws_ticket import WebSocketTicketManager
 
 
@@ -31,9 +32,8 @@ def create_composed_app(
     """
     Canonical AURA HTTP composition root.
 
-    Task execution remains:
-    HTTP -> AgentTaskService -> AgentExecutor -> MCPGateway ->
-    PermissionEngine -> Provider.
+    Lifecycle ownership belongs exclusively to the outer/root
+    application composition layer.
     """
 
     app = create_api(
@@ -46,56 +46,43 @@ def create_composed_app(
     app.state.kernel = kernel
     app.state.permission_engine = permission_engine
 
-    broker = getattr(app.state, "live_events", None)
-    if not isinstance(broker, LiveEventBroker):
+    broker = getattr(
+        app.state,
+        "live_events",
+        None,
+    )
+
+    if not isinstance(
+        broker,
+        LiveEventBroker,
+    ):
         broker = LiveEventBroker()
         app.state.live_events = broker
 
     app.state.ws_ticket_manager = WebSocketTicketManager()
 
-    # Router paths already include /api. Do not add a duplicate prefix.
     app.include_router(health_router)
     app.include_router(approval_router)
     app.include_router(ws_router)
     app.include_router(live_router)
 
     app.state.event_bridge = (
-        EventBusLiveBridge(event_bus, broker)
+        EventBusLiveBridge(
+            event_bus,
+            broker,
+        )
         if event_bus is not None
         else None
     )
 
-    @asynccontextmanager
-    async def lifespan(application: FastAPI) -> AsyncIterator[None]:
-        bridge = application.state.event_bridge
+    app.state.learning_scheduler = None
 
-        if bridge is not None:
-            await bridge.start()
-
-        try:
-            yield
-        finally:
-            if bridge is not None:
-                await bridge.stop()
-
-            active_kernel = getattr(application.state, "kernel", None)
-            if (
-                active_kernel is not None
-                and active_kernel.state is KernelState.RUNNING
-            ):
-                active_kernel.stop()
-
-    app.router.lifespan_context = lifespan
-    # ------------------------------------------------------------
-
-
-    # AURA canonical health route guarantee.
-    _aura_paths = {
+    aura_paths = {
         getattr(route, "path", None)
         for route in app.routes
     }
 
-    if "/api/health" not in _aura_paths:
+    if "/api/health" not in aura_paths:
         app.add_api_route(
             "/api/health",
             health,
@@ -103,12 +90,12 @@ def create_composed_app(
             tags=["health"],
         )
 
-    _aura_paths = {
+    aura_paths = {
         getattr(route, "path", None)
         for route in app.routes
     }
 
-    if "/api/health/live" not in _aura_paths:
+    if "/api/health/live" not in aura_paths:
         app.add_api_route(
             "/api/health/live",
             health_live,
@@ -116,12 +103,12 @@ def create_composed_app(
             tags=["health"],
         )
 
-    _aura_paths = {
+    aura_paths = {
         getattr(route, "path", None)
         for route in app.routes
     }
 
-    if "/api/health/ready" not in _aura_paths:
+    if "/api/health/ready" not in aura_paths:
         app.add_api_route(
             "/api/health/ready",
             health_ready,
@@ -129,21 +116,17 @@ def create_composed_app(
             tags=["health"],
         )
 
-
-    # --------------------------------------------------------
-    # AURA Kernel Diagnostics HTTP surface
-    #
-    # DiagnosticsService zaten Kernel seviyesinde bulunuyor.
-    # HTTP katmanı yalnızca read-only snapshot yayınlar.
-    # --------------------------------------------------------
-
     if "/api/diagnostics" not in {
         getattr(route, "path", None)
         for route in app.routes
     }:
 
         def _aura_diagnostics() -> dict:
-            active_kernel = getattr(app.state, "kernel", None)
+            active_kernel = getattr(
+                app.state,
+                "kernel",
+                None,
+            )
 
             if active_kernel is None:
                 return {
@@ -222,4 +205,5 @@ def create_composed_app(
             methods=["GET"],
             tags=["diagnostics"],
         )
+
     return app

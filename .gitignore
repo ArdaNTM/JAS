@@ -16,3 +16,17 @@ core/.env
 core/.env.*
 core/*.bak
 core/**/*.bak
+# AURA local backups/runtime artifacts
+.aura-backups/
+**/.aura-backups/
+backups/
+core/.aura/
+# AURA local backups/runtime artifacts
+.aura-backups/
+**/.aura-backups/
+backups/
+core/.aura/
+.aura-backups/
+**/.aura-backups/
+backups/
+core/.aura/

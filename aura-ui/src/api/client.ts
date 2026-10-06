@@ -24,6 +24,11 @@ export interface TaskRequest {
   steps: TaskStep[];
 }
 
+export interface GeneratedPlan {
+  resource_scope: string;
+  steps: TaskStep[];
+}
+
 export interface TaskStepResult {
   step_id: string;
   state: string;
@@ -45,10 +50,7 @@ export interface HealthComponent {
 
 export interface HealthResponse {
   status: string;
-  components: Record<
-    string,
-    HealthComponent
-  >;
+  components: Record<string, HealthComponent>;
 }
 
 const API_BASE =
@@ -95,6 +97,20 @@ async function request<T>(
   }
 
   return response.json() as Promise<T>;
+}
+
+export function generateTaskPlan(
+  directive: string,
+): Promise<GeneratedPlan> {
+  return request<GeneratedPlan>(
+    "/api/tasks/plan",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        directive,
+      }),
+    },
+  );
 }
 
 export function createTask(

@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 :root {
   font-family:
@@ -27,6 +25,11 @@ body,
   margin: 0;
 }
 
+html,
+body {
+  overflow: hidden;
+}
+
 body {
   min-width: 320px;
   background:
@@ -39,28 +42,16 @@ body {
 }
 
 button,
+input,
 textarea {
   font: inherit;
+}
+
+button {
+  cursor: pointer;
 }
 
 ::selection {
   background: rgba(34, 211, 238, 0.25);
   color: #ecfeff;
-}
-
-::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: #02070d;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #164e63;
-  border-radius: 999px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #0891b2;
 }
