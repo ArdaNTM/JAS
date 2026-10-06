@@ -1,97 +1,111 @@
-import { useRef } from "react";
+import { useEffect } from "react";
+
+import { respondAsAssistant } from "./api/client";
 
 type AuraJarvisBridgeProps = {
-  command?: string;
+  directive?: string;
   researchOutput?: unknown;
-};
-
-type AssistantResponse = {
-  assistant_reply?: string;
-  reply?: string;
-  response?: string;
-  message?: string;
+  requestId?: number;
+  onStatus?: (
+    status: "ready" | "speaking" | "offline",
+  ) => void;
 };
 
 export default function AuraJarvisBridge({
-  command,
+  directive,
   researchOutput,
+  requestId = 0,
+  onStatus,
 }: AuraJarvisBridgeProps) {
-  const busyRef = useRef(false);
-
-  const speak = (text: string) => {
-    if (!text || typeof window === "undefined") {
+  useEffect(() => {
+    if (
+      requestId <= 0 ||
+      !directive?.trim()
+    ) {
       return;
     }
 
-    if (!("speechSynthesis" in window)) {
-      return;
-    }
+    let cancelled = false;
 
-    window.speechSynthesis.cancel();
+    const run = async () => {
+      onStatus?.("ready");
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "tr-TR";
-    utterance.rate = 1;
-    utterance.pitch = 1;
+      try {
+        const response =
+          await respondAsAssistant(
+            directive.trim(),
+            researchOutput,
+          );
 
-    window.speechSynthesis.speak(utterance);
-  };
+        if (
+          cancelled ||
+          !response.assistant_reply?.trim()
+        ) {
+          return;
+        }
 
-  const sendCommand = async () => {
-    if (!command || busyRef.current) {
-      return;
-    }
+        if (
+          typeof window === "undefined" ||
+          !("speechSynthesis" in window)
+        ) {
+          onStatus?.("offline");
+          return;
+        }
 
-    busyRef.current = true;
+        window.speechSynthesis.cancel();
 
-    try {
-      const response = await fetch("/api/assistant/respond", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: command,
-          research_output: researchOutput ?? null,
-        }),
-      });
+        const utterance =
+          new SpeechSynthesisUtterance(
+            response.assistant_reply.trim(),
+          );
 
-      if (!response.ok) {
-        throw new Error(
-          `Assistant API HTTP ${response.status}`
+        utterance.lang = "tr-TR";
+        utterance.rate = 1;
+        utterance.pitch = 1;
+
+        utterance.onstart = () => {
+          if (!cancelled) {
+            onStatus?.("speaking");
+          }
+        };
+
+        utterance.onend = () => {
+          if (!cancelled) {
+            onStatus?.("ready");
+          }
+        };
+
+        utterance.onerror = () => {
+          if (!cancelled) {
+            onStatus?.("offline");
+          }
+        };
+
+        window.speechSynthesis.speak(
+          utterance,
         );
+      } catch (error) {
+        if (!cancelled) {
+          console.error(
+            "AURA JARVIS bridge error:",
+            error,
+          );
+          onStatus?.("offline");
+        }
       }
+    };
 
-      const data = (await response.json()) as AssistantResponse;
+    void run();
 
-      const reply =
-        data.assistant_reply ??
-        data.reply ??
-        data.response ??
-        data.message ??
-        "";
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    directive,
+    researchOutput,
+    requestId,
+    onStatus,
+  ]);
 
-      if (reply.trim()) {
-        speak(reply.trim());
-      }
-    } catch (error) {
-      console.error("AURA JARVIS bridge error:", error);
-    } finally {
-      busyRef.current = false;
-    }
-  };
-
-  return (
-    <button
-      type="button"
-      onClick={sendCommand}
-      disabled={!command || busyRef.current}
-      style={{
-        display: "none",
-      }}
-      aria-hidden="true"
-    >
-      AURA JARVIS
-    </button>
-  );
+  return null;
 }

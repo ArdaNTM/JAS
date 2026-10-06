@@ -118,7 +118,14 @@ function StatusItem({
 
 
 export default function App() {
-    const [researchOutput] = useState<unknown>(null);
+  const [researchOutput, setResearchOutput] =
+    useState<unknown>(null);
+
+  const [assistantDirective, setAssistantDirective] =
+    useState("");
+
+  const [assistantRequestId, setAssistantRequestId] =
+    useState(0);
 
   const [command, setCommand] = useState("");
   const [plan, setPlan] = useState<TaskStep[]>([]);
@@ -246,6 +253,13 @@ export default function App() {
 
       if (result.state === "succeeded") {
         setSystemState("idle");
+
+        setResearchOutput(result.steps);
+        setAssistantDirective(text);
+        setAssistantRequestId(
+          (current) => current + 1,
+        );
+
         pushTelemetry("EXECUTION COMPLETE");
       }
     } catch (cause) {
@@ -492,8 +506,9 @@ export default function App() {
 
       
       <AuraJarvisBridge
-        command={command}
+        directive={assistantDirective}
         researchOutput={researchOutput}
+        requestId={assistantRequestId}
       />
     </>
 );

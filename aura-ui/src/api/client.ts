@@ -1,4 +1,4 @@
-export interface TaskStep {
+﻿export interface TaskStep {
   step_id: string;
   capability_id: string;
   operation_id: string;
@@ -53,9 +53,7 @@ export interface HealthResponse {
   components: Record<string, HealthComponent>;
 }
 
-const API_BASE =
-  import.meta.env.VITE_API_BASE_URL ??
-  "http://127.0.0.1:8000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
 async function request<T>(
   path: string,
@@ -150,3 +148,30 @@ export async function getWebSocketTicket(): Promise<{
     method: "POST",
   });
 }
+export interface AssistantRespondRequest {
+  message: string;
+  research_output?: unknown;
+}
+
+export interface AssistantRespondResponse {
+  assistant_reply: string;
+  model: string;
+  degraded: boolean;
+}
+
+export function respondAsAssistant(
+  message: string,
+  researchOutput?: unknown,
+): Promise<AssistantRespondResponse> {
+  return request<AssistantRespondResponse>(
+    "/api/assistant/respond",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        message,
+        research_output: researchOutput ?? null,
+      }),
+    },
+  );
+}
+
