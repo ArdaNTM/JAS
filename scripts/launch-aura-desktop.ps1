@@ -1,4 +1,4 @@
-﻿$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Stop"
 
 $Root = "D:\AURA\JAS"
 $Core = Join-Path $Root "core"
