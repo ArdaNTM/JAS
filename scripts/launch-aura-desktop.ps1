@@ -1,4 +1,4 @@
-$ErrorActionPreference = "Stop"
+﻿$ErrorActionPreference = "Stop"
 
 $Root = "D:\AURA\JAS"
 $Core = Join-Path $Root "core"
@@ -332,6 +332,30 @@ function Find-Npm {
     return $null
 }
 
+function Find-FreePort {
+    param(
+        [int]$PreferredPort
+    )
+
+    $port = $PreferredPort
+
+    while ($true) {
+        try {
+            $listener = [System.Net.Sockets.TcpListener]::new(
+                [System.Net.IPAddress]::Loopback,
+                $port
+            )
+
+            $listener.Start()
+            $listener.Stop()
+
+            return $port
+        }
+        catch {
+            $port++
+        }
+    }
+}
 function Start-Core {
     param(
         [Parameter(Mandatory = $true)]
@@ -370,7 +394,7 @@ function Start-Ui {
     Reset-LogFile -Path $UiLogOut
     Reset-LogFile -Path $UiLogErr
 
-    $uiCommand = '""' + $Npm + '" run preview -- --host 127.0.0.1 --port 4173 --strictPort > "' + $UiLogOut + '" 2> "' + $UiLogErr + '""'
+    $uiCommand = '""' + $Npm + '" run preview -- --host 127.0.0.1 --port $UiPort > "' + $UiLogOut + '" 2> "' + $UiLogErr + '""'
 
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = "cmd.exe"
@@ -465,7 +489,7 @@ function Close-Splash {
 }
 
 function Open-AuraBrowser {
-    $url = "http://127.0.0.1:4173/"
+    $url = "http://127.0.0.1:$UiPort/"
 
     $edgeCandidates = @(
         "$env:ProgramFiles\Microsoft\Edge\Application\msedge.exe",
@@ -528,12 +552,17 @@ if (-not (Test-Path $Ui)) {
 }
 
 Stop-AuraRelatedProcesses
-Stop-PortOwner -Port 8000
-Stop-PortOwner -Port 4173
-
 Start-Sleep -Milliseconds 700
 
-$env:AURA_MODEL = "ollama/qwen3"
+$CorePort = Find-FreePort -PreferredPort 8000
+$UiPort = Find-FreePort -PreferredPort 4173
+
+$env:AURA_CORE_HOST = "127.0.0.1"
+$env:AURA_CORE_PORT = "$CorePort"
+$env:AURA_UI_PORT = "$UiPort"
+
+$env:AURA_RUNTIME = "ollama"
+$env:AURA_MODEL = "qwen3"
 $env:AURA_LLM_MODEL = "qwen3"
 
 $env:AURA_RESEARCH_MCP_TRANSPORT = "stdio"
@@ -552,7 +581,7 @@ $env:AURA_RESEARCH_MCP_ARGS = Join-Path $Core "scripts\local_research_mcp.py"
 
 $env:AURA_EVENT_STREAM_TOKEN = "aura-dev-event-stream-token-7f3c9a2e6b1d4f8c0e5a9b7d3c1f6e2a"
 $env:AURA_ALLOW_FILE_ORIGIN = "1"
-$env:AURA_CORS_ORIGINS = "http://127.0.0.1:4173,http://localhost:4173"
+$env:AURA_CORS_ORIGINS = "http://127.0.0.1:$UiPort,http://localhost:$UiPort,http://127.0.0.1:5173,http://localhost:5173"
 
 $Splash = Show-Splash
 $coreProcess = $null
@@ -587,7 +616,7 @@ try {
     $Splash.Status.Text = "WAITING FOR CORE..."
     $Splash.Form.Refresh()
 
-    if (-not (Wait-ForHttp -Url "http://127.0.0.1:8000/health" -TimeoutSeconds 40)) {
+    if (-not (Wait-ForHttp -Url "http://127.0.0.1:$CorePort/health" -TimeoutSeconds 40)) {
         $stderr = Read-LogSafe -Path $CoreLogErr
         $stdout = Read-LogSafe -Path $CoreLogOut
 
@@ -630,7 +659,7 @@ try {
         throw $details
     }
 
-    if (-not (Wait-ForHttp -Url "http://127.0.0.1:4173/" -TimeoutSeconds 30)) {
+    if (-not (Wait-ForHttp -Url "http://127.0.0.1:$UiPort/" -TimeoutSeconds 30)) {
         $stderr = Read-LogSafe -Path $UiLogErr
         $stdout = Read-LogSafe -Path $UiLogOut
 

@@ -6,7 +6,6 @@ import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 
 from aura_core.agent.runtime import AgentExecutor
 from aura_core.application.composition import create_composed_app
@@ -236,50 +235,11 @@ def build_app() -> FastAPI:
     _app_lifespan = lifespan
     app.router.lifespan_context = _app_lifespan
 
-    origins = [
-        "http://127.0.0.1:5173",
-        "http://localhost:5173",
-    ]
-
-    if os.getenv(
-        "AURA_ALLOW_FILE_ORIGIN"
-    ) == "1":
-        origins.append("null")
-
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=origins,
-        allow_credentials=False,
-        allow_methods=[
-            "GET",
-            "POST",
-            "OPTIONS",
-        ],
-        allow_headers=[
-            "Content-Type",
-            "X-Request-ID",
-        ],
-    )
-
     return app
 
 
 app = build_app()
 
-# AURA CORS BEGIN
-_AURA_CORS_ORIGINS = [
-    "http://127.0.0.1:4173",
-    "http://localhost:4173",
-]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=_AURA_CORS_ORIGINS,
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-# AURA CORS END
 
 
 

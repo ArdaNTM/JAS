@@ -65,6 +65,23 @@ class DirectivePlanResponse(BaseModel):
     steps: list[TaskStepPayload]
 
 
+
+class AssistantRespondRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    message: str = Field(
+        min_length=1,
+        max_length=4000,
+    )
+
+    research_output: object | None = None
+
+
+class AssistantRespondResponse(BaseModel):
+    assistant_reply: str
+    model: str
+    degraded: bool = False
+
 class TaskResponse(BaseModel):
     task_id: str
     plan_id: str
@@ -246,6 +263,80 @@ def create_api(
                 await websocket.send_json(event)
         except WebSocketDisconnect:
             return
+
+    @app.post(
+        "/api/assistant/respond",
+        response_model=AssistantRespondResponse,
+    )
+    def assistant_respond(
+        request: AssistantRespondRequest,
+    ) -> AssistantRespondResponse:
+
+        import json
+
+        research_context = ""
+
+        if request.research_output is not None:
+            try:
+                research_context = json.dumps(
+                    request.research_output,
+                    ensure_ascii=False,
+                    default=str,
+                )
+            except Exception:
+                research_context = str(
+                    request.research_output
+                )
+
+            research_context = (
+                research_context[:12000]
+            )
+
+        system_prompt = (
+            "Sen AURA'nÄ±n JARVIS konuÅŸma katmanÄ±sÄ±n. "
+            "KullanÄ±cÄ±ya doÄŸal TÃ¼rkÃ§e yanÄ±t ver. "
+            "Ham araÅŸtÄ±rma Ã§Ä±ktÄ±sÄ±nÄ±, JSON'u, tool metadata'sÄ±nÄ±, "
+            "execution detaylarÄ±nÄ± veya iÃ§ sistem ayrÄ±ntÄ±larÄ±nÄ± aynen aktarma. "
+            "AraÅŸtÄ±rma verisini yalnÄ±zca baÄŸlam olarak kullan. "
+            "YanÄ±t konuÅŸmaya uygun ve kÄ±sa olsun."
+        )
+
+        user_content = request.message
+
+        if research_context:
+            user_content = (
+                "KullanÄ±cÄ± direktifi:\n"
+                + request.message
+                + "\n\n"
+                + "AURA araÅŸtÄ±rma baÄŸlamÄ±:\n"
+                + research_context
+            )
+
+        inference_request = InferenceRequest(
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_prompt,
+                },
+                {
+                    "role": "user",
+                    "content": user_content,
+                },
+            ],
+            model=config.model,
+            temperature=config.temperature,
+            max_tokens=config.max_tokens,
+        )
+
+        result = application.infer(
+            inference_request
+        )
+
+        return AssistantRespondResponse(
+            assistant_reply=result.content.strip(),
+            model=result.model,
+            degraded=False,
+        )
 
     @app.post(
         "/v1/inference",
