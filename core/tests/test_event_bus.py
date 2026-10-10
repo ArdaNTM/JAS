@@ -2,6 +2,7 @@ import asyncio
 
 import pytest
 
+from aura_core.application.live_events import LiveEventBroker
 from aura_core.kernel.events import (
     EventBus,
     EventPriority,
@@ -89,3 +90,25 @@ def test_event_bus_retries_then_dead_letters_failed_delivery() -> None:
         "dead_letter_total": 1,
         "queued_total": 0,
     }
+
+
+def test_live_event_broker_serializes_event_metadata() -> None:
+    broker = LiveEventBroker()
+    event = KernelEvent(
+        event_type="PlanStepStarted",
+        source_component="agent_executor",
+        correlation_id="plan-123",
+        metadata={"request_id": "request-trace-test-123"},
+    )
+    broker.publish(event)
+
+    async def first_event() -> dict:
+        stream = broker.stream()
+        try:
+            return await anext(stream)
+        finally:
+            await stream.aclose()
+
+    serialized = asyncio.run(first_event())
+    assert serialized["metadata"] == {"request_id": "request-trace-test-123"}
+    assert serialized["correlation_id"] == "plan-123"

@@ -2,6 +2,30 @@ import { useEffect } from "react";
 
 import { respondAsAssistant } from "./api/client";
 
+function normalizeSpeechText(text: string): string {
+  return text
+    .replace(
+      /(?<!!)\[([^\]]+)\]\(\s*(?:https?:\/\/|www\.)[^)]*\)/gi,
+      "$1",
+    )
+    .replace(
+      /(?:https?:\/\/|www\.)[^\s<>{}\[\]"']+/gi,
+      " ",
+    )
+    .replace(
+      /\b(?:[a-z0-9-]+\.)+(?:com|org|net|io|ai|dev|edu|gov|tr|de|uk)(?:\/[^\s<>{}\[\]"']*)?/gi,
+      " ",
+    )
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`([^`]*)`/g, "$1")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/^\s{0,3}#{1,6}\s+/gm, "")
+    .replace(/^\s*[-*+]\s+/gm, "")
+    .replace(/\s+([,.;:!?])/g, "$1")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 type AuraJarvisBridgeProps = {
   directive?: string;
   researchOutput?: unknown;
@@ -54,10 +78,17 @@ export default function AuraJarvisBridge({
 
         window.speechSynthesis.cancel();
 
+        const speechText = normalizeSpeechText(
+          response.assistant_reply,
+        );
+
+        if (!speechText) {
+          onStatus?.("ready");
+          return;
+        }
+
         const utterance =
-          new SpeechSynthesisUtterance(
-            response.assistant_reply.trim(),
-          );
+          new SpeechSynthesisUtterance(speechText);
 
         utterance.lang = "tr-TR";
         utterance.rate = 1;

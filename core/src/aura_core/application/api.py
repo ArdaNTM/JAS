@@ -388,6 +388,7 @@ def create_api(
     )
     async def submit_task(
         request: TaskRequest,
+        http_request: Request,
     ) -> TaskResponse:
 
         if task_service is None:
@@ -423,7 +424,11 @@ def create_api(
 
         try:
             result = await task_service.submit(
-                SubmittedTask(task, plan)
+                SubmittedTask(
+                    task,
+                    plan,
+                    getattr(http_request.state, "request_id", None),
+                )
             )
         except ValueError as exc:
             raise HTTPException(

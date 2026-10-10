@@ -1,8 +1,9 @@
 import asyncio
 
-from aura_core.agent.runtime import AgentExecutor, Plan, PlanState, PlanStep, Task
+from aura_core.agent.runtime import AgentExecutor, Plan, PlanState, PlanStep, Task, _request_id_context
 from aura_core.kernel.permissions import AuthorizationDecision, RiskLevel
 from aura_core.mcp.gateway import MCPGatewayResponse
+from aura_core.kernel.events import EventBus
 
 
 class Gateway:
@@ -43,3 +44,23 @@ def test_failed_authorization_stops_dependent_step_without_a_second_gateway_call
     assert result.state is PlanState.FAILED
     assert len(gateway.requests) == 1
     assert result.steps[1].reason == "Dependency did not succeed"
+
+
+def test_executor_events_include_request_id_metadata_without_changing_correlation() -> None:
+    gateway = Gateway([AuthorizationDecision.ALLOW])
+    bus = EventBus()
+    received = []
+    bus.subscribe("*", received.append)
+    plan = Plan("plan-1", "task-1", (step("first"),))
+    token = _request_id_context.set("request-trace-test-123")
+    try:
+        result = asyncio.run(AgentExecutor(gateway, bus).execute(task(), plan))
+    finally:
+        _request_id_context.reset(token)
+
+    assert result.state is PlanState.SUCCEEDED
+    assert asyncio.run(bus.dispatch_once()) is True
+    assert asyncio.run(bus.dispatch_once()) is True
+    assert len(received) == 2
+    assert all(event.metadata["request_id"] == "request-trace-test-123" for event in received)
+    assert all(event.correlation_id == plan.plan_id for event in received)

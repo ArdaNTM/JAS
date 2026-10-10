@@ -28,6 +28,7 @@ class LiveEventBroker:
             "timestamp": event.timestamp.isoformat(),
             "correlation_id": event.correlation_id,
             "data": dict(event.payload),
+            "metadata": dict(event.metadata),
         }
         self._history = (self._history + [payload])[-self._max_events :]
         for queue in tuple(self._subscribers):

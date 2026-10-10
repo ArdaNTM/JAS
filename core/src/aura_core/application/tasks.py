@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from typing import Protocol
 
-from aura_core.agent.runtime import ExecutionResult, Plan, Task
+from aura_core.agent.runtime import ExecutionResult, Plan, Task, _request_id_context
 
 
 class TaskRuntime(Protocol):
@@ -15,6 +15,7 @@ class TaskRuntime(Protocol):
 class SubmittedTask:
     task: Task
     plan: Plan
+    request_id: str | None = None
 
 
 class AgentTaskService:
@@ -27,7 +28,12 @@ class AgentTaskService:
     async def submit(self, submitted: SubmittedTask) -> ExecutionResult:
         if submitted.task.task_id in self._results:
             raise ValueError(f"Task already submitted: {submitted.task.task_id}")
-        result = await self._runtime.execute(submitted.task, submitted.plan)
+        token = _request_id_context.set(submitted.request_id)
+        try:
+            result = await self._runtime.execute(submitted.task, submitted.plan)
+        finally:
+            _request_id_context.reset(token)
+
         self._results[submitted.task.task_id] = result
         return result
 

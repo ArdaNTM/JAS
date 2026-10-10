@@ -1,9 +1,12 @@
 """Planning and execution primitives that never call providers directly."""
 
+from contextvars import ContextVar
 from dataclasses import dataclass, field, replace
 from enum import StrEnum
 from time import monotonic
 from typing import Any, Callable
+
+_request_id_context: ContextVar[str | None] = ContextVar("aura_request_id", default=None)
 
 from aura_core.kernel.events import EventBus, KernelEvent
 from aura_core.kernel.permissions import AuthorizationDecision, RiskLevel
@@ -142,7 +145,21 @@ class AgentExecutor:
 
     def _event(self, event_type: str, task: Task, plan: Plan, step: PlanStep, payload: dict[str, Any] | None = None) -> None:
         if self._event_bus is not None:
-            self._event_bus.publish(KernelEvent(event_type=event_type, source_component="agent_executor", correlation_id=plan.plan_id, payload={"task_id": task.task_id, "step_id": step.step_id, **(payload or {})}))
+            request_id = _request_id_context.get()
+            metadata = {"request_id": request_id} if request_id else {}
+            self._event_bus.publish(
+                KernelEvent(
+                    event_type=event_type,
+                    source_component="agent_executor",
+                    correlation_id=plan.plan_id,
+                    payload={
+                        "task_id": task.task_id,
+                        "step_id": step.step_id,
+                        **(payload or {}),
+                    },
+                    metadata=metadata,
+                )
+            )
 
 
 class AgentLoop:

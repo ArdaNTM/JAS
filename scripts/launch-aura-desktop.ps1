@@ -1,6 +1,25 @@
-$ErrorActionPreference = "Stop"
+﻿$ErrorActionPreference = "Stop"
 
 $Root = "D:\AURA\JAS"
+# AURA_D_DRIVE_RUNTIME_ENV
+$AuraRuntimeRoot = Join-Path $Root ".cache"
+$AuraTempRoot = Join-Path $Root ".tmp"
+
+@(
+    $AuraRuntimeRoot,
+    (Join-Path $AuraRuntimeRoot "uv"),
+    (Join-Path $AuraRuntimeRoot "pip"),
+    $AuraTempRoot,
+    (Join-Path $Root "logs"),
+    (Join-Path $Root "downloads")
+) | ForEach-Object {
+    New-Item -ItemType Directory -Path $_ -Force | Out-Null
+}
+
+$env:TEMP = $AuraTempRoot
+$env:TMP = $AuraTempRoot
+$env:UV_CACHE_DIR = Join-Path $AuraRuntimeRoot "uv"
+$env:PIP_CACHE_DIR = Join-Path $AuraRuntimeRoot "pip"
 $Core = Join-Path $Root "core"
 $Ui = Join-Path $Root "aura-ui"
 
@@ -394,7 +413,7 @@ function Start-Ui {
     Reset-LogFile -Path $UiLogOut
     Reset-LogFile -Path $UiLogErr
 
-    $uiCommand = '""' + $Npm + '" run preview -- --host 127.0.0.1 --port $UiPort > "' + $UiLogOut + '" 2> "' + $UiLogErr + '""'
+    $uiCommand = '""' + $Npm + '" run preview -- --host 127.0.0.1 --port ' + $UiPort + ' --strictPort > "' + $UiLogOut + '" 2> "' + $UiLogErr + '""'
 
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = "cmd.exe"
@@ -412,6 +431,75 @@ function Start-Ui {
     }
 
     return $process
+}
+
+function Start-UiWithRetry {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Npm,
+        [int]$MaxAttempts = 5
+    )
+
+    for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
+        Write-Host "Starting AURA HUD attempt $attempt/$MaxAttempts on port $UiPort..."
+        $process = Start-Ui -Npm $Npm
+
+        if (-not (Wait-ForProcessAlive -ProcessId $process.Id -TimeoutSeconds 5)) {
+            $stderr = Read-LogSafe -Path $UiLogErr
+            $stdout = Read-LogSafe -Path $UiLogOut
+
+            if ($attempt -lt $MaxAttempts) {
+                Write-Host "HUD process exited. Selecting a new port..." -ForegroundColor Yellow
+                Stop-ProcessTreeSafe -ProcessId $process.Id
+                $script:UiPort = Find-FreePort -PreferredPort ($UiPort + 1)
+                $env:AURA_UI_PORT = "$UiPort"
+                $env:AURA_CORS_ORIGINS = "http://127.0.0.1:$UiPort,http://localhost:$UiPort,http://127.0.0.1:5173,http://localhost:5173"
+                continue
+            }
+
+            $details = "AURA UI process exited during startup.`n`n"
+            if (-not [string]::IsNullOrWhiteSpace($stderr)) {
+                $details += "----- aura-ui.stderr.log -----`n"
+                $details += $stderr
+            }
+            if (-not [string]::IsNullOrWhiteSpace($stdout)) {
+                $details += "`n----- aura-ui.stdout.log -----`n"
+                $details += $stdout
+            }
+            throw $details
+        }
+
+        if (Wait-ForHttp -Url "http://127.0.0.1:$UiPort/" -TimeoutSeconds 10) {
+            return $process
+        }
+
+        $stderr = Read-LogSafe -Path $UiLogErr
+        $stdout = Read-LogSafe -Path $UiLogOut
+        Stop-ProcessTreeSafe -ProcessId $process.Id
+
+        if ($attempt -lt $MaxAttempts) {
+            Write-Host "HUD did not become ready on port $UiPort." -ForegroundColor Yellow
+            Write-Host "Selecting another port and retrying..." -ForegroundColor Cyan
+            $script:UiPort = Find-FreePort -PreferredPort ($UiPort + 1)
+            $env:AURA_UI_PORT = "$UiPort"
+            $env:AURA_CORS_ORIGINS = "http://127.0.0.1:$UiPort,http://localhost:$UiPort,http://127.0.0.1:5173,http://localhost:5173"
+            continue
+        }
+
+        $details = "AURA HUD failed to become ready after $MaxAttempts attempts.`n`n"
+        $details += "Last UI port: $UiPort`n`n"
+        if (-not [string]::IsNullOrWhiteSpace($stderr)) {
+            $details += "----- aura-ui.stderr.log -----`n"
+            $details += $stderr
+        }
+        if (-not [string]::IsNullOrWhiteSpace($stdout)) {
+            $details += "`n----- aura-ui.stdout.log -----`n"
+            $details += $stdout
+        }
+        throw $details
+    }
+
+    throw "AURA HUD startup retry loop ended unexpectedly."
 }
 
 function Show-Splash {
@@ -562,7 +650,7 @@ $env:AURA_CORE_PORT = "$CorePort"
 $env:AURA_UI_PORT = "$UiPort"
 
 $env:AURA_RUNTIME = "ollama"
-$env:AURA_MODEL = "qwen3"
+$env:AURA_MODEL = "qwen3:latest"
 $env:AURA_LLM_MODEL = "qwen3"
 
 $env:AURA_RESEARCH_MCP_TRANSPORT = "stdio"
@@ -638,45 +726,7 @@ try {
     $Splash.Status.Text = "STARTING HUD..."
     $Splash.Form.Refresh()
 
-    $uiProcess = Start-Ui -Npm $Npm
-
-    if (-not (Wait-ForProcessAlive -ProcessId $uiProcess.Id -TimeoutSeconds 5)) {
-        $stderr = Read-LogSafe -Path $UiLogErr
-        $stdout = Read-LogSafe -Path $UiLogOut
-
-        $details = "AURA UI process exited before startup completed.`n`n"
-
-        if (-not [string]::IsNullOrWhiteSpace($stderr)) {
-            $details += "----- aura-ui.stderr.log -----`n"
-            $details += $stderr
-        }
-
-        if (-not [string]::IsNullOrWhiteSpace($stdout)) {
-            $details += "`n----- aura-ui.stdout.log -----`n"
-            $details += $stdout
-        }
-
-        throw $details
-    }
-
-    if (-not (Wait-ForHttp -Url "http://127.0.0.1:$UiPort/" -TimeoutSeconds 30)) {
-        $stderr = Read-LogSafe -Path $UiLogErr
-        $stdout = Read-LogSafe -Path $UiLogOut
-
-        $details = "AURA HUD failed to start.`n`n"
-
-        if (-not [string]::IsNullOrWhiteSpace($stderr)) {
-            $details += "----- aura-ui.stderr.log -----`n"
-            $details += $stderr
-        }
-
-        if (-not [string]::IsNullOrWhiteSpace($stdout)) {
-            $details += "`n----- aura-ui.stdout.log -----`n"
-            $details += $stdout
-        }
-
-        throw $details
-    }
+    $uiProcess = Start-UiWithRetry -Npm $Npm
 
     $Splash.Status.Text = "AURA ONLINE"
     $Splash.Form.Refresh()
