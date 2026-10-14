@@ -75,13 +75,46 @@ class Plan:
     def __post_init__(self) -> None:
         if not self.plan_id or not self.task_id or not self.steps:
             raise ValueError("Plan id, task id and steps are required")
-        ids = [step.step_id for step in self.steps]
+
+        original = list(self.steps)
+        ids = [step.step_id for step in original]
+
         if len(ids) != len(set(ids)):
             raise ValueError("Plan step IDs must be unique")
-        unknown = set().union(*(step.depends_on for step in self.steps)) - set(ids)
-        if unknown:
-            raise ValueError(f"Plan has unknown dependencies: {', '.join(sorted(unknown))}")
 
+        known = set(ids)
+        unknown = set().union(
+            *(step.depends_on for step in original)
+        ) - known
+
+        if unknown:
+            raise ValueError(
+                "Plan has unknown dependencies: "
+                + ", ".join(sorted(unknown))
+            )
+
+        # Stable Kahn topological sort.
+        pending = list(original)
+        ordered: list[PlanStep] = []
+        completed: set[str] = set()
+
+        while pending:
+            ready = [
+                step for step in pending
+                if step.depends_on.issubset(completed)
+            ]
+
+            if not ready:
+                raise ValueError(
+                    "Plan dependency cycle detected"
+                )
+
+            for step in ready:
+                ordered.append(step)
+                completed.add(step.step_id)
+                pending.remove(step)
+
+        object.__setattr__(self, "steps", tuple(ordered))
 
 @dataclass(frozen=True, slots=True)
 class StepResult:

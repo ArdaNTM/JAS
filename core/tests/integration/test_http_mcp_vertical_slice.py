@@ -44,7 +44,7 @@ def client(decision: AuthorizationDecision) -> TestClient:
     tools = MCPToolRegistry(bus)
     tools.register(provider_id, MCPTool("echo", "Echo a test payload", {"type": "object"}))
     permissions = PermissionEngine(capabilities, bus)
-    permissions.add_policy(PermissionPolicy("test-policy", "1", "agent:web", capability_id, operation, "D:/workspace", AuthorizationLevel.USER_APPROVAL_REQUIRED if decision is AuthorizationDecision.REQUIRE_APPROVAL else AuthorizationLevel.EXECUTE, decision))
+    permissions.add_policy(PermissionPolicy("test-policy", "1", "local_owner", capability_id, operation, "local_default", AuthorizationLevel.USER_APPROVAL_REQUIRED if decision is AuthorizationDecision.REQUIRE_APPROVAL else AuthorizationLevel.EXECUTE, decision))
     gateway = MCPGateway(capabilities, providers, permissions)
     runtime = CapabilityAgentRuntime(AgentExecutor(gateway, bus), ToolDiscoveryService(capabilities, tools, bus), ToolSelectionService(), bus)
     app = create_api(RuntimeConfig(model="test"), BackendConfig(endpoint="http://test", timeout=1), Transport(), AgentTaskService(runtime))

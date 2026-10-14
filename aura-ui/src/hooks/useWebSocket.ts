@@ -1,3 +1,5 @@
+import { getWebSocketTicket } from "../api/client";
+
 import {
   useEffect,
   useRef,
@@ -28,13 +30,40 @@ export function useWebSocket(
   useEffect(() => {
     let active = true;
 
-    const connect = () => {
+    const connect = async () => {
       if (!active) {
         return;
       }
 
-      const ws =
-        new WebSocket(url);
+      let ticketResponse: {
+        ticket: string;
+        expires_at: number;
+      };
+
+      try {
+        ticketResponse = await getWebSocketTicket();
+      } catch {
+        if (active) {
+          setIsConnected(false);
+        }
+        return;
+      }
+
+      if (!active) {
+        return;
+      }
+
+      const socketUrl = new URL(url, window.location.href);
+
+      if (socketUrl.protocol === "http:") {
+        socketUrl.protocol = "ws:";
+      } else if (socketUrl.protocol === "https:") {
+        socketUrl.protocol = "wss:";
+      }
+
+      socketUrl.searchParams.set("ticket", ticketResponse.ticket);
+
+      const ws = new WebSocket(socketUrl.toString());
 
       wsRef.current = ws;
 

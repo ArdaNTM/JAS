@@ -1,4 +1,4 @@
-import hmac
+import asyncio
 import logging
 import os
 from time import perf_counter
@@ -27,6 +27,11 @@ from aura_core.runtime.errors import (
 )
 from aura_core.runtime.transport import HttpJsonTransport, JsonTransport
 
+
+from aura_core.memory.chat_memory import ChatMemory
+from aura_core.memory.embeddings import OllamaEmbeddingProvider
+from aura_core.memory.semantic_store import SemanticMemoryStore
+from aura_core.observability.pipeline_trace import PipelineTrace
 
 logger = logging.getLogger("aura_core.http")
 
@@ -63,7 +68,6 @@ class DirectivePlanRequest(BaseModel):
 class DirectivePlanResponse(BaseModel):
     resource_scope: str
     steps: list[TaskStepPayload]
-
 
 
 class AssistantRespondRequest(BaseModel):
@@ -158,10 +162,26 @@ def create_api(
     app.state.metrics = metrics
     app.state.task_service = task_service
     app.state.live_events = live_events or LiveEventBroker()
-    app.state.event_token = os.getenv(
-        "AURA_EVENT_STREAM_TOKEN"
-    )
     app.state.directive_planner = DirectivePlanner()
+    app.state.chat_memory = ChatMemory(
+        SemanticMemoryStore(
+            embeddings=OllamaEmbeddingProvider(
+                model=os.getenv("AURA_EMBEDDING_MODEL", "bge-m3"),
+                base_url=os.getenv(
+                    "OLLAMA_BASE_URL",
+                    "http://127.0.0.1:11434",
+                ),
+            ),
+            qdrant_url=os.getenv(
+                "AURA_QDRANT_URL",
+                "http://127.0.0.1:6333",
+            ),
+            collection=os.getenv(
+                "AURA_MEMORY_COLLECTION",
+                "aura_memory",
+            ),
+        )
+    )
 
     @app.middleware("http")
     async def log_request(request: Request, call_next):
@@ -171,9 +191,25 @@ def create_api(
         )
 
         request.state.request_id = request_id
+        trace = PipelineTrace(request_id)
+        trace.start_stage("http_request")
         started_at = perf_counter()
 
-        response = await call_next(request)
+        try:
+            response = await call_next(request)
+        except Exception:
+            trace.finish_stage("http_request", outcome="failure")
+            logger.exception(
+                "HTTP request failed",
+                extra={
+                    "event": "http_request_failed",
+                    "request_id": request_id,
+                    "pipeline_trace": trace.snapshot(),
+                },
+            )
+            raise
+
+        trace.finish_stage("http_request", outcome="success")
 
         latency_ms = round(
             (perf_counter() - started_at) * 1000,
@@ -196,11 +232,11 @@ def create_api(
                 "status_code": response.status_code,
                 "latency_ms": latency_ms,
                 "request_id": request_id,
+                "pipeline_trace": trace.snapshot(),
             },
         )
 
         return response
-
     @app.exception_handler(BackendUnavailableError)
     async def backend_unavailable_handler(
         request,
@@ -235,41 +271,13 @@ def create_api(
     def get_metrics() -> dict[str, int | float]:
         return metrics.snapshot()
 
-    @app.websocket("/api/ws/events")
-    async def websocket_events(
-        websocket: WebSocket,
-    ) -> None:
-
-        expected_token = app.state.event_token
-        supplied_token = websocket.headers.get(
-            "X-AURA-Event-Token",
-            "",
-        )
-
-        if (
-            not expected_token
-            or not hmac.compare_digest(
-                supplied_token,
-                expected_token,
-            )
-        ):
-            await websocket.close(code=1008)
-            return
-
-        await websocket.accept()
-
-        try:
-            async for event in app.state.live_events.stream():
-                await websocket.send_json(event)
-        except WebSocketDisconnect:
-            return
-
     @app.post(
         "/api/assistant/respond",
         response_model=AssistantRespondResponse,
     )
     def assistant_respond(
         request: AssistantRespondRequest,
+        http_request: Request,
     ) -> AssistantRespondResponse:
 
         import json
@@ -292,6 +300,34 @@ def create_api(
                 research_context[:12000]
             )
 
+        request_id = getattr(
+            http_request.state,
+            "request_id",
+            "local-request",
+        )
+
+        memory_context = ""
+        memory_enabled = (
+            os.getenv("AURA_CHAT_MEMORY_ENABLED", "0").strip() == "1"
+        )
+
+        if memory_enabled:
+            try:
+                memories = asyncio.run(
+                    app.state.chat_memory.recall(
+                        scope="local_default",
+                        query=request.message,
+                    )
+                )
+                memory_context = "\n".join(
+                    item.content for item in memories
+                )[:6000]
+            except Exception:
+                logger.warning(
+                    "Chat memory recall unavailable",
+                    extra={"request_id": request_id},
+                    exc_info=True,
+                )
         system_prompt = (
             "Sen AURA'nÄ±n JARVIS konuÅŸma katmanÄ±sÄ±n. "
             "KullanÄ±cÄ±ya doÄŸal TÃ¼rkÃ§e yanÄ±t ver. "
@@ -312,6 +348,12 @@ def create_api(
                 + research_context
             )
 
+        if memory_context:
+            user_content = (
+                user_content
+                + "\n\nAURA onceki sohbet bellegi:\n"
+                + memory_context
+            )
         inference_request = InferenceRequest(
             messages=[
                 {
@@ -328,12 +370,62 @@ def create_api(
             max_tokens=config.max_tokens,
         )
 
-        result = application.infer(
-            inference_request
+        inference_trace = PipelineTrace(request_id)
+        inference_trace.start_stage("inference")
+
+        try:
+            result = application.infer(
+                inference_request
+            )
+        except Exception:
+            inference_trace.finish_stage(
+                "inference",
+                outcome="failure",
+            )
+            logger.exception(
+                "Inference stage failed",
+                extra={
+                    "request_id": request_id,
+                    "pipeline_trace": inference_trace.snapshot(),
+                },
+            )
+            raise
+
+        inference_trace.finish_stage("inference", outcome="success")
+        assistant_reply = result.content.strip()
+
+        logger.info(
+            "Inference stage completed",
+            extra={
+                "request_id": request_id,
+                "pipeline_trace": inference_trace.snapshot(),
+            },
         )
 
+        if memory_enabled:
+            try:
+                asyncio.run(
+                    app.state.chat_memory.remember(
+                        scope="local_default",
+                        content=(
+                            "User: "
+                            + request.message
+                            + "\nAssistant: "
+                            + assistant_reply
+                        ),
+                        source="assistant_chat",
+                        metadata={"request_id": request_id},
+                    )
+                )
+            except Exception:
+                logger.warning(
+                    "Chat memory write unavailable",
+                    extra={"request_id": request_id},
+                    exc_info=True,
+                )
+
         return AssistantRespondResponse(
-            assistant_reply=result.content.strip(),
+            assistant_reply=assistant_reply,
             model=result.model,
             degraded=False,
         )
@@ -399,9 +491,9 @@ def create_api(
 
         task = Task(
             request.task_id,
-            request.principal_id,
+            "local_owner",
             request.title,
-            request.resource_scope,
+            "local_default",
         )
 
         plan = Plan(
@@ -465,7 +557,7 @@ def create_api(
             )
 
         try:
-            result = task_service.get(task_id)
+            result = task_service.get_for_owner(task_id, "local_owner")
         except KeyError as exc:
             raise HTTPException(
                 status_code=404,

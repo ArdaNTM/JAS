@@ -48,10 +48,16 @@ class WebSocketTicketManager:
 
         self._secret = resolved.encode("utf-8")
         self._ttl = ttl_seconds
-        self._used: set[str] = set()
+        self._used: dict[str, int] = {}
+
+    def _prune_used(self, now: int) -> None:
+        for used_ticket, used_expiry in tuple(self._used.items()):
+            if used_expiry <= now:
+                self._used.pop(used_ticket, None)
 
     def issue(self, subject: str = "aura-ui") -> WebSocketTicket:
         now = int(time.time())
+        self._prune_used(now)
         expires = now + self._ttl
 
         nonce = secrets.token_urlsafe(24)
@@ -76,6 +82,9 @@ class WebSocketTicketManager:
         if not ticket:
             return False
 
+        now = int(time.time())
+        self._prune_used(now)
+
         if ticket in self._used:
             return False
 
@@ -94,7 +103,7 @@ class WebSocketTicketManager:
         except ValueError:
             return False
 
-        if expires < int(time.time()):
+        if expires <= now:
             return False
 
         body = f"{ticket_subject}:{expires}:{nonce}"
@@ -115,5 +124,5 @@ class WebSocketTicketManager:
         ):
             return False
 
-        self._used.add(ticket)
+        self._used[ticket] = expires
         return True

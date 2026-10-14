@@ -108,13 +108,13 @@ def build_app() -> FastAPI:
                     policy_id=(
                         "local-user:"
                         "internet.search:"
-                        "public-web"
+                        "local_default"
                     ),
                     policy_version="1.0.0",
-                    principal_id="local-user",
+                    principal_id="local_owner",
                     capability_id="internet.search",
                     operation_id="internet.search",
-                    resource_scope="public-web",
+                    resource_scope="local_default",
                     authorization_level=(
                         AuthorizationLevel.EXECUTE
                     ),
