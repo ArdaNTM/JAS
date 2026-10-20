@@ -36,3 +36,30 @@ def test_reasoning_plan_endpoint_rejects_unsupported_directive() -> None:
         json={"directive": "Kahvemi hazırla."},
     )
     assert response.status_code == 422
+
+
+
+def test_reasoning_plan_preserves_turkish_utf8_json_bytes() -> None:
+    directive = "Yapay zekâ modellerini araştır ve sonuçları karşılaştırıp özetle."
+    request_body = ('{"directive": "' + directive + '"}').encode("utf-8")
+    response = make_client().post(
+        "/api/reasoning/plan",
+        content=request_body,
+        headers={"Content-Type": "application/json; charset=utf-8"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["directive"] == directive
+    assert directive.encode("utf-8") in response.content
+    assert "Ã¢" not in response.content.decode("utf-8")
+    assert "Å" not in response.content.decode("utf-8")
+
+
+def test_reasoning_execute_requires_runtime_instead_of_bypassing_gateway() -> None:
+    response = make_client().post(
+        "/api/reasoning/execute",
+        json={"directive": "Yapay zekâ modellerini araştır."},
+    )
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == "Agent runtime is not configured"
