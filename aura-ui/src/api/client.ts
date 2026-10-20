@@ -182,3 +182,26 @@ export function synthesizeLocalSpeech(text: string): Promise<{
   return request("/api/speech/synthesize", { method: "POST", body: JSON.stringify({ text }) });
 }
 
+
+export interface SpeechTranscriptionResponse {
+  text: string;
+  language: string;
+}
+
+/** Send microphone audio to AURA's local faster-whisper endpoint. */
+export async function transcribeLocalAudio(blob: Blob): Promise<SpeechTranscriptionResponse> {
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + chunkSize));
+  }
+  return request<SpeechTranscriptionResponse>("/api/speech/transcribe", {
+    method: "POST",
+    body: JSON.stringify({
+      audio_base64: btoa(binary),
+      mime_type: blob.type || "audio/webm",
+      language: "tr",
+    }),
+  });
+}
