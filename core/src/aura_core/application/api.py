@@ -22,7 +22,7 @@ from aura_core.application.directive_planner import DirectivePlanner
 from aura_core.application.reasoning_planner import ReasoningPlanner
 from aura_core.application.capability_discovery import DynamicCapabilityDiscovery
 from aura_core.application.proactive_store import ProactiveSuggestionStore
-from aura_core.application.adaptive_execution import AdaptiveExecutionController, RecoveryAction, StepObservation
+from aura_core.application.adaptive_orchestrator import AdaptiveTaskOrchestrator
 from aura_core.mcp.mcp_provider import MCPProvider
 from aura_core.config.backend import BackendConfig
 from aura_core.config.runtime import RuntimeConfig
@@ -427,53 +427,57 @@ def create_api(
                 ),
             )
 
-        # The current execution adapter only permits the planner's first,
-        # explicitly allow-listed public-web research step. Reasoning/response
-        # steps are completed after the governed tool result returns.
+        # The adapter permits only the explicitly allow-listed public-web
+        # research step. Every retry creates a new task and traverses the same
+        # AgentTaskService -> AgentExecutor -> MCPGateway path.
         research_step = reasoning_plan.steps[0]
         if research_step.step_id != "research" or research_step.kind != "capability_request":
             raise HTTPException(status_code=422, detail="Plan has no executable research step")
 
-        task_id = f"reasoning:{uuid4()}"
-        task = Task(
-            task_id=task_id,
-            principal_id="local_owner",
-            title=request.directive[:160],
-            resource_scope="public-web",
-            max_steps=1,
-            timeout_seconds=60.0,
-        )
-        execution_plan = Plan(
-            plan_id=f"plan:{task_id}",
-            task_id=task_id,
-            steps=(
-                PlanStep(
-                    step_id="research",
-                    capability_id="internet.search",
-                    operation_id="internet.search",
-                    tool_name="search",
-                    risk_level=RiskLevel.LOW,
-                    arguments={"query": request.directive},
-                    depends_on=frozenset(),
-                    max_attempts=1,
-                ),
-            ),
-        )
-        try:
-            execution = await task_service.submit(
-                SubmittedTask(
-                    task,
-                    execution_plan,
-                    getattr(http_request.state, "request_id", None),
-                )
+        def make_task(_attempt: int) -> Task:
+            return Task(
+                task_id=f"reasoning:{uuid4()}",
+                principal_id="local_owner",
+                title=request.directive[:160],
+                resource_scope="public-web",
+                max_steps=1,
+                timeout_seconds=60.0,
             )
+
+        def make_plan(task: Task, _attempt: int) -> Plan:
+            return Plan(
+                plan_id=f"plan:{task.task_id}",
+                task_id=task.task_id,
+                steps=(
+                    PlanStep(
+                        step_id="research",
+                        capability_id="internet.search",
+                        operation_id="internet.search",
+                        tool_name="search",
+                        risk_level=RiskLevel.LOW,
+                        arguments={"query": request.directive},
+                        depends_on=frozenset(),
+                        max_attempts=1,
+                    ),
+                ),
+            )
+
+        try:
+            adaptive_run = await AdaptiveTaskOrchestrator(max_replans=1).run(
+                task_service,
+                make_task,
+                make_plan,
+                request_id=getattr(http_request.state, "request_id", None),
+            )
+        except (TimeoutError, ConnectionError, OSError) as exc:
+            logger.warning("Reasoning transient failure exhausted recovery budget", exc_info=True)
+            raise HTTPException(status_code=502, detail="Research transport failed after bounded recovery") from exc
         except ValueError as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
 
-        research_result = next(
-            (step.result for step in execution.steps if step.step_id == "research"),
-            None,
-        )
+        execution = adaptive_run.execution
+        task_id = adaptive_run.task_id
+        recovery = list(adaptive_run.recovery)
         if execution.state.value != "succeeded":
             return {
                 "task_id": task_id,
@@ -481,6 +485,7 @@ def create_api(
                 "state": execution.state,
                 "execution_started": True,
                 "requires_user_confirmation": False,
+                "recovery": recovery,
                 "steps": [
                     {
                         "step_id": step.step_id,
@@ -532,6 +537,7 @@ def create_api(
             "state": execution.state,
             "execution_started": True,
             "requires_user_confirmation": False,
+            "recovery": recovery,
             "steps": [
                 {
                     "step_id": step.step_id,
