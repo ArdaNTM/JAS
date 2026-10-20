@@ -1,6 +1,9 @@
 import asyncio
+import base64
 import logging
 import os
+import tempfile
+import threading
 from time import perf_counter
 from uuid import uuid4
 
@@ -34,7 +37,50 @@ from aura_core.memory.embeddings import OllamaEmbeddingProvider
 from aura_core.memory.semantic_store import SemanticMemoryStore
 from aura_core.observability.pipeline_trace import PipelineTrace
 
+
 logger = logging.getLogger("aura_core.http")
+
+_whisper_model = None
+_whisper_model_lock = threading.Lock()
+
+
+def transcribe_audio_bytes(audio_bytes: bytes, language: str, suffix: str = ".webm") -> tuple[str, str]:
+    """Run local faster-whisper transcription; load the model lazily once."""
+    global _whisper_model
+    from pathlib import Path
+
+    if not audio_bytes:
+        raise ValueError("Audio payload is empty")
+
+    if _whisper_model is None:
+        with _whisper_model_lock:
+            if _whisper_model is None:
+                from faster_whisper import WhisperModel
+
+                _whisper_model = WhisperModel(
+                    os.getenv("AURA_STT_MODEL", "small"),
+                    device=os.getenv("AURA_STT_DEVICE", "cpu"),
+                    compute_type=os.getenv("AURA_STT_COMPUTE_TYPE", "int8"),
+                )
+
+    temp_path = None
+    try:
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as audio_file:
+            audio_file.write(audio_bytes)
+            temp_path = audio_file.name
+        segments, info = _whisper_model.transcribe(
+            temp_path,
+            language=language,
+            vad_filter=True,
+        )
+        text = " ".join(segment.text.strip() for segment in segments).strip()
+        return text, getattr(info, "language", None) or language
+    finally:
+        if temp_path:
+            try:
+                Path(temp_path).unlink(missing_ok=True)
+            except OSError:
+                logger.warning("Unable to remove temporary STT audio file", exc_info=True)
 
 
 class TaskStepPayload(BaseModel):
@@ -86,6 +132,18 @@ class AssistantRespondResponse(BaseModel):
     assistant_reply: str
     model: str
     degraded: bool = False
+
+class SpeechTranscriptionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    audio_base64: str = Field(min_length=1, max_length=16_000_000)
+    mime_type: str = Field(default="audio/webm", min_length=1, max_length=100)
+    language: str = Field(default="tr", min_length=2, max_length=10)
+
+
+class SpeechTranscriptionResponse(BaseModel):
+    text: str
+    language: str
+
 
 class SpeechSynthesisRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -439,6 +497,45 @@ def create_api(
             model=result.model,
             degraded=False,
         )
+
+
+    @app.post("/api/speech/transcribe", response_model=SpeechTranscriptionResponse)
+    async def transcribe_speech(request: SpeechTranscriptionRequest) -> SpeechTranscriptionResponse:
+        try:
+            audio_bytes = base64.b64decode(request.audio_base64, validate=True)
+        except (ValueError, base64.binascii.Error) as exc:
+            raise HTTPException(status_code=422, detail="Invalid base64 audio payload") from exc
+
+        if not audio_bytes:
+            raise HTTPException(status_code=422, detail="Audio payload is empty")
+        if len(audio_bytes) > 12 * 1024 * 1024:
+            raise HTTPException(status_code=413, detail="Audio payload exceeds 12 MiB limit")
+
+        mime_type = request.mime_type.split(";", 1)[0].strip().lower()
+        suffix_by_mime = {
+            "audio/webm": ".webm",
+            "audio/ogg": ".ogg",
+            "audio/wav": ".wav",
+            "audio/x-wav": ".wav",
+            "audio/mp4": ".m4a",
+            "audio/mpeg": ".mp3",
+        }
+        suffix = suffix_by_mime.get(mime_type)
+        if suffix is None:
+            raise HTTPException(status_code=415, detail="Unsupported audio format")
+
+        try:
+            text, detected_language = await asyncio.to_thread(
+                transcribe_audio_bytes, audio_bytes, request.language, suffix
+            )
+        except ImportError as exc:
+            logger.exception("Local speech-to-text dependency is unavailable")
+            raise HTTPException(status_code=503, detail="Local speech-to-text is unavailable") from exc
+        except Exception as exc:
+            logger.exception("Local speech-to-text failed")
+            raise HTTPException(status_code=500, detail="Local speech-to-text failed; see server log for details") from exc
+
+        return SpeechTranscriptionResponse(text=text, language=detected_language)
 
     @app.post("/api/speech/synthesize", response_model=SpeechSynthesisResponse)
     async def synthesize_speech(request: SpeechSynthesisRequest) -> SpeechSynthesisResponse:
