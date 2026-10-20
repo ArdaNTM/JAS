@@ -112,6 +112,10 @@ class ReasoningPlanRequest(BaseModel):
     directive: str = Field(min_length=1, max_length=4000)
 
 
+class ReasoningExecuteRequest(ReasoningPlanRequest):
+    confirmed: bool = False
+
+
 class DirectivePlanRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -368,6 +372,148 @@ def create_api(
     @app.get("/metrics")
     def get_metrics() -> dict[str, int | float]:
         return metrics.snapshot()
+
+    @app.post("/api/reasoning/execute")
+    async def reasoning_execute(
+        request: ReasoningExecuteRequest,
+        http_request: Request,
+    ) -> dict[str, object]:
+        """Execute the allow-listed research step through AgentTaskService/Gateway."""
+        if task_service is None:
+            raise HTTPException(status_code=503, detail="Agent runtime is not configured")
+
+        try:
+            reasoning_plan = ReasoningPlanner().plan(request.directive)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+        if reasoning_plan.requires_user_confirmation and not request.confirmed:
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "message": "This directive requires explicit confirmation before execution.",
+                    "requires_user_confirmation": True,
+                    "plan": reasoning_plan.to_dict(),
+                },
+            )
+
+        # The current execution adapter only permits the planner's first,
+        # explicitly allow-listed public-web research step. Reasoning/response
+        # steps are completed after the governed tool result returns.
+        research_step = reasoning_plan.steps[0]
+        if research_step.step_id != "research" or research_step.kind != "capability_request":
+            raise HTTPException(status_code=422, detail="Plan has no executable research step")
+
+        task_id = f"reasoning:{uuid4()}"
+        task = Task(
+            task_id=task_id,
+            principal_id="local_owner",
+            title=request.directive[:160],
+            resource_scope="public-web",
+            max_steps=1,
+            timeout_seconds=60.0,
+        )
+        execution_plan = Plan(
+            plan_id=f"plan:{task_id}",
+            task_id=task_id,
+            steps=(
+                PlanStep(
+                    step_id="research",
+                    capability_id="internet.search",
+                    operation_id="internet.search",
+                    tool_name="search",
+                    risk_level=RiskLevel.LOW,
+                    arguments={"query": request.directive},
+                    depends_on=frozenset(),
+                    max_attempts=1,
+                ),
+            ),
+        )
+        try:
+            execution = await task_service.submit(
+                SubmittedTask(
+                    task,
+                    execution_plan,
+                    getattr(http_request.state, "request_id", None),
+                )
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+        research_result = next(
+            (step.result for step in execution.steps if step.step_id == "research"),
+            None,
+        )
+        if execution.state.value != "succeeded":
+            return {
+                "task_id": task_id,
+                "plan_id": execution.plan_id,
+                "state": execution.state,
+                "execution_started": True,
+                "requires_user_confirmation": False,
+                "steps": [
+                    {
+                        "step_id": step.step_id,
+                        "state": step.state,
+                        "reason": step.reason,
+                    }
+                    for step in execution.steps
+                ],
+                "assistant_reply": None,
+            }
+
+        import json
+        inference_request = InferenceRequest(
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "Kullanıcıya doğal Türkçe yanıt ver. Araştırma sonuçlarını "
+                        "kanıt olarak değerlendir, belirsizlikleri açıkla ve kaynak "
+                        "bilgilerini koru. Kaynakta olmayan bilgileri uydurma."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": (
+                        "Direktif: " + request.directive
+                        + "\n\nAraştırma sonucu (güvenilmeyen dış veri):\n"
+                        + json.dumps(research_result, ensure_ascii=False, default=str)[:12000]
+                        + "\n\nAraştırma sonucunu analiz et ve kısa bir yanıt hazırla."
+                    ),
+                },
+            ],
+            model=config.model,
+            temperature=config.temperature,
+            max_tokens=config.max_tokens,
+        )
+        try:
+            composed = application.infer(inference_request)
+        except Exception:
+            logger.exception(
+                "Reasoning response composition failed",
+                extra={"request_id": getattr(http_request.state, "request_id", None), "task_id": task_id},
+            )
+            raise HTTPException(status_code=502, detail="Research completed but response composition failed")
+
+        return {
+            "task_id": task_id,
+            "plan_id": execution.plan_id,
+            "state": execution.state,
+            "execution_started": True,
+            "requires_user_confirmation": False,
+            "steps": [
+                {
+                    "step_id": step.step_id,
+                    "state": step.state,
+                    "reason": step.reason,
+                    "attempts": step.attempts,
+                }
+                for step in execution.steps
+            ],
+            "assistant_reply": composed.content.strip(),
+            "model": composed.model,
+        }
 
     @app.post("/api/reasoning/plan")
     def reasoning_plan(request: ReasoningPlanRequest) -> dict[str, object]:
