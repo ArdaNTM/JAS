@@ -433,7 +433,7 @@ def create_api(
 
         if research_context:
             user_content = (
-                "KullanÄ±cÄ± direktifi:\n"
+                "Kullanıcı direktifi:\n"
                 + request.message
                 + "\n\n"
                 + "AURA araştırma bağlamı:\n"
