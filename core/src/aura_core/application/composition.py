@@ -74,6 +74,7 @@ def create_composed_app(
         EventBusLiveBridge(
             event_bus,
             broker,
+            suggestion_store=app.state.proactive_suggestions,
         )
         if event_bus is not None
         else None
