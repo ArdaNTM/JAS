@@ -161,6 +161,26 @@ class AgentExecutor:
             self._event("PlanStepCompleted", task, plan, step, {"state": result.state, "attempts": result.attempts})
         results = tuple(completed[step.step_id] for step in plan.steps)
         state = PlanState.SUCCEEDED if all(item.state is StepState.SUCCEEDED for item in results) else PlanState.CANCELLED if any(item.state is StepState.CANCELLED for item in results) else PlanState.FAILED
+        if self._event_bus is not None:
+            self._event_bus.publish(
+                KernelEvent(
+                    event_type="TaskSucceeded" if state is PlanState.SUCCEEDED else "TaskFailed",
+                    source_component="agent_executor",
+                    correlation_id=plan.plan_id,
+                    payload={
+                        "task_id": task.task_id,
+                        "plan_id": plan.plan_id,
+                        "state": state.value,
+                        "failed_steps": [
+                            item.step_id for item in results
+                            if item.state is not StepState.SUCCEEDED
+                        ],
+                    },
+                    metadata={
+                        "request_id": _request_id_context.get()
+                    } if _request_id_context.get() else {},
+                )
+            )
         return ExecutionResult(plan.plan_id, state, results, monotonic() - started)
 
     async def _execute_step(self, task: Task, plan: Plan, step: PlanStep) -> StepResult:
