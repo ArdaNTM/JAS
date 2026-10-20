@@ -528,17 +528,19 @@ export default function App() {
 
             <button
               type="button"
-              disabled={!voice.available}
+              disabled={!voice.available || systemState !== "idle"}
               onClick={
-                voice.state === "listening"
+                voice.state === "recording" || voice.state === "listening"
                   ? voice.stop
                   : voice.start
               }
               className="px-3 py-2 text-[9px] tracking-[.18em] text-cyan-500 transition hover:text-cyan-200 disabled:opacity-30"
             >
-              {voice.state === "listening"
+              {voice.state === "recording" || voice.state === "listening"
                 ? "STOP"
-                : "VOICE"}
+                : voice.state === "transcribing"
+                  ? "STT…"
+                  : "VOICE"}
             </button>
 
             <button
@@ -552,6 +554,9 @@ export default function App() {
               ENTER
             </button>
           </form>
+          <div className="mx-auto mt-2 max-w-4xl text-center text-[8px] tracking-[.12em] text-slate-500">
+            {voice.message}
+          </div>
         </footer>
 
       </div>
