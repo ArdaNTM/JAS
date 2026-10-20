@@ -387,14 +387,22 @@ def create_api(
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
 
-        if reasoning_plan.requires_user_confirmation and not request.confirmed:
+        if reasoning_plan.requires_user_confirmation:
+            if not request.confirmed:
+                raise HTTPException(
+                    status_code=409,
+                    detail={
+                        "message": "This directive requires explicit confirmation before execution.",
+                        "requires_user_confirmation": True,
+                        "plan": reasoning_plan.to_dict(),
+                    },
+                )
             raise HTTPException(
-                status_code=409,
-                detail={
-                    "message": "This directive requires explicit confirmation before execution.",
-                    "requires_user_confirmation": True,
-                    "plan": reasoning_plan.to_dict(),
-                },
+                status_code=422,
+                detail=(
+                    "The current execution adapter supports governed public-web research only; "
+                    "side-effecting actions have no registered execution adapter."
+                ),
             )
 
         # The current execution adapter only permits the planner's first,
