@@ -23,6 +23,7 @@ def test_reasoning_plan_endpoint_returns_plan_without_execution() -> None:
         json={"directive": "Araştır ve sonuçları karşılaştır."},
     )
     assert response.status_code == 200
+    assert response.headers["content-type"].lower() == "application/json; charset=utf-8"
     body = response.json()
     assert body["execution_started"] is False
     assert body["steps"][0]["kind"] == "capability_request"
@@ -49,6 +50,7 @@ def test_reasoning_plan_preserves_turkish_utf8_json_bytes() -> None:
     )
 
     assert response.status_code == 200
+    assert response.headers["content-type"].lower() == "application/json; charset=utf-8"
     assert response.json()["directive"] == directive
     assert directive.encode("utf-8") in response.content
     assert "Ã¢" not in response.content.decode("utf-8")
