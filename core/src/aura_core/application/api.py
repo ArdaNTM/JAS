@@ -478,6 +478,10 @@ def create_api(
         execution = adaptive_run.execution
         task_id = adaptive_run.task_id
         recovery = list(adaptive_run.recovery)
+        research_result = next(
+            (step.result for step in execution.steps if step.step_id == "research"),
+            None,
+        )
         if execution.state.value != "succeeded":
             return {
                 "task_id": task_id,
