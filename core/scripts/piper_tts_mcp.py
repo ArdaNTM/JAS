@@ -71,9 +71,11 @@ async def handle_call_tool(ctx: ServerRequestContext, params: types.CallToolRequ
 
 
 async def main() -> None:
-    server = Server("aura-piper-tts")
-    server.list_tools()(handle_list_tools)
-    server.call_tool()(handle_call_tool)
+    server = Server(
+        "aura-piper-tts",
+        on_list_tools=handle_list_tools,
+        on_call_tool=handle_call_tool,
+    )
     async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
         await server.run(read_stream, write_stream, server.create_initialization_options())
 
