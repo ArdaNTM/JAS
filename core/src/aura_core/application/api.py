@@ -294,6 +294,12 @@ def create_api(
             3,
         )
 
+        # PowerShell 5.1 often decodes JSON without a charset using a legacy
+        # Windows code page. Explicitly advertise UTF-8 for every JSON response.
+        content_type = response.headers.get("content-type", "")
+        if content_type.lower().startswith("application/json"):
+            response.headers["Content-Type"] = "application/json; charset=utf-8"
+
         response.headers["X-Request-ID"] = request_id
 
         metrics.record(
