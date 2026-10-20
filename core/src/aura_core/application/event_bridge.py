@@ -73,3 +73,5 @@ class EventBusLiveBridge:
 
     async def _handle(self, event: KernelEvent) -> None:
         self._broker.publish(event)
+        if self._suggestion_store is not None:
+            self._suggestion_store.observe(event)
