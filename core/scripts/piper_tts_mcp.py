@@ -10,6 +10,7 @@ import asyncio
 import base64
 import io
 import os
+import wave
 from pathlib import Path
 from typing import Any
 
@@ -41,7 +42,8 @@ def synthesize(text: str) -> dict[str, Any]:
 
     voice = PiperVoice.load(str(model_path), config_path=str(config_path))
     buffer = io.BytesIO()
-    voice.synthesize_wav(text, buffer)
+    with wave.open(buffer, "wb") as wav_file:
+        voice.synthesize_wav(text, wav_file)
     return {
         "mime_type": "audio/wav",
         "audio_base64": base64.b64encode(buffer.getvalue()).decode("ascii"),
