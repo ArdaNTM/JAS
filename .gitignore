@@ -48,3 +48,17 @@ core/.aura/
 /scripts/*.syntax-error-*.bak
 /scripts/*.before-anchor-fix-*.bak
 /scripts/*.bak
+
+# Local timestamped backups (never commit workstation recovery copies)
+*.bak-*
+*.backup-*
+*.before-*.bak
+
+# Local runtime outputs and downloaded content
+/logs/
+/downloads/
+/disk-watch.csv
+/core/artifacts/
+
+# Local SearXNG stack may contain machine-specific settings/secrets
+/core/deployment/searxng-stack/
