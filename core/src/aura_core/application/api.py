@@ -19,6 +19,7 @@ from aura_core.application.readiness import ReadinessService
 from aura_core.application.service import InferenceService
 from aura_core.application.tasks import AgentTaskService, SubmittedTask
 from aura_core.application.directive_planner import DirectivePlanner
+from aura_core.application.reasoning_planner import ReasoningPlanner
 from aura_core.config.backend import BackendConfig
 from aura_core.config.runtime import RuntimeConfig
 from aura_core.contracts.messages import InferenceRequest, InferenceResponse
@@ -104,6 +105,11 @@ class TaskRequest(BaseModel):
     title: str = Field(min_length=1)
     resource_scope: str = Field(min_length=1)
     steps: list[TaskStepPayload] = Field(min_length=1, max_length=32)
+
+
+class ReasoningPlanRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    directive: str = Field(min_length=1, max_length=4000)
 
 
 class DirectivePlanRequest(BaseModel):
@@ -362,6 +368,15 @@ def create_api(
     @app.get("/metrics")
     def get_metrics() -> dict[str, int | float]:
         return metrics.snapshot()
+
+    @app.post("/api/reasoning/plan")
+    def reasoning_plan(request: ReasoningPlanRequest) -> dict[str, object]:
+        """Return an inspectable plan; this endpoint never executes tools."""
+        try:
+            plan = ReasoningPlanner().plan(request.directive)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        return plan.to_dict()
 
     @app.post(
         "/api/assistant/respond",
