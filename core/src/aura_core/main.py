@@ -9,6 +9,7 @@ from fastapi import FastAPI
 
 from aura_core.agent.runtime import AgentExecutor
 from aura_core.application.composition import create_composed_app
+from aura_core.application.capability_discovery import DynamicCapabilityDiscovery
 from aura_core.application.tasks import AgentTaskService
 from aura_core.config.kernel import KernelConfig
 from aura_core.kernel.permissions import (
@@ -21,6 +22,7 @@ from aura_core.kernel.capabilities import CapabilityCategory, CapabilityDefiniti
 from aura_core.kernel.health import HealthReport
 from aura_core.kernel.services import ServiceCategory, ServiceDefinition, ServiceState
 from aura_core.mcp.gateway import MCPGateway
+from aura_core.mcp.mcp_provider import MCPProvider
 from aura_core.mcp.tool_registry import MCPToolRegistry
 from aura_core.research.config import ResearchMCPConfig
 from aura_core.research.provider_bootstrap import (
@@ -190,6 +192,46 @@ def build_app() -> FastAPI:
                 timeout=20.0,
             )
             report_mcp_healthy(kokoro_config)
+
+            # Discover metadata from providers only after their live MCP
+            # connections and registries are established. Discovery creates
+            # proposals; it never auto-approves or grants execution policy.
+            discovery = DynamicCapabilityDiscovery(kernel.capability_registry)
+            _app.state.capability_discovery = discovery
+            for provider_record in kernel.provider_registry.records():
+                try:
+                    connected_provider = kernel.provider_registry.resolve(
+                        provider_record.definition.provider_id
+                    )
+                    if not isinstance(connected_provider, MCPProvider) or not connected_provider.is_connected:
+                        continue
+                    discovered_tools = await connected_provider.list_tools()
+                    category = "voice" if "tts" in provider_record.definition.provider_id.casefold() or "kokoro" in provider_record.definition.provider_id.casefold() else "research"
+                    discovery.discover_mcp_tools(
+                        provider_record.definition.provider_id,
+                        [
+                            {
+                                "name": tool.name,
+                                "description": tool.description or "",
+                                "inputSchema": tool.input_schema,
+                            }
+                            for tool in discovered_tools
+                        ],
+                        category=category,
+                    )
+                    logger.info(
+                        "MCP capability proposals discovered",
+                        extra={
+                            "provider_id": provider_record.definition.provider_id,
+                            "tool_count": len(discovered_tools),
+                        },
+                    )
+                except Exception:
+                    logger.warning(
+                        "MCP capability discovery failed; provider remains governed by existing registrations",
+                        extra={"provider_id": provider_record.definition.provider_id},
+                        exc_info=True,
+                    )
 
             kernel.permission_engine.add_policy(
                 PermissionPolicy(
