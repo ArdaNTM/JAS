@@ -1,3 +1,5 @@
+import asyncio
+
 import pytest
 
 from aura_core.agent.runtime import ExecutionResult, PlanState, StepResult, StepState
@@ -54,35 +56,32 @@ def _result(task_id, state=PlanState.SUCCEEDED, reason="", result={"items": [1]}
     return ExecutionResult(f"plan:{task_id}", state, (step,), 0.01)
 
 
-@pytest.mark.asyncio
-async def test_transient_failure_retries_once_as_new_governed_task():
+def test_transient_failure_retries_once_as_new_governed_task():
     service = FakeTaskService([ConnectionError("network temporarily unavailable"), _result("task-1")])
-    run = await AdaptiveTaskOrchestrator().run(
+    run = asyncio.run(AdaptiveTaskOrchestrator().run(
         service, _task, _plan, request_id="request-1"
-    )
+    ))
     assert run.execution.state is PlanState.SUCCEEDED
     assert len(service.task_ids) == 2
     assert service.task_ids == ["task-0", "task-1"]
     assert run.recovery[0]["action"] == "replan_once"
 
 
-@pytest.mark.asyncio
-async def test_authorization_denial_is_not_retried():
+def test_authorization_denial_is_not_retried():
     service = FakeTaskService([_result("task-0", PlanState.FAILED, "Permission denied")])
-    run = await AdaptiveTaskOrchestrator().run(
+    run = asyncio.run(AdaptiveTaskOrchestrator().run(
         service, _task, _plan, request_id="request-1"
-    )
+    ))
     assert run.execution.state is PlanState.FAILED
     assert len(service.task_ids) == 1
     assert run.recovery[0]["authorization_denied"] is True
     assert run.recovery[0]["action"] == "stop"
 
 
-@pytest.mark.asyncio
-async def test_unknown_exception_is_not_retried():
+def test_unknown_exception_is_not_retried():
     service = FakeTaskService([RuntimeError("unknown runtime failure")])
     with pytest.raises(RuntimeError):
-        await AdaptiveTaskOrchestrator().run(
+        asyncio.run(AdaptiveTaskOrchestrator().run(
             service, _task, _plan, request_id="request-1"
-        )
+        ))
     assert len(service.task_ids) == 1
