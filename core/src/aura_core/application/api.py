@@ -20,6 +20,10 @@ from aura_core.application.service import InferenceService
 from aura_core.application.tasks import AgentTaskService, SubmittedTask
 from aura_core.application.directive_planner import DirectivePlanner
 from aura_core.application.reasoning_planner import ReasoningPlanner
+from aura_core.application.capability_discovery import DynamicCapabilityDiscovery
+from aura_core.application.proactive_store import ProactiveSuggestionStore
+from aura_core.application.adaptive_execution import AdaptiveExecutionController, RecoveryAction, StepObservation
+from aura_core.mcp.mcp_provider import MCPProvider
 from aura_core.config.backend import BackendConfig
 from aura_core.config.runtime import RuntimeConfig
 from aura_core.contracts.messages import InferenceRequest, InferenceResponse
@@ -113,6 +117,16 @@ class ReasoningPlanRequest(BaseModel):
 
 
 class ReasoningExecuteRequest(ReasoningPlanRequest):
+    confirmed: bool = False
+
+
+class CapabilityDiscoveryRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    category: str = Field(default="research", min_length=1, max_length=40)
+
+
+class CapabilityApprovalRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     confirmed: bool = False
 
 
@@ -240,6 +254,8 @@ def create_api(
     app.state.metrics = metrics
     app.state.task_service = task_service
     app.state.live_events = live_events or LiveEventBroker()
+    app.state.proactive_suggestions = ProactiveSuggestionStore()
+    app.state.capability_discovery = None
     app.state.directive_planner = DirectivePlanner()
     app.state.chat_memory = ChatMemory(
         SemanticMemoryStore(
@@ -528,6 +544,71 @@ def create_api(
             "assistant_reply": composed.content.strip(),
             "model": composed.model,
         }
+
+    @app.post("/api/capabilities/discover/{provider_id}")
+    async def discover_provider_capabilities(
+        provider_id: str,
+        request: CapabilityDiscoveryRequest,
+    ) -> dict[str, object]:
+        """Discover tools only from a provider already registered by the host."""
+        kernel = getattr(app.state, "kernel", None)
+        if kernel is None or kernel.provider_registry is None or kernel.capability_registry is None:
+            raise HTTPException(status_code=503, detail="Kernel provider registries are unavailable")
+        try:
+            provider = kernel.provider_registry.resolve(provider_id)
+        except (KeyError, LookupError) as exc:
+            raise HTTPException(status_code=404, detail="Registered provider is unavailable") from exc
+        if not isinstance(provider, MCPProvider) or not provider.is_connected:
+            raise HTTPException(status_code=409, detail="Provider is not a connected MCP provider")
+        discovery = app.state.capability_discovery
+        if discovery is None:
+            discovery = DynamicCapabilityDiscovery(kernel.capability_registry)
+            app.state.capability_discovery = discovery
+        try:
+            tools = await provider.list_tools()
+            proposals = discovery.discover_mcp_tools(
+                provider_id,
+                [{"name": tool.name, "description": tool.description or "", "inputSchema": tool.input_schema} for tool in tools],
+                category=request.category,
+            )
+        except (ValueError, RuntimeError) as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        return {"provider_id": provider_id, "proposals": [item.to_dict() for item in proposals]}
+
+    @app.get("/api/capabilities/proposals")
+    def list_capability_proposals() -> dict[str, object]:
+        discovery = app.state.capability_discovery
+        return {"proposals": [item.to_dict() for item in discovery.proposals()] if discovery else []}
+
+    @app.post("/api/capabilities/proposals/{proposal_id}/approve")
+    def approve_capability_proposal(
+        proposal_id: str,
+        request: CapabilityApprovalRequest,
+        http_request: Request,
+    ) -> dict[str, object]:
+        host = http_request.client.host if http_request.client else ""
+        if host not in {"127.0.0.1", "::1", "localhost", "testclient"}:
+            raise HTTPException(status_code=403, detail="Capability approval is restricted to local clients")
+        if not request.confirmed:
+            raise HTTPException(status_code=409, detail="Explicit confirmation is required")
+        discovery = app.state.capability_discovery
+        if discovery is None:
+            raise HTTPException(status_code=404, detail="No capability proposals are pending")
+        try:
+            proposal = discovery.approve(proposal_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except (ValueError, LookupError) as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        return proposal.to_dict()
+
+    @app.get("/api/proactive/suggestions")
+    def list_proactive_suggestions(limit: int = 50) -> dict[str, object]:
+        try:
+            items = app.state.proactive_suggestions.list_items(limit)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        return {"suggestions": items}
 
     @app.post("/api/reasoning/plan")
     def reasoning_plan(request: ReasoningPlanRequest) -> dict[str, object]:
