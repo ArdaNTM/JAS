@@ -5,6 +5,7 @@ from typing import Callable
 
 from aura_core.application.live_events import LiveEventBroker
 from aura_core.kernel.events import EventBus, KernelEvent
+from aura_core.application.proactive_store import ProactiveSuggestionStore
 
 
 class EventBusLiveBridge:
@@ -19,6 +20,7 @@ class EventBusLiveBridge:
         event_bus: EventBus,
         broker: LiveEventBroker,
         interval_seconds: float = 0.05,
+        suggestion_store: ProactiveSuggestionStore | None = None,
     ) -> None:
         if interval_seconds <= 0:
             raise ValueError("interval_seconds must be positive")
@@ -26,6 +28,7 @@ class EventBusLiveBridge:
         self._event_bus = event_bus
         self._broker = broker
         self._interval = interval_seconds
+        self._suggestion_store = suggestion_store
         self._unsubscribe: Callable[[], None] | None = None
         self._task: asyncio.Task[None] | None = None
         self._running = False
