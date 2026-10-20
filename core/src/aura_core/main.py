@@ -17,18 +17,27 @@ from aura_core.kernel.permissions import (
     PermissionPolicy,
 )
 from aura_core.kernel.runtime import AuraKernel
+from aura_core.kernel.capabilities import CapabilityCategory, CapabilityDefinition, ProviderType
+from aura_core.kernel.health import HealthReport
+from aura_core.kernel.services import ServiceCategory, ServiceDefinition, ServiceState
 from aura_core.mcp.gateway import MCPGateway
 from aura_core.mcp.tool_registry import MCPToolRegistry
 from aura_core.research.config import ResearchMCPConfig
 from aura_core.research.provider_bootstrap import (
     register_research_mcp,
 )
+from aura_core.tts.config import KokoroMCPConfig
+from aura_core.tts.provider_bootstrap import register_kokoro_mcp
 
 
 logger = logging.getLogger(
     "aura_core.lifecycle"
 )
 
+
+
+class VisualizationPlanService:
+    """Registry marker for the deterministic, UI-only visualization plan."""
 
 def build_app() -> FastAPI:
     kernel_config = KernelConfig.from_environment()
@@ -46,8 +55,34 @@ def build_app() -> FastAPI:
             "AURA kernel registries were not initialized"
         )
 
+    visualization_service_id = "aura:visualization_planner:0.1.0"
+    kernel.service_registry.register(
+        ServiceDefinition(
+            name="visualization_planner",
+            version="0.1.0",
+            provider="aura",
+            category=ServiceCategory.KERNEL,
+            capabilities={"3d.visualize"},
+            tags={"foundation", "presentation"},
+        ),
+        VisualizationPlanService(),
+    )
+    kernel.capability_registry.register(
+        CapabilityDefinition(
+            capability_id="3d.visualize",
+            name="3D Visualization Plan",
+            version="1.0.0",
+            description="Creates a deterministic UI-only procedural visualization plan.",
+            provider_id=visualization_service_id,
+            provider_type=ProviderType.CORE,
+            category=CapabilityCategory.VISUALIZATION,
+            required_permissions=frozenset(),
+        )
+    )
     research_config = ResearchMCPConfig.from_env()
+    kokoro_config = KokoroMCPConfig.from_env()
     research_tools = MCPToolRegistry()
+    tts_tools = MCPToolRegistry()
 
     gateway = MCPGateway(
         capability_registry=kernel.capability_registry,
@@ -69,11 +104,44 @@ def build_app() -> FastAPI:
         event_bus=kernel.event_bus,
         permission_engine=kernel.permission_engine,
         kernel=kernel,
+        gateway=gateway,
     )
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
         research_provider = None
+        kokoro_provider = None
+
+        # MCP_HEALTH_REPORT_PATCH: report only after successful provider setup.
+        def report_mcp_healthy(config):
+            monitor = kernel.health_monitor
+            registry = kernel.service_registry
+            if monitor is None or registry is None:
+                raise RuntimeError("Kernel health services are unavailable")
+
+            record = next(
+                (
+                    item for item in registry.records()
+                    if item.definition.provider == "mcp"
+                    and item.definition.name == config.service_name
+                    and item.definition.version == config.service_version
+                ),
+                None,
+            )
+            if record is None:
+                raise RuntimeError(
+                    f"MCP service registration not found: {config.service_name}"
+                )
+
+            registry.update_state(record.service_id, ServiceState.RUNNING)
+            monitor.report(
+                HealthReport(
+                    service_id=record.service_id,
+                    available=True,
+                    ready=True,
+                    live=True,
+                )
+            )
 
         event_bridge = getattr(
             _app.state,
@@ -86,6 +154,13 @@ def build_app() -> FastAPI:
             "learning_scheduler",
             None,
         )
+
+        # Diagnostic/API tests exercise the composed Kernel without spawning
+        # external stdio processes. Production keeps providers enabled unless
+        # this explicit test/deployment switch is set.
+        if os.getenv("AURA_DISABLE_EXTERNAL_PROVIDERS", "0") == "1":
+            yield
+            return
 
         try:
             logger.info(
@@ -102,6 +177,19 @@ def build_app() -> FastAPI:
                 ),
                 timeout=20.0,
             )
+            report_mcp_healthy(research_config)
+
+            kokoro_provider = await asyncio.wait_for(
+                register_kokoro_mcp(
+                    config=kokoro_config,
+                    services=kernel.service_registry,
+                    providers=kernel.provider_registry,
+                    capabilities=kernel.capability_registry,
+                    tools=tts_tools,
+                ),
+                timeout=20.0,
+            )
+            report_mcp_healthy(kokoro_config)
 
             kernel.permission_engine.add_policy(
                 PermissionPolicy(
@@ -121,6 +209,18 @@ def build_app() -> FastAPI:
                     decision=(
                         AuthorizationDecision.ALLOW
                     ),
+                )
+            )
+            kernel.permission_engine.add_policy(
+                PermissionPolicy(
+                    policy_id="local-user:speech.synthesize:local_default",
+                    policy_version="1.0.0",
+                    principal_id="local_owner",
+                    capability_id="speech.synthesize",
+                    operation_id="speech.synthesize",
+                    resource_scope="local_default",
+                    authorization_level=AuthorizationLevel.EXECUTE,
+                    decision=AuthorizationDecision.ALLOW,
                 )
             )
 
@@ -219,14 +319,20 @@ def build_app() -> FastAPI:
 
             if research_provider is not None:
                 try:
-                    await asyncio.wait_for(
-                        research_provider.close(),
-                        timeout=10.0,
-                    )
+                    # MCP stdio owns AnyIO cancellation scopes; wrapping its
+                    # close in asyncio.wait_for exits that scope from a second
+                    # cancellation context under TestClient shutdown.
+                    await research_provider.close()
                 except Exception:
                     logger.exception(
                         "Research provider shutdown failed"
                     )
+
+            if kokoro_provider is not None:
+                try:
+                    await kokoro_provider.close()
+                except Exception:
+                    logger.exception("Kokoro provider shutdown failed")
 
             logger.info(
                 "AURA LIFESPAN SHUTDOWN COMPLETE"
@@ -239,21 +345,3 @@ def build_app() -> FastAPI:
 
 
 app = build_app()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

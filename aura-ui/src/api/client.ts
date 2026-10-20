@@ -175,3 +175,10 @@ export function respondAsAssistant(
   );
 }
 
+export function synthesizeLocalSpeech(text: string): Promise<{
+  mime_type: string;
+  audio_base64: string;
+}> {
+  return request("/api/speech/synthesize", { method: "POST", body: JSON.stringify({ text }) });
+}
+

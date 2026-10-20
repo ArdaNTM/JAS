@@ -10,6 +10,7 @@ from aura_core.kernel.services import ServiceRegistry
 class CapabilityCategory(StrEnum):
     VOICE = "voice"
     VISION = "vision"
+    VISUALIZATION = "visualization"
     MEMORY = "memory"
     LANGUAGE = "language"
     PLANNING = "planning"

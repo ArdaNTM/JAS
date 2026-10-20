@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import unicodedata
 
 from aura_core.kernel.permissions import RiskLevel
 
@@ -23,33 +24,94 @@ class GeneratedPlan:
     steps: tuple[GeneratedStep, ...]
 
 
+def _ascii_fold(value: str) -> str:
+    """Normalize Turkish text for deterministic keyword matching."""
+    value = value.casefold().translate(str.maketrans({
+        "ı": "i",
+        "ş": "s",
+        "ğ": "g",
+        "ü": "u",
+        "ö": "o",
+        "ç": "c",
+    }))
+    return "".join(
+        char for char in unicodedata.normalize("NFKD", value)
+        if not unicodedata.combining(char)
+    )
+
+
 class DirectivePlanner:
     """
     Deterministic, allow-listed directive planner.
 
-    Natural language is never converted into arbitrary tool calls.
-    Only known capabilities are emitted.
+    Visualization plans are presentation directives, not executable MCP
+    tools. Research plans continue through the governed task/Gateway path.
     """
 
+    _VISUAL_VERBS = frozenset({
+        "ciz", "goster", "olustur", "uret", "modelle",
+        "gorsellestir", "visualize", "draw", "create", "make",
+    })
+
+    _VISUAL_OBJECTS = frozenset({
+        "model", "modelini", "3d", "3b", "hologram",
+        "disli", "kure", "motor", "nesne", "obje",
+        "gear", "gears", "sphere", "ball", "engine",
+        "object",
+    })
+
     _RESEARCH_TERMS = (
-        "araştır",
-        "araştırma",
-        "research",
-        "search",
-        "bul",
-        "incele",
-        "öğren",
-        "bilgi",
-        "hakkında",
+        "arastir", "arastirma", "research", "search", "ara",
+        "bul", "incele", "ogren", "bilgi", "hakkinda",
+    )
+
+    _MODEL_RULES = (
+        (frozenset({"disli", "gear", "gears"}), "gear-v1"),
+        (frozenset({"kure", "sphere", "ball"}), "sphere-v1"),
+        (frozenset({"motor", "engine"}), "motor-v1"),
     )
 
     def plan(self, directive: str) -> GeneratedPlan:
         text = directive.strip()
-
         if not text:
             raise ValueError("Directive is required.")
 
-        normalized = text.casefold()
+        normalized = _ascii_fold(text)
+        tokens = set(normalized.split())
+
+        starts_as_3d = normalized.startswith(("3d ", "3b "))
+        has_visual_verb = any(
+            term in tokens for term in self._VISUAL_VERBS
+        )
+        has_visual_object = any(
+            term in tokens for term in self._VISUAL_OBJECTS
+        )
+
+        if starts_as_3d or (has_visual_verb and has_visual_object):
+            model_id = "procedural-object-v1"
+            for keywords, candidate in self._MODEL_RULES:
+                if tokens.intersection(keywords):
+                    model_id = candidate
+                    break
+
+            return GeneratedPlan(
+                resource_scope="local-ui",
+                steps=(
+                    GeneratedStep(
+                        step_id="visualize-3d",
+                        capability_id="3d.visualize",
+                        operation_id="3d.visualize",
+                        tool_name="visualize",
+                        risk_level=RiskLevel.LOW,
+                        arguments={
+                            "model_id": model_id,
+                            "target": " ".join(text.split())[:120],
+                        },
+                        depends_on=set(),
+                        max_attempts=1,
+                    ),
+                ),
+            )
 
         if any(term in normalized for term in self._RESEARCH_TERMS):
             return GeneratedPlan(
@@ -70,5 +132,5 @@ class DirectivePlanner:
 
         raise ValueError(
             "No governed capability matches this directive. "
-            "Supported autonomous directive: research/search."
+            "Supported autonomous directive: research/search or 3D visualization."
         )

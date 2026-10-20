@@ -20,6 +20,7 @@ from aura_core.config.backend import BackendConfig
 from aura_core.config.runtime import RuntimeConfig
 from aura_core.contracts.messages import InferenceRequest, InferenceResponse
 from aura_core.kernel.permissions import RiskLevel
+from aura_core.mcp.gateway import MCPGatewayRequest
 from aura_core.observability.metrics import RequestMetrics
 from aura_core.runtime.errors import (
     BackendInvalidResponseError,
@@ -85,6 +86,15 @@ class AssistantRespondResponse(BaseModel):
     assistant_reply: str
     model: str
     degraded: bool = False
+
+class SpeechSynthesisRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    text: str = Field(min_length=1, max_length=4000)
+    voice: str = Field(default="af_heart", min_length=1)
+
+class SpeechSynthesisResponse(BaseModel):
+    mime_type: str
+    audio_base64: str
 
 class TaskResponse(BaseModel):
     task_id: str
@@ -429,6 +439,22 @@ def create_api(
             model=result.model,
             degraded=False,
         )
+
+    @app.post("/api/speech/synthesize", response_model=SpeechSynthesisResponse)
+    async def synthesize_speech(request: SpeechSynthesisRequest) -> SpeechSynthesisResponse:
+        gateway = getattr(app.state, "mcp_gateway", None)
+        if gateway is None:
+            raise HTTPException(status_code=503, detail="Local speech provider is unavailable")
+        response = await gateway.invoke(MCPGatewayRequest(
+            request_id=f"speech:{uuid4()}", principal_id="local_owner",
+            capability_id="speech.synthesize", operation_id="speech.synthesize",
+            resource_scope="local_default", risk_level=RiskLevel.LOW,
+            tool_name="synthesize", arguments={"text": request.text, "voice": request.voice},
+        ))
+        if response.result is None:
+            raise HTTPException(status_code=403, detail=response.reason)
+        result = response.result
+        return SpeechSynthesisResponse(mime_type=result["mime_type"], audio_base64=result["audio_base64"])
 
     @app.post(
         "/v1/inference",

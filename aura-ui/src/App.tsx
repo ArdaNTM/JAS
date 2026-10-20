@@ -1,3 +1,5 @@
+import ArcReactor3D from "./components/ArcReactor3D";
+import DynamicHologram3D from "./components/DynamicHologram3D";
 import { useEffect, useState} from "react";
 import type { FormEvent } from "react";
 
@@ -9,8 +11,9 @@ import {
   type TaskStep,
 } from "./api/client";
 
-import { useAuraVoice } from "./voice/useAuraVoice";
+import { useAuraVoice } from "./voice/useAuraVoice";
 import AuraJarvisBridge from "./AuraJarvisBridge";
+import { useTaskEvents } from "./hooks/useTaskEvents";
 
 function makeId(): string {
   return crypto.randomUUID?.() ?? `task-${Date.now()}`;
@@ -23,54 +26,12 @@ function ArcReactor({
   active: boolean;
   level: "idle" | "thinking" | "executing";
 }) {
-  const speed =
-    level === "executing"
-      ? "animate-[spin_1.7s_linear_infinite]"
-      : level === "thinking"
-        ? "animate-[spin_4s_linear_infinite]"
-        : "animate-[spin_18s_linear_infinite]";
-
   return (
-    <div
-      className={[
-        "relative flex h-72 w-72 items-center justify-center",
-        active ? "scale-105" : "scale-100",
-        "transition-all duration-700",
-      ].join(" ")}
-    >
-      <div
-        className={[
-          "absolute inset-0 rounded-full border border-cyan-400/20",
-          speed,
-        ].join(" ")}
-      />
-
-      <div
-        className={[
-          "absolute inset-5 rounded-full border border-cyan-400/25",
-          speed,
-        ].join(" ")}
-      />
-
-      <div className="absolute inset-10 rounded-full border border-dashed border-cyan-300/20" />
-
-      <div
-        className={[
-          "absolute inset-16 rounded-full border-2 border-cyan-300/70",
-          "shadow-[0_0_55px_rgba(34,211,238,.55),inset_0_0_45px_rgba(34,211,238,.18)]",
-          active ? "animate-pulse" : "",
-        ].join(" ")}
-      />
-
-      <div
-        className={[
-          "relative h-20 w-20 rounded-full bg-cyan-100",
-          "shadow-[0_0_30px_rgba(165,243,252,1),0_0_100px_rgba(34,211,238,.75)]",
-          active ? "scale-110" : "",
-          "transition-all duration-500",
-        ].join(" ")}
-      />
-    </div>
+    <ArcReactor3D
+      active={active}
+      level={level}
+      size={320}
+    />
   );
 }
 
@@ -85,7 +46,6 @@ function StatusItem({
     "ok",
     "healthy",
     "ready",
-    "configured",
     "running",
     "connected",
   ].includes(value.toLowerCase());
@@ -117,6 +77,11 @@ function StatusItem({
 
 
 
+type VisualizationModelId =
+  | "procedural-object-v1"
+  | "gear-v1"
+  | "sphere-v1"
+  | "motor-v1";
 export default function App() {
   const [researchOutput, setResearchOutput] =
     useState<unknown>(null);
@@ -128,6 +93,9 @@ export default function App() {
     useState(0);
 
   const [command, setCommand] = useState("");
+  const [hologramTarget, setHologramTarget] = useState("");
+  const [hologramModelId, setHologramModelId] =
+    useState<VisualizationModelId>("procedural-object-v1");
   const [plan, setPlan] = useState<TaskStep[]>([]);
   const [health, setHealth] =
     useState<HealthResponse | null>(null);
@@ -144,6 +112,17 @@ export default function App() {
   const [error, setError] =
     useState<string | null>(null);
 
+  const { events, connected: eventsConnected } =
+    useTaskEvents(taskId);
+
+  const liveEvents = events.slice(-8).reverse();
+  const sources = liveEvents.filter((event) =>
+    /source|research|search/i.test(event.event ?? event.type ?? ""),
+  );
+  const approvals = liveEvents.filter((event) =>
+    /approval|permission|authoriz/i.test(event.event ?? event.type ?? ""),
+  );
+
   const [telemetry, setTelemetry] =
     useState<string[]>([
       "AURA CORE ONLINE",
@@ -153,6 +132,7 @@ export default function App() {
 
   const voice = useAuraVoice((directive) => {
     setCommand(directive);
+    setHologramTarget(directive);
     setError(null);
   });
 
@@ -211,8 +191,45 @@ export default function App() {
     );
 
     try {
-      const generated =
-        await generateTaskPlan(text);
+      const generated = await generateTaskPlan(text);
+
+      const visualizationStep = generated.steps.find(
+        (step) => step.capability_id === "3d.visualize"
+      );
+
+      if (visualizationStep) {
+        const args = visualizationStep.arguments as Record<string, unknown>;
+        const allowedModelIds: readonly VisualizationModelId[] = [
+          "procedural-object-v1",
+          "gear-v1",
+          "sphere-v1",
+          "motor-v1",
+        ];
+
+        const modelId = args?.model_id;
+        const rawTarget = args?.target;
+
+        if (
+          typeof modelId !== "string" ||
+          !allowedModelIds.some((allowed) => allowed === modelId)
+        ) {
+          throw new Error("Unsupported visualization model ID.");
+        }
+
+        setError(null);
+        setPlan(generated.steps);
+        setHologramTarget(
+          typeof rawTarget === "string" && rawTarget.trim()
+            ? rawTarget.trim().slice(0, 120)
+            : "AURA procedural model"
+        );
+        setHologramModelId(modelId as VisualizationModelId);
+        setTaskId(null);
+        setSystemState("idle");
+        setTaskState("VISUALIZATION READY");
+        pushTelemetry(`CORE PLAN: 3D VISUALIZATION (${modelId})`);
+        return;
+      }
 
       if (
         !generated.steps ||
@@ -248,7 +265,7 @@ export default function App() {
       );
 
       pushTelemetry(
-        `TASK ${result.task_id} → ${result.state.toUpperCase()}`,
+        `TASK ${result.task_id} â†’ ${result.state.toUpperCase()}`,
       );
 
       if (result.state === "succeeded") {
@@ -303,6 +320,18 @@ export default function App() {
     health?.components?.permission_engine?.status ??
     "unknown";
 
+  const kernelStatus =
+    health?.components?.kernel?.status ?? "unknown";
+  const eventBusStatus =
+    health?.components?.event_bus?.status ?? "unknown";
+  const learningStatus =
+    health?.components?.learning?.status ?? "unknown";
+
+  const isHealthyStatus = (status: string | undefined) =>
+    ["ok", "healthy", "ready", "running"].includes(
+      (status ?? "").toLowerCase()
+    );
+
   return (
       <>
 
@@ -333,7 +362,7 @@ export default function App() {
             <span
               className={[
                 "h-1.5 w-1.5 rounded-full",
-                coreStatus === "ok"
+                isHealthyStatus(coreStatus)
                   ? "bg-cyan-300 shadow-[0_0_12px_rgba(103,232,249,.9)]"
                   : "bg-amber-400",
               ].join(" ")}
@@ -351,7 +380,7 @@ export default function App() {
 
             <StatusItem
               label="KERNEL"
-              value="running"
+              value={kernelStatus}
             />
 
             <StatusItem
@@ -366,12 +395,12 @@ export default function App() {
 
             <StatusItem
               label="EVENT BUS"
-              value="connected"
+              value={eventBusStatus}
             />
 
             <StatusItem
               label="LEARNING"
-              value="running"
+              value={learningStatus}
             />
 
             <div className="mt-8 rounded border border-cyan-950/70 bg-slate-950/40 p-4">
@@ -394,10 +423,18 @@ export default function App() {
           <section className="order-1 flex flex-col items-center lg:order-2">
 
             <div className="relative">
-              <ArcReactor
-                active={systemState !== "idle"}
-                level={systemState}
-              />
+              {hologramTarget.trim() ? (
+                <DynamicHologram3D
+                  target={hologramTarget}
+              modelId={hologramModelId}
+                  active={systemState !== "idle"}
+                />
+              ) : (
+                <ArcReactor
+                  active={systemState !== "idle"}
+                  level={systemState}
+                />
+              )}
 
               <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap text-[8px] tracking-[.35em] text-cyan-700">
                 {systemState === "idle"
@@ -448,6 +485,23 @@ export default function App() {
                 ),
               )}
             </div>
+
+            <div className="mt-6 grid gap-3 text-[9px]">
+              {[
+                ["PLAN", plan.map((step) => step.tool_name).join(" â†’ ") || "Awaiting directive"],
+                ["NOW RUNNING", liveEvents[0]?.event ?? liveEvents[0]?.type ?? taskState],
+                ["SOURCES", sources.length ? `${sources.length} research event(s)` : "No sources yet"],
+                ["PERMISSION / APPROVAL", approvals.length ? `${approvals.length} event(s)` : "No approval pending"],
+              ].map(([label, value]) => (
+                <div key={label} className="rounded border border-cyan-950/70 bg-slate-950/40 p-3">
+                  <div className="text-[8px] tracking-[.2em] text-slate-600">{label}</div>
+                  <div className="mt-1 break-words font-mono text-[9px] text-cyan-200">{value}</div>
+                </div>
+              ))}
+              <div className="text-[8px] tracking-[.16em] text-slate-600">
+                EVENT LINK: {eventsConnected ? "SECURE / CONNECTED" : "WAITING FOR TASK"}
+              </div>
+            </div>
           </aside>
         </main>
 
@@ -464,6 +518,7 @@ export default function App() {
               value={command}
               onChange={(event) => {
                 setCommand(event.target.value);
+                setHologramTarget(event.target.value);
                 setError(null);
               }}
               placeholder="Bir direktif ver..."
@@ -504,7 +559,7 @@ export default function App() {
       </>
       </>
 
-      
+
       <AuraJarvisBridge
         directive={assistantDirective}
         researchOutput={researchOutput}

@@ -1,7 +1,7 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
+import os
 from mcp.client.stdio import StdioServerParameters
-
 from aura_core.kernel.capabilities import (
     CapabilityDefinition,
     CapabilityCategory,
@@ -52,10 +52,19 @@ async def register_research_mcp(
     else:
         assert config.command is not None
 
+        mcp_env = os.environ.copy()
+        mcp_env.update({
+            "TEMP": r"D:\AURA\JAS\.tmp",
+            "TMP": r"D:\AURA\JAS\.tmp",
+            "HF_HOME": r"D:\AURA\JAS\.cache\huggingface",
+            "XDG_CACHE_HOME": r"D:\AURA\JAS\.cache\xdg",
+        })
+
         await connection.connect_stdio(
             StdioServerParameters(
                 command=config.command,
                 args=list(config.args),
+                env=mcp_env,
             )
         )
 

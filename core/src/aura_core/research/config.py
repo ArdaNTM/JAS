@@ -1,6 +1,8 @@
 ﻿from __future__ import annotations
 
 import os
+import sys
+from pathlib import Path
 from dataclasses import dataclass
 
 
@@ -29,7 +31,7 @@ class ResearchMCPConfig:
     ) -> "ResearchMCPConfig":
         transport = os.getenv(
             "AURA_RESEARCH_MCP_TRANSPORT",
-            "",
+            "stdio",
         ).strip().lower()
 
         if transport not in {
@@ -48,7 +50,7 @@ class ResearchMCPConfig:
 
         command = os.getenv(
             "AURA_RESEARCH_MCP_COMMAND",
-            "",
+            sys.executable,
         ).strip() or None
 
         raw_args = os.getenv(
@@ -63,7 +65,13 @@ class ResearchMCPConfig:
                 if item
             )
             if raw_args
-            else ()
+            else (
+                str(
+                    Path(__file__).resolve().parents[3]
+                    / "scripts"
+                    / "local_research_mcp.py"
+                ),
+            )
         )
 
         if transport == "http" and not endpoint:
@@ -80,40 +88,19 @@ class ResearchMCPConfig:
 
         required = {
             "AURA_RESEARCH_MCP_PROVIDER_ID":
-                os.getenv(
-                    "AURA_RESEARCH_MCP_PROVIDER_ID",
-                    "",
-                ),
+                os.getenv("AURA_RESEARCH_MCP_PROVIDER_ID", "research.searxng"),
             "AURA_RESEARCH_MCP_CAPABILITY_ID":
-                os.getenv(
-                    "AURA_RESEARCH_MCP_CAPABILITY_ID",
-                    "",
-                ),
+                os.getenv("AURA_RESEARCH_MCP_CAPABILITY_ID", "internet.search"),
             "AURA_RESEARCH_MCP_SEARCH_OPERATION_ID":
-                os.getenv(
-                    "AURA_RESEARCH_MCP_SEARCH_OPERATION_ID",
-                    "",
-                ),
+                os.getenv("AURA_RESEARCH_MCP_SEARCH_OPERATION_ID", "internet.search"),
             "AURA_RESEARCH_MCP_SEARCH_TOOL":
-                os.getenv(
-                    "AURA_RESEARCH_MCP_SEARCH_TOOL",
-                    "",
-                ),
+                os.getenv("AURA_RESEARCH_MCP_SEARCH_TOOL", "search"),
             "AURA_RESEARCH_MCP_FETCH_CAPABILITY_ID":
-                os.getenv(
-                    "AURA_RESEARCH_MCP_FETCH_CAPABILITY_ID",
-                    "",
-                ),
+                os.getenv("AURA_RESEARCH_MCP_FETCH_CAPABILITY_ID", "internet.fetch"),
             "AURA_RESEARCH_MCP_FETCH_OPERATION_ID":
-                os.getenv(
-                    "AURA_RESEARCH_MCP_FETCH_OPERATION_ID",
-                    "",
-                ),
+                os.getenv("AURA_RESEARCH_MCP_FETCH_OPERATION_ID", "internet.fetch"),
             "AURA_RESEARCH_MCP_FETCH_TOOL":
-                os.getenv(
-                    "AURA_RESEARCH_MCP_FETCH_TOOL",
-                    "",
-                ),
+                os.getenv("AURA_RESEARCH_MCP_FETCH_TOOL", "fetch"),
         }
 
         missing = [

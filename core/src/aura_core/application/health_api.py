@@ -46,6 +46,24 @@ async def health(request: Request) -> JSONResponse:
             "status": "not_configured",
         }
 
+    gateway = getattr(request.app.state, "mcp_gateway", None)
+    components["gateway"] = {
+        "status": "configured" if gateway is not None else "not_configured",
+    }
+
+    permission_engine = getattr(
+        request.app.state,
+        "permission_engine",
+        None,
+    )
+    components["permission_engine"] = {
+        "status": (
+            "configured"
+            if permission_engine is not None
+            else "not_configured"
+        ),
+    }
+
     task_service = getattr(
         request.app.state,
         "task_service",

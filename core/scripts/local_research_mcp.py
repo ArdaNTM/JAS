@@ -1,5 +1,7 @@
 import asyncio
+import hashlib
 import json
+import os
 import sys
 import traceback
 from pathlib import Path
@@ -138,9 +140,11 @@ async def perform_search(
         f"limit={limit}"
     )
 
-    url = (
-        "https://html.duckduckgo.com/html/"
-        f"?q={quote_plus(query)}"
+    url = "https://lite.duckduckgo.com/lite/"
+    searxng_url = (
+        os.getenv("AURA_SEARXNG_URL", "http://127.0.0.1:8080")
+        .rstrip("/")
+        + "/search"
     )
 
     headers = {
@@ -157,11 +161,33 @@ async def perform_search(
         follow_redirects=True,
         headers=headers,
     ) as client:
+        try:
+            response = await client.get(
+                searxng_url,
+                params={"q": query, "format": "json", "language": "auto"},
+            )
+            response.raise_for_status()
+            payload = response.json()
+            candidates = [
+                {
+                    "title": str(item.get("title", "")),
+                    "url": str(item.get("url", "")),
+                    "snippet": str(item.get("content", "")),
+                    "source": "searxng",
+                }
+                for item in payload.get("results", [])
+            ]
+            return rank_results(query, candidates, limit, "searxng")
+        except (httpx.HTTPError, ValueError) as exc:
+            debug(f"SEARXNG unavailable; using DuckDuckGo fallback: {exc}")
 
-        response = await client.get(url)
-        response.raise_for_status()
-
-        html = response.text
+        try:
+            response = await client.get(url, params={"q": query})
+            response.raise_for_status()
+            html = response.text
+        except httpx.HTTPError as exc:
+            debug(f"DuckDuckGo fallback failed: {exc}")
+            return rank_results(query, [], limit, "unavailable")
 
     from html.parser import HTMLParser
 
@@ -198,7 +224,7 @@ async def perform_search(
 
             if (
                 tag == "a"
-                and "result__a" in classes
+                and classes.intersection({"result__a", "result-link"})
             ):
 
                 self._current = {
@@ -212,8 +238,8 @@ async def perform_search(
                 self._capture_title = True
 
             elif (
-                tag in {"a", "div"}
-                and "result__snippet" in classes
+                tag in {"a", "div", "td"}
+                and classes.intersection({"result__snippet", "result-snippet"})
                 and self._current is not None
             ):
 
@@ -233,7 +259,7 @@ async def perform_search(
 
             if (
                 self._capture_snippet
-                and tag in {"a", "div"}
+                and tag in {"a", "div", "td"}
             ):
 
                 self._capture_snippet = False
@@ -275,17 +301,39 @@ async def perform_search(
 
     parser.feed(html)
 
-    results = parser.results[:limit]
-
-    debug(
-        f"SEARCH results={len(results)}"
+    return rank_results(
+        query,
+        [{**item, "source": "duckduckgo_fallback"} for item in parser.results],
+        limit,
+        "duckduckgo_fallback",
     )
 
-    return {
-        "query": query,
-        "results": results,
-        "count": len(results),
-    }
+
+def rank_results(
+    query: str,
+    candidates: list[dict[str, str]],
+    limit: int,
+    backend: str,
+) -> dict[str, Any]:
+    """Stable URL de-duplication, deterministic scoring, then lexical tie-break."""
+    unique: dict[str, dict[str, str]] = {}
+    for item in candidates:
+        url = normalize_result_url(item.get("url", ""))
+        if url and url not in unique:
+            unique[url] = {**item, "url": url}
+    terms = {term.lower() for term in query.split() if len(term) > 2}
+
+    def ranking(item: dict[str, str]) -> tuple[int, str, str]:
+        haystack = f"{item.get('title', '')} {item.get('snippet', '')}".lower()
+        return (-sum(term in haystack for term in terms), item["url"], item.get("title", ""))
+
+    results = []
+    for rank, item in enumerate(sorted(unique.values(), key=ranking)[:limit], start=1):
+        item["rank"] = rank
+        item["content_hash"] = hashlib.sha256(item["url"].encode("utf-8")).hexdigest()[:16]
+        results.append(item)
+    debug(f"SEARCH backend={backend} results={len(results)}")
+    return {"query": query, "results": results, "count": len(results), "backend": backend}
 
 
 # ============================================================

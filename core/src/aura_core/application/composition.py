@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from fastapi import FastAPI
 from starlette.routing import WebSocketRoute
@@ -15,6 +15,7 @@ from aura_core.application.health_api import (
 from aura_core.application.live_api import router as live_router
 from aura_core.application.live_events import LiveEventBroker
 from aura_core.application.ws_api import router as ws_router
+from aura_core.application.diagnostics_api import router as provider_diagnostics_router
 from aura_core.kernel.diagnostics import DiagnosticsService
 from aura_core.security.ws_ticket import WebSocketTicketManager
 
@@ -28,6 +29,7 @@ def create_composed_app(
     event_bus=None,
     permission_engine=None,
     kernel=None,
+    gateway=None,
 ) -> FastAPI:
     """
     Canonical AURA HTTP composition root.
@@ -44,6 +46,7 @@ def create_composed_app(
     )
 
     app.state.kernel = kernel
+    app.state.mcp_gateway = gateway
     app.state.permission_engine = permission_engine
 
     broker = getattr(
@@ -62,6 +65,7 @@ def create_composed_app(
     app.state.ws_ticket_manager = WebSocketTicketManager()
 
     app.include_router(health_router)
+    app.include_router(provider_diagnostics_router)
     app.include_router(approval_router)
     app.include_router(ws_router)
     app.include_router(live_router)

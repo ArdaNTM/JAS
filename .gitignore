@@ -30,3 +30,21 @@ core/.aura/
 **/.aura-backups/
 backups/
 core/.aura/
+# AURA local cache and machine-specific configuration
+/.cache/
+/.tmp/
+/aura-ui/.npmrc
+# Timestamped local patch backups
+/aura-ui/src/*.backup-*
+/aura-ui/src/hooks/*.bak-*
+/core/src/aura_core/*.bak-*
+/core/src/aura_core/agent/*.bak-*
+/core/src/aura_core/application/*.bak-*
+/core/src/aura_core/security/*.bak-*
+/core/tests/**/*.bak-*
+/scripts/*.backup-*
+/scripts/*.before-*.bak
+/scripts/*.v6513.*.bak
+/scripts/*.syntax-error-*.bak
+/scripts/*.before-anchor-fix-*.bak
+/scripts/*.bak

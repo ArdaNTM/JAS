@@ -12,6 +12,7 @@ from aura_core.main import app
 
 def test_diagnostics_is_safe_and_registered(monkeypatch) -> None:
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.setenv("AURA_DISABLE_EXTERNAL_PROVIDERS", "1")
 
     # Gerçek production app objesini with bloğu (lifespan) içinde ayağa kaldırıyoruz
     with TestClient(app) as client:

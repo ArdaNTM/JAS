@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 
-import { respondAsAssistant } from "./api/client";
+import { respondAsAssistant, synthesizeLocalSpeech } from "./api/client";
 
 function normalizeSpeechText(text: string): string {
   return text
@@ -68,16 +68,6 @@ export default function AuraJarvisBridge({
           return;
         }
 
-        if (
-          typeof window === "undefined" ||
-          !("speechSynthesis" in window)
-        ) {
-          onStatus?.("offline");
-          return;
-        }
-
-        window.speechSynthesis.cancel();
-
         const speechText = normalizeSpeechText(
           response.assistant_reply,
         );
@@ -87,34 +77,13 @@ export default function AuraJarvisBridge({
           return;
         }
 
-        const utterance =
-          new SpeechSynthesisUtterance(speechText);
-
-        utterance.lang = "tr-TR";
-        utterance.rate = 1;
-        utterance.pitch = 1;
-
-        utterance.onstart = () => {
-          if (!cancelled) {
-            onStatus?.("speaking");
-          }
-        };
-
-        utterance.onend = () => {
-          if (!cancelled) {
-            onStatus?.("ready");
-          }
-        };
-
-        utterance.onerror = () => {
-          if (!cancelled) {
-            onStatus?.("offline");
-          }
-        };
-
-        window.speechSynthesis.speak(
-          utterance,
-        );
+        const audio = await synthesizeLocalSpeech(speechText);
+        if (cancelled) return;
+        const player = new Audio(`data:${audio.mime_type};base64,${audio.audio_base64}`);
+        player.onplay = () => onStatus?.("speaking");
+        player.onended = () => onStatus?.("ready");
+        player.onerror = () => onStatus?.("offline");
+        await player.play();
       } catch (error) {
         if (!cancelled) {
           console.error(

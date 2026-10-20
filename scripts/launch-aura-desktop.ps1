@@ -1,17 +1,43 @@
-﻿$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Stop"
 
 $Root = "D:\AURA\JAS"
+
 # AURA_D_DRIVE_RUNTIME_ENV
 $AuraRuntimeRoot = Join-Path $Root ".cache"
 $AuraTempRoot = Join-Path $Root ".tmp"
+$AuraModelRoot = Join-Path $Root "models"
+
+$env:TEMP = $AuraTempRoot
+$env:TMP = $AuraTempRoot
+
+$env:UV_CACHE_DIR = Join-Path $AuraRuntimeRoot "uv"
+$env:PIP_CACHE_DIR = Join-Path $AuraRuntimeRoot "pip"
+
+$env:XDG_CACHE_HOME = Join-Path $AuraRuntimeRoot "xdg"
+$env:HF_HOME = Join-Path $AuraRuntimeRoot "huggingface"
+$env:TORCH_HOME = Join-Path $AuraRuntimeRoot "torch"
+$env:TRITON_CACHE_DIR = Join-Path $AuraRuntimeRoot "triton"
+
+# Ollama model konumu: yalnızca bu betikten başlatılan süreçlere aktarılır.
+$env:OLLAMA_MODELS = [Environment]::GetEnvironmentVariable("OLLAMA_MODELS", "User")
+
+if ([string]::IsNullOrWhiteSpace($env:OLLAMA_MODELS)) {
+    $env:OLLAMA_MODELS = "D:\AI\Models\Ollama\models"
+}
 
 @(
     $AuraRuntimeRoot,
     (Join-Path $AuraRuntimeRoot "uv"),
     (Join-Path $AuraRuntimeRoot "pip"),
+    (Join-Path $AuraRuntimeRoot "xdg"),
+    (Join-Path $AuraRuntimeRoot "huggingface"),
+    (Join-Path $AuraRuntimeRoot "torch"),
+    (Join-Path $AuraRuntimeRoot "triton"),
     $AuraTempRoot,
     (Join-Path $Root "logs"),
-    (Join-Path $Root "downloads")
+    (Join-Path $Root "downloads"),
+    $AuraModelRoot,
+    (Join-Path $AuraModelRoot "ollama")
 ) | ForEach-Object {
     New-Item -ItemType Directory -Path $_ -Force | Out-Null
 }
@@ -589,7 +615,7 @@ function Open-AuraBrowser {
         if (Test-Path $edge) {
             Start-Process `
                 -FilePath $edge `
-                -ArgumentList "--app=$url" `
+                -ArgumentList "--force-device-scale-factor=1.5 --app=$url" `
                 -WindowStyle Hidden
 
             return
@@ -606,7 +632,7 @@ function Open-AuraBrowser {
         if (Test-Path $chrome) {
             Start-Process `
                 -FilePath $chrome `
-                -ArgumentList "--app=$url" `
+                -ArgumentList "--force-device-scale-factor=1.5 --app=$url" `
                 -WindowStyle Hidden
 
             return
@@ -655,12 +681,12 @@ $env:AURA_LLM_MODEL = "qwen3"
 
 $env:AURA_RESEARCH_MCP_TRANSPORT = "stdio"
 $env:AURA_RESEARCH_MCP_PROVIDER_ID = "aura-research-local"
-$env:AURA_RESEARCH_MCP_SERVICE_ID = "aura-local-research"
+$env:AURA_RESEARCH_MCP_SERVICE_NAME = "aura-local-research"
 $env:AURA_RESEARCH_MCP_CAPABILITY_ID = "internet.search"
 $env:AURA_RESEARCH_MCP_SEARCH_OPERATION_ID = "internet.search"
 $env:AURA_RESEARCH_MCP_SEARCH_TOOL = "search"
 
-$env:AURA_RESEARCH_MCP_FETCH_CAPABILITY_ID = "internet.search"
+$env:AURA_RESEARCH_MCP_FETCH_CAPABILITY_ID = "internet.fetch"
 $env:AURA_RESEARCH_MCP_FETCH_OPERATION_ID = "internet.fetch"
 $env:AURA_RESEARCH_MCP_FETCH_TOOL = "fetch"
 
