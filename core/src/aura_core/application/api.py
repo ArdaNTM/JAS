@@ -305,6 +305,30 @@ def create_api(
         )
 
         return response
+    @app.exception_handler(Exception)
+    async def unhandled_exception_handler(
+        request: Request,
+        exc: Exception,
+    ) -> JSONResponse:
+        request_id = getattr(request.state, "request_id", str(uuid4()))
+        logger.exception(
+            "Unhandled API exception",
+            extra={
+                "event": "http_unhandled_exception",
+                "request_id": request_id,
+                "method": request.method,
+                "path": request.url.path,
+            },
+        )
+        return JSONResponse(
+            status_code=500,
+            content={
+                "detail": "Internal server error",
+                "request_id": request_id,
+            },
+            headers={"X-Request-ID": request_id},
+        )
+
     @app.exception_handler(BackendUnavailableError)
     async def backend_unavailable_handler(
         request,
