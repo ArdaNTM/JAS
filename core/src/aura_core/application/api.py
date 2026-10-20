@@ -397,12 +397,12 @@ def create_api(
                     exc_info=True,
                 )
         system_prompt = (
-            "Sen AURA'nÄ±n JARVIS konuÅŸma katmanÄ±sÄ±n. "
-            "KullanÄ±cÄ±ya doÄŸal TÃ¼rkÃ§e yanÄ±t ver. "
-            "Ham araÅŸtÄ±rma Ã§Ä±ktÄ±sÄ±nÄ±, JSON'u, tool metadata'sÄ±nÄ±, "
-            "execution detaylarÄ±nÄ± veya iÃ§ sistem ayrÄ±ntÄ±larÄ±nÄ± aynen aktarma. "
-            "AraÅŸtÄ±rma verisini yalnÄ±zca baÄŸlam olarak kullan. "
-            "YanÄ±t konuÅŸmaya uygun ve kÄ±sa olsun."
+            "Sen AURA'nın JARVIS konuşma katmanısın. "
+            "Kullanıcıya doğal Türkçe yanıt ver. "
+            "Ham araştırma çıktısını, JSON'u, tool metadata'sını, "
+            "execution detaylarını veya iç sistem ayrıntılarını aynen aktarma. "
+            "Araştırma verisini yalnızca bağlam olarak kullan. "
+            "Yanıt konuşmaya uygun ve kısa olsun."
         )
 
         user_content = request.message
@@ -412,14 +412,14 @@ def create_api(
                 "KullanÄ±cÄ± direktifi:\n"
                 + request.message
                 + "\n\n"
-                + "AURA araÅŸtÄ±rma baÄŸlamÄ±:\n"
+                + "AURA araştırma bağlamı:\n"
                 + research_context
             )
 
         if memory_context:
             user_content = (
                 user_content
-                + "\n\nAURA onceki sohbet bellegi:\n"
+                + "\n\nAURA önceki sohbet belleği:\n"
                 + memory_context
             )
         inference_request = InferenceRequest(
