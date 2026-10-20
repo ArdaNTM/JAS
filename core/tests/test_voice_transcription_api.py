@@ -69,3 +69,24 @@ def test_local_speech_transcription_rejects_unsupported_mime() -> None:
 
     assert response.status_code == 415
     assert response.json()["detail"] == "Unsupported audio format"
+
+
+
+def test_local_speech_transcription_500_includes_request_id(monkeypatch) -> None:
+    def fail_transcription(audio_bytes: bytes, language: str, suffix: str):
+        raise RuntimeError("synthetic transcription failure")
+
+    monkeypatch.setattr(api_module, "transcribe_audio_bytes", fail_transcription)
+    response = make_client().post(
+        "/api/speech/transcribe",
+        headers={"X-Request-ID": "voice-test-request-500"},
+        json={
+            "audio_base64": base64.b64encode(b"test-audio").decode("ascii"),
+            "mime_type": "audio/webm",
+            "language": "tr",
+        },
+    )
+
+    assert response.status_code == 500
+    assert response.headers["X-Request-ID"] == "voice-test-request-500"
+    assert response.json()["detail"] == "Local speech-to-text failed; see server log for details"
