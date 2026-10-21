@@ -55,7 +55,7 @@ from aura_core.config.backend import BackendConfig
 from aura_core.config.runtime import RuntimeConfig
 from aura_core.contracts.messages import InferenceRequest, InferenceResponse
 from aura_core.contracts.ui import UIContractResponse
-from aura_core.kernel.permissions import RiskLevel
+from aura_core.kernel.permissions import AuthorizationDecision, AuthorizationRequest, RiskLevel
 from aura_core.kernel.events import KernelEvent
 from aura_core.mcp.gateway import MCPGatewayRequest
 from aura_core.observability.metrics import RequestMetrics
