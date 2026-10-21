@@ -235,7 +235,7 @@ export default function App() {
     }).catch((cause: unknown) => {
       if (mounted) {
         const message = cause instanceof AuraApiError
-          ? `[${cause.code}] ${cause.message}${cause.requestId ? ` (request: ${cause.requestId})` : ""}`
+          ? `${cause.message}${cause.requestId ? ` (istek kimliği: ${cause.requestId})` : ""}`
           : "Arayüz-Core sözleşmesi alınamadı.";
         setError(message);
         setSessionState("error");
