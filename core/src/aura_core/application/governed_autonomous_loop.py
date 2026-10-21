@@ -208,14 +208,36 @@ class GovernedAutonomousLoop:
                        {"task_count": len(submissions)})
             execution_started = True
             total_tasks += len(submissions)
-            remaining = self._timeout - (monotonic() - started)
+            remaining = self._remaining(started)
+            execution_task = asyncio.create_task(self._task_service.submit_chain(submissions))
             try:
-                results = await asyncio.wait_for(
-                    self._task_service.submit_chain(submissions), timeout=remaining
-                )
+                while not execution_task.done():
+                    # Polling is only for cooperative cancellation of the loop; the
+                    # task runtime still owns tool cancellation and gateway boundaries.
+                    done, _ = await asyncio.wait(
+                        {execution_task}, timeout=min(0.05, self._remaining(started))
+                    )
+                    if done:
+                        break
+                    if cancelled is not None:
+                        try:
+                            cancel_requested = bool(cancelled())
+                        except Exception:
+                            cancel_requested = True  # fail closed if cancellation state is unreadable
+                        if cancel_requested:
+                            execution_task.cancel()
+                            await asyncio.gather(execution_task, return_exceptions=True)
+                            self._emit("AutonomyExecutionCancelled", goal, principal_id, iteration, {})
+                            return self._result("cancelled", goal, iteration, total_tasks,
+                                                execution_started, "Cancellation requested during execution", feedback)
+                results = await asyncio.wait_for(execution_task, timeout=self._remaining(started))
             except asyncio.CancelledError:
+                execution_task.cancel()
+                await asyncio.gather(execution_task, return_exceptions=True)
                 raise
             except asyncio.TimeoutError:
+                execution_task.cancel()
+                await asyncio.gather(execution_task, return_exceptions=True)
                 return self._result("timed_out", goal, iteration, total_tasks,
                                     execution_started, "Deadline exceeded during task execution", feedback)
             except Exception as exc:
