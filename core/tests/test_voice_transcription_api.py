@@ -340,3 +340,29 @@ def test_cuda_inference_failure_retries_recording_on_cpu(monkeypatch) -> None:
     monkeypatch.setattr(api_module, "_whisper_model", None)
     monkeypatch.setattr(api_module, "_whisper_model_device", None)
 
+def test_explicit_unavailable_cuda_configuration_still_uses_cpu(monkeypatch) -> None:
+    import sys
+    from types import SimpleNamespace
+
+    initialized_devices = []
+
+    class FakeModel:
+        def __init__(self, model_name, **kwargs):
+            initialized_devices.append((kwargs["device"], kwargs["compute_type"]))
+
+        def transcribe(self, audio, **kwargs):
+            return iter([]), SimpleNamespace(language="tr")
+
+    monkeypatch.setitem(sys.modules, "faster_whisper", SimpleNamespace(WhisperModel=FakeModel))
+    monkeypatch.setitem(sys.modules, "ctranslate2", SimpleNamespace(get_cuda_device_count=lambda: 0))
+    monkeypatch.setenv("AURA_STT_DEVICE", "cuda")
+    monkeypatch.setenv("AURA_STT_COMPUTE_TYPE", "float16")
+    monkeypatch.setattr(api_module, "_whisper_model", None)
+    monkeypatch.setattr(api_module, "_whisper_model_device", None)
+    monkeypatch.setattr(api_module, "_stt_memory_store", False)
+
+    assert api_module.transcribe_audio_bytes(b"fake-audio", "tr", ".wav") == ("", "tr")
+    assert initialized_devices == [("cpu", "int8")]
+    monkeypatch.setattr(api_module, "_whisper_model", None)
+    monkeypatch.setattr(api_module, "_whisper_model_device", None)
+
