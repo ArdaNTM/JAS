@@ -278,6 +278,7 @@ def create_api(
         app.state.system_telemetry,
         resolve_event_bus,
         interval_seconds=float(os.getenv("AURA_TELEMETRY_INTERVAL_SECONDS", "5")),
+        pressure_handler=lambda pressured: app.state.async_work.apply_resource_pressure(pressured),
     )
 
     @app.on_event("startup")
