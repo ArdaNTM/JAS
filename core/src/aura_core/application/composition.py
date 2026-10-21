@@ -16,6 +16,8 @@ from aura_core.application.live_api import router as live_router
 from aura_core.application.live_events import LiveEventBroker
 from aura_core.application.ws_api import router as ws_router
 from aura_core.application.diagnostics_api import router as provider_diagnostics_router
+from aura_core.application.jarvis_api import router as jarvis_router
+from aura_core.application.jarvis_intelligence import InitiativeEngine, SelfAdaptationEngine
 from aura_core.kernel.diagnostics import DiagnosticsService
 from aura_core.security.ws_ticket import WebSocketTicketManager
 
@@ -48,6 +50,8 @@ def create_composed_app(
     app.state.kernel = kernel
     app.state.mcp_gateway = gateway
     app.state.permission_engine = permission_engine
+    app.state.self_adaptation = SelfAdaptationEngine()
+    app.state.initiative_engine = InitiativeEngine()
 
     broker = getattr(
         app.state,
@@ -66,6 +70,7 @@ def create_composed_app(
 
     app.include_router(health_router)
     app.include_router(provider_diagnostics_router)
+    app.include_router(jarvis_router)
     app.include_router(approval_router)
     app.include_router(ws_router)
     app.include_router(live_router)
@@ -75,6 +80,8 @@ def create_composed_app(
             event_bus,
             broker,
             suggestion_store=app.state.proactive_suggestions,
+            initiative_engine=app.state.initiative_engine,
+            adaptation_engine=app.state.self_adaptation,
         )
         if event_bus is not None
         else None
