@@ -33,7 +33,7 @@ function ArcReactor({
   level,
 }: {
   active: boolean;
-  level: "idle" | "thinking" | "executing";
+  level: "boşta" | "thinking" | "executing";
 }) {
   return (
     <ArcReactor3D
@@ -52,11 +52,11 @@ function StatusItem({
   value: string;
 }) {
   const online = [
-    "ok",
-    "healthy",
-    "ready",
-    "running",
-    "connected",
+    "tamam",
+    "sağlıklı",
+    "hazır",
+    "çalışıyor",
+    "bağlı",
   ].includes(value.toLowerCase());
 
   return (
@@ -110,10 +110,10 @@ export default function App() {
     useState<HealthResponse | null>(null);
 
   const [systemState, setSystemState] =
-    useState<"idle" | "thinking" | "executing">("idle");
+    useState<"boşta" | "thinking" | "executing">("boşta");
 
   const [taskState, setTaskState] =
-    useState("STANDBY");
+    useState("BEKLEMEDE");
 
   const [taskId, setTaskId] =
     useState<string | null>(null);
@@ -122,7 +122,7 @@ export default function App() {
     useState<string | null>(null);
 
   const [sessionState, setSessionState] =
-    useState<VoiceSessionState>("idle");
+    useState<VoiceSessionState>("boşta");
 
   const { events, connected: eventsConnected } =
     useTaskEvents(taskId);
@@ -137,39 +137,39 @@ export default function App() {
 
   const [telemetry, setTelemetry] =
     useState<string[]>([
-      "AURA CORE ONLINE",
-      "PERMISSION ENGINE ARMED",
-      "MCP GATEWAY READY",
+      "AURA CORE ÇALIŞIYOR",
+      "İZİN MOTORU HAZIR",
+      "MCP AĞ GEÇİDİ HAZIR",
     ]);
 
   const voice = useAuraVoice((directive) => {
     setCommand(directive);
     setHologramTarget(directive);
     setError(null);
-    setSessionState("idle");
-    pushTelemetry("VOICE TRANSCRIPT READY — EXPLICIT ENTER REQUIRED");
+    setSessionState("boşta");
+    pushTelemetry("SES METNİ HAZIR — ÇALIŞTIRMAK İÇİN ENTER GEREKLİ");
   });
 
   const handleVoiceStatus = useCallback((
-    status: "processing" | "ready" | "speaking" | "error",
+    status: "processing" | "hazır" | "speaking" | "error",
     errorMessage?: string,
   ) => {
-    setSessionState(status === "ready" ? "idle" : status);
+    setSessionState(status === "hazır" ? "boşta" : status);
     if (status === "error") {
       // A successful task can still fail while generating or playing its answer.
       // Keep the task summary and lifecycle state consistent with that failure.
       setTaskState("ERROR");
       setSessionState("error");
-      setError(errorMessage ?? "Voice response could not be completed. Review the API error details and retry.");
-      pushTelemetry("ASSISTANT RESPONSE FAILED");
+      setError(errorMessage ?? "Sesli yanıt tamamlanamadı. Hata ayrıntılarını inceleyip yeniden deneyin.");
+      pushTelemetry("ASİSTAN YANITI BAŞARISIZ");
     }
   }, []);
 
   const captureSessionState = captureToSessionState(voice.state);
   const visibleSessionState =
     captureSessionState === "listening" ||
-    (captureSessionState === "processing" && sessionState === "idle") ||
-    (captureSessionState === "error" && sessionState === "idle")
+    (captureSessionState === "processing" && sessionState === "boşta") ||
+    (captureSessionState === "error" && sessionState === "boşta")
       ? captureSessionState
       : sessionState;
 
@@ -201,7 +201,7 @@ export default function App() {
     void getUIContract().then((contract) => {
       if (mounted) {
         setTelemetry((current) => [
-          `UI CONTRACT v${contract.contract_version} READY`,
+          `ARAYÜZ SÖZLEŞMESİ v${contract.contract_version} HAZIR`,
           ...current,
         ].slice(0, 8));
       }
@@ -209,7 +209,7 @@ export default function App() {
       if (mounted) {
         const message = cause instanceof AuraApiError
           ? `[${cause.code}] ${cause.message}${cause.requestId ? ` (request: ${cause.requestId})` : ""}`
-          : "UI-Core contract discovery failed.";
+          : "Arayüz-Core sözleşmesi alınamadı.";
         setError(message);
         setSessionState("error");
       }
@@ -245,10 +245,10 @@ export default function App() {
     setError(null);
     setSessionState("processing");
     setSystemState("thinking");
-    setTaskState("PLANNING");
+    setTaskState("PLANLANIYOR");
 
     pushTelemetry(
-      `DIRECTIVE RECEIVED: ${text}`,
+      `DİREKTİF ALINDI: ${text}`,
     );
 
     try {
@@ -274,7 +274,7 @@ export default function App() {
           typeof modelId !== "string" ||
           !allowedModelIds.some((allowed) => allowed === modelId)
         ) {
-          throw new Error("Unsupported visualization model ID.");
+          throw new Error("Desteklenmeyen görselleştirme modeli kimliği.");
         }
 
         setError(null);
@@ -282,13 +282,13 @@ export default function App() {
         setHologramTarget(
           typeof rawTarget === "string" && rawTarget.trim()
             ? rawTarget.trim().slice(0, 120)
-            : "AURA procedural model"
+            : "AURA yordamlı modeli"
         );
         setHologramModelId(modelId as VisualizationModelId);
         setTaskId(null);
-        setSystemState("idle");
-        setTaskState("VISUALIZATION READY");
-        pushTelemetry(`CORE PLAN: 3D VISUALIZATION (${modelId})`);
+        setSystemState("boşta");
+        setTaskState("GÖRSELLEŞTİRME HAZIR");
+        pushTelemetry(`CORE PLANI: 3B GÖRSELLEŞTİRME (${modelId})`);
         return;
       }
 
@@ -297,18 +297,18 @@ export default function App() {
         generated.steps.length === 0
       ) {
         throw new Error(
-          "AURA generated an empty execution plan.",
+          "AURA boş bir yürütme planı oluşturdu.",
         );
       }
 
       setPlan(generated.steps);
 
       pushTelemetry(
-        `PLAN GENERATED: ${generated.steps.length} STEP(S)`,
+        `PLAN OLUŞTURULDU: ${generated.steps.length} ADIM`,
       );
 
       setSystemState("executing");
-      setTaskState("EXECUTING");
+      setTaskState("YÜRÜTÜLÜYOR");
 
       const result = await createTask({
         task_id: makeId(),
@@ -326,24 +326,24 @@ export default function App() {
       setSessionState(nextSessionState);
 
       pushTelemetry(
-        `TASK ${result.task_id} → ${result.state.toUpperCase()}`,
+        `GÖREV ${result.task_id} → ${result.state.toUpperCase()}`,
       );
 
       if (result.state === "awaiting_approval" || result.state === "pending_approval") {
-        setSystemState("idle");
-        pushTelemetry("EXECUTION BLOCKED — EXPLICIT APPROVAL REQUIRED");
+        setSystemState("boşta");
+        pushTelemetry("YÜRÜTME ENGELLENDİ — AÇIK ONAY GEREKLİ");
         return;
       }
 
       if (["failed", "cancelled", "timed_out"].includes(result.state)) {
-        setSystemState("idle");
-        setError(`Task ${result.state}. No further action was executed by the UI.`);
-        pushTelemetry(`TASK TERMINATED: ${result.state.toUpperCase()}`);
+        setSystemState("boşta");
+        setError(`Görev durumu: ${result.state}. Arayüz başka bir eylem yürütmedi.`);
+        pushTelemetry(`GÖREV SONLANDIRILDI: ${result.state.toUpperCase()}`);
         return;
       }
 
       if (result.state === "succeeded") {
-        setSystemState("idle");
+        setSystemState("boşta");
 
         setResearchOutput(result.steps);
         setAssistantDirective(text);
@@ -351,21 +351,21 @@ export default function App() {
           (current) => current + 1,
         );
 
-        pushTelemetry("EXECUTION COMPLETE");
+        pushTelemetry("YÜRÜTME TAMAMLANDI");
       }
     } catch (cause) {
-      setSystemState("idle");
-      setTaskState("FAILED");
+      setSystemState("boşta");
+      setTaskState("BAŞARISIZ");
       setSessionState("error");
 
       const message = cause instanceof AuraApiError
         ? `[${cause.code}] ${cause.message}${cause.requestId ? ` (request: ${cause.requestId})` : ""}`
         : cause instanceof Error
           ? cause.message
-          : "AURA execution failed.";
+          : "AURA yürütmesi başarısız oldu.";
 
       setError(message);
-      pushTelemetry(`ERROR: ${message}`);
+      pushTelemetry(`HATA: ${message}`);
     }
   }
 
@@ -390,21 +390,21 @@ export default function App() {
 
   const gatewayStatus =
     health?.components?.gateway?.status ??
-    "unknown";
+    "bilinmiyor";
 
   const permissionStatus =
     health?.components?.permission_engine?.status ??
-    "unknown";
+    "bilinmiyor";
 
   const kernelStatus =
-    health?.components?.kernel?.status ?? "unknown";
+    health?.components?.kernel?.status ?? "bilinmiyor";
   const eventBusStatus =
-    health?.components?.event_bus?.status ?? "unknown";
+    health?.components?.event_bus?.status ?? "bilinmiyor";
   const learningStatus =
-    health?.components?.learning?.status ?? "unknown";
+    health?.components?.learning?.status ?? "bilinmiyor";
 
   const isHealthyStatus = (status: string | undefined) =>
-    ["ok", "healthy", "ready", "running"].includes(
+    ["tamam", "sağlıklı", "hazır", "çalışıyor"].includes(
       (status ?? "").toLowerCase()
     );
 
@@ -455,27 +455,27 @@ export default function App() {
             </div>
 
             <StatusItem
-              label="KERNEL"
+              label="ÇEKİRDEK"
               value={kernelStatus}
             />
 
             <StatusItem
-              label="GATEWAY"
+              label="AĞ GEÇİDİ"
               value={gatewayStatus}
             />
 
             <StatusItem
-              label="PERMISSION"
+              label="İZİN YÖNETİMİ"
               value={permissionStatus}
             />
 
             <StatusItem
-              label="EVENT BUS"
+              label="OLAY VERİ YOLU"
               value={eventBusStatus}
             />
 
             <StatusItem
-              label="LEARNING"
+              label="ÖĞRENME"
               value={learningStatus}
             />
 
@@ -511,11 +511,11 @@ export default function App() {
                 <DynamicHologram3D
                   target={hologramTarget}
               modelId={hologramModelId}
-                  active={systemState !== "idle" || sessionBusy}
+                  active={systemState !== "boşta" || sessionBusy}
                 />
               ) : (
                 <ArcReactor
-                  active={systemState !== "idle" || sessionBusy}
+                  active={systemState !== "boşta" || sessionBusy}
                   level={sessionBusy ? "executing" : systemState}
                 />
               )}
@@ -574,10 +574,10 @@ export default function App() {
 
             <div className="mt-6 grid gap-3 text-[9px]">
               {[
-                ["PLAN", plan.map((step) => step.tool_name).join(" â†’ ") || "Awaiting directive"],
-                ["NOW RUNNING", liveEvents[0]?.event ?? liveEvents[0]?.type ?? taskState],
-                ["SOURCES", sources.length ? `${sources.length} research event(s)` : "No sources yet"],
-                ["PERMISSION / APPROVAL", approvals.length ? `${approvals.length} event(s)` : "No approval pending"],
+                ["PLAN", plan.map((step) => step.tool_name).join(" → ") || "Direktif bekleniyor"],
+                ["ŞİMDİ ÇALIŞAN", liveEvents[0]?.event ?? liveEvents[0]?.type ?? taskState],
+                ["KAYNAKLAR", sources.length ? `${sources.length} araştırma olayı` : "Henüz kaynak yok"],
+                ["İZİN / ONAY", approvals.length ? `${approvals.length} olay` : "Bekleyen onay yok"],
               ].map(([label, value]) => (
                 <div key={label} className="rounded border border-cyan-950/70 bg-slate-950/40 p-3">
                   <div className="text-[8px] tracking-[.2em] text-slate-600">{label}</div>
@@ -585,7 +585,7 @@ export default function App() {
                 </div>
               ))}
               <div className="text-[8px] tracking-[.16em] text-slate-600">
-                EVENT LINK: {eventsConnected ? "SECURE / CONNECTED" : "WAITING FOR TASK"}
+                EVENT LINK: {eventsConnected ? "GÜVENLİ / BAĞLI" : "GÖREV BEKLENİYOR"}
               </div>
             </div>
           </aside>
@@ -608,13 +608,13 @@ export default function App() {
                 setError(null);
               }}
               placeholder="Bir direktif ver..."
-              disabled={systemState !== "idle" || sessionBusy}
+              disabled={systemState !== "boşta" || sessionBusy}
               className="min-w-0 flex-1 border-b border-cyan-900/70 bg-transparent px-1 py-3 font-mono text-sm text-cyan-100 outline-none placeholder:text-slate-700 focus:border-cyan-400 disabled:opacity-40"
             />
 
             <button
               type="button"
-              disabled={!voice.available || systemState !== "idle" || sessionBusy}
+              disabled={!voice.available || systemState !== "boşta" || sessionBusy}
               onClick={
                 voice.state === "recording" || voice.state === "listening"
                   ? voice.stop
@@ -623,17 +623,17 @@ export default function App() {
               className="px-3 py-2 text-[9px] tracking-[.18em] text-cyan-500 transition hover:text-cyan-200 disabled:opacity-30"
             >
               {voice.state === "recording" || voice.state === "listening"
-                ? "STOP"
+                ? "DURDUR"
                 : voice.state === "transcribing"
-                  ? "STT…"
-                  : "VOICE"}
+                  ? "SES ÇÖZÜMLENİYOR…"
+                  : "SES"}
             </button>
 
             <button
               type="submit"
               disabled={
                 !command.trim() ||
-                systemState !== "idle" ||
+                systemState !== "boşta" ||
                 sessionBusy
               }
               className="border border-cyan-700/80 px-5 py-2 text-[9px] font-bold tracking-[.2em] text-cyan-300 transition hover:border-cyan-300 hover:text-cyan-100 disabled:cursor-not-allowed disabled:opacity-30"
