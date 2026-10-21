@@ -19,8 +19,9 @@ from aura_core.application.task_state_machine import TaskStateMachine
 from aura_core.application.autonomy_composition import compose_governed_autonomy
 from aura_core.application.full_duplex_session import (
     EventBusAudioPlayer, FasterWhisperRecognizer, FullDuplexSessionManager,
-    GatewaySpeechSynthesizer, ProactiveNotifier,
+    GatewaySpeechSynthesizer, ProactiveNotifier, ControlledVisionService,
 )
+from aura_core.application.vision_adapters import DesktopScreenCapture, OllamaVisionProvider
 from aura_core.config.kernel import KernelConfig
 from aura_core.kernel.permissions import (
     AuthorizationDecision,
@@ -180,6 +181,24 @@ def build_app() -> FastAPI:
     autonomy = compose_governed_autonomy(kernel=kernel, task_service=task_service)
     app.state.governed_autonomous_loop = autonomy.loop if autonomy is not None else None
     app.state.autonomy_components = autonomy
+
+    vision_enabled = os.getenv("AURA_SCREEN_VISION_ENABLED", "0").strip().casefold() in {"1", "true", "yes", "on"}
+    if vision_enabled:
+        vision_principals = frozenset(
+            item.strip() for item in os.getenv("AURA_VISION_PRINCIPALS", "local_owner").split(",")
+            if item.strip()
+        )
+        app.state.controlled_vision_service = ControlledVisionService(
+            capture=DesktopScreenCapture(),
+            provider=OllamaVisionProvider(
+                base_url=os.getenv("AURA_OLLAMA_BASE_URL", "http://127.0.0.1:11434"),
+                model=os.getenv("AURA_VISION_MODEL", "qwen3-vl"),
+                timeout_seconds=float(os.getenv("AURA_VISION_TIMEOUT_SECONDS", "30")),
+            ),
+            consent=lambda principal_id: principal_id in vision_principals,
+        )
+    else:
+        app.state.controlled_vision_service = None
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
