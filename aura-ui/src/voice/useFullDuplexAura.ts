@@ -385,7 +385,7 @@ export function useFullDuplexAura(
         ? `Görev inceleme gerektiriyor. Hata türü: ${finalRecord.error}`
         : typeof finalRecord.result === "string"
           ? finalRecord.result
-          : JSON.stringify(finalRecord.result ?? { state: finalRecord.state });
+          : (JSON.stringify(finalRecord.result ?? { state: finalRecord.state }) ?? String(finalRecord.state));
       const boundedSummary = summary.slice(0, 1800);
       setAutonomyResult(boundedSummary);
       setMessage(`GOVERNOR SONUCU: ${finalRecord.state}`);
