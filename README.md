@@ -39,7 +39,8 @@ Local speech recognition uses `faster-whisper`. Runtime selection is configurabl
 - `AURA_STT_MODEL=medium` selects the default quality model; choose `small` for lower latency or another installed Whisper model when appropriate.
 - `AURA_STT_DEVICE=auto` detects a CTranslate2 CUDA device and otherwise uses CPU. Set `cuda` to require CUDA or `cpu` to disable GPU use.
 - `AURA_STT_COMPUTE_TYPE=auto` selects `float16` for CUDA and `int8` for CPU. Supported explicit values include `float16`, `int8`, `int8_float16`, `float32`, and `bfloat16` (subject to device support).
-- `AURA_STT_BEAM_SIZE=5` controls the bounded beam size (1–10).
+- `AURA_STT_BEAM_SIZE=3` controls the bounded beam size (1–10); raise it to trade latency for possible accuracy gains.
+- `AURA_STT_CPU_THREADS=8` bounds CPU thread use (1–16) when the CPU path is selected.
 - `AURA_STT_INITIAL_PROMPT` overrides the Turkish base prompt.
 - `AURA_STT_PRINCIPAL_ID=local_default` selects the isolated episodic-memory scope used for optional context terms; `AURA_STT_CONTEXT_CACHE_SECONDS=60` bounds how often terms are refreshed.
 
