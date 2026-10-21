@@ -16,7 +16,10 @@ from aura_core.application.tasks import AgentTaskService
 from aura_core.application.task_memory import TaskMemoryCoordinator
 from aura_core.application.task_state_machine import TaskStateMachine
 from aura_core.application.autonomy_composition import compose_governed_autonomy
-from aura_core.application.full_duplex_session import GatewaySpeechSynthesizer
+from aura_core.application.full_duplex_session import (
+    EventBusAudioPlayer, FasterWhisperRecognizer, FullDuplexSessionManager,
+    GatewaySpeechSynthesizer,
+)
 from aura_core.config.kernel import KernelConfig
 from aura_core.kernel.permissions import (
     AuthorizationDecision,
@@ -257,6 +260,16 @@ def build_app() -> FastAPI:
                 operation_id=kokoro_config.operation_id,
                 tool_name=kokoro_config.tool_name,
                 resource_scope=os.getenv("AURA_SPEECH_RESOURCE_SCOPE", "local_default"),
+            )
+            app.state.speech_session_manager = FullDuplexSessionManager(
+                recognizer=FasterWhisperRecognizer(
+                    model_size=os.getenv("AURA_STT_MODEL", "small"),
+                    device=os.getenv("AURA_STT_DEVICE", "cpu"),
+                    compute_type=os.getenv("AURA_STT_COMPUTE_TYPE", "int8"),
+                ),
+                synthesizer=app.state.speech_synthesizer,
+                player=EventBusAudioPlayer(kernel.event_bus),
+                event_bus=kernel.event_bus,
             )
 
             # Discover metadata from providers only after their live MCP
