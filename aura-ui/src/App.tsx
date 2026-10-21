@@ -1,15 +1,22 @@
 import ArcReactor3D from "./components/ArcReactor3D";
 import DynamicHologram3D from "./components/DynamicHologram3D";
-import { useEffect, useState} from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { FormEvent } from "react";
 
 import {
+  AuraApiError,
   createTask,
   generateTaskPlan,
   getHealth,
   type HealthResponse,
   type TaskStep,
 } from "./api/client";
+import {
+  captureToSessionState,
+  operationToSessionState,
+  sessionStateLabel,
+  type VoiceSessionState,
+} from "./voice/sessionState";
 
 import { useAuraVoice } from "./voice/useAuraVoice";
 import AuraJarvisBridge from "./AuraJarvisBridge";
@@ -112,6 +119,9 @@ export default function App() {
   const [error, setError] =
     useState<string | null>(null);
 
+  const [sessionState, setSessionState] =
+    useState<VoiceSessionState>("idle");
+
   const { events, connected: eventsConnected } =
     useTaskEvents(taskId);
 
@@ -134,7 +144,32 @@ export default function App() {
     setCommand(directive);
     setHologramTarget(directive);
     setError(null);
+    setSessionState("idle");
+    pushTelemetry("VOICE TRANSCRIPT READY — EXPLICIT ENTER REQUIRED");
   });
+
+  const handleVoiceStatus = useCallback((
+    status: "processing" | "ready" | "speaking" | "error",
+  ) => {
+    setSessionState(status === "ready" ? "idle" : status);
+    if (status === "error") {
+      setError("Voice response could not be completed. Review the API error details and retry.");
+    }
+  }, []);
+
+  const captureSessionState = captureToSessionState(voice.state);
+  const visibleSessionState =
+    captureSessionState === "listening" ||
+    (captureSessionState === "processing" && sessionState === "idle") ||
+    (captureSessionState === "error" && sessionState === "idle")
+      ? captureSessionState
+      : sessionState;
+
+  const sessionBusy =
+    visibleSessionState === "processing" ||
+    visibleSessionState === "responding" ||
+    visibleSessionState === "speaking" ||
+    visibleSessionState === "awaiting_approval";
 
   useEffect(() => {
     let mounted = true;
@@ -183,6 +218,7 @@ export default function App() {
     }
 
     setError(null);
+    setSessionState("processing");
     setSystemState("thinking");
     setTaskState("PLANNING");
 
@@ -260,13 +296,19 @@ export default function App() {
       });
 
       setTaskId(result.task_id);
-      setTaskState(
-        result.state.toUpperCase(),
-      );
+      setTaskState(result.state.toUpperCase());
+      const nextSessionState = operationToSessionState(result.state);
+      setSessionState(nextSessionState);
 
       pushTelemetry(
-        `TASK ${result.task_id} â†’ ${result.state.toUpperCase()}`,
+        `TASK ${result.task_id} → ${result.state.toUpperCase()}`,
       );
+
+      if (result.state === "awaiting_approval" || result.state === "pending_approval") {
+        setSystemState("idle");
+        pushTelemetry("EXECUTION BLOCKED — EXPLICIT APPROVAL REQUIRED");
+        return;
+      }
 
       if (result.state === "succeeded") {
         setSystemState("idle");
@@ -282,9 +324,11 @@ export default function App() {
     } catch (cause) {
       setSystemState("idle");
       setTaskState("FAILED");
+      setSessionState("error");
 
-      const message =
-        cause instanceof Error
+      const message = cause instanceof AuraApiError
+        ? `[${cause.code}] ${cause.message}${cause.requestId ? ` (request: ${cause.requestId})` : ""}`
+        : cause instanceof Error
           ? cause.message
           : "AURA execution failed.";
 
@@ -412,6 +456,14 @@ export default function App() {
                 {taskState}
               </div>
 
+              <div className={`mt-2 text-[9px] tracking-[.12em] ${
+                visibleSessionState === "error" ? "text-red-300" :
+                visibleSessionState === "awaiting_approval" ? "text-amber-300" :
+                "text-cyan-500"
+              }`}>
+                {sessionStateLabel(visibleSessionState)}
+              </div>
+
               {taskId && (
                 <div className="mt-2 truncate font-mono text-[8px] text-slate-600">
                   {taskId}
@@ -458,6 +510,12 @@ export default function App() {
             {error && (
               <div className="mt-4 max-w-xl rounded border border-red-900/70 bg-red-950/20 px-4 py-2 text-center text-[10px] text-red-300">
                 {error}
+              </div>
+            )}
+
+            {visibleSessionState === "awaiting_approval" && (
+              <div role="status" className="mt-4 max-w-xl rounded border border-amber-700/70 bg-amber-950/20 px-4 py-3 text-center text-[10px] leading-5 text-amber-200">
+                AURA Core is waiting for explicit authorization. The UI will not execute or retry the action on its own.
               </div>
             )}
           </section>
@@ -522,13 +580,13 @@ export default function App() {
                 setError(null);
               }}
               placeholder="Bir direktif ver..."
-              disabled={systemState !== "idle"}
+              disabled={systemState !== "idle" || sessionBusy}
               className="min-w-0 flex-1 border-b border-cyan-900/70 bg-transparent px-1 py-3 font-mono text-sm text-cyan-100 outline-none placeholder:text-slate-700 focus:border-cyan-400 disabled:opacity-40"
             />
 
             <button
               type="button"
-              disabled={!voice.available || systemState !== "idle"}
+              disabled={!voice.available || systemState !== "idle" || sessionBusy}
               onClick={
                 voice.state === "recording" || voice.state === "listening"
                   ? voice.stop
@@ -547,7 +605,8 @@ export default function App() {
               type="submit"
               disabled={
                 !command.trim() ||
-                systemState !== "idle"
+                systemState !== "idle" ||
+                sessionBusy
               }
               className="border border-cyan-700/80 px-5 py-2 text-[9px] font-bold tracking-[.2em] text-cyan-300 transition hover:border-cyan-300 hover:text-cyan-100 disabled:cursor-not-allowed disabled:opacity-30"
             >
@@ -569,6 +628,7 @@ export default function App() {
         directive={assistantDirective}
         researchOutput={researchOutput}
         requestId={assistantRequestId}
+        onStatus={handleVoiceStatus}
       />
     </>
 );
