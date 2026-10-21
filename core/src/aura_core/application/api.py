@@ -1,4 +1,5 @@
 import asyncio
+from contextlib import asynccontextmanager
 import base64
 import logging
 import os
@@ -215,9 +216,22 @@ def create_api(
         transport=transport or HttpJsonTransport(),
     )
 
+    @asynccontextmanager
+    async def lifespan(application: FastAPI):
+        daemon = getattr(application.state, "telemetry_daemon", None)
+        enabled = os.getenv("AURA_TELEMETRY_DAEMON_ENABLED", "1").strip().lower() not in {"0", "false", "no"}
+        if daemon is not None and enabled:
+            daemon.start()
+        try:
+            yield
+        finally:
+            if daemon is not None:
+                await daemon.stop()
+
     app = FastAPI(
         title="AURA Core",
         version="0.1.0",
+        lifespan=lifespan,
     )
 
     # ========================================================
@@ -281,14 +295,6 @@ def create_api(
         pressure_handler=lambda pressured: app.state.async_work.apply_resource_pressure(pressured),
     )
 
-    @app.on_event("startup")
-    async def start_continuous_telemetry() -> None:
-        if os.getenv("AURA_TELEMETRY_DAEMON_ENABLED", "1").strip().lower() not in {"0", "false", "no"}:
-            app.state.telemetry_daemon.start()
-
-    @app.on_event("shutdown")
-    async def stop_continuous_telemetry() -> None:
-        await app.state.telemetry_daemon.stop()
     app.state.capability_discovery = None
     app.state.directive_planner = DirectivePlanner()
     app.state.chat_memory = ChatMemory(
