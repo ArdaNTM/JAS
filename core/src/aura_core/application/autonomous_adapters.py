@@ -342,7 +342,7 @@ class BudgetAutonomyGovernor:
         self._max_goal_chars = max_goal_chars
         self._events = event_bus
         self._usage: dict[str, int] = {}
-        self._reservations: set[tuple[str, str, int]] = set()
+        self._reservations: dict[tuple[str, str, int], int] = {}
         self._retry_counts: dict[str, int] = {}
         self._lock = asyncio.Lock()
 
@@ -368,14 +368,16 @@ class BudgetAutonomyGovernor:
                 reason = "retry_budget_exceeded"
             else:
                 reservation = (principal_id, goal, iteration)
-                if task_count and reservation not in self._reservations:
+                if task_count:
+                    previously_reserved = self._reservations.get(reservation, 0)
+                    delta = max(0, task_count - previously_reserved)
                     used = self._usage.get(principal_id, 0)
-                    if used + task_count > self._max_tasks_principal:
+                    if used + delta > self._max_tasks_principal:
                         reason = "principal_task_budget_exceeded"
                     else:
-                        self._usage[principal_id] = used + task_count
-                        self._reservations.add(reservation)
-                        if retrying_after_execution:
+                        self._usage[principal_id] = used + delta
+                        self._reservations[reservation] = max(previously_reserved, task_count)
+                        if retrying_after_execution and previously_reserved == 0:
                             self._retry_counts[principal_id] = self._retry_counts.get(principal_id, 0) + 1
         self._emit(principal_id, goal, iteration, not reason, reason or "authorized",
                    {"task_count": task_count, "retrying_after_execution": retrying_after_execution})
