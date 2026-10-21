@@ -72,9 +72,9 @@ def test_local_speech_transcription_rejects_unsupported_mime() -> None:
 
 
 
-def test_local_speech_transcription_500_includes_request_id(monkeypatch) -> None:
+def test_local_speech_transcription_500_returns_safe_structured_diagnostic(monkeypatch) -> None:
     def fail_transcription(audio_bytes: bytes, language: str, suffix: str):
-        raise RuntimeError("synthetic transcription failure")
+        raise RuntimeError("synthetic failure containing a private path")
 
     monkeypatch.setattr(api_module, "transcribe_audio_bytes", fail_transcription)
     response = make_client().post(
@@ -87,6 +87,73 @@ def test_local_speech_transcription_500_includes_request_id(monkeypatch) -> None
         },
     )
 
+    payload = response.json()
     assert response.status_code == 500
     assert response.headers["X-Request-ID"] == "voice-test-request-500"
-    assert response.json()["detail"] == "Local speech-to-text failed; see server log for details"
+    assert payload["error"]["code"] == "stt_internal_error"
+    assert payload["error"]["request_id"] == "voice-test-request-500"
+    assert payload["error"]["details"] == {"exception_type": "RuntimeError"}
+    assert "request ID" in payload["error"]["message"]
+    assert "private path" not in response.text
+    assert "synthetic failure" not in response.text
+
+
+def test_local_speech_transcription_model_load_failure_is_actionable(monkeypatch) -> None:
+    def fail_model_load(audio_bytes: bytes, language: str, suffix: str):
+        raise api_module.SpeechModelLoadError("underlying details are logged only")
+
+    monkeypatch.setattr(api_module, "transcribe_audio_bytes", fail_model_load)
+    response = make_client().post(
+        "/api/speech/transcribe",
+        json={
+            "audio_base64": base64.b64encode(b"test-audio").decode("ascii"),
+            "mime_type": "audio/webm",
+            "language": "tr",
+        },
+    )
+
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "stt_model_load_failed"
+    assert "AURA_STT_MODEL" in response.json()["error"]["message"]
+    assert response.json()["error"]["details"] == {"exception_type": "SpeechModelLoadError"}
+
+
+def test_local_speech_transcription_decode_failure_is_actionable(monkeypatch) -> None:
+    def fail_decode(audio_bytes: bytes, language: str, suffix: str):
+        raise api_module.SpeechAudioDecodeError("codec details are logged only")
+
+    monkeypatch.setattr(api_module, "transcribe_audio_bytes", fail_decode)
+    response = make_client().post(
+        "/api/speech/transcribe",
+        json={
+            "audio_base64": base64.b64encode(b"test-audio").decode("ascii"),
+            "mime_type": "audio/webm;codecs=opus",
+            "language": "tr",
+        },
+    )
+
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "stt_audio_decode_failed"
+    assert "codec/container" in response.json()["error"]["message"]
+    assert "codec details" not in response.text
+
+
+def test_local_speech_transcription_accepts_m4a_alias(monkeypatch) -> None:
+    calls = {}
+
+    def fake_transcribe(audio_bytes: bytes, language: str, suffix: str):
+        calls["suffix"] = suffix
+        return "Merhaba", "tr"
+
+    monkeypatch.setattr(api_module, "transcribe_audio_bytes", fake_transcribe)
+    response = make_client().post(
+        "/api/speech/transcribe",
+        json={
+            "audio_base64": base64.b64encode(b"test-audio").decode("ascii"),
+            "mime_type": "audio/x-m4a; codecs=mp4a.40.2",
+            "language": "tr",
+        },
+    )
+
+    assert response.status_code == 200
+    assert calls["suffix"] == ".m4a"

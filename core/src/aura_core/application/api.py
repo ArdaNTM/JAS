@@ -63,6 +63,14 @@ _whisper_model = None
 _whisper_model_lock = threading.Lock()
 
 
+class SpeechModelLoadError(RuntimeError):
+    """The configured local faster-whisper model could not be initialized."""
+
+
+class SpeechAudioDecodeError(RuntimeError):
+    """The local STT engine could not decode or transcribe the supplied audio."""
+
+
 def transcribe_audio_bytes(audio_bytes: bytes, language: str, suffix: str = ".webm") -> tuple[str, str]:
     """Run local faster-whisper transcription; load the model lazily once."""
     global _whisper_model
@@ -74,25 +82,34 @@ def transcribe_audio_bytes(audio_bytes: bytes, language: str, suffix: str = ".we
     if _whisper_model is None:
         with _whisper_model_lock:
             if _whisper_model is None:
-                from faster_whisper import WhisperModel
-
-                _whisper_model = WhisperModel(
-                    os.getenv("AURA_STT_MODEL", "small"),
-                    device=os.getenv("AURA_STT_DEVICE", "cpu"),
-                    compute_type=os.getenv("AURA_STT_COMPUTE_TYPE", "int8"),
-                )
+                try:
+                    from faster_whisper import WhisperModel
+                except ImportError:
+                    raise
+                try:
+                    _whisper_model = WhisperModel(
+                        os.getenv("AURA_STT_MODEL", "small"),
+                        device=os.getenv("AURA_STT_DEVICE", "cpu"),
+                        compute_type=os.getenv("AURA_STT_COMPUTE_TYPE", "int8"),
+                    )
+                except Exception as exc:
+                    raise SpeechModelLoadError("Unable to initialize the configured faster-whisper model") from exc
 
     temp_path = None
     try:
         with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as audio_file:
             audio_file.write(audio_bytes)
             temp_path = audio_file.name
-        segments, info = _whisper_model.transcribe(
-            temp_path,
-            language=language,
-            vad_filter=True,
-        )
-        text = " ".join(segment.text.strip() for segment in segments).strip()
+        try:
+            segments, info = _whisper_model.transcribe(
+                temp_path,
+                language=language,
+                vad_filter=True,
+            )
+            # faster-whisper decodes lazily while iterating the segment generator.
+            text = " ".join(segment.text.strip() for segment in segments).strip()
+        except Exception as exc:
+            raise SpeechAudioDecodeError("faster-whisper failed while decoding or transcribing the audio") from exc
         return text, getattr(info, "language", None) or language
     finally:
         if temp_path:
@@ -1090,7 +1107,13 @@ def create_api(
 
 
     @app.post("/api/speech/transcribe", response_model=SpeechTranscriptionResponse)
-    async def transcribe_speech(request: SpeechTranscriptionRequest) -> SpeechTranscriptionResponse:
+    async def transcribe_speech(
+        request: SpeechTranscriptionRequest,
+        http_request: Request,
+    ) -> SpeechTranscriptionResponse | JSONResponse:
+        # Local STT is a local capability; do not make it a remote transcription service.
+        require_local_client(http_request)
+
         try:
             audio_bytes = base64.b64decode(request.audio_base64, validate=True)
         except (ValueError, base64.binascii.Error) as exc:
@@ -1108,22 +1131,86 @@ def create_api(
             "audio/wav": ".wav",
             "audio/x-wav": ".wav",
             "audio/mp4": ".m4a",
+            "audio/x-m4a": ".m4a",
+            "audio/m4a": ".m4a",
             "audio/mpeg": ".mp3",
+            "audio/mp3": ".mp3",
+            "audio/aac": ".aac",
+            "audio/flac": ".flac",
+            "audio/x-flac": ".flac",
         }
         suffix = suffix_by_mime.get(mime_type)
         if suffix is None:
             raise HTTPException(status_code=415, detail="Unsupported audio format")
+
+        request_id = getattr(http_request.state, "request_id", str(uuid4()))
+
+        def failure_response(
+            status_code: int,
+            code: str,
+            message: str,
+            exc: Exception,
+            retryable: bool,
+        ) -> JSONResponse:
+            logger.exception(
+                "Local speech-to-text failed",
+                extra={
+                    "request_id": request_id,
+                    "stt_error_code": code,
+                    "stt_exception_type": type(exc).__name__,
+                },
+            )
+            return JSONResponse(
+                status_code=status_code,
+                content={
+                    "detail": message,
+                    "error": {
+                        "code": code,
+                        "message": message,
+                        "retryable": retryable,
+                        "request_id": request_id,
+                        # Do not send raw exception text, filesystem paths, or tracebacks to the UI.
+                        "details": {"exception_type": type(exc).__name__},
+                    },
+                },
+            )
 
         try:
             text, detected_language = await asyncio.to_thread(
                 transcribe_audio_bytes, audio_bytes, request.language, suffix
             )
         except ImportError as exc:
-            logger.exception("Local speech-to-text dependency is unavailable")
-            raise HTTPException(status_code=503, detail="Local speech-to-text is unavailable") from exc
+            return failure_response(
+                503,
+                "stt_dependency_unavailable",
+                "The faster-whisper dependency is unavailable in the active Core Python environment. Install the Core dependencies and restart AURA Core.",
+                exc,
+                False,
+            )
+        except SpeechModelLoadError as exc:
+            return failure_response(
+                503,
+                "stt_model_load_failed",
+                "The local STT model could not be loaded. Check AURA_STT_MODEL, AURA_STT_DEVICE, and AURA_STT_COMPUTE_TYPE, plus local model-cache or download availability. The server log contains the diagnostic traceback.",
+                exc,
+                False,
+            )
+        except SpeechAudioDecodeError as exc:
+            return failure_response(
+                422,
+                "stt_audio_decode_failed",
+                "The local STT engine could not decode this recording. Check the browser audio codec/container and try recording again. The server log contains the diagnostic traceback.",
+                exc,
+                True,
+            )
         except Exception as exc:
-            logger.exception("Local speech-to-text failed")
-            raise HTTPException(status_code=500, detail="Local speech-to-text failed; see server log for details") from exc
+            return failure_response(
+                500,
+                "stt_internal_error",
+                "Local speech-to-text failed unexpectedly. Check the Core server log using this request ID for the underlying cause.",
+                exc,
+                True,
+            )
 
         return SpeechTranscriptionResponse(text=text, language=detected_language)
 
