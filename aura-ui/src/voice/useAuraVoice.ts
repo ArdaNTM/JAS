@@ -142,9 +142,15 @@ export function useAuraVoice(onDirective: (value: string) => void) {
           onDirective(normalizeDirective(result.text));
           setState("idle");
           setMessage(`LOCAL STT READY (${result.language}) — PRESS ENTER TO EXECUTE`);
-        }).catch(() => {
-          setMessage("LOCAL STT UNAVAILABLE — USING BROWSER FALLBACK");
-          startBrowserFallback();
+        }).catch((cause: unknown) => {
+          // Do not silently start a second capture session after STOP. That made
+          // the first STOP appear to be ignored when local STT was unavailable.
+          setState("error");
+          setMessage(
+            cause instanceof Error
+              ? `LOCAL STT FAILED: ${cause.message} — PRESS VOICE TO RETRY`
+              : "LOCAL STT UNAVAILABLE — PRESS VOICE TO RETRY",
+          );
         });
       };
       recorder.start();
