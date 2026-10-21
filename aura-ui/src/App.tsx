@@ -155,7 +155,12 @@ export default function App() {
   ) => {
     setSessionState(status === "ready" ? "idle" : status);
     if (status === "error") {
+      // A successful task can still fail while generating or playing its answer.
+      // Keep the task summary and lifecycle state consistent with that failure.
+      setTaskState("ERROR");
+      setSessionState("error");
       setError(errorMessage ?? "Voice response could not be completed. Review the API error details and retry.");
+      pushTelemetry("ASSISTANT RESPONSE FAILED");
     }
   }, []);
 
