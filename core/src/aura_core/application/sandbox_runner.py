@@ -71,7 +71,7 @@ class DockerPythonRunner:
 
         container_name = "aura-sandbox-" + hashlib.sha256(job.job_id.encode("utf-8")).hexdigest()[:20]
         command = [
-            self.docker_executable, "run", "--rm", "-i", "--name", container_name,
+            self.docker_executable, "run", "--rm", "-i", "--pull=never", "--name", container_name,
             "--network", "none", "--read-only",
             "--cap-drop", "ALL", "--security-opt", "no-new-privileges:true",
             "--pids-limit", "32", "--memory", f"{self.policy.max_memory_mb}m",
@@ -125,26 +125,33 @@ class DockerPythonRunner:
             except (OSError, subprocess.SubprocessError):
                 pass
 
+        def feed_source() -> None:
+            try:
+                assert process.stdin is not None
+                process.stdin.write(job.source.encode("utf-8"))
+                process.stdin.close()
+            except (BrokenPipeError, OSError):
+                try:
+                    if process.stdin is not None:
+                        process.stdin.close()
+                except OSError:
+                    pass
+
+        writer = threading.Thread(target=feed_source, daemon=True)
+        writer.start()
         try:
-            assert process.stdin is not None
-            process.stdin.write(job.source.encode("utf-8"))
-            process.stdin.close()
             process.wait(timeout=self.policy.max_wall_time_seconds)
         except subprocess.TimeoutExpired:
             process.kill()
             process.wait()
             stop_container()
             status = "timed_out"
-        except (BrokenPipeError, OSError):
-            process.kill()
-            process.wait()
-            stop_container()
-            status = "failed"
         else:
             status = "output_limit_exceeded" if overflow.is_set() else (
                 "completed" if process.returncode == 0 else "failed"
             )
         finally:
+            writer.join(timeout=1)
             for reader in readers:
                 reader.join(timeout=1)
         return SandboxResult(
