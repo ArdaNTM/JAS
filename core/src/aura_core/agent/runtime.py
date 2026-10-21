@@ -1,5 +1,6 @@
 """Planning and execution primitives that never call providers directly."""
 
+import asyncio
 from contextvars import ContextVar
 from dataclasses import dataclass, field, replace
 from enum import StrEnum
@@ -141,24 +142,71 @@ class AgentExecutor:
         self._event_bus = event_bus
 
     async def execute(self, task: Task, plan: Plan, cancelled: Callable[[], bool] | None = None) -> ExecutionResult:
+        """Execute independent dependency-ready steps concurrently, only via MCPGateway."""
         if plan.task_id != task.task_id:
             raise ValueError("Plan does not belong to task")
         started = monotonic()
         completed: dict[str, StepResult] = {}
-        for step in plan.steps:
+        pending = list(plan.steps)
+        capacity = max(1, min(8, int(__import__("os").getenv("AURA_MAX_PARALLEL_STEPS", "4"))))
+        semaphore = asyncio.Semaphore(capacity)
+
+        async def run_step(step: PlanStep) -> StepResult:
+            async with semaphore:
+                self._event("PlanStepStarted", task, plan, step)
+                remaining = task.timeout_seconds - (monotonic() - started)
+                if remaining <= 0:
+                    result = StepResult(step.step_id, StepState.CANCELLED, 0, reason="Task timed out")
+                else:
+                    try:
+                        result = await asyncio.wait_for(
+                            self._execute_step(task, plan, step), timeout=remaining
+                        )
+                    except asyncio.TimeoutError:
+                        result = StepResult(step.step_id, StepState.CANCELLED, 0, reason="Task timed out")
+                self._event("PlanStepCompleted", task, plan, step, {
+                    "state": result.state.value, "attempts": result.attempts
+                })
+                return result
+
+        while pending:
             if cancelled is not None and cancelled():
-                completed[step.step_id] = StepResult(step.step_id, StepState.CANCELLED, 0, reason="Task cancelled")
-                continue
-            if monotonic() - started > task.timeout_seconds:
-                completed[step.step_id] = StepResult(step.step_id, StepState.CANCELLED, 0, reason="Task timed out")
-                continue
-            if any(completed[dependency].state is not StepState.SUCCEEDED for dependency in step.depends_on):
-                completed[step.step_id] = StepResult(step.step_id, StepState.SKIPPED, 0, reason="Dependency did not succeed")
-                continue
-            self._event("PlanStepStarted", task, plan, step)
-            result = await self._execute_step(task, plan, step)
-            completed[step.step_id] = result
-            self._event("PlanStepCompleted", task, plan, step, {"state": result.state, "attempts": result.attempts})
+                for step in pending:
+                    completed[step.step_id] = StepResult(step.step_id, StepState.CANCELLED, 0, reason="Task cancelled")
+                pending.clear()
+                break
+            if monotonic() - started >= task.timeout_seconds:
+                for step in pending:
+                    completed[step.step_id] = StepResult(step.step_id, StepState.CANCELLED, 0, reason="Task timed out")
+                pending.clear()
+                break
+
+            ready = [step for step in pending if step.depends_on.issubset(completed)]
+            if not ready:
+                # Plan validates dependencies/cycles, so this is defensive only.
+                for step in pending:
+                    completed[step.step_id] = StepResult(step.step_id, StepState.SKIPPED, 0, reason="Dependencies could not be resolved")
+                break
+
+            runnable: list[PlanStep] = []
+            for step in ready:
+                if any(completed[dep].state is not StepState.SUCCEEDED for dep in step.depends_on):
+                    completed[step.step_id] = StepResult(step.step_id, StepState.SKIPPED, 0, reason="Dependency did not succeed")
+                else:
+                    runnable.append(step)
+                pending.remove(step)
+
+            if runnable:
+                outcomes = await asyncio.gather(*(run_step(step) for step in runnable), return_exceptions=True)
+                for step, outcome in zip(runnable, outcomes):
+                    if isinstance(outcome, BaseException):
+                        completed[step.step_id] = StepResult(
+                            step.step_id, StepState.FAILED, 0,
+                            reason=f"Step execution failed: {type(outcome).__name__}",
+                        )
+                    else:
+                        completed[step.step_id] = outcome
+
         results = tuple(completed[step.step_id] for step in plan.steps)
         state = PlanState.SUCCEEDED if all(item.state is StepState.SUCCEEDED for item in results) else PlanState.CANCELLED if any(item.state is StepState.CANCELLED for item in results) else PlanState.FAILED
         if self._event_bus is not None:
@@ -171,14 +219,10 @@ class AgentExecutor:
                         "task_id": task.task_id,
                         "plan_id": plan.plan_id,
                         "state": state.value,
-                        "failed_steps": [
-                            item.step_id for item in results
-                            if item.state is not StepState.SUCCEEDED
-                        ],
+                        "failed_steps": [item.step_id for item in results if item.state is not StepState.SUCCEEDED],
+                        "parallel_capacity": capacity,
                     },
-                    metadata={
-                        "request_id": _request_id_context.get()
-                    } if _request_id_context.get() else {},
+                    metadata={"request_id": _request_id_context.get()} if _request_id_context.get() else {},
                 )
             )
         return ExecutionResult(plan.plan_id, state, results, monotonic() - started)
