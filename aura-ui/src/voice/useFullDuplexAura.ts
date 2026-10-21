@@ -125,8 +125,16 @@ export function useFullDuplexAura(
 
   useEffect(() => {
     const source = new EventSource(`${API_BASE}/api/events/stream`, { withCredentials: true });
-    source.onopen = () => setEventConnected(true);
-    source.onerror = () => setEventConnected(false);
+    source.onopen = () => {
+      setEventConnected(true);
+      setMessage((current) => current.startsWith("SSE BAĞLANTISI KURULAMADI")
+        ? "Olay akışı bağlandı — ses oturumu başlatılabilir"
+        : current);
+    };
+    source.onerror = () => {
+      setEventConnected(false);
+      setMessage("SSE BAĞLANTISI KURULAMADI — Core sunucusunun güncel feature/frontend-full-duplex-wiring koduyla yeniden başlatıldığını ve /api/events/stream rotasının mevcut olduğunu kontrol edin.");
+    };
     source.onmessage = (messageEvent) => {
       let event: UIEvent;
       try {
