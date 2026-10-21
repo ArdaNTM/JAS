@@ -235,3 +235,54 @@ export async function transcribeLocalAudio(blob: Blob): Promise<SpeechTranscript
     }),
   });
 }
+
+export interface VectorMemoryItem {
+  memory_id?: string;
+  content?: string;
+  relevance_score?: number;
+  tags?: string[];
+  principal_id?: string;
+}
+
+export function writeVectorMemory(body: {
+  principal_id: string;
+  content: string;
+  tags?: string[];
+}): Promise<{ memory_id: string; principal_id: string; stored: boolean; trust: string }> {
+  return request("/api/memory/vector", { method: "POST", body: JSON.stringify(body) });
+}
+
+export function recallVectorMemory(body: {
+  principal_id: string;
+  query: string;
+  limit?: number;
+}): Promise<{ items: VectorMemoryItem[]; count: number; trust: string }> {
+  return request("/api/memory/vector/recall", { method: "POST", body: JSON.stringify(body) });
+}
+
+export function analyzeLocalVision(body: {
+  image_base64: string;
+  prompt: string;
+}): Promise<{ model: string; analysis: string; provider: string; cloud_used: boolean }> {
+  return request("/api/vision/analyze", { method: "POST", body: JSON.stringify(body) });
+}
+
+export function synthesizeToolProposal(body: {
+  problem: string;
+  capability_context?: string;
+}): Promise<Record<string, unknown>> {
+  return request("/api/tools/synthesize", { method: "POST", body: JSON.stringify(body) });
+}
+
+export function observePrefetchPattern(body: {
+  principal_id: string;
+  event_key: string;
+  capability_id: string;
+  hour_local: number;
+}): Promise<{ proposal: Record<string, unknown>; execution_performed: boolean }> {
+  return request("/api/prefetch/observe", { method: "POST", body: JSON.stringify(body) });
+}
+
+export function getPrefetchProposals(principalId: string, limit = 20): Promise<{ items: Record<string, unknown>[]; count: number }> {
+  return request("/api/prefetch/proposals?principal_id=" + encodeURIComponent(principalId) + "&limit=" + limit);
+}
