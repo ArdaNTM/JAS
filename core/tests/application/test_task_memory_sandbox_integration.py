@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 from aura_core.agent.runtime import ExecutionResult, Plan, PlanState, PlanStep, Task
+from aura_core.kernel.permissions import RiskLevel
 from aura_core.application.sandbox_contract import SandboxJob
 from aura_core.application.sandbox_runner import (
     DockerPythonRunner,
@@ -54,7 +55,7 @@ async def test_task_service_attaches_scoped_memory_without_bypassing_runtime(tmp
     task = Task(task_id="t1", principal_id="p1", title="research", resource_scope="public-web")
     plan = Plan(
         plan_id="plan-1", task_id="t1",
-        steps=(PlanStep(step_id="step-1", capability_id="cap", operation_id="op", tool_name="tool", risk_level="low"),),
+        steps=(PlanStep(step_id="step-1", capability_id="cap", operation_id="op", tool_name="tool", risk_level=RiskLevel.LOW),),
     )
     result = await service.submit(SubmittedTask(task, plan))
     assert result.state is PlanState.SUCCEEDED
