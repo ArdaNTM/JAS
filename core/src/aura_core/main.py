@@ -82,6 +82,30 @@ def build_app() -> FastAPI:
             required_permissions=frozenset(),
         )
     )
+    sandbox_service_id = "aura:python_sandbox:0.1.0"
+    kernel.service_registry.register(
+        ServiceDefinition(
+            name="python_sandbox",
+            version="0.1.0",
+            provider="aura",
+            category=ServiceCategory.KERNEL,
+            capabilities={"sandbox.python.execute"},
+            tags={"sandbox", "isolated-execution"},
+        ),
+        object(),
+    )
+    kernel.capability_registry.register(
+        CapabilityDefinition(
+            capability_id="sandbox.python.execute",
+            name="Isolated Python Draft Execution",
+            version="1.0.0",
+            description="Executes untrusted Python only in a digest-pinned, network-isolated container after explicit authorization.",
+            provider_id=sandbox_service_id,
+            provider_type=ProviderType.CORE,
+            category=CapabilityCategory.EXECUTION,
+            required_permissions=frozenset({"sandbox.python.execute"}),
+        )
+    )
     research_config = ResearchMCPConfig.from_env()
     kokoro_config = KokoroMCPConfig.from_env()
     research_tools = MCPToolRegistry()
