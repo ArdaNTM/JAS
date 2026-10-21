@@ -31,9 +31,14 @@ These papers support architectural patterns, not a claim of general intelligence
 
 ## Integration notes and limitations
 
-- The model-backed revision adapter is provider-agnostic but no default live-model endpoint is exposed by this increment. A deployment must explicitly instantiate it with the configured `InferenceService` and inject it into a bounded experiment service. Do not create a permissive default authorizer. Real MCP actions remain MCP Gateway-only.
-- The persona object is currently an injectable policy primitive; API persistence and wiring into the main assistant response pipeline are separate integration work. Initiative policy may propose a next step, never execute it by itself.
+- `POST /api/autonomy/reflexion` now wires the configured `InferenceService` into the model-backed revision adapter and runs bounded attempts through `AsyncWorkCoordinator`, a fresh Permission Engine decision per sandbox attempt, and the isolated Docker runner. It requires `expected_stdout` for independent exact-output verification; without that acceptance criterion it cannot promote a skill candidate. Model output is untrusted and all proposed skills remain pending review.
+- The persona policy is appended to the main `/api/assistant/respond` system prompt as presentation-only guidance. `GET/PUT /api/jarvis/persona` exposes local settings; updates are process-lifetime only (not durable yet). Initiative policy may propose a next step, never execute it by itself.
 - The new test file covers model adapter contract, bounds, persona gating, and heuristic consolidation. Tests/builds must be run against the final branch head before treating this increment as verified.
+
+## API integration
+
+- `POST /api/autonomy/reflexion`: local-client-only; requires the Permission Engine to be available and allow the high-risk `sandbox.python.execute` capability for each attempt. Uses the configured inference provider/model, bounded retry and time budgets, isolated Docker, and exact expected-stdout verification. No MCP tools are exposed to the reviser or sandbox. The endpoint reports `tool_execution_performed: false` because this experiment runs only the sandboxed Python draft.
+- `GET /api/jarvis/persona` and `PUT /api/jarvis/persona`: local-only style/initiative preferences. Initiative remains disabled by default; the persona policy never replaces authorization.
 
 ## Recommended next phases
 
