@@ -14,6 +14,9 @@ from aura_core.application.event_driven_orchestration import EventDrivenOrchestr
 from aura_core.application.capability_discovery import DynamicCapabilityDiscovery
 from aura_core.application.tasks import AgentTaskService
 from aura_core.application.task_memory import TaskMemoryCoordinator
+from aura_core.application.task_state_machine import TaskStateMachine
+from aura_core.application.autonomy_composition import compose_governed_autonomy
+from aura_core.application.full_duplex_session import GatewaySpeechSynthesizer
 from aura_core.config.kernel import KernelConfig
 from aura_core.kernel.permissions import (
     AuthorizationDecision,
@@ -119,12 +122,17 @@ def build_app() -> FastAPI:
         permission_engine=kernel.permission_engine,
     )
 
+    task_database_path = os.getenv(
+        "AURA_TASK_DB_PATH", str(os.getenv("LOCALAPPDATA", os.path.expanduser("~"))) + "/AURA/tasks.sqlite3"
+    )
+    task_state_machine = TaskStateMachine(task_database_path, event_bus=kernel.event_bus)
     task_service = AgentTaskService(
         AgentExecutor(
             gateway=gateway,
             event_bus=kernel.event_bus,
         ),
         memory=TaskMemoryCoordinator.from_environment(),
+        state_machine=task_state_machine,
     )
 
     app = create_composed_app(
@@ -145,6 +153,14 @@ def build_app() -> FastAPI:
         poll_interval_seconds=float(os.getenv("AURA_EVENT_POLL_INTERVAL_SECONDS", "0.1")),
     )
     app.state.event_bus_runtime = event_runtime
+    app.state.task_state_machine = task_state_machine
+    app.state.task_service = task_service
+
+    # Autonomous execution is opt-in and fails startup if its explicit operation
+    # allow-list is missing or malformed. It never creates permission policies.
+    autonomy = compose_governed_autonomy(kernel=kernel, task_service=task_service)
+    app.state.governed_autonomous_loop = autonomy.loop if autonomy is not None else None
+    app.state.autonomy_components = autonomy
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
@@ -230,6 +246,15 @@ def build_app() -> FastAPI:
                 timeout=20.0,
             )
             report_mcp_healthy(kokoro_config)
+            # TTS always crosses MCPGateway + Permission Engine; the provider
+            # connection itself is not an authorization grant.
+            app.state.speech_synthesizer = GatewaySpeechSynthesizer(
+                gateway=gateway, principal_id=os.getenv("AURA_SPEECH_PRINCIPAL", "local_owner"),
+                capability_id=kokoro_config.capability_id,
+                operation_id=kokoro_config.operation_id,
+                tool_name=kokoro_config.tool_name,
+                resource_scope=os.getenv("AURA_SPEECH_RESOURCE_SCOPE", "local_default"),
+            )
 
             # Discover metadata from providers only after their live MCP
             # connections and registries are established. Discovery creates
@@ -417,6 +442,8 @@ def build_app() -> FastAPI:
                     logger.exception(
                         "Event bridge shutdown failed"
                     )
+
+            task_state_machine.close()
 
             if kernel.state.value == "running":
                 try:
