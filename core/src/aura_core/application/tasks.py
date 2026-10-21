@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 from dataclasses import dataclass, replace
 from typing import Protocol
 
@@ -131,8 +132,12 @@ class AgentTaskService:
 
             token = _request_id_context.set(submitted.request_id)
             try:
-                execute = self._runtime.execute(task, submitted.plan, cancelled=cancelled)
-                result = await asyncio.wait_for(execute, timeout=task.timeout_seconds)
+                execute_method = self._runtime.execute
+                if "cancelled" in inspect.signature(execute_method).parameters:
+                    execution = execute_method(task, submitted.plan, cancelled=cancelled)
+                else:
+                    execution = execute_method(task, submitted.plan)
+                result = await asyncio.wait_for(execution, timeout=task.timeout_seconds)
             except asyncio.TimeoutError:
                 if self._state_machine is not None:
                     self._state_machine.transition(
