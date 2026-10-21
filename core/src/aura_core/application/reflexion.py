@@ -155,7 +155,7 @@ class ReflexionExperimentLoop:
             )
             # Authorization is repeated for each attempt; denial/errors fail closed.
             try:
-                result = self.runner.run(job) if self.runner.authorizer is not None else self._run_authorized(job)
+                result = self._run_authorized(job)
             except Exception as exc:
                 status = "authorization_or_sandbox_error"
                 lesson = f"Execution stopped safely ({type(exc).__name__}); no fallback execution was attempted."
@@ -209,13 +209,15 @@ class ReflexionExperimentLoop:
         )
 
     def _run_authorized(self, job: SandboxJob) -> SandboxResult:
-        # Inject the current per-job authorization decision; no host execution path exists.
-        original = self.runner.authorizer
-        self.runner.authorizer = self.authorize
-        try:
-            return self.runner.run(job)
-        finally:
-            self.runner.authorizer = original
+        # Use a per-attempt adapter instance so concurrent tasks cannot race on
+        # mutable authorizer state. No host execution path exists.
+        runner = DockerPythonRunner(
+            policy=self.runner.policy,
+            authorizer=self.authorize,
+            image=self.runner.image,
+            docker_executable=self.runner.docker_executable,
+        )
+        return runner.run(job)
 
     def _record(
         self, principal_id: str, task_id: str, experiment_id: str,
