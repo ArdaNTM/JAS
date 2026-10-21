@@ -147,21 +147,21 @@ export default function CapabilityWorkbench() {
       {open && (
         <section
           id="aura-capability-workbench"
-          aria-label="AURA capability workbench"
+          aria-label="AURA yetenek çalışma alanı"
           className="fixed inset-x-3 bottom-20 top-16 z-40 mx-auto flex max-w-4xl flex-col overflow-hidden rounded-lg border border-cyan-900/80 bg-[#030a12]/[.98] shadow-2xl shadow-black"
         >
           <header className="flex flex-wrap items-center justify-between gap-3 border-b border-cyan-950 p-4">
             <div>
-              <div className="text-xs font-bold tracking-[.2em] text-cyan-200">CAPABILITY WORKBENCH</div>
-              <p className="mt-1 text-[9px] text-slate-500">Core API only · provider isolation · no implicit tool execution</p>
+              <div className="text-xs font-bold tracking-[.2em] text-cyan-200">YETENEK ÇALIŞMA ALANI</div>
+              <p className="mt-1 text-[9px] text-slate-500">Yalnızca Core API · sağlayıcı yalıtımı · örtük araç çalıştırma yok</p>
             </div>
             <label className="w-48">
-              <span className={labelClass}>PRINCIPAL SCOPE</span>
+              <span className={labelClass}>KULLANICI KAPSAMI</span>
               <input className={inputClass} value={principalId} maxLength={128} onChange={(event) => setPrincipalId(event.target.value)} />
             </label>
           </header>
 
-          <nav className="flex flex-wrap gap-1 border-b border-cyan-950 p-2" aria-label="Capability tools">
+          <nav className="flex flex-wrap gap-1 border-b border-cyan-950 p-2" aria-label="Yetenek araçları">
             {tabs.map((tab) => (
               <button key={tab.id} type="button" className={panel === tab.id ? buttonClass + " bg-cyan-950/80" : buttonClass + " border-transparent text-slate-500"} onClick={() => { setPanel(tab.id); setMessage(""); }}>
                 {tab.label}
@@ -173,46 +173,46 @@ export default function CapabilityWorkbench() {
             {panel === "memory" && (
               <div className="grid gap-5 md:grid-cols-2">
                 <div className="space-y-3">
-                  <label className="block"><span className={labelClass}>ADD LOCAL KNOWLEDGE</span><textarea className={inputClass + " min-h-28"} value={memoryText} maxLength={12000} onChange={(event) => setMemoryText(event.target.value)} placeholder="Kapsam dâhilinde anlamsal arama için not ekleyin…" /></label>
-                  <button className={buttonClass} disabled={busy || !memoryText.trim() || !principalId.trim()} onClick={() => void saveMemory()}>STORE REFERENCE</button>
+                  <label className="block"><span className={labelClass}>YEREL BİLGİ EKLE</span><textarea className={inputClass + " min-h-28"} value={memoryText} maxLength={12000} onChange={(event) => setMemoryText(event.target.value)} placeholder="Kapsam dâhilinde anlamsal arama için not ekleyin…" /></label>
+                  <button className={buttonClass} disabled={busy || !memoryText.trim() || !principalId.trim()} onClick={() => void saveMemory()}>BAŞVURU BİLGİSİNİ KAYDET</button>
                 </div>
                 <div className="space-y-3">
-                  <label className="block"><span className={labelClass}>SEMANTIC QUERY</span><input className={inputClass} value={memoryQuery} maxLength={12000} onChange={(event) => setMemoryQuery(event.target.value)} placeholder="Kapsamlı yerel hafızada ara…" /></label>
-                  <button className={buttonClass} disabled={busy || !memoryQuery.trim() || !principalId.trim()} onClick={() => void searchMemory()}>RECALL</button>
-                  <div className="space-y-2">{memoryItems.map((item, index) => <article key={item.memory_id ?? index} className="rounded border border-cyan-950 p-3 text-xs"><p className="whitespace-pre-wrap text-cyan-100">{item.content ?? JSON.stringify(item)}</p><p className="mt-2 text-[9px] text-slate-500">Untrusted reference data · relevance {item.relevance_score ?? "n/a"}</p></article>)}</div>
+                  <label className="block"><span className={labelClass}>ANLAMSAL SORGU</span><input className={inputClass} value={memoryQuery} maxLength={12000} onChange={(event) => setMemoryQuery(event.target.value)} placeholder="Kapsamlı yerel hafızada ara…" /></label>
+                  <button className={buttonClass} disabled={busy || !memoryQuery.trim() || !principalId.trim()} onClick={() => void searchMemory()}>HAFIZADA ARA</button>
+                  <div className="space-y-2">{memoryItems.map((item, index) => <article key={item.memory_id ?? index} className="rounded border border-cyan-950 p-3 text-xs"><p className="whitespace-pre-wrap text-cyan-100">{item.content ?? JSON.stringify(item)}</p><p className="mt-2 text-[9px] text-slate-500">Güvenilmeyen başvuru verisi · ilgililik {item.relevance_score ?? "n/a"}</p></article>)}</div>
                 </div>
               </div>
             )}
 
             {panel === "vision" && (
               <div className="max-w-2xl space-y-3">
-                <label className="block"><span className={labelClass}>LOCAL IMAGE INPUT (MAX 8 MIB)</span><input className={inputClass} type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => setImageFile(event.target.files?.[0] ?? null)} /></label>
-                <label className="block"><span className={labelClass}>ANALYSIS PROMPT</span><textarea className={inputClass + " min-h-20"} maxLength={4000} value={visionPrompt} onChange={(event) => setVisionPrompt(event.target.value)} /></label>
-                <button className={buttonClass} disabled={busy || !imageFile || !visionPrompt.trim()} onClick={() => void analyzeImage()}>ANALYZE VIA CORE</button>
+                <label className="block"><span className={labelClass}>YEREL GÖRSEL GİRDİSİ (EN FAZLA 8 MİB)</span><input className={inputClass} type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => setImageFile(event.target.files?.[0] ?? null)} /></label>
+                <label className="block"><span className={labelClass}>ANALİZ İSTEĞİ</span><textarea className={inputClass + " min-h-20"} maxLength={4000} value={visionPrompt} onChange={(event) => setVisionPrompt(event.target.value)} /></label>
+                <button className={buttonClass} disabled={busy || !imageFile || !visionPrompt.trim()} onClick={() => void analyzeImage()}>CORE ÜZERİNDEN ANALİZ ET</button>
                 {visionResult && <article className="whitespace-pre-wrap rounded border border-cyan-950 p-3 text-xs leading-6 text-cyan-100">{visionResult}</article>}
-                <p className="text-[9px] text-slate-500">Images and prompts are sent only to the configured local Core vision endpoint. Analysis is untrusted evidence, not an authorization signal.</p>
+                <p className="text-[9px] text-slate-500">Görseller ve istekler yalnızca yapılandırılmış yerel Core görsel uç noktasına gönderilir. Analiz güvenilmeyen kanıttır; yetkilendirme sinyali değildir.</p>
               </div>
             )}
 
             {panel === "tools" && (
               <div className="space-y-3">
-                <label className="block"><span className={labelClass}>PROBLEM TO SOLVE</span><textarea className={inputClass + " min-h-20"} maxLength={3000} value={toolProblem} onChange={(event) => setToolProblem(event.target.value)} placeholder="Küçük, yalnızca veri işleyen bir yardımcıyı tanımlayın…" /></label>
-                <label className="block"><span className={labelClass}>CAPABILITY CONTEXT (OPTIONAL)</span><textarea className={inputClass + " min-h-16"} maxLength={2000} value={toolContext} onChange={(event) => setToolContext(event.target.value)} /></label>
-                <button className={buttonClass} disabled={busy || !toolProblem.trim()} onClick={() => void createProposal()}>GENERATE PROPOSAL</button>
-                {toolProposal && <article className="space-y-2 rounded border border-amber-900/70 bg-amber-950/10 p-3"><p className="text-[10px] font-bold tracking-widest text-amber-200">UNTRUSTED CANDIDATE · NOT EXECUTED</p><pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words text-[10px] text-cyan-100">{JSON.stringify(toolProposal, null, 2)}</pre><p className="text-[9px] text-slate-500">This screen does not register or execute candidate code. Any future activation must pass server-side validation, explicit approval, Permission Engine, and MCP Gateway.</p></article>}
+                <label className="block"><span className={labelClass}>ÇÖZÜLECEK SORUN</span><textarea className={inputClass + " min-h-20"} maxLength={3000} value={toolProblem} onChange={(event) => setToolProblem(event.target.value)} placeholder="Küçük, yalnızca veri işleyen bir yardımcıyı tanımlayın…" /></label>
+                <label className="block"><span className={labelClass}>YETENEK BAĞLAMI (İSTEĞE BAĞLI)</span><textarea className={inputClass + " min-h-16"} maxLength={2000} value={toolContext} onChange={(event) => setToolContext(event.target.value)} /></label>
+                <button className={buttonClass} disabled={busy || !toolProblem.trim()} onClick={() => void createProposal()}>ÖNERİ OLUŞTUR</button>
+                {toolProposal && <article className="space-y-2 rounded border border-amber-900/70 bg-amber-950/10 p-3"><p className="text-[10px] font-bold tracking-widest text-amber-200">GÜVENİLMEYEN ADAY · ÇALIŞTIRILMADI</p><pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words text-[10px] text-cyan-100">{JSON.stringify(toolProposal, null, 2)}</pre><p className="text-[9px] text-slate-500">Bu ekran aday kodunu kaydetmez veya çalıştırmaz. Etkinleştirme; sunucu tarafı doğrulama, açık onay, İzin Motoru ve MCP Ağ Geçidi denetimlerinden geçmelidir.</p></article>}
               </div>
             )}
 
             {panel === "prefetch" && (
               <div className="space-y-3">
-                <p className="text-[10px] text-slate-500">Record a pattern observation. Suggestions are advisory and never execute actions.</p>
+                <p className="text-[10px] text-slate-500">Bir örüntü gözlemi kaydedin. Öneriler yalnızca tavsiyedir ve eylem çalıştırmaz.</p>
                 <div className="grid gap-3 md:grid-cols-3">
-                  <label className="block"><span className={labelClass}>EVENT KEY</span><input className={inputClass} value={eventKey} maxLength={100} onChange={(event) => setEventKey(event.target.value)} /></label>
-                  <label className="block"><span className={labelClass}>CAPABILITY ID</span><input className={inputClass} value={capabilityId} maxLength={128} onChange={(event) => setCapabilityId(event.target.value)} /></label>
-                  <label className="block"><span className={labelClass}>LOCAL HOUR (0–23)</span><input className={inputClass} type="number" min={0} max={23} value={hourLocal} onChange={(event) => setHourLocal(event.target.value)} /></label>
+                  <label className="block"><span className={labelClass}>OLAY ANAHTARI</span><input className={inputClass} value={eventKey} maxLength={100} onChange={(event) => setEventKey(event.target.value)} /></label>
+                  <label className="block"><span className={labelClass}>YETENEK KİMLİĞİ</span><input className={inputClass} value={capabilityId} maxLength={128} onChange={(event) => setCapabilityId(event.target.value)} /></label>
+                  <label className="block"><span className={labelClass}>YEREL SAAT (0–23)</span><input className={inputClass} type="number" min={0} max={23} value={hourLocal} onChange={(event) => setHourLocal(event.target.value)} /></label>
                 </div>
-                <div className="flex flex-wrap gap-2"><button className={buttonClass} disabled={busy || !principalId.trim() || !eventKey.trim() || !capabilityId.trim() || Number(hourLocal) < 0 || Number(hourLocal) > 23} onClick={() => void recordPattern()}>RECORD OBSERVATION</button><button className={buttonClass} disabled={busy || !principalId.trim()} onClick={() => void run(async () => { const result = await getPrefetchProposals(principalId.trim(), 20); setPrefetchItems(result.items); setMessage(result.count + " öneri yüklendi."); })}>REFRESH PROPOSALS</button></div>
-                <div className="space-y-2">{prefetchItems.map((item, index) => <article key={String(item.proposal_id ?? item.id ?? index)} className="rounded border border-cyan-950 p-3"><pre className="whitespace-pre-wrap break-words text-[10px] text-cyan-100">{JSON.stringify(item, null, 2)}</pre><p className="mt-2 text-[9px] text-slate-500">Recommendation only · execution not authorized</p></article>)}</div>
+                <div className="flex flex-wrap gap-2"><button className={buttonClass} disabled={busy || !principalId.trim() || !eventKey.trim() || !capabilityId.trim() || Number(hourLocal) < 0 || Number(hourLocal) > 23} onClick={() => void recordPattern()}>GÖZLEMİ KAYDET</button><button className={buttonClass} disabled={busy || !principalId.trim()} onClick={() => void run(async () => { const result = await getPrefetchProposals(principalId.trim(), 20); setPrefetchItems(result.items); setMessage(result.count + " öneri yüklendi."); })}>ÖNERİLERİ YENİLE</button></div>
+                <div className="space-y-2">{prefetchItems.map((item, index) => <article key={String(item.proposal_id ?? item.id ?? index)} className="rounded border border-cyan-950 p-3"><pre className="whitespace-pre-wrap break-words text-[10px] text-cyan-100">{JSON.stringify(item, null, 2)}</pre><p className="mt-2 text-[9px] text-slate-500">Yalnızca öneri · yürütme yetkisi verilmedi</p></article>)}</div>
               </div>
             )}
             {busy && <p role="status" className="mt-4 text-[10px] text-cyan-500">CONTACTING AURA CORE…</p>}
