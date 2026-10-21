@@ -74,6 +74,8 @@ class LocalVectorMemory:
                 (principal_id,),
             ).fetchall()
         for row in rows:
+            if row["model_id"] != self.embedder.model:
+                continue
             vector = json.loads(row["vector_json"])
             if len(vector) != len(q):
                 continue
