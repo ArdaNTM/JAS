@@ -62,6 +62,8 @@ export function useFullDuplexAura(
   const [notices, setNotices] = useState<ProactiveNotice[]>([]);
   const [vision, setVision] = useState<VisionResult | null>(null);
   const [busy, setBusy] = useState(false);
+  const [autonomyState, setAutonomyState] = useState("idle");
+  const [autonomyResult, setAutonomyResult] = useState("");
 
   const sessionIdRef = useRef<string | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -187,6 +189,7 @@ export function useFullDuplexAura(
 
   const start = useCallback(async () => {
     if (sessionIdRef.current) return;
+    let createdSessionId: string | null = null;
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
       setMessage("FULL-DUPLEX SES İÇİN MEDİADEVICES VE MEDIARRECORDER GEREKLİ");
       return;
@@ -194,6 +197,7 @@ export function useFullDuplexAura(
     let stream: MediaStream | null = null;
     try {
       const id = crypto.randomUUID();
+      createdSessionId = id;
       await postJson("/api/speech/sessions", { session_id: id, confirmed: true });
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const context = new AudioContext();
@@ -300,6 +304,11 @@ export function useFullDuplexAura(
       frameRef.current = requestAnimationFrame(tick);
     } catch (error) {
       stream?.getTracks().forEach((track) => track.stop());
+      if (createdSessionId) {
+        void fetch(`${API_BASE}/api/speech/sessions/${encodeURIComponent(createdSessionId)}`, {
+          method: "DELETE", credentials: "same-origin",
+        }).catch(() => undefined);
+      }
       setMessage(error instanceof Error ? `OTURUM BAŞLATILAMADI: ${error.message}` : "OTURUM BAŞLATILAMADI");
       onSpeechStateRef.current?.("error");
     }
@@ -341,6 +350,56 @@ export function useFullDuplexAura(
     onSpeechStateRef.current?.("idle");
   }, [stopPlayer]);
 
+  const runGovernedGoal = useCallback(async (goal: string) => {
+    if (!goal.trim()) return;
+    setAutonomyState("starting");
+    setAutonomyResult("");
+    setMessage("GOVERNOR ÜZERİNDEN GÖREV BAŞLATILIYOR — AÇIK KULLANICI ONAYI VERİLDİ");
+    try {
+      const started = await postJson<{ run_id: string; state: string }>("/api/autonomy/runs", {
+        goal: goal.trim().slice(0, 1000),
+        principal_id: "local_owner",
+        resource_scope: "local_default",
+        confirmed: true,
+      });
+      setAutonomyState("running");
+      let finalRecord: { state: string; result?: unknown; error?: string } | null = null;
+      for (let attempt = 0; attempt < 180; attempt += 1) {
+        await new Promise((resolve) => window.setTimeout(resolve, 1000));
+        const response = await fetch(
+          `${API_BASE}/api/autonomy/runs/${encodeURIComponent(started.run_id)}?principal_id=local_owner`,
+          { credentials: "same-origin" },
+        );
+        if (!response.ok) throw new Error(`Görev durumu alınamadı (HTTP ${response.status})`);
+        const record = await response.json() as { state: string; result?: unknown; error?: string };
+        finalRecord = record;
+        if (!["running", "cancellation_requested", "starting"].includes(String(record.state).toLowerCase())) break;
+      }
+      if (!finalRecord || ["running", "cancellation_requested", "starting"].includes(String(finalRecord.state).toLowerCase())) {
+        setAutonomyState("timeout");
+        setMessage("GOVERNED RUN DURUMU ZAMAN SINIRINDA TAMAMLANMADI; CORE'DAN DURUMU KONTROL EDİN");
+        return;
+      }
+      setAutonomyState(String(finalRecord.state));
+      const summary = finalRecord.error
+        ? `Görev inceleme gerektiriyor. Hata türü: ${finalRecord.error}`
+        : typeof finalRecord.result === "string"
+          ? finalRecord.result
+          : JSON.stringify(finalRecord.result ?? { state: finalRecord.state });
+      const boundedSummary = summary.slice(0, 1800);
+      setAutonomyResult(boundedSummary);
+      setMessage(`GOVERNOR SONUCU: ${finalRecord.state}`);
+      if (sessionIdRef.current && boundedSummary) {
+        await speak(boundedSummary).catch((error: unknown) => {
+          setMessage(error instanceof Error ? `SONUÇ SESLENDİRİLEMEDİ: ${error.message}` : "SONUÇ SESLENDİRİLEMEDİ");
+        });
+      }
+    } catch (error) {
+      setAutonomyState("error");
+      setMessage(error instanceof Error ? `GOVERNED RUN BAŞARISIZ: ${error.message}` : "GOVERNED RUN BAŞARISIZ");
+    }
+  }, [speak]);
+
   const describeScreen = useCallback(async () => {
     try {
       const result = await postJson<{ description: string }>("/api/perception/screen/describe", {
@@ -377,5 +436,6 @@ export function useFullDuplexAura(
   return {
     active, busy, eventConnected, message, notices, sessionId, speaking,
     transcript, vision, start, stop, speak, speakNotice, describeScreen, interrupt,
+    autonomyState, autonomyResult, runGovernedGoal,
   };
 }
