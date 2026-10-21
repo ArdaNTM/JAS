@@ -5,6 +5,7 @@ job through the Permission Engine/MCP Gateway before selecting a runner.
 """
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from typing import Literal
 
@@ -59,6 +60,16 @@ class SandboxJob:
         ):
             if not value.strip() or len(value) > 200 or any(ord(ch) < 32 for ch in value):
                 raise ValueError(f"invalid {name}")
+        if not isinstance(self.source, str) or not self.source.strip():
+            raise ValueError("source must be a non-empty string")
+        if not isinstance(self.input_json, str):
+            raise ValueError("input_json must be a JSON string")
+        try:
+            decoded_input = json.loads(self.input_json)
+        except (json.JSONDecodeError, TypeError) as exc:
+            raise ValueError("input_json must contain valid JSON") from exc
+        if not isinstance(decoded_input, dict):
+            raise ValueError("input_json must encode a JSON object")
         if len(self.source.encode("utf-8")) > policy.max_input_bytes:
             raise ValueError("source exceeds configured input limit")
         if len(self.input_json.encode("utf-8")) > policy.max_input_bytes:
