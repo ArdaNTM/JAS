@@ -92,7 +92,7 @@ export default function AuraJarvisBridge({
             error,
           );
           const message = error instanceof AuraApiError
-            ? `[${error.code}] ${error.message}${error.requestId ? ` (request: ${error.requestId})` : ""}`
+            ? `${error.message}${error.requestId ? ` (istek kimliği: ${error.requestId})` : ""}`
             : error instanceof Error ? error.message : "Sesli yanıt başarısız oldu.";
           onStatus?.("error", message);
         }
