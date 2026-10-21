@@ -3,7 +3,7 @@ import type { useFullDuplexAura } from "./voice/useFullDuplexAura";
 
 type FullDuplexController = ReturnType<typeof useFullDuplexAura>;
 
-export default function FullDuplexPanel({ voice }: { voice: FullDuplexController }) {
+export default function FullDuplexPanel({ voice, goal }: { voice: FullDuplexController; goal: string }) {
   const [testText, setTestText] = useState("Merhaba. AURA full-duplex ses hattı hazır.");
   const [visionConsent, setVisionConsent] = useState(false);
 
@@ -58,6 +58,23 @@ export default function FullDuplexPanel({ voice }: { voice: FullDuplexController
           <p className="mt-2 text-[8px] text-slate-500">Metin komut alanına aktarılır; görev yürütmesi için kullanıcı onayı gerekir.</p>
         </div>
       )}
+
+      <div className="mt-4 rounded border border-cyan-900/70 bg-black/20 p-3">
+        <div className="text-[9px] font-bold tracking-[.2em] text-cyan-500">GOVERNED AUTONOMOUS RUN</div>
+        <p className="mt-1 text-[10px] leading-5 text-slate-400">Bu düğme komutu yalnızca açık kullanıcı tıklamasıyla backend Governor'a gönderir. Çalıştırma devre dışıysa veya izin listesi yoksa backend isteği reddeder; UI hiçbir aracı doğrudan çağırmaz.</p>
+        <button
+          type="button"
+          disabled={!goal.trim() || voice.busy || voice.autonomyState === "running" || voice.autonomyState === "starting"}
+          onClick={() => {
+            const approved = window.confirm("Bu direktifi AURA'nın yönetilen otonom döngüsünde çalıştırmak istiyor musunuz? Yürütme yalnızca Kernel Permission Engine ve MCP Gateway yetkileri dahilinde yapılır.");
+            if (approved) void voice.runGovernedGoal(goal);
+          }}
+          className="mt-2 border border-amber-800 px-3 py-2 text-[9px] font-bold tracking-wider text-amber-200 disabled:opacity-30"
+        >
+          {voice.autonomyState === "running" || voice.autonomyState === "starting" ? "GOVERNOR ÇALIŞIYOR…" : "GOVERNOR İLE ÇALIŞTIR"}
+        </button>
+        {voice.autonomyResult && <p className="mt-2 whitespace-pre-wrap break-words text-[10px] leading-5 text-cyan-100">{voice.autonomyResult}</p>}
+      </div>
 
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         <div className="rounded border border-cyan-950/70 p-3">
