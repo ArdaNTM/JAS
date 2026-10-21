@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from aura_core.agent.runtime import ExecutionResult, Plan, PlanState, Task
+from aura_core.agent.runtime import ExecutionResult, Plan, PlanState, PlanStep, Task
 from aura_core.application.sandbox_contract import SandboxJob
 from aura_core.application.sandbox_runner import (
     DockerPythonRunner,
@@ -52,9 +52,10 @@ async def test_task_service_attaches_scoped_memory_without_bypassing_runtime(tmp
     runtime = CapturingRuntime()
     service = AgentTaskService(runtime, memory=coordinator)
     task = Task(task_id="t1", principal_id="p1", title="research", resource_scope="public-web")
-    plan = Plan(plan_id="plan-1", task_id="t1", steps=())
-    # Plan requires at least one step; a minimal placeholder keeps this test focused on memory.
-    object.__setattr__(plan, "steps", ())
+    plan = Plan(
+        plan_id="plan-1", task_id="t1",
+        steps=(PlanStep(step_id="step-1", capability_id="cap", operation_id="op", tool_name="tool", risk_level="low"),),
+    )
     result = await service.submit(SubmittedTask(task, plan))
     assert result.state is PlanState.SUCCEEDED
     assert runtime.task is not None
@@ -88,13 +89,12 @@ def test_sandbox_fails_closed_when_authorization_denied():
         run_python_draft(_job(), authorize=lambda _job: False, runner=runner)
 
 
-def test_sandbox_fails_closed_without_docker():
+def test_sandbox_fails_closed_without_docker(monkeypatch):
+    from aura_core.application import sandbox_runner
+    monkeypatch.setattr(sandbox_runner.shutil, "which", lambda _name: None)
     runner = DockerPythonRunner(
         authorizer=lambda _job: True,
         image="python:3.13-slim@sha256:" + "a" * 64,
-        docker_executable=None,
     )
-    # Explicitly simulate an unavailable runtime; no source code is run.
-    runner.docker_executable = None
     with pytest.raises(SandboxUnavailable):
         runner.run(_job())
