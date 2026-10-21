@@ -41,7 +41,7 @@ export default function FullDuplexPanel({ voice, goal }: { voice: FullDuplexCont
               </button>
             </>
           ) : (
-            <button type="button" onClick={() => void voice.start()} className="border border-cyan-700 px-3 py-2 text-[9px] font-bold tracking-wider text-cyan-200 hover:border-cyan-300">
+            <button type="button" disabled={!voice.eventConnected} onClick={() => void voice.start()} className="border border-cyan-700 px-3 py-2 text-[9px] font-bold tracking-wider text-cyan-200 hover:border-cyan-300 disabled:opacity-30">
               MİKROFON + SESİ BAŞLAT
             </button>
           )}
