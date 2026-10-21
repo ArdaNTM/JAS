@@ -4,7 +4,7 @@ import pytest
 
 import aura_core.security.ws_ticket as ws_ticket_module
 from aura_core.application.tasks import AgentTaskService, SubmittedTask
-from aura_core.agent.runtime import Task
+from aura_core.agent.runtime import ExecutionResult, PlanState, Task
 from aura_core.security.ws_ticket import WebSocketTicketManager
 
 
@@ -42,7 +42,13 @@ def test_issue_prunes_expired_used_tickets(monkeypatch):
 
 class FakeRuntime:
     async def execute(self, task, plan):
-        return object()
+        # Ownership tests need a structurally valid result; they do not test planning.
+        return ExecutionResult(
+            plan_id="ownership-test-plan",
+            state=PlanState.SUCCEEDED,
+            steps=(),
+            elapsed_seconds=0.0,
+        )
 
 
 def test_task_result_requires_matching_principal():
