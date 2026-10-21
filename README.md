@@ -32,6 +32,31 @@ The local inference baseline is Ollama with the locked Qwen3 configuration defin
 - `adr/` — architecture decision records.
 - `release-manifest.final.json` — deterministic SHA-256 release lock for the selected implementation files.
 
+## Local STT acceleration and bounded background reflection
+
+Local speech recognition uses `faster-whisper`. Runtime selection is configurable:
+
+- `AURA_STT_MODEL=medium` selects the default quality model; choose `small` for lower latency or another installed Whisper model when appropriate.
+- `AURA_STT_DEVICE=auto` detects a CTranslate2 CUDA device and otherwise uses CPU. Set `cuda` to require CUDA or `cpu` to disable GPU use.
+- `AURA_STT_COMPUTE_TYPE=auto` selects `float16` for CUDA and `int8` for CPU. Supported explicit values include `float16`, `int8`, `int8_float16`, `float32`, and `bfloat16` (subject to device support).
+- `AURA_STT_BEAM_SIZE=5` controls the bounded beam size (1–10).
+- `AURA_STT_INITIAL_PROMPT` overrides the Turkish base prompt.
+- `AURA_STT_PRINCIPAL_ID=local_default` selects the isolated episodic-memory scope used for optional context terms; `AURA_STT_CONTEXT_CACHE_SECONDS=60` bounds how often terms are refreshed.
+
+The context-aware adapter extracts a short, sanitized list of domain terms from the selected principal's existing episodic memories. It does not pass recalled memory instructions to the recognizer, invoke another model for each recording, or train/fine-tune Whisper. If memory is unavailable, transcription falls back to the static Turkish prompt. Context can help with names and jargon, but cannot guarantee recognition or eliminate model latency.
+
+Continuous background reflection is opt-in and disabled by default. To enable bounded idle-time suggestions, set:
+
+- `AURA_BACKGROUND_THINKING_ENABLED=1`
+- `AURA_BACKGROUND_THINKING_PRINCIPAL_ID=local_default`
+- `AURA_BACKGROUND_THINKING_IDLE_SECONDS=300`
+- `AURA_BACKGROUND_THINKING_INTERVAL_SECONDS=900`
+- `AURA_REFLECTION_DB=./data/background-reflection.sqlite3`
+
+The worker examines at most 20 existing records per cycle and stores at most five deterministic, lexical candidate links. It does not rewrite source memories, call an inference provider, grant permissions, invoke tools, or execute actions. Suggestions are reviewable data available from `/api/background-thinking/proposals`; status is available from `/api/background-thinking/status`. Both endpoints are local-client-only. This is bounded memory housekeeping, not unconstrained autonomous reasoning or model self-training.
+
+CUDA availability and precision depend on the installed CTranslate2 build, NVIDIA driver, CUDA runtime, and hardware. Automatic mode safely selects CPU INT8 when CUDA is unavailable. Measure end-to-end latency on the target machine before deciding whether GPU acceleration is active.
+
 ## Validation
 
 The implementation is validated by the Core Python test suite, frontend production build, and release-lock verification scripts.
