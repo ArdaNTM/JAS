@@ -150,10 +150,11 @@ export default function App() {
 
   const handleVoiceStatus = useCallback((
     status: "processing" | "ready" | "speaking" | "error",
+    errorMessage?: string,
   ) => {
     setSessionState(status === "ready" ? "idle" : status);
     if (status === "error") {
-      setError("Voice response could not be completed. Review the API error details and retry.");
+      setError(errorMessage ?? "Voice response could not be completed. Review the API error details and retry.");
     }
   }, []);
 
@@ -307,6 +308,13 @@ export default function App() {
       if (result.state === "awaiting_approval" || result.state === "pending_approval") {
         setSystemState("idle");
         pushTelemetry("EXECUTION BLOCKED — EXPLICIT APPROVAL REQUIRED");
+        return;
+      }
+
+      if (["failed", "cancelled", "timed_out"].includes(result.state)) {
+        setSystemState("idle");
+        setError(`Task ${result.state}. No further action was executed by the UI.`);
+        pushTelemetry(`TASK TERMINATED: ${result.state.toUpperCase()}`);
         return;
       }
 
@@ -479,7 +487,7 @@ export default function App() {
                 <DynamicHologram3D
                   target={hologramTarget}
               modelId={hologramModelId}
-                  active={systemState !== "idle"}
+                  active={systemState !== "idle" || sessionBusy}
                 />
               ) : (
                 <ArcReactor
@@ -489,11 +497,7 @@ export default function App() {
               )}
 
               <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap text-[8px] tracking-[.35em] text-cyan-700">
-                {systemState === "idle"
-                  ? "STANDBY"
-                  : systemState === "thinking"
-                    ? "ANALYZING"
-                    : "EXECUTING"}
+                {sessionStateLabel(visibleSessionState)}
               </div>
             </div>
 
