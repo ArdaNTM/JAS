@@ -6,6 +6,7 @@ or contacts a hosted inference service.
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import math
 from pathlib import Path
 from typing import Protocol
@@ -25,7 +26,7 @@ class LocalSentenceTransformerEmbedder:
                 "Local embedding model path does not exist; install/download the model manually first."
             )
         self.model_path = str(path)
-        self.model = path.name
+        self.model = path.name + "-" + hashlib.sha256(str(path.resolve()).encode("utf-8")).hexdigest()[:12]
         self.device = device
         self._model = None
 
