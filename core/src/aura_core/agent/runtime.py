@@ -240,6 +240,8 @@ class AgentExecutor:
             if runnable:
                 outcomes = await asyncio.gather(*(run_step(step) for step in runnable), return_exceptions=True)
                 for step, outcome in zip(runnable, outcomes):
+                    if isinstance(outcome, asyncio.CancelledError):
+                        raise outcome
                     if isinstance(outcome, BaseException):
                         completed[step.step_id] = StepResult(
                             step.step_id, StepState.FAILED, 0,
