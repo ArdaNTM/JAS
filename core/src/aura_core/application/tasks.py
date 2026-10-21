@@ -1,15 +1,18 @@
 """HTTP-facing task coordination over the boundary-enforced agent runtime."""
+from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass, replace
 from typing import Protocol
 
-from aura_core.agent.runtime import ExecutionResult, Plan, Task, _request_id_context
+from aura_core.agent.runtime import ExecutionResult, Plan, PlanState, Task, _request_id_context
 from aura_core.application.task_memory import TaskMemoryCoordinator
+from aura_core.application.task_state_machine import TaskState, TaskStateMachine
 
 
 class TaskRuntime(Protocol):
-    async def execute(self, task: Task, plan: Plan) -> ExecutionResult:
+    async def execute(self, task: Task, plan: Plan, cancelled=None) -> ExecutionResult:
+        """Execute only through the existing authorized runtime."""
         raise NotImplementedError
 
 
@@ -18,46 +21,140 @@ class SubmittedTask:
     task: Task
     plan: Plan
     request_id: str | None = None
+    dependencies: tuple[str, ...] = ()
 
 
 class AgentTaskService:
-    """Coordinates plans without exposing providers to HTTP."""
+    """Coordinates durable task state without bypassing Gateway authorization."""
 
-    def __init__(self, runtime: TaskRuntime, *, memory: TaskMemoryCoordinator | None = None) -> None:
+    def __init__(
+        self,
+        runtime: TaskRuntime,
+        *,
+        memory: TaskMemoryCoordinator | None = None,
+        state_machine: TaskStateMachine | None = None,
+    ) -> None:
         self._runtime = runtime
         self._memory = memory
+        self._state_machine = state_machine
         self._results: dict[str, ExecutionResult] = {}
         self._owners: dict[str, str] = {}
         self._task_locks: dict[str, asyncio.Lock] = {}
+        self._cancel_events: dict[str, asyncio.Event] = {}
 
     async def submit(self, submitted: SubmittedTask) -> ExecutionResult:
+        """Submit one task; dependency-blocked tasks must be submitted via submit_chain."""
+        self._validate_submission(submitted)
+        if self._state_machine is not None:
+            record = self._ensure_record(submitted)
+            if record.state == TaskState.PENDING:
+                raise RuntimeError("Task dependencies are not yet succeeded; use submit_chain()")
+        return await self._execute_submitted(submitted)
+
+    async def submit_chain(self, submissions: tuple[SubmittedTask, ...] | list[SubmittedTask]) -> tuple[ExecutionResult, ...]:
+        """Persist a same-principal chain, then execute each task after dependencies succeed."""
+        chain = tuple(submissions)
+        if not chain:
+            return ()
+        principal_ids = {item.task.principal_id for item in chain}
+        if len(principal_ids) != 1:
+            raise ValueError("A task chain must use one principal")
+        known_ids = {item.task.task_id for item in chain}
+        if len(known_ids) != len(chain):
+            raise ValueError("Task IDs in a chain must be unique")
+        if self._state_machine is None:
+            raise RuntimeError("submit_chain requires a persistent TaskStateMachine")
+        # Only permit dependencies already persisted or included earlier in this chain.
+        prepared: set[str] = set()
+        for item in chain:
+            self._validate_submission(item)
+            unknown_later = set(item.dependencies) & (known_ids - prepared - {item.task.task_id})
+            if unknown_later:
+                raise ValueError("Task chain must be ordered before its dependents")
+            self._ensure_record(item)
+            prepared.add(item.task.task_id)
+        results: list[ExecutionResult] = []
+        for item in chain:
+            record = self._state_machine.get(item.task.task_id, principal_id=item.task.principal_id)
+            if record.state == TaskState.PENDING:
+                raise RuntimeError(f"Task dependencies are not yet succeeded: {item.task.task_id}")
+            results.append(await self._execute_submitted(item))
+        return tuple(results)
+
+    def cancel(self, task_id: str, *, principal_id: str) -> None:
+        """Request cancellation only within the task owner's scope."""
+        if self._state_machine is None:
+            raise RuntimeError("Cancellation requires a persistent TaskStateMachine")
+        self._state_machine.request_cancel(task_id, principal_id=principal_id)
+        event = self._cancel_events.get(task_id)
+        if event is not None:
+            event.set()
+
+    async def _execute_submitted(self, submitted: SubmittedTask) -> ExecutionResult:
         task_id = submitted.task.task_id
-
-        # Lock creation occurs before the first await. Requests for
-        # different task IDs can proceed independently.
         lock = self._task_locks.setdefault(task_id, asyncio.Lock())
-
         async with lock:
             if task_id in self._results:
                 raise ValueError(f"Task already submitted: {task_id}")
-
             task = submitted.task
+            record = None
+            if self._state_machine is not None:
+                record = self._ensure_record(submitted)
+                if record.state != TaskState.READY:
+                    raise RuntimeError(f"Task is not ready for execution: {record.state.value}")
+                record = self._state_machine.transition(
+                    task_id, principal_id=task.principal_id, target=TaskState.RUNNING
+                )
+            cancel_event = asyncio.Event()
+            self._cancel_events[task_id] = cancel_event
             memory_started = False
             if self._memory is not None:
                 context = self._memory.begin(
-                    principal_id=task.principal_id,
-                    task_id=task.task_id,
-                    goal=task.title,
+                    principal_id=task.principal_id, task_id=task.task_id, goal=task.title
                 )
-                # Context is attached as data and explicitly marked untrusted;
-                # it never changes gateway arguments or authorization decisions.
                 task = replace(task, memory_context=context)
                 memory_started = True
 
+            def cancelled() -> bool:
+                if cancel_event.is_set():
+                    return True
+                if self._state_machine is None:
+                    return False
+                try:
+                    current = self._state_machine.get(task_id, principal_id=task.principal_id)
+                    if current.cancellation_requested:
+                        cancel_event.set()
+                        return True
+                    return current.state in {TaskState.CANCELLED, TaskState.TIMED_OUT}
+                except KeyError:
+                    return True
+
             token = _request_id_context.set(submitted.request_id)
             try:
-                result = await self._runtime.execute(task, submitted.plan)
-            except BaseException:
+                execute = self._runtime.execute(task, submitted.plan, cancelled=cancelled)
+                result = await asyncio.wait_for(execute, timeout=task.timeout_seconds)
+            except asyncio.TimeoutError:
+                if self._state_machine is not None:
+                    self._state_machine.transition(
+                        task_id, principal_id=task.principal_id, target=TaskState.TIMED_OUT,
+                        error="Execution deadline exceeded",
+                    )
+                raise
+            except asyncio.CancelledError:
+                if self._state_machine is not None:
+                    current = self._state_machine.get(task_id, principal_id=task.principal_id)
+                    if current.state == TaskState.RUNNING:
+                        target = TaskState.CANCELLED if current.cancellation_requested else TaskState.FAILED
+                        self._state_machine.transition(task_id, principal_id=task.principal_id, target=target)
+                raise
+            except BaseException as exc:
+                if self._state_machine is not None:
+                    current = self._state_machine.get(task_id, principal_id=task.principal_id)
+                    if current.state == TaskState.RUNNING:
+                        self._state_machine.transition(
+                            task_id, principal_id=task.principal_id, target=TaskState.FAILED,
+                            error=f"Runtime raised {type(exc).__name__}",
+                        )
                 if memory_started and self._memory is not None:
                     self._memory.finish(
                         principal_id=task.principal_id, task_id=task.task_id,
@@ -66,10 +163,29 @@ class AgentTaskService:
                 raise
             finally:
                 _request_id_context.reset(token)
+                self._cancel_events.pop(task_id, None)
 
+            result_state = getattr(result.state, "value", str(result.state)).lower()
+            if self._state_machine is not None:
+                current = self._state_machine.get(task_id, principal_id=task.principal_id)
+                if current.state == TaskState.RUNNING:
+                    if current.cancellation_requested or result.state is PlanState.CANCELLED:
+                        target = TaskState.CANCELLED
+                    elif result.state is PlanState.SUCCEEDED:
+                        target = TaskState.SUCCEEDED
+                    else:
+                        target = TaskState.FAILED
+                    summary = "; ".join(
+                        f"{step.step_id}:{getattr(step.state, 'value', step.state)}"
+                        for step in result.steps
+                    )[:4000]
+                    self._state_machine.transition(
+                        task_id, principal_id=task.principal_id, target=target,
+                        result_summary=summary,
+                        error=summary if target == TaskState.FAILED else None,
+                    )
             if memory_started and self._memory is not None:
-                state = getattr(result.state, "value", str(result.state)).lower()
-                memory_state = state if state in {"succeeded", "failed", "cancelled"} else "failed"
+                memory_state = result_state if result_state in {"succeeded", "failed", "cancelled"} else "failed"
                 summary = "; ".join(
                     f"{step.step_id}:{getattr(step.state, 'value', step.state)}"
                     for step in result.steps
@@ -78,16 +194,36 @@ class AgentTaskService:
                     principal_id=task.principal_id, task_id=task.task_id,
                     state=memory_state, summary=summary,
                 )
-
             self._results[task_id] = result
             self._owners[task_id] = submitted.task.principal_id
             return result
 
-    def get_for_owner(
-        self,
-        task_id: str,
-        principal_id: str,
-    ) -> ExecutionResult:
+    def _ensure_record(self, submitted: SubmittedTask):
+        if self._state_machine is None:
+            return None
+        task = submitted.task
+        try:
+            record = self._state_machine.get(task.task_id, principal_id=task.principal_id)
+            if record.dependencies != tuple(submitted.dependencies):
+                raise ValueError("Submitted dependencies do not match persisted task record")
+            return record
+        except KeyError:
+            return self._state_machine.create_task(
+                principal_id=task.principal_id,
+                task_id=task.task_id,
+                goal=task.title,
+                dependencies=submitted.dependencies,
+                timeout_seconds=task.timeout_seconds,
+            )
+
+    @staticmethod
+    def _validate_submission(submitted: SubmittedTask) -> None:
+        if submitted.plan.task_id != submitted.task.task_id:
+            raise ValueError("Plan does not belong to submitted task")
+        if len(set(submitted.dependencies)) != len(submitted.dependencies):
+            raise ValueError("Task dependencies must be unique")
+
+    def get_for_owner(self, task_id: str, principal_id: str) -> ExecutionResult:
         if self._owners.get(task_id) != principal_id:
             raise KeyError(f"Unknown task: {task_id}")
         return self.get(task_id)
