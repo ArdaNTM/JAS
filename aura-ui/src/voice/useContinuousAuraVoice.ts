@@ -27,7 +27,7 @@ export function useContinuousAuraVoice(onDirective: (value: string) => void) {
     setActive(false);
     if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
     frameRef.current = null;
-    recorderRef.current?.stop();
+    if (recorderRef.current?.state === "recording") recorderRef.current.stop();
     recorderRef.current = null;
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
@@ -141,7 +141,7 @@ export function useContinuousAuraVoice(onDirective: (value: string) => void) {
   useEffect(() => () => {
     activeRef.current = false;
     if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
-    recorderRef.current?.stop();
+    if (recorderRef.current?.state === "recording") recorderRef.current.stop();
     streamRef.current?.getTracks().forEach((track) => track.stop());
     sourceRef.current?.disconnect();
     void audioContextRef.current?.close().catch(() => undefined);
