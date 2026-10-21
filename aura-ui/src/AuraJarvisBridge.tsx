@@ -31,7 +31,7 @@ type AuraJarvisBridgeProps = {
   researchOutput?: unknown;
   requestId?: number;
   onStatus?: (
-    status: "ready" | "speaking" | "offline",
+    status: "processing" | "ready" | "speaking" | "error",
   ) => void;
 };
 
@@ -52,7 +52,7 @@ export default function AuraJarvisBridge({
     let cancelled = false;
 
     const run = async () => {
-      onStatus?.("ready");
+      onStatus?.("processing");
 
       try {
         const response =
@@ -82,7 +82,7 @@ export default function AuraJarvisBridge({
         const player = new Audio(`data:${audio.mime_type};base64,${audio.audio_base64}`);
         player.onplay = () => onStatus?.("speaking");
         player.onended = () => onStatus?.("ready");
-        player.onerror = () => onStatus?.("offline");
+        player.onerror = () => onStatus?.("error");
         await player.play();
       } catch (error) {
         if (!cancelled) {
@@ -90,7 +90,7 @@ export default function AuraJarvisBridge({
             "AURA JARVIS bridge error:",
             error,
           );
-          onStatus?.("offline");
+          onStatus?.("error");
         }
       }
     };
