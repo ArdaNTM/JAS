@@ -509,8 +509,8 @@ export default function App() {
                 />
               ) : (
                 <ArcReactor
-                  active={systemState !== "idle"}
-                  level={systemState}
+                  active={systemState !== "idle" || sessionBusy}
+                  level={sessionBusy ? "executing" : systemState}
                 />
               )}
 
