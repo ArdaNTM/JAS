@@ -25,11 +25,6 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/aura_core"]
 
-[project.optional-dependencies]
-local-embeddings = [
-    "sentence-transformers>=3.0,<6",
-]
-
 [dependency-groups]
 dev = [
     "pytest>=9.1.1",
