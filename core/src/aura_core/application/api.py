@@ -2,6 +2,7 @@ import asyncio
 from contextlib import asynccontextmanager
 import base64
 import io
+import json
 import logging
 import os
 import tempfile
@@ -32,7 +33,10 @@ from aura_core.application.async_work import AsyncWorkCoordinator
 from aura_core.application.context_synthesizer import ContextSynthesizer
 from aura_core.application.context_aware_stt import build_stt_prompt
 from aura_core.application.background_thinking import IdleMemoryReflectionDaemon
-from aura_core.application.sandbox_contract import SandboxJob\nfrom aura_core.application.sandbox_runner import SandboxAuthorizationError, SandboxUnavailable\nfrom aura_core.application.autonomy_lab import (
+from aura_core.application.sandbox_contract import SandboxJob
+from aura_core.application.sandbox_runner import SandboxAuthorizationError, SandboxUnavailable
+from aura_core.application.autonomy_lab import (
+    run_python_draft,
     AutonomyBudget,
     AutonomyValidationError,
     TaskNode,
