@@ -33,7 +33,7 @@ function ArcReactor({
   level,
 }: {
   active: boolean;
-  level: "boşta" | "thinking" | "executing";
+  level: "idle" | "thinking" | "executing";
 }) {
   return (
     <ArcReactor3D
@@ -52,11 +52,11 @@ function StatusItem({
   value: string;
 }) {
   const online = [
-    "tamam",
-    "sağlıklı",
-    "hazır",
-    "çalışıyor",
-    "bağlı",
+    "ok",
+    "healthy",
+    "ready",
+    "running",
+    "connected",
   ].includes(value.toLowerCase());
 
   return (
@@ -110,7 +110,7 @@ export default function App() {
     useState<HealthResponse | null>(null);
 
   const [systemState, setSystemState] =
-    useState<"boşta" | "thinking" | "executing">("boşta");
+    useState<"idle" | "thinking" | "executing">("idle");
 
   const [taskState, setTaskState] =
     useState("BEKLEMEDE");
@@ -122,7 +122,7 @@ export default function App() {
     useState<string | null>(null);
 
   const [sessionState, setSessionState] =
-    useState<VoiceSessionState>("boşta");
+    useState<VoiceSessionState>("idle");
 
   const { events, connected: eventsConnected } =
     useTaskEvents(taskId);
@@ -146,15 +146,15 @@ export default function App() {
     setCommand(directive);
     setHologramTarget(directive);
     setError(null);
-    setSessionState("boşta");
+    setSessionState("idle");
     pushTelemetry("SES METNİ HAZIR — ÇALIŞTIRMAK İÇİN ENTER GEREKLİ");
   });
 
   const handleVoiceStatus = useCallback((
-    status: "processing" | "hazır" | "speaking" | "error",
+    status: "processing" | "ready" | "speaking" | "error",
     errorMessage?: string,
   ) => {
-    setSessionState(status === "hazır" ? "boşta" : status);
+    setSessionState(status === "ready" ? "boşta" : status);
     if (status === "error") {
       // A successful task can still fail while generating or playing its answer.
       // Keep the task summary and lifecycle state consistent with that failure.
@@ -168,8 +168,8 @@ export default function App() {
   const captureSessionState = captureToSessionState(voice.state);
   const visibleSessionState =
     captureSessionState === "listening" ||
-    (captureSessionState === "processing" && sessionState === "boşta") ||
-    (captureSessionState === "error" && sessionState === "boşta")
+    (captureSessionState === "processing" && sessionState === "idle") ||
+    (captureSessionState === "error" && sessionState === "idle")
       ? captureSessionState
       : sessionState;
 
@@ -286,7 +286,7 @@ export default function App() {
         );
         setHologramModelId(modelId as VisualizationModelId);
         setTaskId(null);
-        setSystemState("boşta");
+        setSystemState("idle");
         setTaskState("GÖRSELLEŞTİRME HAZIR");
         pushTelemetry(`CORE PLANI: 3B GÖRSELLEŞTİRME (${modelId})`);
         return;
@@ -330,20 +330,20 @@ export default function App() {
       );
 
       if (result.state === "awaiting_approval" || result.state === "pending_approval") {
-        setSystemState("boşta");
+        setSystemState("idle");
         pushTelemetry("YÜRÜTME ENGELLENDİ — AÇIK ONAY GEREKLİ");
         return;
       }
 
       if (["failed", "cancelled", "timed_out"].includes(result.state)) {
-        setSystemState("boşta");
+        setSystemState("idle");
         setError(`Görev durumu: ${result.state}. Arayüz başka bir eylem yürütmedi.`);
         pushTelemetry(`GÖREV SONLANDIRILDI: ${result.state.toUpperCase()}`);
         return;
       }
 
       if (result.state === "succeeded") {
-        setSystemState("boşta");
+        setSystemState("idle");
 
         setResearchOutput(result.steps);
         setAssistantDirective(text);
@@ -354,7 +354,7 @@ export default function App() {
         pushTelemetry("YÜRÜTME TAMAMLANDI");
       }
     } catch (cause) {
-      setSystemState("boşta");
+      setSystemState("idle");
       setTaskState("BAŞARISIZ");
       setSessionState("error");
 
@@ -390,21 +390,21 @@ export default function App() {
 
   const gatewayStatus =
     health?.components?.gateway?.status ??
-    "bilinmiyor";
+    "unknown";
 
   const permissionStatus =
     health?.components?.permission_engine?.status ??
-    "bilinmiyor";
+    "unknown";
 
   const kernelStatus =
-    health?.components?.kernel?.status ?? "bilinmiyor";
+    health?.components?.kernel?.status ?? "unknown";
   const eventBusStatus =
-    health?.components?.event_bus?.status ?? "bilinmiyor";
+    health?.components?.event_bus?.status ?? "unknown";
   const learningStatus =
-    health?.components?.learning?.status ?? "bilinmiyor";
+    health?.components?.learning?.status ?? "unknown";
 
   const isHealthyStatus = (status: string | undefined) =>
-    ["tamam", "sağlıklı", "hazır", "çalışıyor"].includes(
+    ["ok", "healthy", "ready", "running"].includes(
       (status ?? "").toLowerCase()
     );
 
@@ -511,11 +511,11 @@ export default function App() {
                 <DynamicHologram3D
                   target={hologramTarget}
               modelId={hologramModelId}
-                  active={systemState !== "boşta" || sessionBusy}
+                  active={systemState !== "idle" || sessionBusy}
                 />
               ) : (
                 <ArcReactor
-                  active={systemState !== "boşta" || sessionBusy}
+                  active={systemState !== "idle" || sessionBusy}
                   level={sessionBusy ? "executing" : systemState}
                 />
               )}
@@ -608,13 +608,13 @@ export default function App() {
                 setError(null);
               }}
               placeholder="Bir direktif ver..."
-              disabled={systemState !== "boşta" || sessionBusy}
+              disabled={systemState !== "idle" || sessionBusy}
               className="min-w-0 flex-1 border-b border-cyan-900/70 bg-transparent px-1 py-3 font-mono text-sm text-cyan-100 outline-none placeholder:text-slate-700 focus:border-cyan-400 disabled:opacity-40"
             />
 
             <button
               type="button"
-              disabled={!voice.available || systemState !== "boşta" || sessionBusy}
+              disabled={!voice.available || systemState !== "idle" || sessionBusy}
               onClick={
                 voice.state === "recording" || voice.state === "listening"
                   ? voice.stop
@@ -633,7 +633,7 @@ export default function App() {
               type="submit"
               disabled={
                 !command.trim() ||
-                systemState !== "boşta" ||
+                systemState !== "idle" ||
                 sessionBusy
               }
               className="border border-cyan-700/80 px-5 py-2 text-[9px] font-bold tracking-[.2em] text-cyan-300 transition hover:border-cyan-300 hover:text-cyan-100 disabled:cursor-not-allowed disabled:opacity-30"
