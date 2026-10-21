@@ -105,7 +105,14 @@ def transcribe_audio_bytes(audio_bytes: bytes, language: str, suffix: str = ".we
             segments, info = _whisper_model.transcribe(
                 temp_path,
                 language=language,
+                beam_size=max(1, min(10, int(os.getenv("AURA_STT_BEAM_SIZE", "5")))),
+                temperature=0.0,
                 vad_filter=True,
+                vad_parameters={
+                    "min_silence_duration_ms": 350,
+                    "speech_pad_ms": 250,
+                },
+                condition_on_previous_text=False,
             )
             # faster-whisper decodes lazily while iterating the segment generator.
             text = " ".join(segment.text.strip() for segment in segments).strip()
@@ -148,7 +155,14 @@ def transcribe_audio_bytes(audio_bytes: bytes, language: str, suffix: str = ".we
                 segments, info = _whisper_model.transcribe(
                     audio_samples,
                     language=language,
+                    beam_size=max(1, min(10, int(os.getenv("AURA_STT_BEAM_SIZE", "5")))),
+                    temperature=0.0,
                     vad_filter=True,
+                    vad_parameters={
+                        "min_silence_duration_ms": 350,
+                        "speech_pad_ms": 250,
+                    },
+                    condition_on_previous_text=False,
                 )
                 text = " ".join(segment.text.strip() for segment in segments).strip()
             except Exception as fallback_exc:
