@@ -162,8 +162,7 @@ class AgentExecutor:
                 if remaining <= 0:
                     result = StepResult(step.step_id, StepState.CANCELLED, 0, reason="Task timed out")
                 else:
-                    else:
-                        execution = asyncio.create_task(self._execute_step(task, plan, step))
+                    execution = asyncio.create_task(self._execute_step(task, plan, step))
                         deadline = monotonic() + remaining
                         try:
                             while not execution.done():
@@ -183,8 +182,6 @@ class AgentExecutor:
                                 except asyncio.TimeoutError:
                                     continue
                             else:
-                                result = execution.result()
-                            if execution.done() and not execution.cancelled() and 'result' not in locals():
                                 result = execution.result()
                         except asyncio.CancelledError:
                             execution.cancel()
