@@ -57,6 +57,34 @@ export interface HealthResponse {
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
+function localizeApiMessage(code: string, message: string): string {
+  const known: Record<string, string> = {
+    stt_dependency_unavailable: "Yerel ses tanıma bağımlılığı bulunamadı. Core Python ortamını ve kurulumunu kontrol edin.",
+    stt_model_load_failed: "Ses tanıma modeli yüklenemedi. AURA_STT_MODEL ayarını ve kullanılabilir belleği kontrol edin.",
+    stt_transcription_failed: "Ses çözümlenemedi. Kayıt biçimini, ses düzeyini ve Core günlüklerini kontrol edin.",
+    stt_internal_error: "Yerel ses tanıma sırasında beklenmeyen bir hata oluştu.",
+    validation_error: "İstek doğrulanamadı. Girilen bilgileri kontrol edin.",
+    unauthorized: "Bu işlem için kimlik doğrulaması gerekiyor.",
+    forbidden: "Bu işlem için izniniz yok.",
+    not_found: "İstenen kaynak bulunamadı.",
+    conflict: "İşlem mevcut durumla çakışıyor.",
+    rate_limited: "Çok fazla istek gönderildi. Biraz bekleyip yeniden deneyin.",
+    provider_unavailable: "Yapılandırılmış hizmet şu anda kullanılamıyor.",
+    provider_invalid_response: "Hizmet geçersiz bir yanıt döndürdü.",
+    internal_error: "Core içinde beklenmeyen bir hata oluştu.",
+    http_error: "İstek tamamlanamadı.",
+  };
+  if (known[code]) return known[code];
+  const safeFallbacks: Array<[RegExp, string]> = [
+    [/microphone|audio capture/i, "Mikrofon veya ses kaydı hatası oluştu."],
+    [/transcrib|speech.to.text/i, "Ses metne dönüştürülemedi."],
+    [/model.*initializ|model.*load/i, "Ses tanıma modeli yüklenemedi."],
+    [/request validation failed/i, "İstek doğrulanamadı."],
+    [/internal server error/i, "Sunucu içinde beklenmeyen bir hata oluştu."],
+  ];
+  return safeFallbacks.find(([pattern]) => pattern.test(message))?.[1] ?? "İstek başarısız oldu. Ayrıntılar için Core günlüklerini denetleyin.";
+}
+
 export class AuraApiError extends Error {
   readonly status: number;
   readonly code: string;
@@ -110,7 +138,7 @@ async function request<T>(
     const legacyDetail =
       typeof envelope.detail === "string" ? envelope.detail : undefined;
     throw new AuraApiError(
-      apiError?.message ?? legacyDetail ?? `API request failed: ${response.status}`,
+      localizeApiMessage(apiError?.code ?? "http_error", apiError?.message ?? legacyDetail ?? `API request failed: ${response.status}`),
       response.status,
       apiError?.code ?? "http_error",
       apiError?.retryable ?? response.status >= 500,
@@ -234,4 +262,55 @@ export async function transcribeLocalAudio(blob: Blob): Promise<SpeechTranscript
       language: "tr",
     }),
   });
+}
+
+export interface VectorMemoryItem {
+  memory_id?: string;
+  content?: string;
+  relevance_score?: number;
+  tags?: string[];
+  principal_id?: string;
+}
+
+export function writeVectorMemory(body: {
+  principal_id: string;
+  content: string;
+  tags?: string[];
+}): Promise<{ memory_id: string; principal_id: string; stored: boolean; trust: string }> {
+  return request("/api/memory/vector", { method: "POST", body: JSON.stringify(body) });
+}
+
+export function recallVectorMemory(body: {
+  principal_id: string;
+  query: string;
+  limit?: number;
+}): Promise<{ items: VectorMemoryItem[]; count: number; trust: string }> {
+  return request("/api/memory/vector/recall", { method: "POST", body: JSON.stringify(body) });
+}
+
+export function analyzeLocalVision(body: {
+  image_base64: string;
+  prompt: string;
+}): Promise<{ model: string; analysis: string; provider: string; cloud_used: boolean }> {
+  return request("/api/vision/analyze", { method: "POST", body: JSON.stringify(body) });
+}
+
+export function synthesizeToolProposal(body: {
+  problem: string;
+  capability_context?: string;
+}): Promise<Record<string, unknown>> {
+  return request("/api/tools/synthesize", { method: "POST", body: JSON.stringify(body) });
+}
+
+export function observePrefetchPattern(body: {
+  principal_id: string;
+  event_key: string;
+  capability_id: string;
+  hour_local: number;
+}): Promise<{ proposal: Record<string, unknown>; execution_performed: boolean }> {
+  return request("/api/prefetch/observe", { method: "POST", body: JSON.stringify(body) });
+}
+
+export function getPrefetchProposals(principalId: string, limit = 20): Promise<{ items: Record<string, unknown>[]; count: number }> {
+  return request("/api/prefetch/proposals?principal_id=" + encodeURIComponent(principalId) + "&limit=" + limit);
 }

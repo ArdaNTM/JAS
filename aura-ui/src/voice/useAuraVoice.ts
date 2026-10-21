@@ -42,14 +42,14 @@ export function useAuraVoice(onDirective: (value: string) => void) {
       ? "idle"
       : getRecognitionConstructor() ? "idle" : "unavailable",
   );
-  const [message, setMessage] = useState("LOCAL STT READY");
+  const [message, setMessage] = useState("YEREL SES TANIMA HAZIR");
   const [amplitude, setAmplitude] = useState(0);
 
   const startBrowserFallback = useCallback(() => {
     const RecognitionApi = getRecognitionConstructor();
     if (!RecognitionApi) {
       setState("error");
-      setMessage("STT UNAVAILABLE — CHECK MICROPHONE PERMISSIONS");
+      setMessage("SES TANIMA KULLANILAMIYOR — MİKROFON İZİNLERİNİ KONTROL EDİN");
       return;
     }
     const recognition = new RecognitionApi();
@@ -59,11 +59,18 @@ export function useAuraVoice(onDirective: (value: string) => void) {
     recognition.lang = "tr-TR";
     recognition.onstart = () => {
       setState("listening");
-      setMessage("BROWSER STT FALLBACK — LISTENING");
+      setMessage("TARAYICI SES TANIMA YEDEĞİ — DİNLİYOR");
     };
     recognition.onerror = (event) => {
       setState("error");
-      setMessage(`VOICE ERROR: ${event.error}`);
+      const browserErrors: Record<string, string> = {
+        "not-allowed": "Mikrofon izni verilmedi.",
+        "audio-capture": "Mikrofon bulunamadı veya kullanılamıyor.",
+        "network": "Tarayıcı ses tanıma hizmetine bağlanamadı.",
+        "no-speech": "Konuşma algılanmadı.",
+        "service-not-allowed": "Tarayıcı ses tanıma hizmetine izin vermiyor.",
+      };
+      setMessage(browserErrors[event.error] ?? "Ses tanıma sırasında hata oluştu.");
     };
     recognition.onend = () => {
       recognitionRef.current = null;
@@ -76,9 +83,9 @@ export function useAuraVoice(onDirective: (value: string) => void) {
         .trim();
       if (transcript) {
         onDirective(normalizeDirective(transcript));
-        setMessage("TRANSCRIPT READY — PRESS ENTER TO EXECUTE");
+        setMessage("KONUŞMA METNİ HAZIR — ÇALIŞTIRMAK İÇİN ENTER'A BASIN");
       } else {
-        setMessage("NO SPEECH DETECTED");
+        setMessage("KONUŞMA ALGILANMADI");
       }
     };
     recognition.start();
@@ -115,11 +122,11 @@ export function useAuraVoice(onDirective: (value: string) => void) {
       };
       recorder.onstart = () => {
         setState("recording");
-        setMessage("RECORDING LOCALLY — PRESS STOP WHEN FINISHED");
+        setMessage("YEREL KAYIT YAPILIYOR — BİTİNCE DURDUR'A BASIN");
       };
       recorder.onerror = () => {
         setState("error");
-        setMessage("MICROPHONE RECORDING FAILED");
+        setMessage("MİKROFON KAYDI BAŞARISIZ");
       };
       recorder.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
@@ -128,29 +135,35 @@ export function useAuraVoice(onDirective: (value: string) => void) {
         recorderRef.current = null;
         if (!blob.size) {
           setState("error");
-          setMessage("NO AUDIO CAPTURED");
+          setMessage("SES KAYDEDİLMEDİ");
           return;
         }
         setState("transcribing");
-        setMessage("LOCAL FASTER-WHISPER TRANSCRIBING…");
+        setMessage("YEREL FASTER-WHISPER SESİ METNE DÖNÜŞTÜRÜYOR…");
         void transcribeLocalAudio(blob).then((result) => {
           if (!result.text.trim()) {
             setState("idle");
-            setMessage("NO SPEECH DETECTED");
+            setMessage("KONUŞMA ALGILANMADI");
             return;
           }
           onDirective(normalizeDirective(result.text));
           setState("idle");
-          setMessage(`LOCAL STT READY (${result.language}) — PRESS ENTER TO EXECUTE`);
-        }).catch(() => {
-          setMessage("LOCAL STT UNAVAILABLE — USING BROWSER FALLBACK");
-          startBrowserFallback();
+          setMessage(`YEREL SES TANIMA HAZIR (${result.language}) — ÇALIŞTIRMAK İÇİN ENTER'A BASIN`);
+        }).catch((cause: unknown) => {
+          // Do not silently start a second capture session after STOP. That made
+          // the first STOP appear to be ignored when local STT was unavailable.
+          setState("error");
+          setMessage(
+            cause instanceof Error
+              ? `YEREL SES TANIMA BAŞARISIZ: ${cause.message} — YENİDEN DENEMEK İÇİN SES'E BASIN`
+              : "YEREL SES TANIMA KULLANILAMIYOR — YENİDEN DENEMEK İÇİN SES'E BASIN",
+          );
         });
       };
       recorder.start();
     }).catch((cause: unknown) => {
       setState("error");
-      setMessage(cause instanceof Error ? `MICROPHONE ERROR: ${cause.message}` : "MICROPHONE ACCESS FAILED");
+      setMessage(cause instanceof Error ? `MİKROFON HATASI: ${cause.message}` : "MİKROFONA ERİŞİLEMEDİ");
     });
   }, [onDirective, startBrowserFallback]);
 

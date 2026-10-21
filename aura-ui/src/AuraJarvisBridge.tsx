@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 
-import { respondAsAssistant, synthesizeLocalSpeech } from "./api/client";
+import { AuraApiError, respondAsAssistant, synthesizeLocalSpeech } from "./api/client";
 
 function normalizeSpeechText(text: string): string {
   return text
@@ -31,7 +31,8 @@ type AuraJarvisBridgeProps = {
   researchOutput?: unknown;
   requestId?: number;
   onStatus?: (
-    status: "ready" | "speaking" | "offline",
+    status: "processing" | "ready" | "speaking" | "error",
+    errorMessage?: string,
   ) => void;
 };
 
@@ -52,7 +53,7 @@ export default function AuraJarvisBridge({
     let cancelled = false;
 
     const run = async () => {
-      onStatus?.("ready");
+      onStatus?.("processing");
 
       try {
         const response =
@@ -82,15 +83,18 @@ export default function AuraJarvisBridge({
         const player = new Audio(`data:${audio.mime_type};base64,${audio.audio_base64}`);
         player.onplay = () => onStatus?.("speaking");
         player.onended = () => onStatus?.("ready");
-        player.onerror = () => onStatus?.("offline");
+        player.onerror = () => onStatus?.("error");
         await player.play();
       } catch (error) {
         if (!cancelled) {
           console.error(
-            "AURA JARVIS bridge error:",
+            "AURA JARVIS köprü hatası:",
             error,
           );
-          onStatus?.("offline");
+          const message = error instanceof AuraApiError
+            ? `${error.message}${error.requestId ? ` (istek kimliği: ${error.requestId})` : ""}`
+            : error instanceof Error ? error.message : "Sesli yanıt başarısız oldu.";
+          onStatus?.("error", message);
         }
       }
     };

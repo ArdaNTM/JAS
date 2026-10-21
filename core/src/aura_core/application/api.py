@@ -1,10 +1,13 @@
 import asyncio
 from contextlib import asynccontextmanager
 import base64
+import io
+import json
 import logging
 import os
 import tempfile
 import threading
+import time
 from time import perf_counter
 from uuid import uuid4
 
@@ -28,6 +31,23 @@ from aura_core.application.proactive_store import ProactiveSuggestionStore
 from aura_core.application.adaptive_orchestrator import AdaptiveTaskOrchestrator
 from aura_core.application.async_work import AsyncWorkCoordinator
 from aura_core.application.context_synthesizer import ContextSynthesizer
+from aura_core.application.context_aware_stt import build_stt_prompt
+from aura_core.application.background_thinking import IdleMemoryReflectionDaemon
+from aura_core.application.persona_policy import PersonaPolicy
+from aura_core.application.reflexion import ExperimentBudget, ProceduralSkillLibrary, ReflexionExperimentLoop
+from aura_core.application.reflexion_inference import ModelBackedDraftRevision, ModelRevisionConfig
+from aura_core.application.sandbox_runner import DockerPythonRunner
+from aura_core.memory.hierarchical_memory import SQLiteEpisodicMemory
+from aura_core.application.sandbox_contract import SandboxJob
+from aura_core.application.sandbox_runner import SandboxAuthorizationError, SandboxUnavailable
+from aura_core.application.autonomy_lab import (
+    run_python_draft,
+    AutonomyBudget,
+    AutonomyValidationError,
+    TaskNode,
+    evaluate_safe_expression,
+    validate_task_graph,
+)
 from aura_core.application.episodic_memory import EpisodicMemoryStore
 from aura_core.application.cross_capability_reasoning import CapabilityEvidence, CrossCapabilitySynthesizer
 from aura_core.application.jarvis_api import router as jarvis_router
@@ -40,7 +60,7 @@ from aura_core.config.backend import BackendConfig
 from aura_core.config.runtime import RuntimeConfig
 from aura_core.contracts.messages import InferenceRequest, InferenceResponse
 from aura_core.contracts.ui import UIContractResponse
-from aura_core.kernel.permissions import RiskLevel
+from aura_core.kernel.permissions import AuthorizationDecision, AuthorizationRequest, RiskLevel
 from aura_core.kernel.events import KernelEvent
 from aura_core.mcp.gateway import MCPGatewayRequest
 from aura_core.observability.metrics import RequestMetrics
@@ -60,40 +80,238 @@ from aura_core.observability.pipeline_trace import PipelineTrace
 logger = logging.getLogger("aura_core.http")
 
 _whisper_model = None
+_whisper_model_device = None
 _whisper_model_lock = threading.Lock()
+_stt_memory_store = None
 
 
-def transcribe_audio_bytes(audio_bytes: bytes, language: str, suffix: str = ".webm") -> tuple[str, str]:
-    """Run local faster-whisper transcription; load the model lazily once."""
-    global _whisper_model
+class SpeechModelLoadError(RuntimeError):
+    """The configured local faster-whisper model could not be initialized."""
+
+
+class SpeechTranscriptionError(RuntimeError):
+    """The local STT engine failed while decoding or transcribing audio."""
+
+
+def resolve_stt_runtime() -> tuple[str, str]:
+    """Resolve configured STT device/precision with safe automatic CUDA selection."""
+    requested_device = os.getenv("AURA_STT_DEVICE", "auto").strip().lower()
+    requested_compute = os.getenv("AURA_STT_COMPUTE_TYPE", "auto").strip().lower()
+    if requested_device not in {"auto", "cuda", "cpu"}:
+        raise ValueError("AURA_STT_DEVICE must be auto, cuda, or cpu")
+    if requested_compute not in {"auto", "float16", "int8", "int8_float16", "float32", "bfloat16"}:
+        raise ValueError("Unsupported AURA_STT_COMPUTE_TYPE")
+    cuda_available = False
+    if requested_device in {"auto", "cuda"}:
+        try:
+            import ctranslate2
+            cuda_available = ctranslate2.get_cuda_device_count() > 0
+        except Exception:
+            cuda_available = False
+    if requested_device == "cuda" and not cuda_available:
+        raise RuntimeError("CUDA was explicitly requested but no CUDA device is available")
+    device = "cuda" if requested_device == "cuda" or (requested_device == "auto" and cuda_available) else "cpu"
+    if requested_compute == "auto":
+        compute_type = "float16" if device == "cuda" else "int8"
+    else:
+        compute_type = requested_compute
+    if device == "cpu" and compute_type in {"float16", "int8_float16"}:
+        # These precision modes are CUDA-oriented; use a compatible CPU default.
+        compute_type = "int8"
+    return device, compute_type
+
+
+def _stt_context_prompt() -> str:
+    """Return dynamic context when available; never let optional context break STT."""
+    fallback = (
+        os.getenv(
+            "AURA_STT_INITIAL_PROMPT",
+            "Türkçe konuşma. Doğa hakkında araştırma yap. Yapay zeka hakkında araştırma yap. "
+            "Lütfen Türkçe kelimeleri doğru yaz: araştırma, yapay zeka, doğa, hakkında, "
+            "bilgi, özet, kaynaklar, dosyalar, hafıza, görsel, analiz, görev, izin, araç.",
+        )
+    )
+    try:
+        global _stt_memory_store
+        if _stt_memory_store is None:
+            try:
+                _stt_memory_store = EpisodicMemoryStore.from_environment()
+            except Exception:
+                logger.debug("STT context memory unavailable; using static Turkish prompt", exc_info=True)
+                _stt_memory_store = False
+        prompt = build_stt_prompt(
+            principal_id=os.getenv("AURA_STT_PRINCIPAL_ID", "local_default"),
+            static_prompt=fallback,
+            memory_store=_stt_memory_store if _stt_memory_store is not False else None,
+            cache_seconds=max(0, min(3600, int(os.getenv("AURA_STT_CONTEXT_CACHE_SECONDS", "60")))),
+        )
+        return prompt if isinstance(prompt, str) and prompt.strip() else fallback
+    except Exception:
+        logger.warning("STT context prompt failed; using static Turkish prompt", exc_info=True)
+        return fallback
+
+
+def transcribe_audio_bytes(
+    audio_bytes: bytes,
+    language: str,
+    suffix: str = ".webm",
+    *,
+    _force_cpu: bool = False,
+) -> tuple[str, str]:
+    """Transcribe locally, retrying CUDA failures once on CPU INT8."""
+    global _whisper_model, _whisper_model_device
     from pathlib import Path
 
     if not audio_bytes:
         raise ValueError("Audio payload is empty")
 
+    try:
+        from faster_whisper import WhisperModel
+    except ImportError:
+        raise
+
+    def load_model(device: str, compute_type: str):
+        return WhisperModel(
+            os.getenv("AURA_STT_MODEL", "medium"),
+            device=device,
+            compute_type=compute_type,
+            cpu_threads=max(
+                1,
+                min(16, int(os.getenv("AURA_STT_CPU_THREADS", str(min(8, os.cpu_count() or 4))))),
+            ),
+        )
+
+    if _force_cpu and _whisper_model_device != "cpu":
+        with _whisper_model_lock:
+            if _whisper_model_device != "cpu":
+                _whisper_model = None
+                _whisper_model_device = None
+
     if _whisper_model is None:
         with _whisper_model_lock:
             if _whisper_model is None:
-                from faster_whisper import WhisperModel
+                try:
+                    if _force_cpu:
+                        requested_device, compute_type = "cpu", "int8"
+                    else:
+                        try:
+                            requested_device, compute_type = resolve_stt_runtime()
+                        except Exception as runtime_exc:
+                            # Even an explicitly requested but unavailable CUDA runtime
+                            # should not prevent a best-effort local CPU transcription.
+                            logger.warning(
+                                "STT runtime selection failed; retrying with CPU INT8",
+                                extra={"stt_exception_type": type(runtime_exc).__name__},
+                                exc_info=True,
+                            )
+                            requested_device, compute_type = "cpu", "int8"
+                    try:
+                        _whisper_model = load_model(requested_device, compute_type)
+                        _whisper_model_device = requested_device
+                    except Exception as model_exc:
+                        if requested_device != "cuda":
+                            raise
+                        logger.warning(
+                            "CUDA STT model initialization failed; retrying with CPU INT8",
+                            extra={"stt_exception_type": type(model_exc).__name__},
+                            exc_info=True,
+                        )
+                        _whisper_model = load_model("cpu", "int8")
+                        _whisper_model_device = "cpu"
+                except Exception as exc:
+                    _whisper_model = None
+                    _whisper_model_device = None
+                    raise SpeechModelLoadError("Unable to initialize faster-whisper on CUDA or CPU") from exc
 
-                _whisper_model = WhisperModel(
-                    os.getenv("AURA_STT_MODEL", "small"),
-                    device=os.getenv("AURA_STT_DEVICE", "cpu"),
-                    compute_type=os.getenv("AURA_STT_COMPUTE_TYPE", "int8"),
-                )
+    prompt = _stt_context_prompt()
+    options = {
+        "language": language,
+        "beam_size": max(1, min(10, int(os.getenv("AURA_STT_BEAM_SIZE", "3")))),
+        "temperature": 0.0,
+        "vad_filter": True,
+        "vad_parameters": {
+            "min_silence_duration_ms": 300,
+            "speech_pad_ms": 400,
+            "threshold": 0.45,
+        },
+        "initial_prompt": prompt,
+        "condition_on_previous_text": True,
+        "no_speech_threshold": 0.6,
+        "log_prob_threshold": -1.0,
+        "compression_ratio_threshold": 2.4,
+    }
 
     temp_path = None
     try:
-        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as audio_file:
-            audio_file.write(audio_bytes)
-            temp_path = audio_file.name
-        segments, info = _whisper_model.transcribe(
-            temp_path,
-            language=language,
-            vad_filter=True,
-        )
-        text = " ".join(segment.text.strip() for segment in segments).strip()
+        try:
+            with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as audio_file:
+                audio_file.write(audio_bytes)
+                temp_path = audio_file.name
+            try:
+                segments, info = _whisper_model.transcribe(temp_path, **options)
+                text = " ".join(segment.text.strip() for segment in segments).strip()
+            except Exception as path_exc:
+                # Browser MediaRecorder commonly emits WebM/Opus. Try PyAV normalization
+                # before classifying this as a model/runtime failure.
+                try:
+                    import av
+                    import numpy as np
+
+                    with av.open(io.BytesIO(audio_bytes), mode="r") as container:
+                        audio_stream = next(
+                            (stream for stream in container.streams if stream.type == "audio"),
+                            None,
+                        )
+                        if audio_stream is None:
+                            raise ValueError("Audio container has no audio stream")
+                        resampler = av.AudioResampler(format="fltp", layout="mono", rate=16000)
+                        chunks = []
+                        for frame in container.decode(audio_stream):
+                            chunks.extend(
+                                converted.to_ndarray().reshape(-1)
+                                for converted in resampler.resample(frame)
+                            )
+                        chunks.extend(
+                            converted.to_ndarray().reshape(-1)
+                            for converted in resampler.resample(None)
+                        )
+                        if not chunks:
+                            raise ValueError("Audio decoder produced no samples")
+                        audio_samples = np.concatenate(chunks).astype(np.float32, copy=False)
+
+                    segments, info = _whisper_model.transcribe(audio_samples, **options)
+                    text = " ".join(segment.text.strip() for segment in segments).strip()
+                except Exception as fallback_exc:
+                    logger.warning(
+                        "STT file decoding and in-memory normalization failed",
+                        extra={
+                            "stt_exception_type": type(fallback_exc).__name__,
+                            "stt_initial_exception_type": type(path_exc).__name__,
+                            "stt_device": _whisper_model_device,
+                        },
+                        exc_info=True,
+                    )
+                    raise SpeechTranscriptionError(
+                        "faster-whisper could not decode or transcribe the audio"
+                    ) from fallback_exc
+        except SpeechTranscriptionError:
+            raise
+        except Exception as exc:
+            raise SpeechTranscriptionError("faster-whisper inference failed") from exc
         return text, getattr(info, "language", None) or language
+    except SpeechTranscriptionError:
+        # CUDA can fail lazily during inference/segment iteration, not just model loading.
+        if _whisper_model_device == "cuda" and not _force_cpu:
+            logger.warning(
+                "CUDA STT inference failed; retrying the recording on CPU INT8",
+                extra={"stt_exception_type": "SpeechTranscriptionError"},
+                exc_info=True,
+            )
+            with _whisper_model_lock:
+                _whisper_model = None
+                _whisper_model_device = None
+            return transcribe_audio_bytes(audio_bytes, language, suffix, _force_cpu=True)
+        raise
     finally:
         if temp_path:
             try:
@@ -123,6 +341,47 @@ class TaskRequest(BaseModel):
     title: str = Field(min_length=1)
     resource_scope: str = Field(min_length=1)
     steps: list[TaskStepPayload] = Field(min_length=1, max_length=32)
+
+
+class AutonomyTaskNodePayload(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    task_id: str = Field(min_length=1, max_length=100)
+    title: str = Field(min_length=1, max_length=500)
+    depends_on: list[str] = Field(default_factory=list, max_length=32)
+    kind: str = Field(default="reason", min_length=1, max_length=20)
+    requires_approval: bool = False
+
+
+class AutonomyPlanRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    nodes: list[AutonomyTaskNodePayload] = Field(min_length=1, max_length=32)
+    max_seconds: float = Field(default=60.0, ge=1.0, le=300.0)
+    max_subtasks: int = Field(default=8, ge=0, le=16)
+
+
+class AutonomyExperimentRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    expression: str = Field(min_length=1, max_length=2000)
+    data: dict[str, object] = Field(default_factory=dict)
+
+
+
+
+class ReflexionExperimentRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    task_id: str = Field(min_length=1, max_length=128)
+    goal: str = Field(min_length=1, max_length=1000)
+    source: str = Field(min_length=1, max_length=64000)
+    input_data: dict[str, object] = Field(default_factory=dict)
+    expected_stdout: str | None = Field(default=None, max_length=4000)
+    max_attempts: int = Field(default=3, ge=1, le=3)
+    max_total_seconds: float = Field(default=45.0, ge=1.0, le=120.0)
+
+
+class AutonomyPythonRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    source: str = Field(min_length=1, max_length=64_000)
+    data: dict[str, object] = Field(default_factory=dict)
 
 
 class ReasoningPlanRequest(BaseModel):
@@ -287,6 +546,10 @@ def create_api(
         enabled = os.getenv("AURA_TELEMETRY_DAEMON_ENABLED", "1").strip().lower() not in {"0", "false", "no"}
         if daemon is not None and enabled:
             daemon.start()
+        reflection = getattr(application.state, "background_thinking", None)
+        reflection_enabled = os.getenv("AURA_BACKGROUND_THINKING_ENABLED", "0").strip().lower() in {"1", "true", "yes"}
+        if reflection is not None and reflection_enabled:
+            reflection.start()
         unsubscribe_prefetch = None
         prefetch_enabled = os.getenv("AURA_PREFETCH_ENABLED", "0").strip().lower() in {"1", "true", "yes"}
         kernel = getattr(application.state, "kernel", None)
@@ -310,6 +573,8 @@ def create_api(
         finally:
             if unsubscribe_prefetch is not None:
                 unsubscribe_prefetch()
+            if reflection is not None:
+                await reflection.stop()
             if daemon is not None:
                 await daemon.stop()
 
@@ -400,6 +665,20 @@ def create_api(
                 "aura_memory",
             ),
         )
+    )
+    app.state.last_user_activity = time.monotonic()
+    reflection_enabled = os.getenv("AURA_BACKGROUND_THINKING_ENABLED", "0").strip().lower() in {"1", "true", "yes"}
+    app.state.background_thinking = (
+        IdleMemoryReflectionDaemon(
+            memory_store=EpisodicMemoryStore.from_environment(),
+            principal_id=os.getenv("AURA_BACKGROUND_THINKING_PRINCIPAL_ID", "local_default"),
+            database_path=os.getenv("AURA_REFLECTION_DB", "./data/background-reflection.sqlite3"),
+            idle_seconds=int(os.getenv("AURA_BACKGROUND_THINKING_IDLE_SECONDS", "300")),
+            interval_seconds=int(os.getenv("AURA_BACKGROUND_THINKING_INTERVAL_SECONDS", "900")),
+            last_activity=lambda: app.state.last_user_activity,
+        )
+        if reflection_enabled
+        else None
     )
 
     @app.middleware("http")
@@ -922,6 +1201,7 @@ def create_api(
         request: AssistantRespondRequest,
         http_request: Request,
     ) -> AssistantRespondResponse:
+        app.state.last_user_activity = time.monotonic()
 
         import json
 
@@ -996,6 +1276,22 @@ def create_api(
             tone=tone,
         )
         system_prompt = synthesized.system_prompt
+        # Persona is an explicit presentation preference, not an authority source.
+        # The local settings route may override this in-process; no initiative is
+        # executed from a persona prompt.
+        persona_policy = getattr(app.state, "persona_policy", None)
+        if persona_policy is None:
+            try:
+                persona_policy = PersonaPolicy(
+                    tone=os.getenv("AURA_PERSONA_TONE", "witty"),
+                    language=os.getenv("AURA_PERSONA_LANGUAGE", "auto"),
+                    humor_intensity=max(0, min(3, int(os.getenv("AURA_PERSONA_HUMOR", "2")))),
+                    initiative_enabled=os.getenv("AURA_PERSONA_INITIATIVE_ENABLED", "0").strip().lower() in {"1", "true", "yes"},
+                )
+            except (ValueError, TypeError):
+                logger.warning("Invalid persona environment settings; using safe defaults")
+                persona_policy = PersonaPolicy()
+        system_prompt = system_prompt + "\n\n" + persona_policy.system_style_prompt()
         user_content = synthesized.user_content
 
         inference_request = InferenceRequest(
@@ -1089,8 +1385,276 @@ def create_api(
         )
 
 
+    @app.post("/api/autonomy/plan/validate")
+    def validate_autonomy_plan(body: AutonomyPlanRequest, http_request: Request) -> dict[str, object]:
+        """Validate a bounded task graph without scheduling or executing its steps."""
+        require_local_client(http_request)
+        nodes = [
+            TaskNode(
+                task_id=node.task_id,
+                title=node.title,
+                depends_on=tuple(node.depends_on),
+                kind=node.kind,
+                requires_approval=node.requires_approval,
+            )
+            for node in body.nodes
+        ]
+        try:
+            checked = validate_task_graph(
+                nodes,
+                AutonomyBudget(
+                    max_steps=32,
+                    max_seconds=body.max_seconds,
+                    max_subtasks=body.max_subtasks,
+                ),
+            )
+        except (AutonomyValidationError, ValueError) as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        return {
+            "valid": True,
+            "execution_started": False,
+            "authorization_boundary": "PermissionEngine and MCPGateway remain required for real actions",
+            "budget": {
+                "max_steps": 32,
+                "max_seconds": body.max_seconds,
+                "max_subtasks": body.max_subtasks,
+            },
+            "nodes": [
+                {
+                    "task_id": node.task_id,
+                    "title": node.title,
+                    "depends_on": list(node.depends_on),
+                    "kind": node.kind,
+                    "requires_approval": node.requires_approval,
+                }
+                for node in checked
+            ],
+        }
+
+    @app.post("/api/autonomy/experiment")
+    def run_safe_autonomy_experiment(
+        body: AutonomyExperimentRequest,
+        http_request: Request,
+    ) -> dict[str, object]:
+        """Evaluate a restricted pure expression; never execute arbitrary code."""
+        require_local_client(http_request)
+        try:
+            result = evaluate_safe_expression(body.expression, body.data)
+        except AutonomyValidationError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        return {
+            "status": "completed",
+            "result": result,
+            "execution_mode": "restricted_expression",
+            "arbitrary_code_executed": False,
+            "network_access": False,
+            "mcp_tool_execution_performed": False,
+            "sandbox_code_executed": False,
+            "memory_mutated": False,
+            "authorization_boundary": "MCPGateway and PermissionEngine",
+        }
+
+    @app.post("/api/autonomy/python")
+    def run_isolated_python_draft(
+        body: AutonomyPythonRequest,
+        http_request: Request,
+    ) -> dict[str, object]:
+        """Run a Python draft only after explicit Permission Engine authorization."""
+        require_local_client(http_request)
+        permission_engine = getattr(http_request.app.state, "permission_engine", None)
+        if permission_engine is None:
+            raise HTTPException(status_code=503, detail="Permission Engine is unavailable")
+
+        task_id = f"sandbox:{uuid4()}"
+        request_id = f"authorize:{task_id}"
+        authorization = AuthorizationRequest(
+            request_id=request_id,
+            principal_id="local_owner",
+            capability_id="sandbox.python.execute",
+            operation_id="sandbox.python.execute",
+            resource_scope="local-sandbox",
+            risk_level=RiskLevel.HIGH,
+            task_id=task_id,
+        )
+        decision = permission_engine.authorize(authorization)
+        if decision.decision is not AuthorizationDecision.ALLOW:
+            raise HTTPException(
+                status_code=403,
+                detail="Sandbox execution requires an explicit allow policy.",
+            )
+
+        job = SandboxJob(
+            job_id=task_id,
+            principal_id="local_owner",
+            runner="docker",
+            source=body.source,
+            input_json=json.dumps(body.data, ensure_ascii=False, allow_nan=False),
+            authorization_id=decision.policy_id or request_id,
+        )
+        try:
+            result = run_python_draft(
+                job,
+                authorize=lambda candidate: (
+                    candidate.principal_id == "local_owner"
+                    and candidate.job_id == task_id
+                    and candidate.authorization_id == (decision.policy_id or request_id)
+                ),
+            )
+        except SandboxAuthorizationError as exc:
+            raise HTTPException(status_code=403, detail="Sandbox authorization failed.") from exc
+        except SandboxUnavailable as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        except (ValueError, TypeError) as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        return {
+            "job_id": result.job_id,
+            "status": result.status,
+            "return_code": result.return_code,
+            "stdout": result.stdout,
+            "stderr": result.stderr,
+            "elapsed_seconds": result.elapsed_seconds,
+            "isolation": result.isolation,
+            "authorization_boundary": "PermissionEngine",
+            "arbitrary_python_executed": True,
+        }
+
+
+    @app.post("/api/autonomy/reflexion")
+    async def run_model_backed_reflexion(
+        body: ReflexionExperimentRequest,
+        http_request: Request,
+    ) -> dict[str, object]:
+        """Run a bounded, local-only model-revised experiment through the Permission Engine."""
+        require_local_client(http_request)
+        permission_engine = getattr(http_request.app.state, "permission_engine", None)
+        if permission_engine is None:
+            raise HTTPException(status_code=503, detail="Permission Engine is unavailable")
+
+        principal_id = "local_owner"
+        experiment_id = f"reflexion:{uuid4()}"
+        try:
+            input_json = json.dumps(body.input_data, ensure_ascii=False, allow_nan=False)
+            budget = ExperimentBudget(
+                max_attempts=body.max_attempts,
+                max_total_seconds=body.max_total_seconds,
+            )
+        except (ValueError, TypeError) as exc:
+            raise HTTPException(status_code=422, detail="Invalid experiment input or budget") from exc
+
+        def authorize_attempt(candidate: SandboxJob) -> bool:
+            # A fresh Permission Engine decision is required for every attempt.
+            if candidate.principal_id != principal_id or not candidate.authorization_id.startswith("reflexion:"):
+                return False
+            authorization = AuthorizationRequest(
+                request_id=f"authorize:{candidate.job_id}",
+                principal_id=principal_id,
+                capability_id="sandbox.python.execute",
+                operation_id="sandbox.python.execute",
+                resource_scope="local-sandbox",
+                risk_level=RiskLevel.HIGH,
+                task_id=candidate.job_id,
+            )
+            decision = permission_engine.authorize(authorization)
+            return decision.decision is AuthorizationDecision.ALLOW
+
+        try:
+            runner = DockerPythonRunner(authorizer=authorize_attempt)
+            memory = SQLiteEpisodicMemory(
+                os.getenv("AURA_REFLEXION_MEMORY_DB", "./data/reflexion-episodes.sqlite3")
+            )
+            skills = ProceduralSkillLibrary(
+                os.getenv("AURA_SKILL_CANDIDATES_DB", "./data/procedural-skills.sqlite3")
+            )
+            revise = ModelBackedDraftRevision(
+                inference=application,
+                config=ModelRevisionConfig(
+                    model=config.model,
+                    max_tokens=max(1, min(int(config.max_tokens or 1800), 4096)),
+                    temperature=0.0,
+                ),
+            )
+            expected = body.expected_stdout
+            loop = ReflexionExperimentLoop(
+                runner=runner,
+                memory=memory,
+                skills=skills,
+                revise=revise,
+                verify=lambda result: (
+                    expected is not None
+                    and result.status == "completed"
+                    and result.stdout.strip() == expected.strip()
+                    and result.return_code == 0
+                ),
+                authorize=authorize_attempt,
+                budget=budget,
+            )
+            outcome = await app.state.async_work.run(
+                lambda: loop.run(
+                    experiment_id=experiment_id,
+                    principal_id=principal_id,
+                    task_id=body.task_id,
+                    goal=body.goal,
+                    source=body.source,
+                    input_json=input_json,
+                )
+            )
+        except Exception as exc:
+            logger.warning("Model-backed Reflexion experiment failed safely", exc_info=True)
+            raise HTTPException(status_code=503, detail="Reflexion experiment could not complete safely") from exc
+
+        return {
+            "experiment_id": outcome.experiment_id,
+            "status": outcome.status,
+            "attempts": outcome.attempts,
+            "lesson": outcome.lesson,
+            "skill_proposal_id": outcome.skill_proposal_id,
+            "skill_review_required": outcome.skill_proposal_id is not None,
+            "results": [
+                {
+                    "job_id": item.job_id,
+                    "status": item.status,
+                    "return_code": item.return_code,
+                    "stdout": item.stdout[:4000],
+                    "stderr": item.stderr[:4000],
+                    "elapsed_seconds": item.elapsed_seconds,
+                    "isolation": item.isolation,
+                }
+                for item in outcome.results
+            ],
+            "authorization_boundary": "PermissionEngine + isolated Docker sandbox",
+            "model_output_is_untrusted": True,
+            "independent_verifier": "exact expected_stdout and return_code == 0",
+            "tool_execution_performed": False,
+        }
+
+    @app.get("/api/background-thinking/status")
+    def background_thinking_status(http_request: Request) -> dict[str, object]:
+        require_local_client(http_request)
+        reflection = app.state.background_thinking
+        return reflection.status() if reflection is not None else {
+            "enabled": False,
+            "mode": "disabled",
+            "reason": "Set AURA_BACKGROUND_THINKING_ENABLED=1 to enable bounded idle suggestions.",
+        }
+
+    @app.get("/api/background-thinking/proposals")
+    def background_thinking_proposals(http_request: Request, limit: int = 20) -> dict[str, object]:
+        require_local_client(http_request)
+        bounded_limit = max(1, min(limit, 50))
+        reflection = app.state.background_thinking
+        return {
+            "items": reflection.list_proposals(limit=bounded_limit) if reflection is not None else [],
+            "mode": "reviewable_suggestions_only" if reflection is not None else "disabled",
+        }
+
     @app.post("/api/speech/transcribe", response_model=SpeechTranscriptionResponse)
-    async def transcribe_speech(request: SpeechTranscriptionRequest) -> SpeechTranscriptionResponse:
+    async def transcribe_speech(
+        request: SpeechTranscriptionRequest,
+        http_request: Request,
+    ) -> SpeechTranscriptionResponse | JSONResponse:
+        # Local STT is a local capability; do not make it a remote transcription service.
+        require_local_client(http_request)
+
         try:
             audio_bytes = base64.b64decode(request.audio_base64, validate=True)
         except (ValueError, base64.binascii.Error) as exc:
@@ -1108,22 +1672,88 @@ def create_api(
             "audio/wav": ".wav",
             "audio/x-wav": ".wav",
             "audio/mp4": ".m4a",
+            "audio/x-m4a": ".m4a",
+            "audio/m4a": ".m4a",
             "audio/mpeg": ".mp3",
+            "audio/mp3": ".mp3",
+            "audio/aac": ".aac",
+            "audio/flac": ".flac",
+            "audio/x-flac": ".flac",
         }
         suffix = suffix_by_mime.get(mime_type)
         if suffix is None:
             raise HTTPException(status_code=415, detail="Unsupported audio format")
+
+        request_id = getattr(http_request.state, "request_id", str(uuid4()))
+
+        def failure_response(
+            status_code: int,
+            code: str,
+            message: str,
+            exc: Exception,
+            retryable: bool,
+        ) -> JSONResponse:
+            logger.exception(
+                "Local speech-to-text failed",
+                extra={
+                    "request_id": request_id,
+                    "stt_error_code": code,
+                    "stt_exception_type": type(exc).__name__,
+                },
+            )
+            return JSONResponse(
+                status_code=status_code,
+                content={
+                    "detail": message,
+                    "error": {
+                        "code": code,
+                        "message": message,
+                        "retryable": retryable,
+                        "request_id": request_id,
+                        # Do not send raw exception text, filesystem paths, or tracebacks to the UI.
+                        "details": {"exception_type": type(exc).__name__},
+                    },
+                },
+            )
 
         try:
             text, detected_language = await asyncio.to_thread(
                 transcribe_audio_bytes, audio_bytes, request.language, suffix
             )
         except ImportError as exc:
-            logger.exception("Local speech-to-text dependency is unavailable")
-            raise HTTPException(status_code=503, detail="Local speech-to-text is unavailable") from exc
+            return failure_response(
+                503,
+                "stt_dependency_unavailable",
+                "The faster-whisper dependency is unavailable in the active Core Python environment. Install the Core dependencies and restart AURA Core.",
+                exc,
+                False,
+            )
+        except SpeechModelLoadError as exc:
+            return failure_response(
+                503,
+                "stt_model_load_failed",
+                "The local STT model could not be loaded. Check AURA_STT_MODEL, AURA_STT_DEVICE, and AURA_STT_COMPUTE_TYPE, plus local model-cache or download availability. The server log contains the diagnostic traceback.",
+                exc,
+                False,
+            )
+        except SpeechTranscriptionError as exc:
+            # The inference engine can fail for codec, runtime, device, or resource
+            # reasons. Do not misreport every engine failure as a client-side 422.
+            return failure_response(
+                500,
+                "stt_transcription_failed",
+                "The local STT engine failed while decoding or transcribing this recording. Check the audio codec/container and the Core server log using this request ID; the underlying failure may also be a model, device, or runtime issue.",
+                exc,
+                True,
+            )
         except Exception as exc:
-            logger.exception("Local speech-to-text failed")
-            raise HTTPException(status_code=500, detail="Local speech-to-text failed; see server log for details") from exc
+            return failure_response(
+                500,
+                "stt_internal_error",
+                "Local speech-to-text failed unexpectedly. Check the Core server log using this request ID for the underlying cause.",
+                exc,
+                True,
+            )
 
         return SpeechTranscriptionResponse(text=text, language=detected_language)
 

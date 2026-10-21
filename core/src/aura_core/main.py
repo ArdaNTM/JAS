@@ -11,6 +11,7 @@ from aura_core.agent.runtime import AgentExecutor
 from aura_core.application.composition import create_composed_app
 from aura_core.application.capability_discovery import DynamicCapabilityDiscovery
 from aura_core.application.tasks import AgentTaskService
+from aura_core.application.task_memory import TaskMemoryCoordinator
 from aura_core.config.kernel import KernelConfig
 from aura_core.kernel.permissions import (
     AuthorizationDecision,
@@ -81,6 +82,30 @@ def build_app() -> FastAPI:
             required_permissions=frozenset(),
         )
     )
+    sandbox_service_id = "aura:python_sandbox:0.1.0"
+    kernel.service_registry.register(
+        ServiceDefinition(
+            name="python_sandbox",
+            version="0.1.0",
+            provider="aura",
+            category=ServiceCategory.KERNEL,
+            capabilities={"sandbox.python.execute"},
+            tags={"sandbox", "isolated-execution"},
+        ),
+        object(),
+    )
+    kernel.capability_registry.register(
+        CapabilityDefinition(
+            capability_id="sandbox.python.execute",
+            name="Isolated Python Draft Execution",
+            version="1.0.0",
+            description="Executes untrusted Python only in a digest-pinned, network-isolated container after explicit authorization.",
+            provider_id=sandbox_service_id,
+            provider_type=ProviderType.CORE,
+            category=CapabilityCategory.CODING,
+            required_permissions=frozenset({"sandbox.python.execute"}),
+        )
+    )
     research_config = ResearchMCPConfig.from_env()
     kokoro_config = KokoroMCPConfig.from_env()
     research_tools = MCPToolRegistry()
@@ -96,7 +121,8 @@ def build_app() -> FastAPI:
         AgentExecutor(
             gateway=gateway,
             event_bus=kernel.event_bus,
-        )
+        ),
+        memory=TaskMemoryCoordinator.from_environment(),
     )
 
     app = create_composed_app(

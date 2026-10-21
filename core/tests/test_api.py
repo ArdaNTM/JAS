@@ -425,9 +425,12 @@ def test_backend_unavailable_maps_to_503() -> None:
     )
 
     assert response.status_code == 503
-    assert response.json() == {
-        "detail": "Inference backend is unavailable",
-    }
+    body = response.json()
+    assert body["detail"] == "Inference backend is unavailable"
+    assert body["error"]["code"] == "provider_unavailable"
+    assert body["error"]["message"] == "Inference provider is unavailable"
+    assert body["error"]["retryable"] is True
+    assert body["error"]["request_id"] == response.headers["X-Request-ID"]
 
     assert len(transport.calls) == 1
 
@@ -459,8 +462,11 @@ def test_backend_invalid_response_maps_to_502() -> None:
     )
 
     assert response.status_code == 502
-    assert response.json() == {
-        "detail": "Inference backend returned an invalid response",
-    }
+    body = response.json()
+    assert body["detail"] == "Inference backend returned an invalid response"
+    assert body["error"]["code"] == "provider_invalid_response"
+    assert body["error"]["message"] == "Inference provider returned an invalid response"
+    assert body["error"]["retryable"] is False
+    assert body["error"]["request_id"] == response.headers["X-Request-ID"]
 
     assert len(transport.calls) == 1

@@ -1,17 +1,27 @@
 import ArcReactor3D from "./components/ArcReactor3D";
 import DynamicHologram3D from "./components/DynamicHologram3D";
-import { useEffect, useState} from "react";
+import CapabilityWorkbench from "./components/CapabilityWorkbench";
+import { useCallback, useEffect, useState } from "react";
 import type { FormEvent } from "react";
 
 import {
+  AuraApiError,
   createTask,
   generateTaskPlan,
   getHealth,
+  getUIContract,
   type HealthResponse,
   type TaskStep,
 } from "./api/client";
+import {
+  captureToSessionState,
+  operationToSessionState,
+  sessionStateLabel,
+  type VoiceSessionState,
+} from "./voice/sessionState";
 
 import { useAuraVoice } from "./voice/useAuraVoice";
+import { useContinuousAuraVoice } from "./voice/useContinuousAuraVoice";
 import AuraJarvisBridge from "./AuraJarvisBridge";
 import { useTaskEvents } from "./hooks/useTaskEvents";
 
@@ -33,6 +43,33 @@ function ArcReactor({
       size={320}
     />
   );
+}
+
+function durumMetni(value: string): string {
+  const labels: Record<string, string> = {
+    ok: "tamam",
+    healthy: "sağlıklı",
+    ready: "hazır",
+    running: "çalışıyor",
+    connected: "bağlı",
+    configured: "yapılandırıldı",
+    unknown: "bilinmiyor",
+    offline: "çevrimdışı",
+    standby: "beklemede",
+    queued: "kuyrukta",
+    processing: "işleniyor",
+    planning: "planlanıyor",
+    executing: "yürütülüyor",
+    succeeded: "başarılı",
+    failed: "başarısız",
+    cancelled: "iptal edildi",
+    timed_out: "zaman aşımına uğradı",
+    awaiting_approval: "onay bekliyor",
+    pending_approval: "onay bekliyor",
+    error: "hata",
+    idle: "boşta",
+  };
+  return labels[value.toLowerCase()] ?? value;
 }
 
 function StatusItem({
@@ -104,13 +141,16 @@ export default function App() {
     useState<"idle" | "thinking" | "executing">("idle");
 
   const [taskState, setTaskState] =
-    useState("STANDBY");
+    useState("BEKLEMEDE");
 
   const [taskId, setTaskId] =
     useState<string | null>(null);
 
   const [error, setError] =
     useState<string | null>(null);
+
+  const [sessionState, setSessionState] =
+    useState<VoiceSessionState>("idle");
 
   const { events, connected: eventsConnected } =
     useTaskEvents(taskId);
@@ -125,16 +165,61 @@ export default function App() {
 
   const [telemetry, setTelemetry] =
     useState<string[]>([
-      "AURA CORE ONLINE",
-      "PERMISSION ENGINE ARMED",
-      "MCP GATEWAY READY",
+      "AURA CORE ÇALIŞIYOR",
+      "İZİN MOTORU HAZIR",
+      "MCP AĞ GEÇİDİ HAZIR",
     ]);
 
   const voice = useAuraVoice((directive) => {
     setCommand(directive);
     setHologramTarget(directive);
     setError(null);
+    setSessionState("idle");
+    pushTelemetry("SES METNİ HAZIR — ÇALIŞTIRMAK İÇİN ENTER GEREKLİ");
   });
+
+  const continuousVoice = useContinuousAuraVoice((directive) => {
+    setCommand(directive);
+    setHologramTarget(directive);
+    setError(null);
+    setSessionState("idle");
+    pushTelemetry("SÜREKLİ DİNLEMEDEN KONUŞMA METNİ HAZIR — ENTER ONAYI GEREKLİ");
+  });
+
+  const handleVoiceStatus = useCallback((
+    status: "processing" | "ready" | "speaking" | "error",
+    errorMessage?: string,
+  ) => {
+    setSessionState(status === "ready" ? "idle" : status);
+    if (status === "error") {
+      // A successful task can still fail while generating or playing its answer.
+      // Keep the task summary and lifecycle state consistent with that failure.
+      setTaskState("ERROR");
+      setSessionState("error");
+      setError(errorMessage ?? "Sesli yanıt tamamlanamadı. Hata ayrıntılarını inceleyip yeniden deneyin.");
+      pushTelemetry("ASİSTAN YANITI BAŞARISIZ");
+    }
+  }, []);
+
+  const captureSessionState = captureToSessionState(voice.state);
+  const visibleSessionState =
+    captureSessionState === "listening" ||
+    (captureSessionState === "processing" && sessionState === "idle") ||
+    (captureSessionState === "error" && sessionState === "idle")
+      ? captureSessionState
+      : sessionState;
+
+  const sessionBusy =
+    visibleSessionState === "processing" ||
+    visibleSessionState === "responding" ||
+    visibleSessionState === "speaking" ||
+    visibleSessionState === "awaiting_approval";
+
+  useEffect(() => {
+    if (systemState !== "idle" || sessionBusy) {
+      continuousVoice.stop();
+    }
+  }, [systemState, sessionBusy, continuousVoice.stop]);
 
   useEffect(() => {
     let mounted = true;
@@ -154,6 +239,23 @@ export default function App() {
     };
 
     void refresh();
+
+    void getUIContract().then((contract) => {
+      if (mounted) {
+        setTelemetry((current) => [
+          `ARAYÜZ SÖZLEŞMESİ v${contract.contract_version} HAZIR`,
+          ...current,
+        ].slice(0, 8));
+      }
+    }).catch((cause: unknown) => {
+      if (mounted) {
+        const message = cause instanceof AuraApiError
+          ? `${cause.message}${cause.requestId ? ` (istek kimliği: ${cause.requestId})` : ""}`
+          : "Arayüz-Core sözleşmesi alınamadı.";
+        setError(message);
+        setSessionState("error");
+      }
+    });
 
     const timer = window.setInterval(
       () => void refresh(),
@@ -183,11 +285,12 @@ export default function App() {
     }
 
     setError(null);
+    setSessionState("processing");
     setSystemState("thinking");
-    setTaskState("PLANNING");
+    setTaskState("PLANLANIYOR");
 
     pushTelemetry(
-      `DIRECTIVE RECEIVED: ${text}`,
+      `DİREKTİF ALINDI: ${text}`,
     );
 
     try {
@@ -213,7 +316,7 @@ export default function App() {
           typeof modelId !== "string" ||
           !allowedModelIds.some((allowed) => allowed === modelId)
         ) {
-          throw new Error("Unsupported visualization model ID.");
+          throw new Error("Desteklenmeyen görselleştirme modeli kimliği.");
         }
 
         setError(null);
@@ -221,13 +324,13 @@ export default function App() {
         setHologramTarget(
           typeof rawTarget === "string" && rawTarget.trim()
             ? rawTarget.trim().slice(0, 120)
-            : "AURA procedural model"
+            : "AURA yordamlı modeli"
         );
         setHologramModelId(modelId as VisualizationModelId);
         setTaskId(null);
         setSystemState("idle");
-        setTaskState("VISUALIZATION READY");
-        pushTelemetry(`CORE PLAN: 3D VISUALIZATION (${modelId})`);
+        setTaskState("GÖRSELLEŞTİRME HAZIR");
+        pushTelemetry(`CORE PLANI: 3B GÖRSELLEŞTİRME (${modelId})`);
         return;
       }
 
@@ -236,18 +339,18 @@ export default function App() {
         generated.steps.length === 0
       ) {
         throw new Error(
-          "AURA generated an empty execution plan.",
+          "AURA boş bir yürütme planı oluşturdu.",
         );
       }
 
       setPlan(generated.steps);
 
       pushTelemetry(
-        `PLAN GENERATED: ${generated.steps.length} STEP(S)`,
+        `PLAN OLUŞTURULDU: ${generated.steps.length} ADIM`,
       );
 
       setSystemState("executing");
-      setTaskState("EXECUTING");
+      setTaskState("YÜRÜTÜLÜYOR");
 
       const result = await createTask({
         task_id: makeId(),
@@ -260,13 +363,26 @@ export default function App() {
       });
 
       setTaskId(result.task_id);
-      setTaskState(
-        result.state.toUpperCase(),
-      );
+      setTaskState(durumMetni(result.state).toLocaleUpperCase("tr-TR"));
+      const nextSessionState = operationToSessionState(result.state);
+      setSessionState(nextSessionState);
 
       pushTelemetry(
-        `TASK ${result.task_id} â†’ ${result.state.toUpperCase()}`,
+        `GÖREV ${result.task_id} → ${result.state.toUpperCase()}`,
       );
+
+      if (result.state === "awaiting_approval" || result.state === "pending_approval") {
+        setSystemState("idle");
+        pushTelemetry("YÜRÜTME ENGELLENDİ — AÇIK ONAY GEREKLİ");
+        return;
+      }
+
+      if (["failed", "cancelled", "timed_out"].includes(result.state)) {
+        setSystemState("idle");
+        setError(`Görev durumu: ${result.state}. Arayüz başka bir eylem yürütmedi.`);
+        pushTelemetry(`GÖREV SONLANDIRILDI: ${result.state.toUpperCase()}`);
+        return;
+      }
 
       if (result.state === "succeeded") {
         setSystemState("idle");
@@ -277,19 +393,21 @@ export default function App() {
           (current) => current + 1,
         );
 
-        pushTelemetry("EXECUTION COMPLETE");
+        pushTelemetry("YÜRÜTME TAMAMLANDI");
       }
     } catch (cause) {
       setSystemState("idle");
-      setTaskState("FAILED");
+      setTaskState("BAŞARISIZ");
+      setSessionState("error");
 
-      const message =
-        cause instanceof Error
+      const message = cause instanceof AuraApiError
+        ? `[${cause.code}] ${cause.message}${cause.requestId ? ` (request: ${cause.requestId})` : ""}`
+        : cause instanceof Error
           ? cause.message
-          : "AURA execution failed.";
+          : "AURA yürütmesi başarısız oldu.";
 
       setError(message);
-      pushTelemetry(`ERROR: ${message}`);
+      pushTelemetry(`HATA: ${message}`);
     }
   }
 
@@ -354,7 +472,7 @@ export default function App() {
             </div>
 
             <div className="mt-1 text-[8px] tracking-[.3em] text-slate-600">
-              AUTONOMOUS INTELLIGENCE SYSTEM
+              ÖZERK ZEKA SİSTEMİ
             </div>
           </div>
 
@@ -367,7 +485,7 @@ export default function App() {
                   : "bg-amber-400",
               ].join(" ")}
             />
-            CORE {coreStatus.toUpperCase()}
+            CORE {durumMetni(coreStatus).toLocaleUpperCase("tr-TR")}
           </div>
         </header>
 
@@ -375,41 +493,49 @@ export default function App() {
 
           <aside className="order-2 lg:order-1">
             <div className="mb-5 text-[9px] font-bold tracking-[.25em] text-cyan-600">
-              CORE SYSTEMS
+              CORE SİSTEMLERİ
             </div>
 
             <StatusItem
-              label="KERNEL"
+              label="ÇEKİRDEK"
               value={kernelStatus}
             />
 
             <StatusItem
-              label="GATEWAY"
+              label="AĞ GEÇİDİ"
               value={gatewayStatus}
             />
 
             <StatusItem
-              label="PERMISSION"
+              label="İZİN YÖNETİMİ"
               value={permissionStatus}
             />
 
             <StatusItem
-              label="EVENT BUS"
+              label="OLAY VERİ YOLU"
               value={eventBusStatus}
             />
 
             <StatusItem
-              label="LEARNING"
+              label="ÖĞRENME"
               value={learningStatus}
             />
 
             <div className="mt-8 rounded border border-cyan-950/70 bg-slate-950/40 p-4">
               <div className="text-[8px] tracking-[.2em] text-slate-600">
-                CURRENT STATE
+                GÜNCEL DURUM
               </div>
 
               <div className="mt-2 text-lg font-light tracking-[.16em] text-cyan-300">
-                {taskState}
+                {durumMetni(taskState).toLocaleUpperCase("tr-TR")}
+              </div>
+
+              <div className={`mt-2 text-[9px] tracking-[.12em] ${
+                visibleSessionState === "error" ? "text-red-300" :
+                visibleSessionState === "awaiting_approval" ? "text-amber-300" :
+                "text-cyan-500"
+              }`}>
+                {sessionStateLabel(visibleSessionState)}
               </div>
 
               {taskId && (
@@ -427,21 +553,17 @@ export default function App() {
                 <DynamicHologram3D
                   target={hologramTarget}
               modelId={hologramModelId}
-                  active={systemState !== "idle"}
+                  active={systemState !== "idle" || sessionBusy}
                 />
               ) : (
                 <ArcReactor
-                  active={systemState !== "idle"}
-                  level={systemState}
+                  active={systemState !== "idle" || sessionBusy}
+                  level={sessionBusy ? "executing" : systemState}
                 />
               )}
 
               <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap text-[8px] tracking-[.35em] text-cyan-700">
-                {systemState === "idle"
-                  ? "STANDBY"
-                  : systemState === "thinking"
-                    ? "ANALYZING"
-                    : "EXECUTING"}
+                {sessionStateLabel(visibleSessionState)}
               </div>
             </div>
 
@@ -460,11 +582,17 @@ export default function App() {
                 {error}
               </div>
             )}
+
+            {visibleSessionState === "awaiting_approval" && (
+              <div role="status" className="mt-4 max-w-xl rounded border border-amber-700/70 bg-amber-950/20 px-4 py-3 text-center text-[10px] leading-5 text-amber-200">
+                AURA Core açık yetkilendirme bekliyor. Arayüz eylemi kendiliğinden çalıştırmaz veya yeniden denemez.
+              </div>
+            )}
           </section>
 
           <aside className="order-3">
             <div className="mb-5 text-[9px] font-bold tracking-[.25em] text-cyan-600">
-              TELEMETRY
+              SİSTEM GÖZLEMİ
             </div>
 
             <div className="space-y-2">
@@ -488,10 +616,10 @@ export default function App() {
 
             <div className="mt-6 grid gap-3 text-[9px]">
               {[
-                ["PLAN", plan.map((step) => step.tool_name).join(" â†’ ") || "Awaiting directive"],
-                ["NOW RUNNING", liveEvents[0]?.event ?? liveEvents[0]?.type ?? taskState],
-                ["SOURCES", sources.length ? `${sources.length} research event(s)` : "No sources yet"],
-                ["PERMISSION / APPROVAL", approvals.length ? `${approvals.length} event(s)` : "No approval pending"],
+                ["PLAN", plan.map((step) => step.tool_name).join(" → ") || "Direktif bekleniyor"],
+                ["ŞİMDİ ÇALIŞAN", durumMetni(liveEvents[0]?.event ?? liveEvents[0]?.type ?? taskState)],
+                ["KAYNAKLAR", sources.length ? `${sources.length} araştırma olayı` : "Henüz kaynak yok"],
+                ["İZİN / ONAY", approvals.length ? `${approvals.length} olay` : "Bekleyen onay yok"],
               ].map(([label, value]) => (
                 <div key={label} className="rounded border border-cyan-950/70 bg-slate-950/40 p-3">
                   <div className="text-[8px] tracking-[.2em] text-slate-600">{label}</div>
@@ -499,7 +627,7 @@ export default function App() {
                 </div>
               ))}
               <div className="text-[8px] tracking-[.16em] text-slate-600">
-                EVENT LINK: {eventsConnected ? "SECURE / CONNECTED" : "WAITING FOR TASK"}
+                OLAY BAĞLANTISI: {eventsConnected ? "GÜVENLİ / BAĞLI" : "GÖREV BEKLENİYOR"}
               </div>
             </div>
           </aside>
@@ -522,13 +650,13 @@ export default function App() {
                 setError(null);
               }}
               placeholder="Bir direktif ver..."
-              disabled={systemState !== "idle"}
+              disabled={systemState !== "idle" || sessionBusy}
               className="min-w-0 flex-1 border-b border-cyan-900/70 bg-transparent px-1 py-3 font-mono text-sm text-cyan-100 outline-none placeholder:text-slate-700 focus:border-cyan-400 disabled:opacity-40"
             />
 
             <button
               type="button"
-              disabled={!voice.available || systemState !== "idle"}
+              disabled={!voice.available || systemState !== "idle" || sessionBusy}
               onClick={
                 voice.state === "recording" || voice.state === "listening"
                   ? voice.stop
@@ -537,17 +665,32 @@ export default function App() {
               className="px-3 py-2 text-[9px] tracking-[.18em] text-cyan-500 transition hover:text-cyan-200 disabled:opacity-30"
             >
               {voice.state === "recording" || voice.state === "listening"
-                ? "STOP"
+                ? "DURDUR"
                 : voice.state === "transcribing"
-                  ? "STT…"
-                  : "VOICE"}
+                  ? "SES ÇÖZÜMLENİYOR…"
+                  : "SES"}
+            </button>
+
+            <button
+              type="button"
+              disabled={systemState !== "idle" || sessionBusy || voice.state === "recording" || voice.state === "transcribing"}
+              onClick={() => continuousVoice.active ? continuousVoice.stop() : void continuousVoice.start()}
+              title="Mikrofon erişimi sürekli açık kalır; konuşma metni otomatik çalıştırılmaz."
+              aria-pressed={continuousVoice.active}
+              className={[
+                "border px-3 py-2 text-[9px] tracking-[.12em] transition disabled:opacity-30",
+                continuousVoice.active ? "border-amber-400 text-amber-300" : "border-cyan-900/70 text-cyan-700 hover:text-cyan-200",
+              ].join(" ")}
+            >
+              {continuousVoice.active ? "DİNLEMEYİ KAPAT" : "SÜREKLİ DİNLE"}
             </button>
 
             <button
               type="submit"
               disabled={
                 !command.trim() ||
-                systemState !== "idle"
+                systemState !== "idle" ||
+                sessionBusy
               }
               className="border border-cyan-700/80 px-5 py-2 text-[9px] font-bold tracking-[.2em] text-cyan-300 transition hover:border-cyan-300 hover:text-cyan-100 disabled:cursor-not-allowed disabled:opacity-30"
             >
@@ -555,7 +698,7 @@ export default function App() {
             </button>
           </form>
           <div className="mx-auto mt-2 max-w-4xl text-center text-[8px] tracking-[.12em] text-slate-500">
-            {voice.message}
+            {continuousVoice.active ? continuousVoice.message : voice.message}
           </div>
         </footer>
 
@@ -565,10 +708,12 @@ export default function App() {
       </>
 
 
+      <CapabilityWorkbench />
       <AuraJarvisBridge
         directive={assistantDirective}
         researchOutput={researchOutput}
         requestId={assistantRequestId}
+        onStatus={handleVoiceStatus}
       />
     </>
 );
