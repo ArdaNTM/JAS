@@ -12,7 +12,9 @@ These papers support architectural patterns, not a claim of general intelligence
 
 ## Implemented in this increment
 
-- `core/src/aura_core/application/reflexion.py` provides a bounded Reflexion-style orchestration primitive. Each attempt constructs a distinct job and passes through the sandbox adapter with authorization checked again for that attempt.
+- `core/src/aura_core/application/reflexion.py` provides a bounded Reflexion-style orchestration primitive.
+- `core/src/aura_core/application/reflexion_inference.py` adapts the provider-neutral `InferenceService.infer(InferenceRequest)` contract into a model-backed draft reviser. It bounds tokens and output, treats sandbox diagnostics as untrusted data, exposes no tools, and rejects fenced/oversized output. Wire it as the `revise` callback to `ReflexionExperimentLoop`; sandbox authorization and independent verification remain separate required dependencies.
+- `core/src/aura_core/application/persona_policy.py` defines configurable style, language, humor, initiative threshold, quiet hours, opt-in, and daily suggestion budgets. It returns presentation guidance and a pure initiative gate; it is not an authorization mechanism. Each attempt constructs a distinct job and passes through the sandbox adapter with authorization checked again for that attempt.
 - `ExperimentBudget` caps retries to at most three and bounds total wall-clock budget.
 - Failed execution/verifier feedback is stored as untrusted episodic data. It is diagnostic input, never policy or permission.
 - A successful run is not automatically trusted: a separate verifier must return true before a skill candidate is written.
@@ -23,9 +25,15 @@ These papers support architectural patterns, not a claim of general intelligence
 
 - The Reflexion primitive is not yet connected to a live model-backed revision callback or exposed as an end-user endpoint. The host application must supply a revision function, an independent verifier, and an authorizer backed by the Permission Engine. Do not provide a callback that bypasses the MCP Gateway for actual tool calls.
 - The procedural skill library currently stores proposals; it is not yet a general capability registry and must not be treated as executable authority.
-- Existing background reflection still proposes lexical memory links. Model-assisted semantic consolidation, contradiction handling, confidence calibration, retention/forgetting, and user review workflows remain future work.
-- Dynamic persona is a presentation policy, not an authority source. A future persona profile should define tone, humor, initiative thresholds, and communication preferences, while the deterministic Kernel and Permission Engine remain in control.
+- Background reflection now proposes lexical links plus heuristic repeated-lesson and possible-contradiction candidates, with source-memory IDs, stable deduplication, explicit untrusted status, and review-required metadata. This is a transparent heuristic—not model-confirmed semantic truth. Confidence calibration, retention/forgetting, and full review/decision APIs remain future work.
+- Dynamic persona is implemented as a configurable policy object, but has not been wired into every response-generation path or persisted through a settings API yet. Callers must apply `system_style_prompt()` as presentation-only guidance and use `may_suggest_initiative()` only to gate suggestions. Never use persona to authorize action.
 - This code has been committed to the feature branch, but the new tests have not been executed in the repository environment in this session.
+
+## Integration notes and limitations
+
+- The model-backed revision adapter is provider-agnostic but no default live-model endpoint is exposed by this increment. A deployment must explicitly instantiate it with the configured `InferenceService` and inject it into a bounded experiment service. Do not create a permissive default authorizer. Real MCP actions remain MCP Gateway-only.
+- The persona object is currently an injectable policy primitive; API persistence and wiring into the main assistant response pipeline are separate integration work. Initiative policy may propose a next step, never execute it by itself.
+- The new test file covers model adapter contract, bounds, persona gating, and heuristic consolidation. Tests/builds must be run against the final branch head before treating this increment as verified.
 
 ## Recommended next phases
 
