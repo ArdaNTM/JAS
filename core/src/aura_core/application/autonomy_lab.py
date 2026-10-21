@@ -1,8 +1,9 @@
 """Bounded autonomy primitives for AURA.
 
-This module provides deterministic task-graph validation and a restricted expression
-laboratory. It deliberately does not execute arbitrary Python, shell commands, imports,
-network calls, or MCP tools. Any real capability invocation remains a separate
+This module provides deterministic task-graph validation, a restricted expression
+laboratory, and a separate fail-closed Python-draft adapter. Arbitrary Python is never
+evaluated in the host process: draft execution requires explicit authorization and a
+digest-pinned, network-isolated Docker runner. MCP tool invocation remains a separate
 PermissionEngine/MCPGateway operation.
 """
 from __future__ import annotations
