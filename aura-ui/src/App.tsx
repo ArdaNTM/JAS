@@ -186,12 +186,6 @@ export default function App() {
     pushTelemetry("SÜREKLİ DİNLEMEDEN KONUŞMA METNİ HAZIR — ENTER ONAYI GEREKLİ");
   });
 
-  useEffect(() => {
-    if (systemState !== "idle" || sessionBusy) {
-      continuousVoice.stop();
-    }
-  }, [systemState, sessionBusy, continuousVoice.stop]);
-
   const handleVoiceStatus = useCallback((
     status: "processing" | "ready" | "speaking" | "error",
     errorMessage?: string,
@@ -220,6 +214,12 @@ export default function App() {
     visibleSessionState === "responding" ||
     visibleSessionState === "speaking" ||
     visibleSessionState === "awaiting_approval";
+
+  useEffect(() => {
+    if (systemState !== "idle" || sessionBusy) {
+      continuousVoice.stop();
+    }
+  }, [systemState, sessionBusy, continuousVoice.stop]);
 
   useEffect(() => {
     let mounted = true;
