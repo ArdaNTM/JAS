@@ -79,6 +79,30 @@ The UI now exposes an explicit `SÜREKLİ DİNLE` control. It uses browser micro
 
 Microphone access is opt-in and visible, not secretly enabled on startup. Browser/device VAD thresholds vary; this is an initial local prototype, not a guarantee of studio-quality or always-correct detection. A later production hardening step should add browser-level tests for permission denial, device removal, long speech, and repeated segmentation.
 
+
+
+### Proposed next architecture steps (not yet implemented)
+
+#### Hierarchical memory
+
+The next memory increment should separate three lifetimes rather than expanding the prompt indefinitely:
+
+1. **Working context:** a bounded, task-scoped buffer holding the current goal, recent observations, active plan, unresolved questions, and references to relevant episodic records. Apply token/byte and age limits; summarize or evict by explicit policy.
+2. **Short-term context window:** only the selected, sanitized working context is assembled into each model request. Retrieved text is data, never authority; recalled instructions must not override system policy or permissions.
+3. **Long-term episodic memory (SQLite):** append-only task episodes with principal/task scope, timestamps, provenance, retention metadata, and explicit review/deletion behavior. Indexes and retrieval should be bounded; memory promotion or summarization must be auditable and must not grant capabilities.
+
+A task checkpoint should persist the plan state and episode references so a long-running task can resume without treating old model output as trusted state. Before implementation, define schema migrations, isolation/retention rules, context-selection budgets, and tests for prompt injection in recalled content.
+
+#### Isolated Python experiment runner
+
+The restricted expression evaluator remains the only implemented experiment path; it is not arbitrary Python execution. A future runner should be a separate, opt-in capability behind the Permission Engine and MCP Gateway, with a narrow job API and no direct access to host credentials, user files, network, or production memory.
+
+- **Pyodide/WebAssembly** is a possible first option for deterministic, browser-side experiments where supported packages and execution limits are sufficient. It still needs explicit CPU/time and memory limits, package allow-listing, and a clear boundary around browser-origin data.
+- **Docker or another OS-level isolation boundary** may support backend Python tests, but only with a non-root user, read-only base filesystem, disposable per-job workspace, no host mounts or Docker socket, network disabled by default, resource/time quotas, pinned images/dependencies, and process cleanup. Containers alone should not be described as a complete security boundary.
+- Both options need authorization before launch, bounded input/output, cancellation, audit events, and adversarial tests. Experiment results remain untrusted proposals until independently verified; they must not auto-edit trusted code, mutate memory, or promote skills.
+
+These are design directions only. Neither Pyodide execution nor a Docker-backed Python runner is currently implemented.
+
 ### Research links
 
 - ReAct — https://arxiv.org/abs/2210.03629
