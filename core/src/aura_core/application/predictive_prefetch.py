@@ -5,7 +5,7 @@ import json
 import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Awaitable, Callable
+from typing import Any
 from uuid import uuid4
 
 
@@ -73,27 +73,3 @@ class PredictivePrefetchPlanner:
                               (principal_id, limit)).fetchall()
         return [json.loads(row["payload_json"]) for row in rows]
 
-    async def dispatch_approved(self, *, principal_id: str, proposal_id: str, confirmed: bool,
-                                gateway_dispatch: Callable[[dict[str, Any]], Awaitable[Any]]) -> Any:
-        if not confirmed:
-            raise PermissionError("explicit confirmation is required")
-        with self._connect() as db:
-            row = db.execute("SELECT * FROM prefetch_proposals WHERE proposal_id=? AND principal_id=?",
-                             (proposal_id, principal_id)).fetchone()
-            if row is None:
-                raise KeyError("prefetch proposal not found")
-            if row["status"] != "pending":
-                raise ValueError("proposal is no longer pending")
-            db.execute("UPDATE prefetch_proposals SET status='approved_dispatching' WHERE proposal_id=?",
-                       (proposal_id,))
-        # The callback contract is intentionally gateway-specific; this planner
-        # has no provider registry and cannot call providers directly.
-        try:
-            result = await gateway_dispatch(json.loads(row["payload_json"]))
-        except Exception:
-            with self._connect() as db:
-                db.execute("UPDATE prefetch_proposals SET status='pending' WHERE proposal_id=?", (proposal_id,))
-            raise
-        with self._connect() as db:
-            db.execute("UPDATE prefetch_proposals SET status='dispatched' WHERE proposal_id=?", (proposal_id,))
-        return result
