@@ -1279,12 +1279,18 @@ def create_api(
         # Persona is an explicit presentation preference, not an authority source.
         # The local settings route may override this in-process; no initiative is
         # executed from a persona prompt.
-        persona_policy = getattr(app.state, "persona_policy", None) or PersonaPolicy(
-            tone=os.getenv("AURA_PERSONA_TONE", "witty"),
-            language=os.getenv("AURA_PERSONA_LANGUAGE", "auto"),
-            humor_intensity=max(0, min(3, int(os.getenv("AURA_PERSONA_HUMOR", "2")))),
-            initiative_enabled=os.getenv("AURA_PERSONA_INITIATIVE_ENABLED", "0").strip().lower() in {"1", "true", "yes"},
-        )
+        persona_policy = getattr(app.state, "persona_policy", None)
+        if persona_policy is None:
+            try:
+                persona_policy = PersonaPolicy(
+                    tone=os.getenv("AURA_PERSONA_TONE", "witty"),
+                    language=os.getenv("AURA_PERSONA_LANGUAGE", "auto"),
+                    humor_intensity=max(0, min(3, int(os.getenv("AURA_PERSONA_HUMOR", "2")))),
+                    initiative_enabled=os.getenv("AURA_PERSONA_INITIATIVE_ENABLED", "0").strip().lower() in {"1", "true", "yes"},
+                )
+            except (ValueError, TypeError):
+                logger.warning("Invalid persona environment settings; using safe defaults")
+                persona_policy = PersonaPolicy()
         system_prompt = system_prompt + "\n\n" + persona_policy.system_style_prompt()
         user_content = synthesized.user_content
 
