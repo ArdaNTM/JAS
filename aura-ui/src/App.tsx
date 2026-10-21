@@ -1,5 +1,6 @@
 import ArcReactor3D from "./components/ArcReactor3D";
 import DynamicHologram3D from "./components/DynamicHologram3D";
+import CapabilityWorkbench from "./components/CapabilityWorkbench";
 import { useCallback, useEffect, useState } from "react";
 import type { FormEvent } from "react";
 
@@ -651,6 +652,7 @@ export default function App() {
       </>
 
 
+      <CapabilityWorkbench />
       <AuraJarvisBridge
         directive={assistantDirective}
         researchOutput={researchOutput}
