@@ -25,6 +25,7 @@ from aura_core.application.proactive_store import ProactiveSuggestionStore
 from aura_core.application.adaptive_orchestrator import AdaptiveTaskOrchestrator
 from aura_core.application.async_work import AsyncWorkCoordinator
 from aura_core.application.context_synthesizer import ContextSynthesizer
+from aura_core.application.episodic_memory import EpisodicMemoryStore
 from aura_core.application.predictive_simulation import PredictiveSimulator
 from aura_core.application.system_telemetry import SystemTelemetry
 from aura_core.mcp.mcp_provider import MCPProvider
@@ -724,6 +725,20 @@ def create_api(
                 memory_context = "\n".join(
                     item.content for item in memories
                 )[:6000]
+                episodic_store = getattr(app.state, "episodic_memory", None)
+                if episodic_store is None:
+                    episodic_store = EpisodicMemoryStore.from_environment()
+                    app.state.episodic_memory = episodic_store
+                episodic_records = await app.state.async_work.run(
+                    lambda: episodic_store.recall(
+                        principal_id="local_default",
+                        query=request.message,
+                        limit=5,
+                    )
+                )
+                episodic_context = "\n".join(item.content for item in episodic_records)[:3000]
+                if episodic_context:
+                    memory_context = (memory_context + "\n" + episodic_context)[:8000]
             except Exception:
                 logger.warning(
                     "Chat memory recall unavailable",
@@ -801,6 +816,20 @@ def create_api(
                         ),
                         source="assistant_chat",
                         metadata={"request_id": request_id},
+                    )
+                )
+                episodic_store = getattr(app.state, "episodic_memory", None)
+                if episodic_store is None:
+                    episodic_store = EpisodicMemoryStore.from_environment()
+                    app.state.episodic_memory = episodic_store
+                await app.state.async_work.run(
+                    lambda: episodic_store.remember(
+                        principal_id="local_default",
+                        kind="episode",
+                        content=("User: " + request.message + "\nAssistant: " + assistant_reply)[:8000],
+                        tags=("conversation",),
+                        source_task_id=request_id,
+                        importance=2,
                     )
                 )
             except Exception:
