@@ -137,6 +137,10 @@ class InitiativeEngine:
             "review_provider_health",
             "A provider became degraded; inspect health before routing new work to it.",
         ),
+        "SystemResourcePressure": (
+            "review_system_pressure",
+            "System resources are under pressure; consider deferring optional background work.",
+        ),
     }
 
     def __init__(self) -> None:
