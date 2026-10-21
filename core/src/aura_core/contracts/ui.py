@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Stable, provider-neutral contract exposed to the AURA UI."""
+
+from __future__ import annotations
 
 from typing import Literal
 
