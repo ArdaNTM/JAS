@@ -1581,9 +1581,8 @@ def create_api(
                 authorize=authorize_attempt,
                 budget=budget,
             )
-            outcome = await app.state.async_work.run_async(
-                lambda: asyncio.to_thread(
-                    loop.run,
+            outcome = await app.state.async_work.run(
+                lambda: loop.run(
                     experiment_id=experiment_id,
                     principal_id=principal_id,
                     task_id=body.task_id,
