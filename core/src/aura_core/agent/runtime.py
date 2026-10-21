@@ -162,12 +162,34 @@ class AgentExecutor:
                 if remaining <= 0:
                     result = StepResult(step.step_id, StepState.CANCELLED, 0, reason="Task timed out")
                 else:
-                    try:
-                        result = await asyncio.wait_for(
-                            self._execute_step(task, plan, step), timeout=remaining
-                        )
-                    except asyncio.TimeoutError:
-                        result = StepResult(step.step_id, StepState.CANCELLED, 0, reason="Task timed out")
+                    else:
+                        execution = asyncio.create_task(self._execute_step(task, plan, step))
+                        deadline = monotonic() + remaining
+                        try:
+                            while not execution.done():
+                                if cancelled is not None and cancelled():
+                                    execution.cancel()
+                                    await asyncio.gather(execution, return_exceptions=True)
+                                    result = StepResult(step.step_id, StepState.CANCELLED, 0, reason="Task cancelled")
+                                    break
+                                time_left = deadline - monotonic()
+                                if time_left <= 0:
+                                    execution.cancel()
+                                    await asyncio.gather(execution, return_exceptions=True)
+                                    result = StepResult(step.step_id, StepState.CANCELLED, 0, reason="Task timed out")
+                                    break
+                                try:
+                                    await asyncio.wait_for(asyncio.shield(execution), timeout=min(0.05, time_left))
+                                except asyncio.TimeoutError:
+                                    continue
+                            else:
+                                result = execution.result()
+                            if execution.done() and not execution.cancelled() and 'result' not in locals():
+                                result = execution.result()
+                        except asyncio.CancelledError:
+                            execution.cancel()
+                            await asyncio.gather(execution, return_exceptions=True)
+                            raise
                 self._event("PlanStepCompleted", task, plan, step, {
                     "state": result.state.value, "attempts": result.attempts
                 })
