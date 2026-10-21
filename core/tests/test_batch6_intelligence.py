@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-import time
+from threading import Barrier
 
 from aura_core.application.async_work import AsyncWorkCoordinator
 from aura_core.application.context_synthesizer import ContextSynthesizer
@@ -63,14 +63,16 @@ def test_telemetry_handles_optional_dependency_missing(monkeypatch) -> None:
 def test_async_coordinator_offloads_blocking_work_and_tracks_stats() -> None:
     async def scenario() -> None:
         coordinator = AsyncWorkCoordinator(capacity=2)
-        started = time.perf_counter()
+        barrier = Barrier(2)
+        def operation(value: str) -> str:
+            barrier.wait(timeout=2)
+            return value
+
         results = await asyncio.gather(
-            coordinator.run(lambda: (time.sleep(0.08), "a")[1]),
-            coordinator.run(lambda: (time.sleep(0.08), "b")[1]),
+            coordinator.run(lambda: operation("a")),
+            coordinator.run(lambda: operation("b")),
         )
-        elapsed = time.perf_counter() - started
         assert results == ["a", "b"]
-        assert elapsed < 0.15
         snapshot = await coordinator.snapshot()
         assert snapshot.active == 0
         assert snapshot.completed == 2
