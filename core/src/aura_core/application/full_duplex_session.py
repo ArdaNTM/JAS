@@ -57,11 +57,12 @@ class FasterWhisperRecognizer:
             with tempfile.NamedTemporaryFile(suffix=".audio", delete=True) as handle:
                 handle.write(audio)
                 handle.flush()
-                segments, _info = await asyncio.to_thread(
-                    self._model.transcribe, handle.name, beam_size=1,
-                    vad_filter=True,
-                )
-                text = " ".join(segment.text.strip() for segment in segments).strip()
+                def transcribe_file():
+                    segments, _info = self._model.transcribe(
+                        handle.name, beam_size=1, vad_filter=True,
+                    )
+                    return " ".join(segment.text.strip() for segment in segments).strip()
+                text = await asyncio.to_thread(transcribe_file)
         return text[:8000]
 
 
