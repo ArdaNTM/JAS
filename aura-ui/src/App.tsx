@@ -430,7 +430,7 @@ export default function App() {
             </div>
 
             <div className="mt-1 text-[8px] tracking-[.3em] text-slate-600">
-              AUTONOMOUS INTELLIGENCE SYSTEM
+              ÖZERK ZEKA SİSTEMİ
             </div>
           </div>
 
@@ -481,7 +481,7 @@ export default function App() {
 
             <div className="mt-8 rounded border border-cyan-950/70 bg-slate-950/40 p-4">
               <div className="text-[8px] tracking-[.2em] text-slate-600">
-                CURRENT STATE
+                GÜNCEL DURUM
               </div>
 
               <div className="mt-2 text-lg font-light tracking-[.16em] text-cyan-300">
@@ -550,7 +550,7 @@ export default function App() {
 
           <aside className="order-3">
             <div className="mb-5 text-[9px] font-bold tracking-[.25em] text-cyan-600">
-              TELEMETRY
+              SİSTEM GÖZLEMİ
             </div>
 
             <div className="space-y-2">
