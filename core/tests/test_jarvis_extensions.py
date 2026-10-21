@@ -36,7 +36,7 @@ def test_model_revision_uses_provider_neutral_inference_and_bounds_output():
 
 def test_model_revision_rejects_markdown_fences_and_oversized_output():
     fenced = ModelBackedDraftRevision(
-        inference=FakeInference("\`\`\`python\nprint(1)\n\`\`\`"),
+        inference=FakeInference("```python\nprint(1)\n```"),
         config=ModelRevisionConfig(model="test-model"),
     )
     with pytest.raises(ValueError, match="fenced"):
