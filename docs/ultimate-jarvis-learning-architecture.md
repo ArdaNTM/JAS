@@ -14,7 +14,8 @@ These papers support architectural patterns, not a claim of general intelligence
 
 - `core/src/aura_core/application/reflexion.py` provides a bounded Reflexion-style orchestration primitive.
 - `core/src/aura_core/application/reflexion_inference.py` adapts the provider-neutral `InferenceService.infer(InferenceRequest)` contract into a model-backed draft reviser. It bounds tokens and output, treats sandbox diagnostics as untrusted data, exposes no tools, and rejects fenced/oversized output. Wire it as the `revise` callback to `ReflexionExperimentLoop`; sandbox authorization and independent verification remain separate required dependencies.
-- `core/src/aura_core/application/persona_policy.py` defines configurable style, language, humor, initiative threshold, quiet hours, opt-in, and daily suggestion budgets. It returns presentation guidance and a pure initiative gate; it is not an authorization mechanism. Each attempt constructs a distinct job and passes through the sandbox adapter with authorization checked again for that attempt.
+- `core/src/aura_core/application/persona_policy.py` defines configurable style, language, humor, initiative threshold, quiet hours, opt-in, and daily suggestion budgets. It returns presentation guidance and a pure initiative gate; it is not an authorization mechanism.
+- Each experiment attempt constructs a distinct job and passes through the sandbox adapter with authorization checked again for that attempt.
 - `ExperimentBudget` caps retries to at most three and bounds total wall-clock budget.
 - Failed execution/verifier feedback is stored as untrusted episodic data. It is diagnostic input, never policy or permission.
 - A successful run is not automatically trusted: a separate verifier must return true before a skill candidate is written.
@@ -42,11 +43,11 @@ These papers support architectural patterns, not a claim of general intelligence
 
 ## Recommended next phases
 
-1. **Close the experiment loop:** connect a provider-neutral draft/revision interface to the Reflexion primitive. Require independent tests/acceptance checks and re-authorize every attempt.
+1. **Strengthen experiment verification:** add structured test-suite/acceptance-check support beyond exact expected stdout, and preserve per-attempt authorization audit records.
 2. **Skill lifecycle:** add review/approve/reject APIs, immutable versioning, provenance, dependency declarations, regression tests, revocation, and invocation through registered capabilities only.
 3. **Memory consolidation:** produce reviewable lesson candidates from task outcomes and repeated evidence. Keep source episode references; do not elevate a lesson to a trusted system instruction.
 4. **Proactive autonomy:** add an opt-in scheduler with user-defined goals, quiet hours, budget, cancellation, and per-capability policy checks. It should propose or execute only actions already authorized by policy.
-5. **Persona:** implement configurable Turkish/English style settings and calibrated humor, with factuality, safety, privacy, and approval rules taking precedence.
+5. **Persona:** persist settings durably and connect initiative suggestions to user-reviewed event/goal workflows, with factuality, safety, privacy, quiet hours, budgets, and approval rules taking precedence.
 6. **Evaluation:** use task-specific regression suites, held-out tasks, repeated trials, cost/latency measures, false-success rates, permission-denial tests, and adversarial prompt-injection cases. No learned skill should be promoted based only on a model's self-assessment.
 
 ## Security invariants
