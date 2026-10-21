@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+from datetime import time
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -18,7 +19,7 @@ from aura_core.application.task_state_machine import TaskStateMachine
 from aura_core.application.autonomy_composition import compose_governed_autonomy
 from aura_core.application.full_duplex_session import (
     EventBusAudioPlayer, FasterWhisperRecognizer, FullDuplexSessionManager,
-    GatewaySpeechSynthesizer,
+    GatewaySpeechSynthesizer, ProactiveNotifier,
 )
 from aura_core.config.kernel import KernelConfig
 from aura_core.kernel.permissions import (
@@ -158,6 +159,20 @@ def build_app() -> FastAPI:
     app.state.event_bus_runtime = event_runtime
     app.state.task_state_machine = task_state_machine
     app.state.task_service = task_service
+
+    async def deliver_proactive_notification(*, principal_id: str, message: str) -> None:
+        kernel.event_bus.publish(__import__("aura_core.kernel.events", fromlist=["KernelEvent"]).KernelEvent(
+            event_type="ProactiveNotificationReady",
+            source_component="aura.proactive_notifier",
+            payload={"principal_id": principal_id, "message": message, "requires_user_attention": True},
+        ))
+
+    app.state.proactive_notifier = ProactiveNotifier(
+        deliver=deliver_proactive_notification,
+        budget_per_day=int(os.getenv("AURA_PROACTIVE_DAILY_BUDGET", "5")),
+        quiet_start=time.fromisoformat(os.getenv("AURA_QUIET_HOURS_START", "22:00")),
+        quiet_end=time.fromisoformat(os.getenv("AURA_QUIET_HOURS_END", "08:00")),
+    )
 
     # Autonomous execution is opt-in and fails startup if its explicit operation
     # allow-list is missing or malformed. It never creates permission policies.
