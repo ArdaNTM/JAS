@@ -23,6 +23,10 @@ from aura_core.application.reasoning_planner import ReasoningPlanner
 from aura_core.application.capability_discovery import DynamicCapabilityDiscovery
 from aura_core.application.proactive_store import ProactiveSuggestionStore
 from aura_core.application.adaptive_orchestrator import AdaptiveTaskOrchestrator
+from aura_core.application.async_work import AsyncWorkCoordinator
+from aura_core.application.context_synthesizer import ContextSynthesizer
+from aura_core.application.predictive_simulation import PredictiveSimulator
+from aura_core.application.system_telemetry import SystemTelemetry
 from aura_core.mcp.mcp_provider import MCPProvider
 from aura_core.config.backend import BackendConfig
 from aura_core.config.runtime import RuntimeConfig
@@ -255,6 +259,13 @@ def create_api(
     app.state.task_service = task_service
     app.state.live_events = live_events or LiveEventBroker()
     app.state.proactive_suggestions = ProactiveSuggestionStore()
+    app.state.async_work = AsyncWorkCoordinator(capacity=int(os.getenv("AURA_MAX_CONCURRENT_INFERENCE", "4")))
+    app.state.context_synthesizer = ContextSynthesizer()
+    app.state.predictive_simulator = PredictiveSimulator()
+    app.state.system_telemetry = SystemTelemetry(
+        cpu_warning=float(os.getenv("AURA_CPU_WARNING_PERCENT", "85")),
+        memory_warning=float(os.getenv("AURA_MEMORY_WARNING_PERCENT", "85")),
+    )
     app.state.capability_discovery = None
     app.state.directive_planner = DirectivePlanner()
     app.state.chat_memory = ChatMemory(
@@ -629,11 +640,31 @@ def create_api(
             raise HTTPException(status_code=422, detail=str(exc)) from exc
         return plan.to_dict()
 
+    @app.get("/api/runtime/concurrency")
+    async def runtime_concurrency() -> dict[str, object]:
+        return (await app.state.async_work.snapshot()).to_dict()
+
+    @app.get("/api/runtime/telemetry")
+    def runtime_telemetry() -> dict[str, object]:
+        return app.state.system_telemetry.snapshot()
+
+    @app.post("/api/reasoning/simulate")
+    def reasoning_simulate(request: DirectivePlanRequest) -> dict[str, object]:
+        try:
+            plan = ReasoningPlanner().plan(request.directive)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        return {
+            "directive": request.directive,
+            "plan": plan.to_dict(),
+            "simulation": app.state.predictive_simulator.simulate(plan.steps),
+        }
+
     @app.post(
         "/api/assistant/respond",
         response_model=AssistantRespondResponse,
     )
-    def assistant_respond(
+    async def assistant_respond(
         request: AssistantRespondRequest,
         http_request: Request,
     ) -> AssistantRespondResponse:
@@ -671,8 +702,8 @@ def create_api(
 
         if memory_enabled:
             try:
-                memories = asyncio.run(
-                    app.state.chat_memory.recall(
+                memories = await app.state.async_work.run_async(
+                    lambda: app.state.chat_memory.recall(
                         scope="local_default",
                         query=request.message,
                     )
@@ -686,32 +717,16 @@ def create_api(
                     extra={"request_id": request_id},
                     exc_info=True,
                 )
-        system_prompt = (
-            "Sen AURA'nın JARVIS konuşma katmanısın. "
-            "Kullanıcıya doğal Türkçe yanıt ver. "
-            "Ham araştırma çıktısını, JSON'u, tool metadata'sını, "
-            "execution detaylarını veya iç sistem ayrıntılarını aynen aktarma. "
-            "Araştırma verisini yalnızca bağlam olarak kullan. "
-            "Yanıt konuşmaya uygun ve kısa olsun."
+        tone = os.getenv("AURA_CHAT_TONE", "adaptive").strip().casefold()
+        synthesized = app.state.context_synthesizer.synthesize(
+            message=request.message,
+            memories=memory_context.splitlines() if memory_context else (),
+            research_context=research_context,
+            tone=tone,
         )
+        system_prompt = synthesized.system_prompt
+        user_content = synthesized.user_content
 
-        user_content = request.message
-
-        if research_context:
-            user_content = (
-                "Kullanıcı direktifi:\n"
-                + request.message
-                + "\n\n"
-                + "AURA araştırma bağlamı:\n"
-                + research_context
-            )
-
-        if memory_context:
-            user_content = (
-                user_content
-                + "\n\nAURA önceki sohbet belleği:\n"
-                + memory_context
-            )
         inference_request = InferenceRequest(
             messages=[
                 {
@@ -732,8 +747,8 @@ def create_api(
         inference_trace.start_stage("inference")
 
         try:
-            result = application.infer(
-                inference_request
+            result = await app.state.async_work.run(
+                lambda: application.infer(inference_request)
             )
         except Exception:
             inference_trace.finish_stage(
@@ -762,8 +777,8 @@ def create_api(
 
         if memory_enabled:
             try:
-                asyncio.run(
-                    app.state.chat_memory.remember(
+                await app.state.async_work.run_async(
+                    lambda: app.state.chat_memory.remember(
                         scope="local_default",
                         content=(
                             "User: "
