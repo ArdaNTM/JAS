@@ -32,6 +32,13 @@ from aura_core.application.async_work import AsyncWorkCoordinator
 from aura_core.application.context_synthesizer import ContextSynthesizer
 from aura_core.application.context_aware_stt import build_stt_prompt
 from aura_core.application.background_thinking import IdleMemoryReflectionDaemon
+from aura_core.application.autonomy_lab import (
+    AutonomyBudget,
+    AutonomyValidationError,
+    TaskNode,
+    evaluate_safe_expression,
+    validate_task_graph,
+)
 from aura_core.application.episodic_memory import EpisodicMemoryStore
 from aura_core.application.cross_capability_reasoning import CapabilityEvidence, CrossCapabilitySynthesizer
 from aura_core.application.jarvis_api import router as jarvis_router
@@ -325,6 +332,28 @@ class TaskRequest(BaseModel):
     title: str = Field(min_length=1)
     resource_scope: str = Field(min_length=1)
     steps: list[TaskStepPayload] = Field(min_length=1, max_length=32)
+
+
+class AutonomyTaskNodePayload(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    task_id: str = Field(min_length=1, max_length=100)
+    title: str = Field(min_length=1, max_length=500)
+    depends_on: list[str] = Field(default_factory=list, max_length=32)
+    kind: str = Field(default="reason", min_length=1, max_length=20)
+    requires_approval: bool = False
+
+
+class AutonomyPlanRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    nodes: list[AutonomyTaskNodePayload] = Field(min_length=1, max_length=32)
+    max_seconds: float = Field(default=60.0, ge=1.0, le=300.0)
+    max_subtasks: int = Field(default=8, ge=0, le=16)
+
+
+class AutonomyExperimentRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    expression: str = Field(min_length=1, max_length=2000)
+    data: dict[str, object] = Field(default_factory=dict)
 
 
 class ReasoningPlanRequest(BaseModel):
@@ -1311,6 +1340,74 @@ def create_api(
             degraded=False,
         )
 
+
+    @app.post("/api/autonomy/plan/validate")
+    def validate_autonomy_plan(body: AutonomyPlanRequest, http_request: Request) -> dict[str, object]:
+        """Validate a bounded task graph without scheduling or executing its steps."""
+        require_local_client(http_request)
+        nodes = [
+            TaskNode(
+                task_id=node.task_id,
+                title=node.title,
+                depends_on=tuple(node.depends_on),
+                kind=node.kind,
+                requires_approval=node.requires_approval,
+            )
+            for node in body.nodes
+        ]
+        try:
+            checked = validate_task_graph(
+                nodes,
+                AutonomyBudget(
+                    max_steps=32,
+                    max_seconds=body.max_seconds,
+                    max_subtasks=body.max_subtasks,
+                ),
+            )
+        except (AutonomyValidationError, ValueError) as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        return {
+            "valid": True,
+            "execution_started": False,
+            "authorization_boundary": "PermissionEngine and MCPGateway remain required for real actions",
+            "budget": {
+                "max_steps": 32,
+                "max_seconds": body.max_seconds,
+                "max_subtasks": body.max_subtasks,
+            },
+            "nodes": [
+                {
+                    "task_id": node.task_id,
+                    "title": node.title,
+                    "depends_on": list(node.depends_on),
+                    "kind": node.kind,
+                    "requires_approval": node.requires_approval,
+                }
+                for node in checked
+            ],
+        }
+
+    @app.post("/api/autonomy/experiment")
+    def run_safe_autonomy_experiment(
+        body: AutonomyExperimentRequest,
+        http_request: Request,
+    ) -> dict[str, object]:
+        """Evaluate a restricted pure expression; never execute arbitrary code."""
+        require_local_client(http_request)
+        try:
+            result = evaluate_safe_expression(body.expression, body.data)
+        except AutonomyValidationError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        return {
+            "status": "completed",
+            "result": result,
+            "execution_mode": "restricted_expression",
+            "arbitrary_code_executed": False,
+            "network_access": False,
+            "tool_execution_performed": False,
+            "memory_mutated": False,
+            "authorization_boundary": "MCPGateway and PermissionEngine",
+        }
 
     @app.get("/api/background-thinking/status")
     def background_thinking_status(http_request: Request) -> dict[str, object]:
