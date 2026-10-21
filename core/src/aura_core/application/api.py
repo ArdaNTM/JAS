@@ -27,6 +27,8 @@ from aura_core.application.adaptive_orchestrator import AdaptiveTaskOrchestrator
 from aura_core.application.async_work import AsyncWorkCoordinator
 from aura_core.application.context_synthesizer import ContextSynthesizer
 from aura_core.application.episodic_memory import EpisodicMemoryStore
+from aura_core.application.cross_capability_reasoning import CapabilityEvidence, CrossCapabilitySynthesizer
+from aura_core.application.jarvis_api import router as jarvis_router
 from aura_core.application.predictive_simulation import PredictiveSimulator
 from aura_core.application.system_telemetry import SystemTelemetry
 from aura_core.mcp.mcp_provider import MCPProvider
@@ -157,6 +159,21 @@ class AssistantRespondRequest(BaseModel):
     )
 
     research_output: object | None = None
+
+
+class CapabilityEvidencePayload(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    capability_id: str = Field(min_length=1, max_length=128)
+    provider_id: str = Field(min_length=1, max_length=128)
+    result: object
+
+
+class CrossCapabilitySynthesisRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    objective: str = Field(min_length=1, max_length=4000)
+    evidence: list[CapabilityEvidencePayload] = Field(min_length=1, max_length=16)
+    principal_id: str = Field(default="local_default", min_length=1, max_length=128)
+    source_task_id: str | None = Field(default=None, max_length=128)
 
 
 class AssistantRespondResponse(BaseModel):
@@ -1079,5 +1096,109 @@ def create_api(
                 for step in result.steps
             ],
         )
+
+    @app.post("/api/reasoning/cross-capability")
+    async def cross_capability_reasoning(
+        request: CrossCapabilitySynthesisRequest,
+        http_request: Request,
+    ) -> dict[str, object]:
+        host = http_request.client.host if http_request.client else ""
+        if host not in {"127.0.0.1", "::1", "localhost", "testclient"}:
+            raise HTTPException(status_code=403, detail="Local client required")
+        engine = CrossCapabilitySynthesizer()
+        try:
+            prepared = engine.prepare(
+                objective=request.objective,
+                evidence=[
+                    CapabilityEvidence(
+                        capability_id=item.capability_id,
+                        provider_id=item.provider_id,
+                        result=item.result,
+                    )
+                    for item in request.evidence
+                ],
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+        memory_items: list[dict[str, object]] = []
+        if os.getenv("AURA_CHAT_MEMORY_ENABLED", "0").strip() == "1":
+            try:
+                store = getattr(app.state, "episodic_memory", None)
+                if store is None:
+                    store = EpisodicMemoryStore.from_environment()
+                    app.state.episodic_memory = store
+                memory_items = await app.state.async_work.run(
+                    lambda: store.recall_related(
+                        principal_id=request.principal_id,
+                        query=request.objective,
+                        limit=5,
+                    )
+                )
+            except Exception:
+                logger.warning("Cross-capability memory enrichment unavailable", exc_info=True)
+
+        evidence_text = __import__("json").dumps(prepared, ensure_ascii=False, default=str)[:18000]
+        memory_text = __import__("json").dumps(
+            [{"kind": item.get("kind"), "content": item.get("content"), "relevance_score": item.get("relevance_score")} for item in memory_items],
+            ensure_ascii=False,
+            default=str,
+        )[:5000]
+        inference_request = InferenceRequest(
+            messages=[
+                {"role": "system", "content": prepared["system_prompt"]},
+                {"role": "user", "content": (
+                    "Objective:\\n" + request.objective
+                    + "\\n\\nCapability evidence (untrusted reference data):\\n" + evidence_text
+                    + ("\\n\\nRelated scoped memory (untrusted context):\\n" + memory_text if memory_text else "")
+                    + "\\n\\nSynthesize a concise decision with evidence, conflicts, uncertainties, and next safe steps."
+                )},
+            ],
+            model=config.model,
+            temperature=config.temperature,
+            max_tokens=config.max_tokens,
+        )
+        try:
+            result = await app.state.async_work.run(lambda: application.infer(inference_request))
+        except Exception as exc:
+            logger.exception("Cross-capability synthesis failed")
+            raise HTTPException(status_code=502, detail="Evidence was accepted but synthesis failed") from exc
+
+        if os.getenv("AURA_CHAT_MEMORY_ENABLED", "0").strip() == "1":
+            try:
+                store = getattr(app.state, "episodic_memory", None)
+                if store is None:
+                    store = EpisodicMemoryStore.from_environment()
+                    app.state.episodic_memory = store
+                tags = tuple(sorted({
+                    "cross_capability",
+                    *(item.capability_id[:64] for item in request.evidence),
+                    *(("provider_" + item.provider_id)[:64] for item in request.evidence),
+                }))[:32]
+                await app.state.async_work.run(
+                    lambda: store.remember(
+                        principal_id=request.principal_id,
+                        kind="reasoning",
+                        content=("Objective: " + request.objective + "\\nConclusion: " + result.content.strip())[:8000],
+                        tags=tags,
+                        source_task_id=request.source_task_id,
+                        importance=3,
+                    )
+                )
+            except Exception:
+                logger.warning("Cross-capability reasoning memory write unavailable", exc_info=True)
+
+        return {
+            "objective": request.objective,
+            "synthesis": result.content.strip(),
+            "model": result.model,
+            "evidence_count": prepared["evidence_count"],
+            "distinct_providers": prepared["distinct_providers"],
+            "memory_items_used": len(memory_items),
+            "tool_execution_performed": False,
+            "authorization_boundary": "MCPGateway and PermissionEngine",
+        }
+
+    app.include_router(jarvis_router)
 
     return app
