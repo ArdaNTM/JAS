@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import json
 import os
+import re
+import unicodedata
 import sqlite3
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -16,7 +18,7 @@ from typing import Any
 from uuid import uuid4
 
 
-_ALLOWED_KINDS = {"preference", "fact", "episode", "goal", "lesson"}
+_ALLOWED_KINDS = {"preference", "fact", "episode", "goal", "lesson", "reasoning"}
 
 
 @dataclass(frozen=True, slots=True)
@@ -191,6 +193,92 @@ class EpisodicMemoryStore:
                     [(now, memory_id, principal_id) for memory_id in ids],
                 )
         return [self._record(row) for row in rows]
+
+    @staticmethod
+    def _semantic_tokens(text: str) -> set[str]:
+        normalized = unicodedata.normalize("NFKC", text).casefold()
+        tokens = set(re.findall(r"[\wğüşöçıİĞÜŞÖÇ]{2,}", normalized, flags=re.UNICODE))
+        # Small, conservative Turkish suffix normalization helps relate inflected
+        # forms without an external model or a provider call.
+        suffixes = ("larından", "lerinden", "larının", "lerinin", "ları", "leri", "lar", "ler", "dan", "den", "dır", "dir", "tır", "tir", "ına", "ine", " için", "de", "da", "yi", "yı", "ı", "i", "u", "ü")
+        stems = set(tokens)
+        for token in tokens:
+            for suffix in suffixes:
+                if token.endswith(suffix) and len(token) - len(suffix) >= 4:
+                    stems.add(token[:-len(suffix)])
+                    break
+        return stems
+
+    def recall_related(
+        self,
+        *,
+        principal_id: str,
+        query: str,
+        kinds: tuple[str, ...] | list[str] | None = None,
+        limit: int = 8,
+    ) -> list[dict[str, Any]]:
+        """Retrieve semantically related records using scoped lexical/tag scoring.
+
+        This is deterministic local retrieval, not an embedding-model claim.
+        It ranks shared concepts, tags, importance and memory kind, and never
+        crosses the requested principal boundary.
+        """
+        if not principal_id.strip():
+            raise ValueError("principal_id is required")
+        if not query.strip() or len(query) > 4000:
+            raise ValueError("query must contain 1..4000 characters")
+        limit = max(1, min(int(limit), 50))
+        selected_kinds = tuple(kinds or ())
+        if any(kind not in _ALLOWED_KINDS for kind in selected_kinds):
+            raise ValueError("Unsupported memory kind")
+        clauses = ["principal_id = ?"]
+        params: list[object] = [principal_id]
+        if selected_kinds:
+            clauses.append("kind IN (" + ",".join("?" for _ in selected_kinds) + ")")
+            params.extend(selected_kinds)
+        params.append(500)
+        with self._connect() as db:
+            rows = db.execute(
+                "SELECT * FROM episodic_memory WHERE " + " AND ".join(clauses)
+                + " ORDER BY importance DESC, last_accessed_at DESC LIMIT ?",
+                params,
+            ).fetchall()
+
+        query_tokens = self._semantic_tokens(query)
+        if not query_tokens:
+            return []
+        ranked: list[tuple[float, sqlite3.Row, list[str]]] = []
+        for row in rows:
+            tags = tuple(json.loads(row["tags_json"]))
+            record_tokens = self._semantic_tokens(row["content"] + " " + " ".join(tags))
+            shared = sorted(query_tokens & record_tokens)
+            tag_tokens = self._semantic_tokens(" ".join(tags))
+            tag_overlap = len(query_tokens & tag_tokens)
+            if not shared:
+                continue
+            coverage = len(shared) / max(1, len(query_tokens))
+            precision = len(shared) / max(1, len(record_tokens))
+            score = (0.7 * coverage + 0.3 * precision) * 100
+            score += min(10, int(row["importance"]) * 2)
+            score += min(12, tag_overlap * 4)
+            if row["kind"] == "preference":
+                score += 3
+            ranked.append((score, row, shared))
+        ranked.sort(key=lambda item: (item[0], item[1]["created_at"]), reverse=True)
+        now = datetime.now(UTC).isoformat()
+        results: list[dict[str, Any]] = []
+        with self._connect() as db:
+            for score, row, shared in ranked[:limit]:
+                db.execute(
+                    "UPDATE episodic_memory SET last_accessed_at = ? WHERE memory_id = ? AND principal_id = ?",
+                    (now, row["memory_id"], principal_id),
+                )
+                item = self._record(row).to_dict()
+                item["relevance_score"] = round(score, 3)
+                item["matched_concepts"] = shared[:12]
+                item["relation"] = "shared_concepts_and_tags"
+                results.append(item)
+        return results
 
     def forget(self, *, principal_id: str, memory_id: str) -> bool:
         with self._connect() as db:
