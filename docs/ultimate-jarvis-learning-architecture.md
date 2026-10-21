@@ -38,7 +38,7 @@ These papers support architectural patterns, not a claim of general intelligence
 
 ## API integration
 
-- `POST /api/autonomy/reflexion`: local-client-only; requires the Permission Engine to be available and allow the high-risk `sandbox.python.execute` capability for each attempt. Uses the configured inference provider/model, bounded retry and time budgets, isolated Docker, and exact expected-stdout verification. No MCP tools are exposed to the reviser or sandbox. The endpoint reports `tool_execution_performed: false` because this experiment runs only the sandboxed Python draft.
+- `POST /api/autonomy/reflexion`: local-client-only; requires the Permission Engine to be available and allow the high-risk `sandbox.python.execute` capability for each attempt. Uses the configured inference provider/model, bounded retry and time budgets, isolated Docker, and exact expected-stdout verification. No MCP tools are exposed to the reviser or sandbox. The endpoint reports `mcp_tool_execution_performed: false` and separately indicates whether sandbox code ran; sandbox execution is not the same as an MCP tool invocation.
 - `GET /api/jarvis/persona` and `PUT /api/jarvis/persona`: local-only style/initiative preferences. Initiative remains disabled by default; the persona policy never replaces authorization.
 
 ## Recommended next phases
