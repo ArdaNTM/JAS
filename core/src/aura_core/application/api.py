@@ -29,6 +29,7 @@ from aura_core.application.proactive_store import ProactiveSuggestionStore
 from aura_core.application.adaptive_orchestrator import AdaptiveTaskOrchestrator
 from aura_core.application.async_work import AsyncWorkCoordinator
 from aura_core.application.context_synthesizer import ContextSynthesizer
+from aura_core.application.context_aware_stt import build_stt_prompt
 from aura_core.application.episodic_memory import EpisodicMemoryStore
 from aura_core.application.cross_capability_reasoning import CapabilityEvidence, CrossCapabilitySynthesizer
 from aura_core.application.jarvis_api import router as jarvis_router
@@ -62,6 +63,7 @@ logger = logging.getLogger("aura_core.http")
 
 _whisper_model = None
 _whisper_model_lock = threading.Lock()
+_stt_memory_store = None
 
 
 class SpeechModelLoadError(RuntimeError):
@@ -70,6 +72,55 @@ class SpeechModelLoadError(RuntimeError):
 
 class SpeechTranscriptionError(RuntimeError):
     """The local STT engine failed while decoding or transcribing audio."""
+
+
+def resolve_stt_runtime() -> tuple[str, str]:
+    """Resolve configured STT device/precision with safe automatic CUDA selection."""
+    requested_device = os.getenv("AURA_STT_DEVICE", "auto").strip().lower()
+    requested_compute = os.getenv("AURA_STT_COMPUTE_TYPE", "auto").strip().lower()
+    if requested_device not in {"auto", "cuda", "cpu"}:
+        raise ValueError("AURA_STT_DEVICE must be auto, cuda, or cpu")
+    if requested_compute not in {"auto", "float16", "int8", "int8_float16", "float32", "bfloat16"}:
+        raise ValueError("Unsupported AURA_STT_COMPUTE_TYPE")
+    cuda_available = False
+    if requested_device in {"auto", "cuda"}:
+        try:
+            import ctranslate2
+            cuda_available = ctranslate2.get_cuda_device_count() > 0
+        except Exception:
+            cuda_available = False
+    if requested_device == "cuda" and not cuda_available:
+        raise RuntimeError("CUDA was explicitly requested but no CUDA device is available")
+    device = "cuda" if requested_device == "cuda" or (requested_device == "auto" and cuda_available) else "cpu"
+    if requested_compute == "auto":
+        compute_type = "float16" if device == "cuda" else "int8"
+    else:
+        compute_type = requested_compute
+    if device == "cpu" and compute_type in {"float16", "int8_float16"}:
+        # These precision modes are CUDA-oriented; use a compatible CPU default.
+        compute_type = "int8"
+    return device, compute_type
+
+
+def _stt_context_prompt() -> str:
+    global _stt_memory_store
+    if _stt_memory_store is None:
+        try:
+            _stt_memory_store = EpisodicMemoryStore.from_environment()
+        except Exception:
+            logger.debug("STT context memory unavailable; using static Turkish prompt", exc_info=True)
+            _stt_memory_store = False
+    return build_stt_prompt(
+        principal_id=os.getenv("AURA_STT_PRINCIPAL_ID", "local_default"),
+        static_prompt=os.getenv(
+            "AURA_STT_INITIAL_PROMPT",
+            "Türkçe konuşma. Doğa hakkında araştırma yap. Yapay zeka hakkında araştırma yap. "
+            "Lütfen Türkçe kelimeleri doğru yaz: araştırma, yapay zeka, doğa, hakkında, "
+            "bilgi, özet, kaynaklar, dosyalar, hafıza, görsel, analiz, görev, izin, araç.",
+        ),
+        memory_store=_stt_memory_store if _stt_memory_store is not False else None,
+        cache_seconds=int(os.getenv("AURA_STT_CONTEXT_CACHE_SECONDS", "60")),
+    )
 
 
 def transcribe_audio_bytes(audio_bytes: bytes, language: str, suffix: str = ".webm") -> tuple[str, str]:
@@ -88,10 +139,11 @@ def transcribe_audio_bytes(audio_bytes: bytes, language: str, suffix: str = ".we
                 except ImportError:
                     raise
                 try:
+                    device, compute_type = resolve_stt_runtime()
                     _whisper_model = WhisperModel(
                         os.getenv("AURA_STT_MODEL", "medium"),
-                        device=os.getenv("AURA_STT_DEVICE", "cpu"),
-                        compute_type=os.getenv("AURA_STT_COMPUTE_TYPE", "int8"),
+                        device=device,
+                        compute_type=compute_type,
                     )
                 except Exception as exc:
                     raise SpeechModelLoadError("Unable to initialize the configured faster-whisper model") from exc
@@ -113,12 +165,7 @@ def transcribe_audio_bytes(audio_bytes: bytes, language: str, suffix: str = ".we
                     "speech_pad_ms": 400,
                     "threshold": 0.45,
                 },
-                initial_prompt=os.getenv(
-                    "AURA_STT_INITIAL_PROMPT",
-                    "Türkçe konuşma. Doğa hakkında araştırma yap. Yapay zeka hakkında araştırma yap. "
-                    "Lütfen Türkçe kelimeleri doğru yaz: araştırma, yapay zeka, doğa, hakkında, "
-                    "bilgi, özet, kaynaklar, dosyalar, hafıza, görsel, analiz, görev, izin, araç.",
-                ),
+                initial_prompt=_stt_context_prompt(),
                 condition_on_previous_text=True,
                 no_speech_threshold=0.6,
                 log_prob_threshold=-1.0,
@@ -173,12 +220,7 @@ def transcribe_audio_bytes(audio_bytes: bytes, language: str, suffix: str = ".we
                         "speech_pad_ms": 400,
                         "threshold": 0.45,
                     },
-                    initial_prompt=os.getenv(
-                        "AURA_STT_INITIAL_PROMPT",
-                        "Türkçe konuşma. Doğa hakkında araştırma yap. Yapay zeka hakkında araştırma yap. "
-                        "Lütfen Türkçe kelimeleri doğru yaz: araştırma, yapay zeka, doğa, hakkında, "
-                        "bilgi, özet, kaynaklar, dosyalar, hafıza, görsel, analiz, görev, izin, araç.",
-                    ),
+                    initial_prompt=_stt_context_prompt(),
                     condition_on_previous_text=True,
                     no_speech_threshold=0.6,
                     log_prob_threshold=-1.0,
