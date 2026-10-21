@@ -146,6 +146,7 @@ def transcribe_audio_bytes(audio_bytes: bytes, language: str, suffix: str = ".we
                         os.getenv("AURA_STT_MODEL", "medium"),
                         device=device,
                         compute_type=compute_type,
+                        cpu_threads=max(1, min(16, int(os.getenv("AURA_STT_CPU_THREADS", str(min(8, os.cpu_count() or 4)))))),
                     )
                 except Exception as exc:
                     raise SpeechModelLoadError("Unable to initialize the configured faster-whisper model") from exc
@@ -159,7 +160,7 @@ def transcribe_audio_bytes(audio_bytes: bytes, language: str, suffix: str = ".we
             segments, info = _whisper_model.transcribe(
                 temp_path,
                 language=language,
-                beam_size=max(1, min(10, int(os.getenv("AURA_STT_BEAM_SIZE", "5")))),
+                beam_size=max(1, min(10, int(os.getenv("AURA_STT_BEAM_SIZE", "3")))),
                 temperature=0.0,
                 vad_filter=True,
                 vad_parameters={
