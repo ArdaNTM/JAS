@@ -66,6 +66,29 @@ class PredictivePrefetchPlanner:
             payload["proposal_id"] = proposal_id
             return payload
 
+    def observe_kernel_event(self, event: Any) -> dict[str, Any] | None:
+        """Observe only explicitly tagged, local events; never infer arbitrary tools."""
+        payload = getattr(event, "payload", {})
+        if not isinstance(payload, dict) and not hasattr(payload, "get"):
+            return None
+        principal_id = str(payload.get("principal_id", "")).strip()
+        capability_id = str(payload.get("prefetch_capability_id", "")).strip()
+        if not principal_id or not capability_id:
+            return None
+        event_key = str(payload.get("prefetch_event_key", getattr(event, "event_type", ""))).strip()
+        hour = payload.get("local_hour")
+        if hour is None:
+            timestamp = getattr(event, "timestamp", None)
+            hour = getattr(timestamp, "hour", None)
+        if not isinstance(hour, int):
+            return None
+        return self.observe(
+            principal_id=principal_id,
+            event_key=event_key,
+            capability_id=capability_id,
+            hour_local=hour,
+        )
+
     def proposals(self, *, principal_id: str, limit: int = 20) -> list[dict[str, Any]]:
         limit = min(max(int(limit), 1), self.max_proposals)
         with self._connect() as db:
