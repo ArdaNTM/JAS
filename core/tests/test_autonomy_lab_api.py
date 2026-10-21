@@ -57,7 +57,8 @@ def test_autonomy_experiment_returns_pure_result_without_side_effects():
     assert response.status_code == 200
     assert response.json()["result"] == 42
     assert response.json()["arbitrary_code_executed"] is False
-    assert response.json()["tool_execution_performed"] is False
+    assert response.json()["mcp_tool_execution_performed"] is False
+    assert response.json()["sandbox_code_executed"] is False
     assert response.json()["memory_mutated"] is False
 
 
