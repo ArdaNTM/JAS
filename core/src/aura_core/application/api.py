@@ -64,6 +64,7 @@ from aura_core.observability.pipeline_trace import PipelineTrace
 logger = logging.getLogger("aura_core.http")
 
 _whisper_model = None
+_whisper_model_device = None
 _whisper_model_lock = threading.Lock()
 _stt_memory_store = None
 
@@ -105,144 +106,185 @@ def resolve_stt_runtime() -> tuple[str, str]:
 
 
 def _stt_context_prompt() -> str:
-    global _stt_memory_store
-    if _stt_memory_store is None:
-        try:
-            _stt_memory_store = EpisodicMemoryStore.from_environment()
-        except Exception:
-            logger.debug("STT context memory unavailable; using static Turkish prompt", exc_info=True)
-            _stt_memory_store = False
-    return build_stt_prompt(
-        principal_id=os.getenv("AURA_STT_PRINCIPAL_ID", "local_default"),
-        static_prompt=os.getenv(
+    """Return dynamic context when available; never let optional context break STT."""
+    fallback = (
+        os.getenv(
             "AURA_STT_INITIAL_PROMPT",
             "Türkçe konuşma. Doğa hakkında araştırma yap. Yapay zeka hakkında araştırma yap. "
             "Lütfen Türkçe kelimeleri doğru yaz: araştırma, yapay zeka, doğa, hakkında, "
             "bilgi, özet, kaynaklar, dosyalar, hafıza, görsel, analiz, görev, izin, araç.",
-        ),
-        memory_store=_stt_memory_store if _stt_memory_store is not False else None,
-        cache_seconds=int(os.getenv("AURA_STT_CONTEXT_CACHE_SECONDS", "60")),
+        )
     )
+    try:
+        global _stt_memory_store
+        if _stt_memory_store is None:
+            try:
+                _stt_memory_store = EpisodicMemoryStore.from_environment()
+            except Exception:
+                logger.debug("STT context memory unavailable; using static Turkish prompt", exc_info=True)
+                _stt_memory_store = False
+        prompt = build_stt_prompt(
+            principal_id=os.getenv("AURA_STT_PRINCIPAL_ID", "local_default"),
+            static_prompt=fallback,
+            memory_store=_stt_memory_store if _stt_memory_store is not False else None,
+            cache_seconds=max(0, min(3600, int(os.getenv("AURA_STT_CONTEXT_CACHE_SECONDS", "60")))),
+        )
+        return prompt if isinstance(prompt, str) and prompt.strip() else fallback
+    except Exception:
+        logger.warning("STT context prompt failed; using static Turkish prompt", exc_info=True)
+        return fallback
 
 
-def transcribe_audio_bytes(audio_bytes: bytes, language: str, suffix: str = ".webm") -> tuple[str, str]:
-    """Run local faster-whisper transcription; load the model lazily once."""
-    global _whisper_model
+def transcribe_audio_bytes(
+    audio_bytes: bytes,
+    language: str,
+    suffix: str = ".webm",
+    *,
+    _force_cpu: bool = False,
+) -> tuple[str, str]:
+    """Transcribe locally, retrying CUDA failures once on CPU INT8."""
+    global _whisper_model, _whisper_model_device
     from pathlib import Path
 
     if not audio_bytes:
         raise ValueError("Audio payload is empty")
 
+    try:
+        from faster_whisper import WhisperModel
+    except ImportError:
+        raise
+
+    def load_model(device: str, compute_type: str):
+        return WhisperModel(
+            os.getenv("AURA_STT_MODEL", "medium"),
+            device=device,
+            compute_type=compute_type,
+            cpu_threads=max(
+                1,
+                min(16, int(os.getenv("AURA_STT_CPU_THREADS", str(min(8, os.cpu_count() or 4))))),
+            ),
+        )
+
+    if _force_cpu and _whisper_model_device != "cpu":
+        with _whisper_model_lock:
+            if _whisper_model_device != "cpu":
+                _whisper_model = None
+                _whisper_model_device = None
+
     if _whisper_model is None:
         with _whisper_model_lock:
             if _whisper_model is None:
                 try:
-                    from faster_whisper import WhisperModel
-                except ImportError:
-                    raise
-                try:
-                    device, compute_type = resolve_stt_runtime()
-                    _whisper_model = WhisperModel(
-                        os.getenv("AURA_STT_MODEL", "medium"),
-                        device=device,
-                        compute_type=compute_type,
-                        cpu_threads=max(1, min(16, int(os.getenv("AURA_STT_CPU_THREADS", str(min(8, os.cpu_count() or 4)))))),
-                    )
+                    requested_device, compute_type = ("cpu", "int8") if _force_cpu else resolve_stt_runtime()
+                    try:
+                        _whisper_model = load_model(requested_device, compute_type)
+                        _whisper_model_device = requested_device
+                    except Exception as gpu_or_model_exc:
+                        # CUDA/float16 initialization is not reliable on every Windows setup.
+                        # Fall back once to CPU INT8 before reporting model-load failure.
+                        if requested_device != "cuda":
+                            raise
+                        logger.warning(
+                            "CUDA STT model initialization failed; retrying with CPU INT8",
+                            extra={"stt_exception_type": type(gpu_or_model_exc).__name__},
+                            exc_info=True,
+                        )
+                        _whisper_model = load_model("cpu", "int8")
+                        _whisper_model_device = "cpu"
                 except Exception as exc:
-                    raise SpeechModelLoadError("Unable to initialize the configured faster-whisper model") from exc
+                    _whisper_model = None
+                    _whisper_model_device = None
+                    raise SpeechModelLoadError("Unable to initialize faster-whisper on CUDA or CPU") from exc
+
+    prompt = _stt_context_prompt()
+    options = {
+        "language": language,
+        "beam_size": max(1, min(10, int(os.getenv("AURA_STT_BEAM_SIZE", "3")))),
+        "temperature": 0.0,
+        "vad_filter": True,
+        "vad_parameters": {
+            "min_silence_duration_ms": 300,
+            "speech_pad_ms": 400,
+            "threshold": 0.45,
+        },
+        "initial_prompt": prompt,
+        "condition_on_previous_text": True,
+        "no_speech_threshold": 0.6,
+        "log_prob_threshold": -1.0,
+        "compression_ratio_threshold": 2.4,
+    }
 
     temp_path = None
     try:
-        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as audio_file:
-            audio_file.write(audio_bytes)
-            temp_path = audio_file.name
         try:
-            segments, info = _whisper_model.transcribe(
-                temp_path,
-                language=language,
-                beam_size=max(1, min(10, int(os.getenv("AURA_STT_BEAM_SIZE", "3")))),
-                temperature=0.0,
-                vad_filter=True,
-                vad_parameters={
-                    "min_silence_duration_ms": 300,
-                    "speech_pad_ms": 400,
-                    "threshold": 0.45,
-                },
-                initial_prompt=_stt_context_prompt(),
-                condition_on_previous_text=True,
-                no_speech_threshold=0.6,
-                log_prob_threshold=-1.0,
-                compression_ratio_threshold=2.4,
-            )
-            # faster-whisper decodes lazily while iterating the segment generator.
-            text = " ".join(segment.text.strip() for segment in segments).strip()
-        except Exception as path_exc:
-            # Browser MediaRecorder commonly emits WebM/Opus. Decode through PyAV's
-            # bundled FFmpeg libraries and pass normalized 16 kHz mono PCM directly
-            # to faster-whisper. This avoids requiring a separately installed
-            # ffmpeg.exe and avoids relying on a temporary filename's extension.
+            with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as audio_file:
+                audio_file.write(audio_bytes)
+                temp_path = audio_file.name
             try:
-                import av
-                import numpy as np
+                segments, info = _whisper_model.transcribe(temp_path, **options)
+                text = " ".join(segment.text.strip() for segment in segments).strip()
+            except Exception as path_exc:
+                # Browser MediaRecorder commonly emits WebM/Opus. Try PyAV normalization
+                # before classifying this as a model/runtime failure.
+                try:
+                    import av
+                    import numpy as np
 
-                with av.open(io.BytesIO(audio_bytes), mode="r") as container:
-                    audio_stream = next(
-                        (stream for stream in container.streams if stream.type == "audio"),
-                        None,
-                    )
-                    if audio_stream is None:
-                        raise ValueError("Audio container has no audio stream")
-
-                    resampler = av.AudioResampler(
-                        format="fltp",
-                        layout="mono",
-                        rate=16000,
-                    )
-                    chunks = []
-                    for frame in container.decode(audio_stream):
+                    with av.open(io.BytesIO(audio_bytes), mode="r") as container:
+                        audio_stream = next(
+                            (stream for stream in container.streams if stream.type == "audio"),
+                            None,
+                        )
+                        if audio_stream is None:
+                            raise ValueError("Audio container has no audio stream")
+                        resampler = av.AudioResampler(format="fltp", layout="mono", rate=16000)
+                        chunks = []
+                        for frame in container.decode(audio_stream):
+                            chunks.extend(
+                                converted.to_ndarray().reshape(-1)
+                                for converted in resampler.resample(frame)
+                            )
                         chunks.extend(
                             converted.to_ndarray().reshape(-1)
-                            for converted in resampler.resample(frame)
+                            for converted in resampler.resample(None)
                         )
-                    chunks.extend(
-                        converted.to_ndarray().reshape(-1)
-                        for converted in resampler.resample(None)
-                    )
-                    if not chunks:
-                        raise ValueError("Audio decoder produced no samples")
-                    audio_samples = np.concatenate(chunks).astype(np.float32, copy=False)
+                        if not chunks:
+                            raise ValueError("Audio decoder produced no samples")
+                        audio_samples = np.concatenate(chunks).astype(np.float32, copy=False)
 
-                segments, info = _whisper_model.transcribe(
-                    audio_samples,
-                    language=language,
-                    beam_size=max(1, min(10, int(os.getenv("AURA_STT_BEAM_SIZE", "5")))),
-                    temperature=0.0,
-                    vad_filter=True,
-                    vad_parameters={
-                        "min_silence_duration_ms": 300,
-                        "speech_pad_ms": 400,
-                        "threshold": 0.45,
-                    },
-                    initial_prompt=_stt_context_prompt(),
-                    condition_on_previous_text=True,
-                    no_speech_threshold=0.6,
-                    log_prob_threshold=-1.0,
-                    compression_ratio_threshold=2.4,
-                )
-                text = " ".join(segment.text.strip() for segment in segments).strip()
-            except Exception as fallback_exc:
-                logger.warning(
-                    "STT file decoding and in-memory normalization both failed",
-                    extra={
-                        "stt_exception_type": type(fallback_exc).__name__,
-                        "stt_initial_exception_type": type(path_exc).__name__,
-                    },
-                    exc_info=True,
-                )
-                raise SpeechTranscriptionError(
-                    "faster-whisper could not decode the original audio or normalized PCM fallback"
-                ) from fallback_exc
+                    segments, info = _whisper_model.transcribe(audio_samples, **options)
+                    text = " ".join(segment.text.strip() for segment in segments).strip()
+                except Exception as fallback_exc:
+                    logger.warning(
+                        "STT file decoding and in-memory normalization failed",
+                        extra={
+                            "stt_exception_type": type(fallback_exc).__name__,
+                            "stt_initial_exception_type": type(path_exc).__name__,
+                            "stt_device": _whisper_model_device,
+                        },
+                        exc_info=True,
+                    )
+                    raise SpeechTranscriptionError(
+                        "faster-whisper could not decode or transcribe the audio"
+                    ) from fallback_exc
+        except SpeechTranscriptionError:
+            raise
+        except Exception as exc:
+            raise SpeechTranscriptionError("faster-whisper inference failed") from exc
         return text, getattr(info, "language", None) or language
+    except SpeechTranscriptionError:
+        # CUDA can fail lazily during inference/segment iteration, not just model loading.
+        if _whisper_model_device == "cuda" and not _force_cpu:
+            logger.warning(
+                "CUDA STT inference failed; retrying the recording on CPU INT8",
+                extra={"stt_exception_type": "SpeechTranscriptionError"},
+                exc_info=True,
+            )
+            with _whisper_model_lock:
+                _whisper_model = None
+                _whisper_model_device = None
+            return transcribe_audio_bytes(audio_bytes, language, suffix, _force_cpu=True)
+        raise
     finally:
         if temp_path:
             try:
