@@ -81,27 +81,28 @@ Microphone access is opt-in and visible, not secretly enabled on startup. Browse
 
 
 
-### Proposed next architecture steps (not yet implemented)
+### Hierarchical task memory
 
-#### Hierarchical memory
+The initial task-lifecycle integration is implemented in `core/src/aura_core/application/task_memory.py` and `core/src/aura_core/memory/hierarchical_memory.py`:
 
-The next memory increment should separate three lifetimes rather than expanding the prompt indefinitely:
+- A bounded working context is attached to the task as `Task.memory_context`; every recalled item is marked untrusted.
+- SQLite episodic records and checkpoints are scoped by both principal and task. `AURA_HIERARCHICAL_MEMORY_DB` selects the database path (default: `./data/hierarchical-memory.sqlite3`).
+- `AgentTaskService` loads scoped context at task start and stores a bounded lifecycle outcome/checkpoint.
+- Memory text is data, not authority; it cannot grant capabilities or modify Gateway arguments.
+- The current `ReasoningPlanner` remains deterministic and does not change its plan based on recalled memory yet. This integration preserves context for the task runtime; model-level context selection, cross-task retrieval, retention/deletion policy, and adversarial prompt-injection evaluation remain follow-up work.
 
-1. **Working context:** a bounded, task-scoped buffer holding the current goal, recent observations, active plan, unresolved questions, and references to relevant episodic records. Apply token/byte and age limits; summarize or evict by explicit policy.
-2. **Short-term context window:** only the selected, sanitized working context is assembled into each model request. Retrieved text is data, never authority; recalled instructions must not override system policy or permissions.
-3. **Long-term episodic memory (SQLite):** append-only task episodes with principal/task scope, timestamps, provenance, retention metadata, and explicit review/deletion behavior. Indexes and retrieval should be bounded; memory promotion or summarization must be auditable and must not grant capabilities.
+### Isolated Python experiment runner
 
-A task checkpoint should persist the plan state and episode references so a long-running task can resume without treating old model output as trusted state. Before implementation, define schema migrations, isolation/retention rules, context-selection budgets, and tests for prompt injection in recalled content.
+The restricted expression evaluator remains available for deterministic calculations. A separate `POST /api/autonomy/python` endpoint can run an untrusted Python draft only when all of these conditions hold:
 
-#### Isolated Python experiment runner
+- The caller is a local client.
+- The Permission Engine has an explicit allow policy for `sandbox.python.execute` at `local-sandbox` for principal `local_owner`. No default allow policy is installed; absence of an explicit allow returns 403.
+- `AURA_PYTHON_SANDBOX_IMAGE` names a locally available, digest-pinned image in the form `image@sha256:<64-hex-digest>`. The Docker runner uses `--pull=never`, so it will not download an image at execution time.
+- Docker is available. Otherwise the request fails closed without executing the source.
 
-The restricted expression evaluator remains the only implemented experiment path; it is not arbitrary Python execution. A future runner should be a separate, opt-in capability behind the Permission Engine and MCP Gateway, with a narrow job API and no direct access to host credentials, user files, network, or production memory.
+The runner uses no network, no host mounts or Docker socket mount, a read-only root filesystem, a non-root UID, dropped capabilities, no-new-privileges, and CPU/memory/PID/time/output limits. A timeout triggers best-effort container termination. The host does not use an `exec`/`eval` fallback. Container isolation is still a defense-in-depth boundary, not a claim of perfect isolation.
 
-- **Pyodide/WebAssembly** is a possible first option for deterministic, browser-side experiments where supported packages and execution limits are sufficient. It still needs explicit CPU/time and memory limits, package allow-listing, and a clear boundary around browser-origin data.
-- **Docker or another OS-level isolation boundary** may support backend Python tests, but only with a non-root user, read-only base filesystem, disposable per-job workspace, no host mounts or Docker socket, network disabled by default, resource/time quotas, pinned images/dependencies, and process cleanup. Containers alone should not be described as a complete security boundary.
-- Both options need authorization before launch, bounded input/output, cancellation, audit events, and adversarial tests. Experiment results remain untrusted proposals until independently verified; they must not auto-edit trusted code, mutate memory, or promote skills.
-
-These are design directions only. Neither Pyodide execution nor a Docker-backed Python runner is currently implemented.
+Real MCP tool execution remains behind AgentExecutor → MCPGateway → Permission Engine. Sandbox execution is a separate capability authorized by the Permission Engine; it does not invoke MCP tools.
 
 ### Research links
 
