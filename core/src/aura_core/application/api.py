@@ -284,9 +284,29 @@ def create_api(
         enabled = os.getenv("AURA_TELEMETRY_DAEMON_ENABLED", "1").strip().lower() not in {"0", "false", "no"}
         if daemon is not None and enabled:
             daemon.start()
+        unsubscribe_prefetch = None
+        prefetch_enabled = os.getenv("AURA_PREFETCH_ENABLED", "0").strip().lower() in {"1", "true", "yes"}
+        kernel = getattr(application.state, "kernel", None)
+        event_bus = getattr(kernel, "event_bus", None) if kernel is not None else getattr(application.state, "event_bus", None)
+        if prefetch_enabled and event_bus is not None:
+            def observe_prefetch_event(event: KernelEvent) -> None:
+                try:
+                    planner = getattr(application.state, "predictive_prefetch_planner", None)
+                    if planner is None:
+                        planner = PredictivePrefetchPlanner(
+                            os.getenv("AURA_PREFETCH_DB", "./data/predictive_prefetch.sqlite3"),
+                            min_observations=int(os.getenv("AURA_PREFETCH_MIN_OBSERVATIONS", "3")),
+                        )
+                        application.state.predictive_prefetch_planner = planner
+                    planner.observe_kernel_event(event)
+                except Exception:
+                    logger.warning("Predictive prefetch event observation failed", exc_info=True)
+            unsubscribe_prefetch = event_bus.subscribe("*", observe_prefetch_event)
         try:
             yield
         finally:
+            if unsubscribe_prefetch is not None:
+                unsubscribe_prefetch()
             if daemon is not None:
                 await daemon.stop()
 
