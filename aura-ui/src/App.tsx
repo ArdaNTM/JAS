@@ -470,7 +470,7 @@ export default function App() {
                   : "bg-amber-400",
               ].join(" ")}
             />
-            CORE {coreStatus.toUpperCase()}
+            CORE {durumMetni(coreStatus).toLocaleUpperCase("tr-TR")}
           </div>
         </header>
 
@@ -478,7 +478,7 @@ export default function App() {
 
           <aside className="order-2 lg:order-1">
             <div className="mb-5 text-[9px] font-bold tracking-[.25em] text-cyan-600">
-              CORE SYSTEMS
+              CORE SİSTEMLERİ
             </div>
 
             <StatusItem
@@ -570,7 +570,7 @@ export default function App() {
 
             {visibleSessionState === "awaiting_approval" && (
               <div role="status" className="mt-4 max-w-xl rounded border border-amber-700/70 bg-amber-950/20 px-4 py-3 text-center text-[10px] leading-5 text-amber-200">
-                AURA Core is waiting for explicit authorization. The UI will not execute or retry the action on its own.
+                AURA Core açık yetkilendirme bekliyor. Arayüz eylemi kendiliğinden çalıştırmaz veya yeniden denemez.
               </div>
             )}
           </section>
