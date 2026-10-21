@@ -84,3 +84,21 @@ def test_vision_provider_rejects_nonlocal_endpoints() -> None:
         LocalOllamaVisionProvider(base_url="http://192.0.2.10:11434")
     provider = LocalOllamaVisionProvider(base_url="http://127.0.0.1:11434")
     assert provider.model == "qwen2.5vl:3b"
+
+
+def test_prefetch_kernel_event_requires_explicit_capability_and_local_hour(tmp_path) -> None:
+    from datetime import UTC, datetime
+    from types import SimpleNamespace
+
+    planner = PredictivePrefetchPlanner(tmp_path / "event-prefetch.sqlite3", min_observations=2)
+    missing = SimpleNamespace(event_type="TaskCompleted", payload={"principal_id": "alice"}, timestamp=datetime.now(UTC))
+    assert planner.observe_kernel_event(missing) is None
+    event = SimpleNamespace(
+        event_type="MorningRoutine",
+        payload={"principal_id": "alice", "prefetch_capability_id": "weather.read", "local_hour": 7},
+        timestamp=datetime.now(UTC),
+    )
+    assert planner.observe_kernel_event(event) is None
+    proposal = planner.observe_kernel_event(event)
+    assert proposal is not None
+    assert proposal["status"] == "pending_approval"
