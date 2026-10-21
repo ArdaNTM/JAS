@@ -253,9 +253,9 @@ class DockerIsolatedSandbox(PlanSandbox):
                 "--pids-limit", str(self._limits.pids_limit),
                 "--user", "65534:65534",
                 "--tmpfs", "/tmp:rw,noexec,nosuid,size=16m",
-                "--mount", f"type=bind,src={script},dst=/input/main.py,readonly",
+                "--mount", f"type=bind,src={script},dst=/main.py,readonly",
                 "--workdir", "/tmp",
-                self._limits.image, "python", "-I", "-S", "/input/main.py",
+                self._limits.image, "python", "-I", "-S", "/main.py",
             ]
             self._emit("SandboxExecutionStarted", principal_id, {"image": self._limits.image})
             try:
