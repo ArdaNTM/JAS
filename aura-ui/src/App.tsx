@@ -8,6 +8,7 @@ import {
   createTask,
   generateTaskPlan,
   getHealth,
+  getUIContract,
   type HealthResponse,
   type TaskStep,
 } from "./api/client";
@@ -190,6 +191,23 @@ export default function App() {
     };
 
     void refresh();
+
+    void getUIContract().then((contract) => {
+      if (mounted) {
+        setTelemetry((current) => [
+          `UI CONTRACT v${contract.contract_version} READY`,
+          ...current,
+        ].slice(0, 8));
+      }
+    }).catch((cause: unknown) => {
+      if (mounted) {
+        const message = cause instanceof AuraApiError
+          ? `[${cause.code}] ${cause.message}${cause.requestId ? ` (request: ${cause.requestId})` : ""}`
+          : "UI-Core contract discovery failed.";
+        setError(message);
+        setSessionState("error");
+      }
+    });
 
     const timer = window.setInterval(
       () => void refresh(),
