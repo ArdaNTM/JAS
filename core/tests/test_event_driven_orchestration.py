@@ -87,18 +87,26 @@ def test_duplicate_event_and_cooldown_are_bounded() -> None:
         monotonic=lambda: clock[0],
     )
     coordinator.start()
+
+    # EventBus reports successful delivery when the subscriber callback returns.
+    # Duplicate/cooldown suppression is therefore asserted at the coordinator's
+    # side-effect boundary (the reflection daemon invocation count).
     bus.publish(event(event_id="same"))
-    assert asyncio.run(bus.dispatch_once()) is True
-    bus.publish(event(event_id="same"))
-    assert asyncio.run(bus.dispatch_once()) is False
-    bus.publish(event(event_id="next"))
     assert asyncio.run(bus.dispatch_once()) is True
     assert daemon.calls == 1
+
+    bus.publish(event(event_id="same"))
+    assert asyncio.run(bus.dispatch_once()) is True
+    assert daemon.calls == 1  # duplicate event ID was suppressed
+
+    bus.publish(event(event_id="next"))
+    assert asyncio.run(bus.dispatch_once()) is True
+    assert daemon.calls == 1  # distinct event suppressed during cooldown
 
     clock[0] += 31
     bus.publish(event(event_id="later"))
     assert asyncio.run(bus.dispatch_once()) is True
-    assert daemon.calls == 2
+    assert daemon.calls == 2  # reflection resumes after cooldown
 
 
 def test_reflection_errors_are_contained_and_observable() -> None:
