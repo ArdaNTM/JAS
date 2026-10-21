@@ -52,6 +52,78 @@ def propose_memory_links(records: list[Any], *, max_pairs: int = 5) -> list[dict
     return proposals
 
 
+
+def propose_memory_consolidation(records: list[Any], *, max_proposals: int = 5) -> list[dict[str, Any]]:
+    """Derive review-only lessons from repeated patterns and possible contradictions.
+
+    This deterministic first pass prefers explainable heuristics over pretending
+    lexical overlap is semantic certainty. Every proposal cites source IDs and
+    remains untrusted until a human reviews it.
+    """
+    bounded = records[:20]
+    proposals: list[dict[str, Any]] = []
+    contradiction_pairs = (
+        ({"always", "never"}, "absolute_claim_conflict"),
+        ({"works", "fails"}, "outcome_conflict"),
+        ({"success", "failure"}, "outcome_conflict"),
+        ({"enabled", "disabled"}, "state_conflict"),
+        ({"true", "false"}, "state_conflict"),
+        ({"çalışıyor", "çalışmıyor"}, "outcome_conflict"),
+        ({"başarılı", "başarısız"}, "outcome_conflict"),
+        ({"açık", "kapalı"}, "state_conflict"),
+    )
+    for i, left in enumerate(bounded):
+        left_text = str(getattr(left, "content", ""))[:1200]
+        left_tokens = _concepts(left_text)
+        if not left_tokens:
+            continue
+        for right in bounded[i + 1:]:
+            right_text = str(getattr(right, "content", ""))[:1200]
+            right_tokens = _concepts(right_text)
+            shared = sorted(left_tokens & right_tokens)
+            if len(shared) < 2:
+                continue
+            left_id = str(getattr(left, "memory_id", getattr(left, "record_id", "")))
+            right_id = str(getattr(right, "memory_id", getattr(right, "record_id", "")))
+            if not left_id or not right_id or left_id == right_id:
+                continue
+            left_words = set(re.findall(r"[\wğüşöçıİĞÜŞÖÇ]+", left_text.casefold()))
+            right_words = set(re.findall(r"[\wğüşöçıİĞÜŞÖÇ]+", right_text.casefold()))
+            conflict = None
+            for terms, kind in contradiction_pairs:
+                left_hit = bool(terms & left_words)
+                right_hit = bool(terms & right_words)
+                if left_hit and right_hit and (terms & left_words) != (terms & right_words):
+                    conflict = kind
+                    break
+            if conflict:
+                proposals.append({
+                    "kind": "possible_memory_contradiction",
+                    "evidence_memory_ids": [left_id, right_id],
+                    "shared_concepts": shared[:8],
+                    "conflict_type": conflict,
+                    "summary": "Two records may disagree; inspect context and timestamps before resolving.",
+                    "confidence": 0.45,
+                    "review_required": True,
+                    "untrusted": True,
+                    "execution_performed": False,
+                })
+            elif len(shared) >= 3:
+                proposals.append({
+                    "kind": "possible_repeated_lesson",
+                    "evidence_memory_ids": [left_id, right_id],
+                    "shared_concepts": shared[:8],
+                    "summary": "Repeated evidence may support a reusable lesson; verify context and counterexamples.",
+                    "confidence": round(min(0.7, 0.3 + 0.05 * len(shared)), 2),
+                    "review_required": True,
+                    "untrusted": True,
+                    "execution_performed": False,
+                })
+            if len(proposals) >= max(1, min(int(max_proposals), 5)):
+                return proposals
+    return proposals
+
+
 class IdleMemoryReflectionDaemon:
     """Runs only when explicitly enabled and the app has been idle long enough."""
 
@@ -127,16 +199,24 @@ class IdleMemoryReflectionDaemon:
             query="",
             limit=20,
         )
-        proposals = propose_memory_links(records, max_pairs=5)
+        proposals = propose_memory_links(records, max_pairs=5) + propose_memory_consolidation(records, max_proposals=5)
         now = time.time()
         saved = 0
         with sqlite3.connect(str(self.database_path), timeout=5.0) as db:
             for proposal in proposals:
                 payload = dict(proposal)
-                # Stable per-pair ID prevents duplicate proposals every idle cycle.
-                pair = "|".join(sorted((payload["source_memory_id"], payload["target_memory_id"])))
+                # Stable identity includes proposal kind and evidence IDs, preventing
+                # duplicate proposals every idle cycle without merging unlike claims.
                 import hashlib
-                proposal_id = hashlib.sha256((self.principal_id + "|" + pair).encode()).hexdigest()
+                evidence = payload.get("evidence_memory_ids") or [
+                    payload.get("source_memory_id", ""), payload.get("target_memory_id", "")
+                ]
+                identity = json.dumps(
+                    [payload.get("kind", "unknown"), sorted(str(item) for item in evidence),
+                     payload.get("conflict_type", ""), payload.get("shared_concepts", [])],
+                    ensure_ascii=False, sort_keys=True,
+                )
+                proposal_id = hashlib.sha256((self.principal_id + "|" + identity).encode()).hexdigest()
                 payload["proposal_id"] = proposal_id
                 cursor = db.execute(
                     "INSERT OR IGNORE INTO reflection_proposals(proposal_id, principal_id, payload_json, created_at) VALUES (?, ?, ?, ?)",
