@@ -18,11 +18,11 @@ const labelClass = "mb-1 block text-[9px] tracking-[.18em] text-slate-500";
 function toBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onerror = () => reject(new Error("Image could not be read."));
+    reader.onerror = () => reject(new Error("Görsel okunamadı."));
     reader.onload = () => {
       const result = String(reader.result ?? "");
       const separator = result.indexOf(",");
-      if (separator < 0) reject(new Error("Image data URL is invalid."));
+      if (separator < 0) reject(new Error("Görsel verisi geçersiz."));
       else resolve(result.slice(separator + 1));
     };
     reader.readAsDataURL(file);
@@ -41,7 +41,7 @@ export default function CapabilityWorkbench() {
   const [memoryItems, setMemoryItems] = useState<VectorMemoryItem[]>([]);
 
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [visionPrompt, setVisionPrompt] = useState("Describe the important objects and visible text.");
+  const [visionPrompt, setVisionPrompt] = useState("Önemli nesneleri ve görünen metinleri açıkla.");
   const [visionResult, setVisionResult] = useState("");
 
   const [toolProblem, setToolProblem] = useState("");
@@ -59,7 +59,7 @@ export default function CapabilityWorkbench() {
     try {
       await action();
     } catch (cause) {
-      setMessage(cause instanceof Error ? cause.message : "Core request failed.");
+      setMessage(cause instanceof Error ? cause.message : "Core isteği başarısız oldu.");
     } finally {
       setBusy(false);
     }
@@ -72,7 +72,7 @@ export default function CapabilityWorkbench() {
         content: memoryText.trim(),
         tags: ["ui", "user-provided"],
       });
-      setMessage(result.stored ? "Stored as untrusted reference data." : "Memory was not stored.");
+      setMessage(result.stored ? "Güvenilmeyen başvuru verisi olarak kaydedildi." : "Hafıza kaydedilemedi.");
       setMemoryText("");
     });
   }
@@ -85,18 +85,18 @@ export default function CapabilityWorkbench() {
         limit: 8,
       });
       setMemoryItems(result.items);
-      setMessage(result.count + " result(s) · " + result.trust);
+      setMessage(result.count + " sonuç · " + result.trust);
     });
   }
 
   async function analyzeImage() {
     await run(async () => {
-      if (!imageFile) throw new Error("Choose an image first.");
-      if (imageFile.size > 8 * 1024 * 1024) throw new Error("Choose an image smaller than 8 MiB.");
+      if (!imageFile) throw new Error("Önce bir görsel seçin.");
+      if (imageFile.size > 8 * 1024 * 1024) throw new Error("8 MiB boyutundan küçük bir görsel seçin.");
       const imageBase64 = await toBase64(imageFile);
       const result = await analyzeLocalVision({ image_base64: imageBase64, prompt: visionPrompt.trim() });
       setVisionResult(result.analysis);
-      setMessage("Provider: " + result.provider + " · cloud used: " + String(result.cloud_used));
+      setMessage("Sağlayıcı: " + result.provider + " · bulut kullanıldı: " + String(result.cloud_used));
     });
   }
 
@@ -107,7 +107,7 @@ export default function CapabilityWorkbench() {
         capability_context: toolContext.trim(),
       });
       setToolProposal(result);
-      setMessage("Proposal only. Nothing was registered or executed.");
+      setMessage("Yalnızca öneri oluşturuldu. Hiçbir şey kaydedilmedi veya çalıştırılmadı.");
     });
   }
 
@@ -119,17 +119,17 @@ export default function CapabilityWorkbench() {
         capability_id: capabilityId.trim(),
         hour_local: Number(hourLocal),
       });
-      setMessage("Observation processed. Execution performed: " + String(result.execution_performed));
+      setMessage("Gözlem işlendi. Eylem yürütüldü: " + String(result.execution_performed));
       const proposals = await getPrefetchProposals(principalId.trim(), 20);
       setPrefetchItems(proposals.items);
     });
   }
 
   const tabs: { id: Panel; label: string }[] = [
-    { id: "memory", label: "LOCAL RAG" },
-    { id: "vision", label: "VISION" },
-    { id: "tools", label: "TOOL PROPOSALS" },
-    { id: "prefetch", label: "PREFETCH" },
+    { id: "memory", label: "YEREL HAFIZA" },
+    { id: "vision", label: "GÖRÜ" },
+    { id: "tools", label: "ARAÇ ÖNERİLERİ" },
+    { id: "prefetch", label: "ÖN HAZIRLIK" },
   ];
 
   return (
@@ -141,7 +141,7 @@ export default function CapabilityWorkbench() {
         aria-expanded={open}
         aria-controls="aura-capability-workbench"
       >
-        {open ? "CLOSE WORKBENCH" : "CAPABILITY WORKBENCH"}
+        {open ? "ÇALIŞMA ALANINI KAPAT" : "YETENEK ÇALIŞMA ALANI"}
       </button>
 
       {open && (
@@ -173,11 +173,11 @@ export default function CapabilityWorkbench() {
             {panel === "memory" && (
               <div className="grid gap-5 md:grid-cols-2">
                 <div className="space-y-3">
-                  <label className="block"><span className={labelClass}>ADD LOCAL KNOWLEDGE</span><textarea className={inputClass + " min-h-28"} value={memoryText} maxLength={12000} onChange={(event) => setMemoryText(event.target.value)} placeholder="Add notes for scoped semantic retrieval…" /></label>
+                  <label className="block"><span className={labelClass}>ADD LOCAL KNOWLEDGE</span><textarea className={inputClass + " min-h-28"} value={memoryText} maxLength={12000} onChange={(event) => setMemoryText(event.target.value)} placeholder="Kapsam dâhilinde anlamsal arama için not ekleyin…" /></label>
                   <button className={buttonClass} disabled={busy || !memoryText.trim() || !principalId.trim()} onClick={() => void saveMemory()}>STORE REFERENCE</button>
                 </div>
                 <div className="space-y-3">
-                  <label className="block"><span className={labelClass}>SEMANTIC QUERY</span><input className={inputClass} value={memoryQuery} maxLength={12000} onChange={(event) => setMemoryQuery(event.target.value)} placeholder="Search scoped local memory…" /></label>
+                  <label className="block"><span className={labelClass}>SEMANTIC QUERY</span><input className={inputClass} value={memoryQuery} maxLength={12000} onChange={(event) => setMemoryQuery(event.target.value)} placeholder="Kapsamlı yerel hafızada ara…" /></label>
                   <button className={buttonClass} disabled={busy || !memoryQuery.trim() || !principalId.trim()} onClick={() => void searchMemory()}>RECALL</button>
                   <div className="space-y-2">{memoryItems.map((item, index) => <article key={item.memory_id ?? index} className="rounded border border-cyan-950 p-3 text-xs"><p className="whitespace-pre-wrap text-cyan-100">{item.content ?? JSON.stringify(item)}</p><p className="mt-2 text-[9px] text-slate-500">Untrusted reference data · relevance {item.relevance_score ?? "n/a"}</p></article>)}</div>
                 </div>
@@ -196,7 +196,7 @@ export default function CapabilityWorkbench() {
 
             {panel === "tools" && (
               <div className="space-y-3">
-                <label className="block"><span className={labelClass}>PROBLEM TO SOLVE</span><textarea className={inputClass + " min-h-20"} maxLength={3000} value={toolProblem} onChange={(event) => setToolProblem(event.target.value)} placeholder="Describe a small, pure-data helper…" /></label>
+                <label className="block"><span className={labelClass}>PROBLEM TO SOLVE</span><textarea className={inputClass + " min-h-20"} maxLength={3000} value={toolProblem} onChange={(event) => setToolProblem(event.target.value)} placeholder="Küçük, yalnızca veri işleyen bir yardımcıyı tanımlayın…" /></label>
                 <label className="block"><span className={labelClass}>CAPABILITY CONTEXT (OPTIONAL)</span><textarea className={inputClass + " min-h-16"} maxLength={2000} value={toolContext} onChange={(event) => setToolContext(event.target.value)} /></label>
                 <button className={buttonClass} disabled={busy || !toolProblem.trim()} onClick={() => void createProposal()}>GENERATE PROPOSAL</button>
                 {toolProposal && <article className="space-y-2 rounded border border-amber-900/70 bg-amber-950/10 p-3"><p className="text-[10px] font-bold tracking-widest text-amber-200">UNTRUSTED CANDIDATE · NOT EXECUTED</p><pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words text-[10px] text-cyan-100">{JSON.stringify(toolProposal, null, 2)}</pre><p className="text-[9px] text-slate-500">This screen does not register or execute candidate code. Any future activation must pass server-side validation, explicit approval, Permission Engine, and MCP Gateway.</p></article>}
@@ -211,7 +211,7 @@ export default function CapabilityWorkbench() {
                   <label className="block"><span className={labelClass}>CAPABILITY ID</span><input className={inputClass} value={capabilityId} maxLength={128} onChange={(event) => setCapabilityId(event.target.value)} /></label>
                   <label className="block"><span className={labelClass}>LOCAL HOUR (0–23)</span><input className={inputClass} type="number" min={0} max={23} value={hourLocal} onChange={(event) => setHourLocal(event.target.value)} /></label>
                 </div>
-                <div className="flex flex-wrap gap-2"><button className={buttonClass} disabled={busy || !principalId.trim() || !eventKey.trim() || !capabilityId.trim() || Number(hourLocal) < 0 || Number(hourLocal) > 23} onClick={() => void recordPattern()}>RECORD OBSERVATION</button><button className={buttonClass} disabled={busy || !principalId.trim()} onClick={() => void run(async () => { const result = await getPrefetchProposals(principalId.trim(), 20); setPrefetchItems(result.items); setMessage(result.count + " proposal(s) loaded."); })}>REFRESH PROPOSALS</button></div>
+                <div className="flex flex-wrap gap-2"><button className={buttonClass} disabled={busy || !principalId.trim() || !eventKey.trim() || !capabilityId.trim() || Number(hourLocal) < 0 || Number(hourLocal) > 23} onClick={() => void recordPattern()}>RECORD OBSERVATION</button><button className={buttonClass} disabled={busy || !principalId.trim()} onClick={() => void run(async () => { const result = await getPrefetchProposals(principalId.trim(), 20); setPrefetchItems(result.items); setMessage(result.count + " öneri yüklendi."); })}>REFRESH PROPOSALS</button></div>
                 <div className="space-y-2">{prefetchItems.map((item, index) => <article key={String(item.proposal_id ?? item.id ?? index)} className="rounded border border-cyan-950 p-3"><pre className="whitespace-pre-wrap break-words text-[10px] text-cyan-100">{JSON.stringify(item, null, 2)}</pre><p className="mt-2 text-[9px] text-slate-500">Recommendation only · execution not authorized</p></article>)}</div>
               </div>
             )}
