@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 
-import { respondAsAssistant, synthesizeLocalSpeech } from "./api/client";
+import { AuraApiError, respondAsAssistant, synthesizeLocalSpeech } from "./api/client";
 
 function normalizeSpeechText(text: string): string {
   return text
@@ -32,6 +32,7 @@ type AuraJarvisBridgeProps = {
   requestId?: number;
   onStatus?: (
     status: "processing" | "ready" | "speaking" | "error",
+    errorMessage?: string,
   ) => void;
 };
 
@@ -90,7 +91,10 @@ export default function AuraJarvisBridge({
             "AURA JARVIS bridge error:",
             error,
           );
-          onStatus?.("error");
+          const message = error instanceof AuraApiError
+            ? `[${error.code}] ${error.message}${error.requestId ? ` (request: ${error.requestId})` : ""}`
+            : error instanceof Error ? error.message : "Voice response failed.";
+          onStatus?.("error", message);
         }
       }
     };
