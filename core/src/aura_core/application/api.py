@@ -34,6 +34,10 @@ from aura_core.application.context_synthesizer import ContextSynthesizer
 from aura_core.application.context_aware_stt import build_stt_prompt
 from aura_core.application.background_thinking import IdleMemoryReflectionDaemon
 from aura_core.application.persona_policy import PersonaPolicy
+from aura_core.application.reflexion import ExperimentBudget, ProceduralSkillLibrary, ReflexionExperimentLoop
+from aura_core.application.reflexion_inference import ModelBackedDraftRevision, ModelRevisionConfig
+from aura_core.application.sandbox_runner import DockerPythonRunner
+from aura_core.memory.hierarchical_memory import SQLiteEpisodicMemory
 from aura_core.application.sandbox_contract import SandboxJob
 from aura_core.application.sandbox_runner import SandboxAuthorizationError, SandboxUnavailable
 from aura_core.application.autonomy_lab import (
@@ -359,6 +363,19 @@ class AutonomyExperimentRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     expression: str = Field(min_length=1, max_length=2000)
     data: dict[str, object] = Field(default_factory=dict)
+
+
+
+
+class ReflexionExperimentRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    task_id: str = Field(min_length=1, max_length=128)
+    goal: str = Field(min_length=1, max_length=1000)
+    source: str = Field(min_length=1, max_length=64000)
+    input_data: dict[str, object] = Field(default_factory=dict)
+    expected_stdout: str | None = Field(default=None, max_length=4000)
+    max_attempts: int = Field(default=3, ge=1, le=3)
+    max_total_seconds: float = Field(default=45.0, ge=1.0, le=120.0)
 
 
 class AutonomyPythonRequest(BaseModel):
@@ -1492,6 +1509,116 @@ def create_api(
             "isolation": result.isolation,
             "authorization_boundary": "PermissionEngine",
             "arbitrary_python_executed": True,
+        }
+
+
+    @app.post("/api/autonomy/reflexion")
+    async def run_model_backed_reflexion(
+        body: ReflexionExperimentRequest,
+        http_request: Request,
+    ) -> dict[str, object]:
+        """Run a bounded, local-only model-revised experiment through the Permission Engine."""
+        require_local_client(http_request)
+        permission_engine = getattr(http_request.app.state, "permission_engine", None)
+        if permission_engine is None:
+            raise HTTPException(status_code=503, detail="Permission Engine is unavailable")
+
+        principal_id = "local_owner"
+        experiment_id = f"reflexion:{uuid4()}"
+        try:
+            input_json = json.dumps(body.input_data, ensure_ascii=False, allow_nan=False)
+            budget = ExperimentBudget(
+                max_attempts=body.max_attempts,
+                max_total_seconds=body.max_total_seconds,
+            )
+        except (ValueError, TypeError) as exc:
+            raise HTTPException(status_code=422, detail="Invalid experiment input or budget") from exc
+
+        def authorize_attempt(candidate: SandboxJob) -> bool:
+            # A fresh Permission Engine decision is required for every attempt.
+            if candidate.principal_id != principal_id or not candidate.authorization_id.startswith("reflexion:"):
+                return False
+            authorization = AuthorizationRequest(
+                request_id=f"authorize:{candidate.job_id}",
+                principal_id=principal_id,
+                capability_id="sandbox.python.execute",
+                operation_id="sandbox.python.execute",
+                resource_scope="local-sandbox",
+                risk_level=RiskLevel.HIGH,
+                task_id=candidate.job_id,
+            )
+            decision = permission_engine.authorize(authorization)
+            return decision.decision is AuthorizationDecision.ALLOW
+
+        try:
+            runner = DockerPythonRunner(authorizer=authorize_attempt)
+            memory = SQLiteEpisodicMemory(
+                os.getenv("AURA_REFLEXION_MEMORY_DB", "./data/reflexion-episodes.sqlite3")
+            )
+            skills = ProceduralSkillLibrary(
+                os.getenv("AURA_SKILL_CANDIDATES_DB", "./data/procedural-skills.sqlite3")
+            )
+            revise = ModelBackedDraftRevision(
+                inference=application,
+                config=ModelRevisionConfig(
+                    model=config.model,
+                    max_tokens=max(1, min(int(config.max_tokens or 1800), 4096)),
+                    temperature=0.0,
+                ),
+            )
+            expected = body.expected_stdout
+            loop = ReflexionExperimentLoop(
+                runner=runner,
+                memory=memory,
+                skills=skills,
+                revise=revise,
+                verify=lambda result: (
+                    expected is not None
+                    and result.status == "completed"
+                    and result.stdout.strip() == expected.strip()
+                    and result.return_code == 0
+                ),
+                authorize=authorize_attempt,
+                budget=budget,
+            )
+            outcome = await app.state.async_work.run_async(
+                lambda: asyncio.to_thread(
+                    loop.run,
+                    experiment_id=experiment_id,
+                    principal_id=principal_id,
+                    task_id=body.task_id,
+                    goal=body.goal,
+                    source=body.source,
+                    input_json=input_json,
+                )
+            )
+        except Exception as exc:
+            logger.warning("Model-backed Reflexion experiment failed safely", exc_info=True)
+            raise HTTPException(status_code=503, detail="Reflexion experiment could not complete safely") from exc
+
+        return {
+            "experiment_id": outcome.experiment_id,
+            "status": outcome.status,
+            "attempts": outcome.attempts,
+            "lesson": outcome.lesson,
+            "skill_proposal_id": outcome.skill_proposal_id,
+            "skill_review_required": outcome.skill_proposal_id is not None,
+            "results": [
+                {
+                    "job_id": item.job_id,
+                    "status": item.status,
+                    "return_code": item.return_code,
+                    "stdout": item.stdout[:4000],
+                    "stderr": item.stderr[:4000],
+                    "elapsed_seconds": item.elapsed_seconds,
+                    "isolation": item.isolation,
+                }
+                for item in outcome.results
+            ],
+            "authorization_boundary": "PermissionEngine + isolated Docker sandbox",
+            "model_output_is_untrusted": True,
+            "independent_verifier": "exact expected_stdout and return_code == 0",
+            "tool_execution_performed": False,
         }
 
     @app.get("/api/background-thinking/status")
