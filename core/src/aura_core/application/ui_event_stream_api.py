@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import json
 from collections.abc import AsyncIterator
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
@@ -33,11 +34,20 @@ async def ui_event_stream(request: Request) -> StreamingResponse:
         return StreamingResponse(unavailable(), media_type="text/event-stream", status_code=503)
 
     async def stream() -> AsyncIterator[str]:
+        connected_at = datetime.now(UTC)
         try:
             async for event in broker.stream():
                 if await request.is_disconnected():
                     break
                 if event.get("event") not in _UI_EVENT_ALLOWLIST:
+                    continue
+                try:
+                    event_time = datetime.fromisoformat(str(event.get("timestamp", "")))
+                    if event_time.tzinfo is None:
+                        event_time = event_time.replace(tzinfo=UTC)
+                    if event_time < connected_at:
+                        continue
+                except ValueError:
                     continue
                 payload = json.dumps(event, ensure_ascii=False, separators=(",", ":"))
                 yield f"data: {payload}\n\n"
