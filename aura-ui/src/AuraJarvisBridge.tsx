@@ -34,6 +34,7 @@ type AuraJarvisBridgeProps = {
     status: "processing" | "ready" | "speaking" | "error",
     errorMessage?: string,
   ) => void;
+  speakThroughSession?: (text: string) => Promise<boolean>;
 };
 
 export default function AuraJarvisBridge({
@@ -41,6 +42,7 @@ export default function AuraJarvisBridge({
   researchOutput,
   requestId = 0,
   onStatus,
+  speakThroughSession,
 }: AuraJarvisBridgeProps) {
   useEffect(() => {
     if (
@@ -78,6 +80,15 @@ export default function AuraJarvisBridge({
           return;
         }
 
+        if (speakThroughSession) {
+          const handledByGateway = await speakThroughSession(speechText);
+          if (cancelled) return;
+          if (handledByGateway) {
+            // The SSE audio event owns speaking/ended state and interrupt handling.
+            return;
+          }
+        }
+
         const audio = await synthesizeLocalSpeech(speechText);
         if (cancelled) return;
         const player = new Audio(`data:${audio.mime_type};base64,${audio.audio_base64}`);
@@ -109,6 +120,7 @@ export default function AuraJarvisBridge({
     researchOutput,
     requestId,
     onStatus,
+    speakThroughSession,
   ]);
 
   return null;
