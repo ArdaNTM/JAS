@@ -175,18 +175,29 @@ def transcribe_audio_bytes(
         with _whisper_model_lock:
             if _whisper_model is None:
                 try:
-                    requested_device, compute_type = ("cpu", "int8") if _force_cpu else resolve_stt_runtime()
+                    if _force_cpu:
+                        requested_device, compute_type = "cpu", "int8"
+                    else:
+                        try:
+                            requested_device, compute_type = resolve_stt_runtime()
+                        except Exception as runtime_exc:
+                            # Even an explicitly requested but unavailable CUDA runtime
+                            # should not prevent a best-effort local CPU transcription.
+                            logger.warning(
+                                "STT runtime selection failed; retrying with CPU INT8",
+                                extra={"stt_exception_type": type(runtime_exc).__name__},
+                                exc_info=True,
+                            )
+                            requested_device, compute_type = "cpu", "int8"
                     try:
                         _whisper_model = load_model(requested_device, compute_type)
                         _whisper_model_device = requested_device
-                    except Exception as gpu_or_model_exc:
-                        # CUDA/float16 initialization is not reliable on every Windows setup.
-                        # Fall back once to CPU INT8 before reporting model-load failure.
+                    except Exception as model_exc:
                         if requested_device != "cuda":
                             raise
                         logger.warning(
                             "CUDA STT model initialization failed; retrying with CPU INT8",
-                            extra={"stt_exception_type": type(gpu_or_model_exc).__name__},
+                            extra={"stt_exception_type": type(model_exc).__name__},
                             exc_info=True,
                         )
                         _whisper_model = load_model("cpu", "int8")
