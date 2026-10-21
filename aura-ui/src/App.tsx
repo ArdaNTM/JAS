@@ -44,6 +44,33 @@ function ArcReactor({
   );
 }
 
+function durumMetni(value: string): string {
+  const labels: Record<string, string> = {
+    ok: "tamam",
+    healthy: "sağlıklı",
+    ready: "hazır",
+    running: "çalışıyor",
+    connected: "bağlı",
+    configured: "yapılandırıldı",
+    unknown: "bilinmiyor",
+    offline: "çevrimdışı",
+    standby: "beklemede",
+    queued: "kuyrukta",
+    processing: "işleniyor",
+    planning: "planlanıyor",
+    executing: "yürütülüyor",
+    succeeded: "başarılı",
+    failed: "başarısız",
+    cancelled: "iptal edildi",
+    timed_out: "zaman aşımına uğradı",
+    awaiting_approval: "onay bekliyor",
+    pending_approval: "onay bekliyor",
+    error: "hata",
+    idle: "boşta",
+  };
+  return labels[value.toLowerCase()] ?? value;
+}
+
 function StatusItem({
   label,
   value,
@@ -321,7 +348,7 @@ export default function App() {
       });
 
       setTaskId(result.task_id);
-      setTaskState(result.state.toUpperCase());
+      setTaskState(durumMetni(result.state).toLocaleUpperCase("tr-TR"));
       const nextSessionState = operationToSessionState(result.state);
       setSessionState(nextSessionState);
 
@@ -485,7 +512,7 @@ export default function App() {
               </div>
 
               <div className="mt-2 text-lg font-light tracking-[.16em] text-cyan-300">
-                {taskState}
+                {durumMetni(taskState).toLocaleUpperCase("tr-TR")}
               </div>
 
               <div className={`mt-2 text-[9px] tracking-[.12em] ${
@@ -575,7 +602,7 @@ export default function App() {
             <div className="mt-6 grid gap-3 text-[9px]">
               {[
                 ["PLAN", plan.map((step) => step.tool_name).join(" → ") || "Direktif bekleniyor"],
-                ["ŞİMDİ ÇALIŞAN", liveEvents[0]?.event ?? liveEvents[0]?.type ?? taskState],
+                ["ŞİMDİ ÇALIŞAN", durumMetni(liveEvents[0]?.event ?? liveEvents[0]?.type ?? taskState)],
                 ["KAYNAKLAR", sources.length ? `${sources.length} araştırma olayı` : "Henüz kaynak yok"],
                 ["İZİN / ONAY", approvals.length ? `${approvals.length} olay` : "Bekleyen onay yok"],
               ].map(([label, value]) => (
