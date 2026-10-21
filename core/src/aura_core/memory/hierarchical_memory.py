@@ -104,6 +104,15 @@ class SQLiteEpisodicMemory:
                 """CREATE INDEX IF NOT EXISTS idx_episodic_scope_time
                    ON episodic_records(principal_id, task_id, created_at DESC)"""
             )
+            db.execute(
+                """CREATE TABLE IF NOT EXISTS task_checkpoints (
+                    principal_id TEXT NOT NULL,
+                    task_id TEXT NOT NULL,
+                    state_json TEXT NOT NULL,
+                    updated_at REAL NOT NULL,
+                    PRIMARY KEY (principal_id, task_id)
+                )"""
+            )
 
     def append(
         self,
