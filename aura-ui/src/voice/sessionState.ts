@@ -63,12 +63,12 @@ export function operationToSessionState(
 
 export function sessionStateLabel(state: VoiceSessionState): string {
   switch (state) {
-    case "idle": return "READY — PRESS ENTER TO EXECUTE";
-    case "listening": return "LISTENING — MICROPHONE ACTIVE";
-    case "processing": return "PROCESSING — AURA CORE WORKING";
-    case "awaiting_approval": return "AWAITING APPROVAL — EXECUTION BLOCKED";
-    case "responding": return "RESPONSE — PREPARING ANSWER";
-    case "speaking": return "RESPONSE — SPEAKING";
-    case "error": return "ERROR — REVIEW DETAILS BEFORE RETRY";
+    case "idle": return "HAZIR — ÇALIŞTIRMAK İÇİN ENTER'A BASIN";
+    case "listening": return "DİNLİYOR — MİKROFON ETKİN";
+    case "processing": return "İŞLENİYOR — AURA CORE ÇALIŞIYOR";
+    case "awaiting_approval": return "ONAY BEKLENİYOR — YÜRÜTME ENGELLENDİ";
+    case "responding": return "YANIT HAZIRLANIYOR";
+    case "speaking": return "YANIT SESLENDİRİLİYOR";
+    case "error": return "HATA — YENİDEN DENEMEDEN ÖNCE AYRINTILARI İNCELEYİN";
   }
 }
