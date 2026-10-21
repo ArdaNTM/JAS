@@ -6,6 +6,7 @@ import logging
 import os
 import tempfile
 import threading
+import time
 from time import perf_counter
 from uuid import uuid4
 
@@ -30,6 +31,7 @@ from aura_core.application.adaptive_orchestrator import AdaptiveTaskOrchestrator
 from aura_core.application.async_work import AsyncWorkCoordinator
 from aura_core.application.context_synthesizer import ContextSynthesizer
 from aura_core.application.context_aware_stt import build_stt_prompt
+from aura_core.application.background_thinking import IdleMemoryReflectionDaemon
 from aura_core.application.episodic_memory import EpisodicMemoryStore
 from aura_core.application.cross_capability_reasoning import CapabilityEvidence, CrossCapabilitySynthesizer
 from aura_core.application.jarvis_api import router as jarvis_router
@@ -433,6 +435,10 @@ def create_api(
         enabled = os.getenv("AURA_TELEMETRY_DAEMON_ENABLED", "1").strip().lower() not in {"0", "false", "no"}
         if daemon is not None and enabled:
             daemon.start()
+        reflection = getattr(application.state, "background_thinking", None)
+        reflection_enabled = os.getenv("AURA_BACKGROUND_THINKING_ENABLED", "0").strip().lower() in {"1", "true", "yes"}
+        if reflection is not None and reflection_enabled:
+            reflection.start()
         unsubscribe_prefetch = None
         prefetch_enabled = os.getenv("AURA_PREFETCH_ENABLED", "0").strip().lower() in {"1", "true", "yes"}
         kernel = getattr(application.state, "kernel", None)
@@ -456,6 +462,8 @@ def create_api(
         finally:
             if unsubscribe_prefetch is not None:
                 unsubscribe_prefetch()
+            if reflection is not None:
+                await reflection.stop()
             if daemon is not None:
                 await daemon.stop()
 
@@ -546,6 +554,15 @@ def create_api(
                 "aura_memory",
             ),
         )
+    )
+    app.state.last_user_activity = time.monotonic()
+    app.state.background_thinking = IdleMemoryReflectionDaemon(
+        memory_store=EpisodicMemoryStore.from_environment(),
+        principal_id=os.getenv("AURA_BACKGROUND_THINKING_PRINCIPAL_ID", "local_default"),
+        database_path=os.getenv("AURA_REFLECTION_DB", "./data/background-reflection.sqlite3"),
+        idle_seconds=int(os.getenv("AURA_BACKGROUND_THINKING_IDLE_SECONDS", "300")),
+        interval_seconds=int(os.getenv("AURA_BACKGROUND_THINKING_INTERVAL_SECONDS", "900")),
+        last_activity=lambda: app.state.last_user_activity,
     )
 
     @app.middleware("http")
@@ -1068,6 +1085,7 @@ def create_api(
         request: AssistantRespondRequest,
         http_request: Request,
     ) -> AssistantRespondResponse:
+        app.state.last_user_activity = time.monotonic()
 
         import json
 
@@ -1234,6 +1252,20 @@ def create_api(
             degraded=False,
         )
 
+
+    @app.get("/api/background-thinking/status")
+    def background_thinking_status(http_request: Request) -> dict[str, object]:
+        require_local_client(http_request)
+        return app.state.background_thinking.status()
+
+    @app.get("/api/background-thinking/proposals")
+    def background_thinking_proposals(http_request: Request, limit: int = 20) -> dict[str, object]:
+        require_local_client(http_request)
+        bounded_limit = max(1, min(limit, 50))
+        return {
+            "items": app.state.background_thinking.list_proposals(limit=bounded_limit),
+            "mode": "reviewable_suggestions_only",
+        }
 
     @app.post("/api/speech/transcribe", response_model=SpeechTranscriptionResponse)
     async def transcribe_speech(
