@@ -32,7 +32,7 @@ from aura_core.application.async_work import AsyncWorkCoordinator
 from aura_core.application.context_synthesizer import ContextSynthesizer
 from aura_core.application.context_aware_stt import build_stt_prompt
 from aura_core.application.background_thinking import IdleMemoryReflectionDaemon
-from aura_core.application.autonomy_lab import (
+from aura_core.application.sandbox_contract import SandboxJob\nfrom aura_core.application.sandbox_runner import SandboxAuthorizationError, SandboxUnavailable\nfrom aura_core.application.autonomy_lab import (
     AutonomyBudget,
     AutonomyValidationError,
     TaskNode,
@@ -353,6 +353,12 @@ class AutonomyPlanRequest(BaseModel):
 class AutonomyExperimentRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     expression: str = Field(min_length=1, max_length=2000)
+    data: dict[str, object] = Field(default_factory=dict)
+
+
+class AutonomyPythonRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    source: str = Field(min_length=1, max_length=64_000)
     data: dict[str, object] = Field(default_factory=dict)
 
 
@@ -1407,6 +1413,69 @@ def create_api(
             "tool_execution_performed": False,
             "memory_mutated": False,
             "authorization_boundary": "MCPGateway and PermissionEngine",
+        }
+
+    @app.post("/api/autonomy/python")
+    def run_isolated_python_draft(
+        body: AutonomyPythonRequest,
+        http_request: Request,
+    ) -> dict[str, object]:
+        """Run a Python draft only after explicit Permission Engine authorization."""
+        require_local_client(http_request)
+        permission_engine = getattr(http_request.app.state, "permission_engine", None)
+        if permission_engine is None:
+            raise HTTPException(status_code=503, detail="Permission Engine is unavailable")
+
+        task_id = f"sandbox:{uuid4()}"
+        request_id = f"authorize:{task_id}"
+        authorization = AuthorizationRequest(
+            request_id=request_id,
+            principal_id="local_owner",
+            capability_id="sandbox.python.execute",
+            operation_id="sandbox.python.execute",
+            resource_scope="local-sandbox",
+            risk_level=RiskLevel.HIGH,
+            task_id=task_id,
+        )
+        decision = permission_engine.authorize(authorization)
+        if decision.decision is not AuthorizationDecision.ALLOW:
+            raise HTTPException(
+                status_code=403,
+                detail="Sandbox execution requires an explicit allow policy.",
+            )
+
+        job = SandboxJob(
+            job_id=task_id,
+            principal_id="local_owner",
+            runner="docker",
+            source=body.source,
+            input_json=json.dumps(body.data, ensure_ascii=False, allow_nan=False),
+            authorization_id=decision.policy_id or request_id,
+        )
+        try:
+            result = run_python_draft(
+                job,
+                authorize=lambda candidate: (
+                    candidate.principal_id == "local_owner"
+                    and candidate.task_id if hasattr(candidate, "task_id") else True
+                ),
+            )
+        except SandboxAuthorizationError as exc:
+            raise HTTPException(status_code=403, detail="Sandbox authorization failed.") from exc
+        except SandboxUnavailable as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        except (ValueError, TypeError) as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        return {
+            "job_id": result.job_id,
+            "status": result.status,
+            "return_code": result.return_code,
+            "stdout": result.stdout,
+            "stderr": result.stderr,
+            "elapsed_seconds": result.elapsed_seconds,
+            "isolation": result.isolation,
+            "authorization_boundary": "PermissionEngine",
+            "arbitrary_python_executed": True,
         }
 
     @app.get("/api/background-thinking/status")
