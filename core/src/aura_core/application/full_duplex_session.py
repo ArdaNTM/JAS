@@ -134,6 +134,7 @@ class FullDuplexSessionManager:
             previous = self._playback
             if previous is not None and not previous.done():
                 previous.cancel()
+                self._playback = None
             self._state = "speaking"
             self._emit("SpeechPlaybackStarted", {"generation": generation})
         if previous is not None and not previous.done():
