@@ -32,6 +32,7 @@ from aura_core.config.backend import BackendConfig
 from aura_core.config.runtime import RuntimeConfig
 from aura_core.contracts.messages import InferenceRequest, InferenceResponse
 from aura_core.kernel.permissions import RiskLevel
+from aura_core.kernel.events import KernelEvent
 from aura_core.mcp.gateway import MCPGatewayRequest
 from aura_core.observability.metrics import RequestMetrics
 from aura_core.runtime.errors import (
@@ -646,7 +647,19 @@ def create_api(
 
     @app.get("/api/runtime/telemetry")
     def runtime_telemetry() -> dict[str, object]:
-        return app.state.system_telemetry.snapshot()
+        snapshot = app.state.system_telemetry.snapshot()
+        alerts = snapshot.get("alerts", [])
+        kernel = getattr(app.state, "kernel", None)
+        event_bus = getattr(kernel, "event_bus", None) if kernel is not None else None
+        if alerts and event_bus is not None:
+            alert_codes = sorted(str(item.get("code", "unknown")) for item in alerts)
+            event_bus.publish(KernelEvent(
+                event_type="SystemResourcePressure",
+                source_component="system_telemetry",
+                correlation_id="system-pressure:" + ",".join(alert_codes),
+                payload={"alert_codes": alert_codes},
+            ))
+        return snapshot
 
     @app.post("/api/reasoning/simulate")
     def reasoning_simulate(request: DirectivePlanRequest) -> dict[str, object]:
