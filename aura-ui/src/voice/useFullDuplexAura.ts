@@ -172,7 +172,7 @@ export function useFullDuplexAura(
       } else if (event.event === "ProactiveNotificationReady") {
         const principal = typeof data.principal_id === "string" ? data.principal_id : "";
         const body = typeof data.message === "string" ? data.message : "";
-        if (!body) return;
+        if (!body || (principal && principal !== "local_owner")) return;
         setNotices((current) => [
           { id: event.id ?? crypto.randomUUID(), message: body, timestamp: event.timestamp ?? new Date().toISOString() },
           ...current,
