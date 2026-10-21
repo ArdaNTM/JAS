@@ -1449,7 +1449,7 @@ def create_api(
             "arbitrary_code_executed": False,
             "network_access": False,
             "mcp_tool_execution_performed": False,
-            "sandbox_code_executed": bool(outcome.results),
+            "sandbox_code_executed": False,
             "memory_mutated": False,
             "authorization_boundary": "MCPGateway and PermissionEngine",
         }
