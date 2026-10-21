@@ -1,6 +1,7 @@
 import asyncio
 from contextlib import asynccontextmanager
 import base64
+import io
 import logging
 import os
 import tempfile
@@ -108,8 +109,60 @@ def transcribe_audio_bytes(audio_bytes: bytes, language: str, suffix: str = ".we
             )
             # faster-whisper decodes lazily while iterating the segment generator.
             text = " ".join(segment.text.strip() for segment in segments).strip()
-        except Exception as exc:
-            raise SpeechTranscriptionError("faster-whisper failed while decoding or transcribing the audio") from exc
+        except Exception as path_exc:
+            # Browser MediaRecorder commonly emits WebM/Opus. Decode through PyAV's
+            # bundled FFmpeg libraries and pass normalized 16 kHz mono PCM directly
+            # to faster-whisper. This avoids requiring a separately installed
+            # ffmpeg.exe and avoids relying on a temporary filename's extension.
+            try:
+                import av
+                import numpy as np
+
+                with av.open(io.BytesIO(audio_bytes), mode="r") as container:
+                    audio_stream = next(
+                        (stream for stream in container.streams if stream.type == "audio"),
+                        None,
+                    )
+                    if audio_stream is None:
+                        raise ValueError("Audio container has no audio stream")
+
+                    resampler = av.AudioResampler(
+                        format="fltp",
+                        layout="mono",
+                        rate=16000,
+                    )
+                    chunks = []
+                    for frame in container.decode(audio_stream):
+                        chunks.extend(
+                            converted.to_ndarray().reshape(-1)
+                            for converted in resampler.resample(frame)
+                        )
+                    chunks.extend(
+                        converted.to_ndarray().reshape(-1)
+                        for converted in resampler.resample(None)
+                    )
+                    if not chunks:
+                        raise ValueError("Audio decoder produced no samples")
+                    audio_samples = np.concatenate(chunks).astype(np.float32, copy=False)
+
+                segments, info = _whisper_model.transcribe(
+                    audio_samples,
+                    language=language,
+                    vad_filter=True,
+                )
+                text = " ".join(segment.text.strip() for segment in segments).strip()
+            except Exception as fallback_exc:
+                logger.warning(
+                    "STT file decoding and in-memory normalization both failed",
+                    extra={
+                        "stt_exception_type": type(fallback_exc).__name__,
+                        "stt_initial_exception_type": type(path_exc).__name__,
+                    },
+                    exc_info=True,
+                )
+                raise SpeechTranscriptionError(
+                    "faster-whisper could not decode the original audio or normalized PCM fallback"
+                ) from fallback_exc
         return text, getattr(info, "language", None) or language
     finally:
         if temp_path:
