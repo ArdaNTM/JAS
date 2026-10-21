@@ -134,10 +134,17 @@ class GovernedAutonomousLoop:
                                     execution_started, "Autonomy Governor denied iteration", feedback)
 
             self._emit("AutonomyPlanningStarted", goal, principal_id, iteration, {})
-            submissions = tuple(await self._planner.propose(
-                goal=goal, principal_id=principal_id, resource_scope=resource_scope,
-                iteration=iteration, feedback=feedback,
-            ))
+            try:
+                submissions = tuple(await asyncio.wait_for(
+                    self._planner.propose(
+                        goal=goal, principal_id=principal_id, resource_scope=resource_scope,
+                        iteration=iteration, feedback=feedback,
+                    ),
+                    timeout=self._remaining(started),
+                ))
+            except asyncio.TimeoutError:
+                return self._result("timed_out", goal, iteration, total_tasks,
+                                    execution_started, "Deadline exceeded during planning", feedback)
             if not submissions:
                 feedback = ("Planner returned no tasks.",)
                 self._emit("AutonomyReflexion", goal, principal_id, iteration,
@@ -162,10 +169,17 @@ class GovernedAutonomousLoop:
 
             self._emit("AutonomySandboxStarted", goal, principal_id, iteration,
                        {"task_count": len(submissions)})
-            sandbox_report = await self._sandbox.validate(
-                goal=goal, principal_id=principal_id,
-                submissions=submissions, iteration=iteration,
-            )
+            try:
+                sandbox_report = await asyncio.wait_for(
+                    self._sandbox.validate(
+                        goal=goal, principal_id=principal_id,
+                        submissions=submissions, iteration=iteration,
+                    ),
+                    timeout=self._remaining(started),
+                )
+            except asyncio.TimeoutError:
+                return self._result("timed_out", goal, iteration, total_tasks,
+                                    execution_started, "Deadline exceeded during sandbox validation", feedback)
             if not sandbox_report.accepted:
                 feedback = tuple(sandbox_report.findings) or (sandbox_report.summary,)
                 self._emit("AutonomyReflexion", goal, principal_id, iteration,
@@ -201,6 +215,9 @@ class GovernedAutonomousLoop:
                 )
             except asyncio.CancelledError:
                 raise
+            except asyncio.TimeoutError:
+                return self._result("timed_out", goal, iteration, total_tasks,
+                                    execution_started, "Deadline exceeded during task execution", feedback)
             except Exception as exc:
                 feedback = (f"Execution failed: {type(exc).__name__}.",)
                 self._emit("AutonomyReflexion", goal, principal_id, iteration,
@@ -211,10 +228,17 @@ class GovernedAutonomousLoop:
                 retrying_after_execution = True
                 continue
 
-            verification = await self._verifier.verify(
-                goal=goal, principal_id=principal_id,
-                submissions=submissions, results=tuple(results), iteration=iteration,
-            )
+            try:
+                verification = await asyncio.wait_for(
+                    self._verifier.verify(
+                        goal=goal, principal_id=principal_id,
+                        submissions=submissions, results=tuple(results), iteration=iteration,
+                    ),
+                    timeout=self._remaining(started),
+                )
+            except asyncio.TimeoutError:
+                return self._result("timed_out", goal, iteration, total_tasks,
+                                    execution_started, "Deadline exceeded during verification", feedback)
             if verification.passed:
                 self._emit("AutonomyGoalVerified", goal, principal_id, iteration,
                            {"summary": verification.summary})
@@ -232,6 +256,12 @@ class GovernedAutonomousLoop:
 
         return self._result("exhausted", goal, self._max_iterations, total_tasks,
                             execution_started, "Maximum planning iterations reached", feedback)
+
+    def _remaining(self, started: float) -> float:
+        remaining = self._timeout - (monotonic() - started)
+        if remaining <= 0:
+            raise asyncio.TimeoutError("Autonomous loop deadline exceeded")
+        return remaining
 
     def _emit(
         self, event_type: str, goal: str, principal_id: str, iteration: int,
