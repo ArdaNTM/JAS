@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+from datetime import time
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -14,6 +15,13 @@ from aura_core.application.event_driven_orchestration import EventDrivenOrchestr
 from aura_core.application.capability_discovery import DynamicCapabilityDiscovery
 from aura_core.application.tasks import AgentTaskService
 from aura_core.application.task_memory import TaskMemoryCoordinator
+from aura_core.application.task_state_machine import TaskStateMachine
+from aura_core.application.autonomy_composition import compose_governed_autonomy
+from aura_core.application.full_duplex_session import (
+    EventBusAudioPlayer, FasterWhisperRecognizer, FullDuplexSessionManager,
+    GatewaySpeechSynthesizer, ProactiveNotifier, ControlledVisionService,
+)
+from aura_core.application.vision_adapters import DesktopScreenCapture, OllamaVisionProvider
 from aura_core.config.kernel import KernelConfig
 from aura_core.kernel.permissions import (
     AuthorizationDecision,
@@ -21,6 +29,7 @@ from aura_core.kernel.permissions import (
     PermissionPolicy,
 )
 from aura_core.kernel.runtime import AuraKernel
+from aura_core.kernel.events import KernelEvent
 from aura_core.kernel.capabilities import CapabilityCategory, CapabilityDefinition, ProviderType
 from aura_core.kernel.health import HealthReport
 from aura_core.kernel.services import ServiceCategory, ServiceDefinition, ServiceState
@@ -119,12 +128,17 @@ def build_app() -> FastAPI:
         permission_engine=kernel.permission_engine,
     )
 
+    task_database_path = os.getenv(
+        "AURA_TASK_DB_PATH", str(os.getenv("LOCALAPPDATA", os.path.expanduser("~"))) + "/AURA/tasks.sqlite3"
+    )
+    task_state_machine = TaskStateMachine(task_database_path, event_bus=kernel.event_bus)
     task_service = AgentTaskService(
         AgentExecutor(
             gateway=gateway,
             event_bus=kernel.event_bus,
         ),
         memory=TaskMemoryCoordinator.from_environment(),
+        state_machine=task_state_machine,
     )
 
     app = create_composed_app(
@@ -145,6 +159,46 @@ def build_app() -> FastAPI:
         poll_interval_seconds=float(os.getenv("AURA_EVENT_POLL_INTERVAL_SECONDS", "0.1")),
     )
     app.state.event_bus_runtime = event_runtime
+    app.state.task_state_machine = task_state_machine
+    app.state.task_service = task_service
+
+    async def deliver_proactive_notification(*, principal_id: str, message: str) -> None:
+        kernel.event_bus.publish(KernelEvent(
+            event_type="ProactiveNotificationReady",
+            source_component="aura.proactive_notifier",
+            payload={"principal_id": principal_id, "message": message, "requires_user_attention": True},
+        ))
+
+    app.state.proactive_notifier = ProactiveNotifier(
+        deliver=deliver_proactive_notification,
+        budget_per_day=int(os.getenv("AURA_PROACTIVE_DAILY_BUDGET", "5")),
+        quiet_start=time.fromisoformat(os.getenv("AURA_QUIET_HOURS_START", "22:00")),
+        quiet_end=time.fromisoformat(os.getenv("AURA_QUIET_HOURS_END", "08:00")),
+    )
+
+    # Autonomous execution is opt-in and fails startup if its explicit operation
+    # allow-list is missing or malformed. It never creates permission policies.
+    autonomy = compose_governed_autonomy(kernel=kernel, task_service=task_service)
+    app.state.governed_autonomous_loop = autonomy.loop if autonomy is not None else None
+    app.state.autonomy_components = autonomy
+
+    vision_enabled = os.getenv("AURA_SCREEN_VISION_ENABLED", "0").strip().casefold() in {"1", "true", "yes", "on"}
+    if vision_enabled:
+        vision_principals = frozenset(
+            item.strip() for item in os.getenv("AURA_VISION_PRINCIPALS", "local_owner").split(",")
+            if item.strip()
+        )
+        app.state.controlled_vision_service = ControlledVisionService(
+            capture=DesktopScreenCapture(),
+            provider=OllamaVisionProvider(
+                base_url=os.getenv("AURA_OLLAMA_BASE_URL", "http://127.0.0.1:11434"),
+                model=os.getenv("AURA_VISION_MODEL", "qwen3-vl"),
+                timeout_seconds=float(os.getenv("AURA_VISION_TIMEOUT_SECONDS", "30")),
+            ),
+            consent=lambda principal_id: principal_id in vision_principals,
+        )
+    else:
+        app.state.controlled_vision_service = None
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
@@ -230,6 +284,25 @@ def build_app() -> FastAPI:
                 timeout=20.0,
             )
             report_mcp_healthy(kokoro_config)
+            # TTS always crosses MCPGateway + Permission Engine; the provider
+            # connection itself is not an authorization grant.
+            app.state.speech_synthesizer = GatewaySpeechSynthesizer(
+                gateway=gateway, principal_id=os.getenv("AURA_SPEECH_PRINCIPAL", "local_owner"),
+                capability_id=kokoro_config.capability_id,
+                operation_id=kokoro_config.operation_id,
+                tool_name=kokoro_config.tool_name,
+                resource_scope=os.getenv("AURA_SPEECH_RESOURCE_SCOPE", "local_default"),
+            )
+            app.state.speech_session_manager = FullDuplexSessionManager(
+                recognizer=FasterWhisperRecognizer(
+                    model_size=os.getenv("AURA_STT_MODEL", "small"),
+                    device=os.getenv("AURA_STT_DEVICE", "cpu"),
+                    compute_type=os.getenv("AURA_STT_COMPUTE_TYPE", "int8"),
+                ),
+                synthesizer=app.state.speech_synthesizer,
+                player=EventBusAudioPlayer(kernel.event_bus),
+                event_bus=kernel.event_bus,
+            )
 
             # Discover metadata from providers only after their live MCP
             # connections and registries are established. Discovery creates
