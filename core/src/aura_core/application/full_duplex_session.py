@@ -6,9 +6,13 @@ Gateway; this module does not treat speech, vision, or proactive signals as auth
 from __future__ import annotations
 
 import asyncio
+import base64
+import io
+import tempfile
+from pathlib import Path
 from dataclasses import dataclass
 from datetime import datetime, time
-from typing import Any, Mapping, Protocol
+from typing import Any, Callable, Mapping, Protocol
 from uuid import uuid4
 
 from aura_core.kernel.events import EventBus, KernelEvent
@@ -28,6 +32,68 @@ class AudioPlayer(Protocol):
     async def play(self, audio: Any, *, session_id: str) -> None: ...
 
     async def stop(self, *, session_id: str) -> None: ...
+
+
+class FasterWhisperRecognizer:
+    """Lazy local STT adapter; audio is decoded from an in-memory payload."""
+
+    def __init__(self, *, model_size: str = "small", device: str = "cpu", compute_type: str = "int8") -> None:
+        self._model_size = model_size
+        self._device = device
+        self._compute_type = compute_type
+        self._model = None
+        self._lock = asyncio.Lock()
+
+    async def transcribe(self, audio: bytes, *, session_id: str) -> str:
+        if not audio or len(audio) > 20_000_000:
+            raise ValueError("Audio payload is empty or exceeds the 20 MB limit")
+        async with self._lock:
+            if self._model is None:
+                from faster_whisper import WhisperModel
+                self._model = await asyncio.to_thread(
+                    WhisperModel, self._model_size, device=self._device,
+                    compute_type=self._compute_type,
+                )
+            with tempfile.NamedTemporaryFile(suffix=".audio", delete=True) as handle:
+                handle.write(audio)
+                handle.flush()
+                segments, _info = await asyncio.to_thread(
+                    self._model.transcribe, handle.name, beam_size=1,
+                    vad_filter=True,
+                )
+                text = " ".join(segment.text.strip() for segment in segments).strip()
+        return text[:8000]
+
+
+class EventBusAudioPlayer:
+    """Deliver TTS audio to the authorized local UI over the existing event bridge."""
+
+    def __init__(self, event_bus: EventBus) -> None:
+        self._events = event_bus
+
+    async def play(self, audio: Any, *, session_id: str) -> None:
+        payload = getattr(audio, "structuredContent", None)
+        if not isinstance(payload, Mapping):
+            payload = audio if isinstance(audio, Mapping) else None
+        if not isinstance(payload, Mapping) or not isinstance(payload.get("audio_base64"), str):
+            raise RuntimeError("TTS provider returned no structured audio payload")
+        encoded = payload["audio_base64"]
+        if len(encoded) > 16_000_000:
+            raise ValueError("Synthesized audio exceeds configured delivery limit")
+        # Validate before emitting; the browser remains responsible for playback.
+        base64.b64decode(encoded, validate=True)
+        self._events.publish(KernelEvent(
+            event_type="SpeechAudioReady", source_component="aura.audio_player",
+            correlation_id=session_id,
+            payload={"session_id": session_id, "mime_type": payload.get("mime_type", "audio/wav"),
+                     "audio_base64": encoded},
+        ))
+
+    async def stop(self, *, session_id: str) -> None:
+        self._events.publish(KernelEvent(
+            event_type="SpeechAudioStop", source_component="aura.audio_player",
+            correlation_id=session_id, payload={"session_id": session_id},
+        ))
 
 
 class ScreenCapture(Protocol):
@@ -213,7 +279,7 @@ class ControlledVisionService:
 
     def __init__(
         self, *, capture: ScreenCapture, provider: VisionProvider,
-        consent: callable, max_image_bytes: int = 8_000_000,
+        consent: Callable[[str], bool] | Callable[[str], Any], max_image_bytes: int = 8_000_000,
     ) -> None:
         if max_image_bytes < 1:
             raise ValueError("max_image_bytes must be positive")
