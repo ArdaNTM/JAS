@@ -169,10 +169,20 @@ def transcribe_audio_bytes(audio_bytes: bytes, language: str, suffix: str = ".we
                     temperature=0.0,
                     vad_filter=True,
                     vad_parameters={
-                        "min_silence_duration_ms": 350,
-                        "speech_pad_ms": 250,
+                        "min_silence_duration_ms": 300,
+                        "speech_pad_ms": 400,
+                        "threshold": 0.45,
                     },
-                    condition_on_previous_text=False,
+                    initial_prompt=os.getenv(
+                        "AURA_STT_INITIAL_PROMPT",
+                        "Türkçe konuşma. Doğa hakkında araştırma yap. Yapay zeka hakkında araştırma yap. "
+                        "Lütfen Türkçe kelimeleri doğru yaz: araştırma, yapay zeka, doğa, hakkında, "
+                        "bilgi, özet, kaynaklar, dosyalar, hafıza, görsel, analiz, görev, izin, araç.",
+                    ),
+                    condition_on_previous_text=True,
+                    no_speech_threshold=0.6,
+                    log_prob_threshold=-1.0,
+                    compression_ratio_threshold=2.4,
                 )
                 text = " ".join(segment.text.strip() for segment in segments).strip()
             except Exception as fallback_exc:
