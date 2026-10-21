@@ -223,7 +223,7 @@ class AgentTaskService:
 
     @staticmethod
     def _validate_submission(submitted: SubmittedTask) -> None:
-        if submitted.plan.task_id != submitted.task.task_id:
+        if submitted.plan is not None and submitted.plan.task_id != submitted.task.task_id:
             raise ValueError("Plan does not belong to submitted task")
         if len(set(submitted.dependencies)) != len(submitted.dependencies):
             raise ValueError("Task dependencies must be unique")
