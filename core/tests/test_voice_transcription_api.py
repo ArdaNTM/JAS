@@ -258,3 +258,85 @@ def test_explicit_cuda_without_device_fails_actionably(monkeypatch) -> None:
     with pytest.raises(RuntimeError, match="CUDA was explicitly requested"):
         api_module.resolve_stt_runtime()
 
+def test_context_prompt_failure_falls_back_to_static_turkish_prompt(monkeypatch) -> None:
+    monkeypatch.setenv("AURA_STT_INITIAL_PROMPT", "Türkçe sabit istem.")
+    monkeypatch.setattr(api_module, "_stt_memory_store", False)
+    monkeypatch.setattr(api_module, "build_stt_prompt", lambda **kwargs: (_ for _ in ()).throw(RuntimeError("context failure")))
+    assert api_module._stt_context_prompt() == "Türkçe sabit istem."
+
+
+def test_cuda_model_initialization_failure_retries_cpu_int8(monkeypatch) -> None:
+    import sys
+    from types import SimpleNamespace
+
+    calls = []
+
+    class FakeModel:
+        def __init__(self, model_name, **kwargs):
+            calls.append(kwargs)
+            if kwargs["device"] == "cuda":
+                raise RuntimeError("missing CUDA runtime")
+
+        def transcribe(self, audio, **kwargs):
+            return iter([]), SimpleNamespace(language="tr")
+
+    monkeypatch.setitem(sys.modules, "faster_whisper", SimpleNamespace(WhisperModel=FakeModel))
+    monkeypatch.setitem(sys.modules, "ctranslate2", SimpleNamespace(get_cuda_device_count=lambda: 1))
+    monkeypatch.setenv("AURA_STT_DEVICE", "auto")
+    monkeypatch.setenv("AURA_STT_COMPUTE_TYPE", "auto")
+    monkeypatch.setattr(api_module, "_whisper_model", None)
+    monkeypatch.setattr(api_module, "_whisper_model_device", None)
+    monkeypatch.setattr(api_module, "_stt_memory_store", False)
+
+    text, language = api_module.transcribe_audio_bytes(b"fake-audio", "tr", ".wav")
+
+    assert (text, language) == ("", "tr")
+    assert [call["device"] for call in calls] == ["cuda", "cpu"]
+    assert calls[1]["compute_type"] == "int8"
+    monkeypatch.setattr(api_module, "_whisper_model", None)
+    monkeypatch.setattr(api_module, "_whisper_model_device", None)
+
+
+def test_cuda_inference_failure_retries_recording_on_cpu(monkeypatch) -> None:
+    import sys
+    from types import SimpleNamespace
+
+    calls = []
+
+    class Segment:
+        text = "Türkçe yedek transkripsiyon"
+
+    class FakeModel:
+        def __init__(self, model_name, **kwargs):
+            self.device = kwargs["device"]
+            calls.append(("init", self.device))
+
+        def transcribe(self, audio, **kwargs):
+            calls.append(("transcribe", self.device))
+            if self.device == "cuda":
+                raise RuntimeError("CUDA inference failure")
+            return iter([Segment()]), SimpleNamespace(language="tr")
+
+    class BrokenContainerModule:
+        @staticmethod
+        def open(*args, **kwargs):
+            raise RuntimeError("synthetic invalid container")
+
+    monkeypatch.setitem(sys.modules, "faster_whisper", SimpleNamespace(WhisperModel=FakeModel))
+    monkeypatch.setitem(sys.modules, "ctranslate2", SimpleNamespace(get_cuda_device_count=lambda: 1))
+    monkeypatch.setitem(sys.modules, "av", BrokenContainerModule)
+    monkeypatch.setenv("AURA_STT_DEVICE", "auto")
+    monkeypatch.setenv("AURA_STT_COMPUTE_TYPE", "auto")
+    monkeypatch.setattr(api_module, "_whisper_model", None)
+    monkeypatch.setattr(api_module, "_whisper_model_device", None)
+    monkeypatch.setattr(api_module, "_stt_memory_store", False)
+
+    text, language = api_module.transcribe_audio_bytes(b"synthetic-audio", "tr", ".wav")
+
+    assert (text, language) == ("Türkçe yedek transkripsiyon", "tr")
+    assert ("init", "cuda") in calls
+    assert ("init", "cpu") in calls
+    assert calls[-1] == ("transcribe", "cpu")
+    monkeypatch.setattr(api_module, "_whisper_model", None)
+    monkeypatch.setattr(api_module, "_whisper_model_device", None)
+
