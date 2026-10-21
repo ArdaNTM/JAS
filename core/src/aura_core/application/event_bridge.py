@@ -6,6 +6,7 @@ from typing import Callable
 from aura_core.application.live_events import LiveEventBroker
 from aura_core.kernel.events import EventBus, KernelEvent
 from aura_core.application.proactive_store import ProactiveSuggestionStore
+from aura_core.application.jarvis_intelligence import InitiativeEngine, SelfAdaptationEngine
 
 
 class EventBusLiveBridge:
@@ -21,6 +22,8 @@ class EventBusLiveBridge:
         broker: LiveEventBroker,
         interval_seconds: float = 0.05,
         suggestion_store: ProactiveSuggestionStore | None = None,
+        initiative_engine: InitiativeEngine | None = None,
+        adaptation_engine: SelfAdaptationEngine | None = None,
     ) -> None:
         if interval_seconds <= 0:
             raise ValueError("interval_seconds must be positive")
@@ -29,6 +32,8 @@ class EventBusLiveBridge:
         self._broker = broker
         self._interval = interval_seconds
         self._suggestion_store = suggestion_store
+        self._initiative_engine = initiative_engine
+        self._adaptation_engine = adaptation_engine
         self._unsubscribe: Callable[[], None] | None = None
         self._task: asyncio.Task[None] | None = None
         self._running = False
