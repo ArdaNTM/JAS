@@ -58,6 +58,10 @@ The worker examines at most 20 existing records per cycle and stores at most fiv
 
 CUDA availability and precision depend on the installed CTranslate2 build, NVIDIA driver, CUDA runtime, and hardware. Automatic mode safely selects CPU INT8 when CUDA is unavailable. Measure end-to-end latency on the target machine before deciding whether GPU acceleration is active.
 
+### STT runtime fallback
+
+If CUDA model initialization fails (including unsupported `float16` or missing runtime libraries), Core logs a safe diagnostic and retries model loading with CPU `int8`. If CUDA initializes but fails during inference or lazy segment decoding, Core retries that recording once with CPU `int8`. The retry is bounded to one CPU attempt to avoid loops. A context-adapter, episodic-memory, or invalid context-cache setting failure falls back to `AURA_STT_INITIAL_PROMPT` (or the built-in Turkish prompt) and does not prevent transcription. The API continues to hide raw exception strings and local paths from UI responses.
+
 ## Validation
 
 The implementation is validated by the Core Python test suite, frontend production build, and release-lock verification scripts.
