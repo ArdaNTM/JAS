@@ -1,6 +1,7 @@
 """Local-only HTTP surface for governed JARVIS memory and adaptation."""
 from __future__ import annotations
 
+from dataclasses import asdict
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Request
@@ -8,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from aura_core.application.episodic_memory import EpisodicMemoryStore
 from aura_core.application.jarvis_intelligence import InitiativeEngine, SelfAdaptationEngine
+from aura_core.application.persona_policy import PersonaPolicy, persona_from_mapping
 
 
 router = APIRouter(prefix="/api/jarvis", tags=["jarvis-intelligence"])
@@ -42,6 +44,21 @@ def _initiatives(request: Request) -> InitiativeEngine:
         engine = InitiativeEngine()
         request.app.state.initiative_engine = engine
     return engine
+
+
+
+
+class PersonaSettings(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    tone: Literal["professional", "warm", "witty", "dry_sarcastic"] = "witty"
+    language: Literal["auto", "tr", "en"] = "auto"
+    humor_intensity: int = Field(default=2, ge=0, le=3)
+    initiative_enabled: bool = False
+    initiative_threshold: int = Field(default=3, ge=1, le=5)
+    daily_suggestion_budget: int = Field(default=5, ge=0, le=20)
+    quiet_hours_start: int = Field(default=22, ge=0, le=23)
+    quiet_hours_end: int = Field(default=8, ge=0, le=23)
+    allow_unsolicited_followups: bool = False
 
 
 class MemoryWrite(BaseModel):
@@ -211,3 +228,30 @@ def list_initiatives(request: Request, limit: int = 20) -> dict[str, object]:
     _require_local(request)
     items = _initiatives(request).suggestions(limit=limit)
     return {"items": list(items), "count": len(items)}
+
+
+@router.get("/persona")
+def get_persona(request: Request) -> dict[str, object]:
+    _require_local(request)
+    policy = getattr(request.app.state, "persona_policy", None) or PersonaPolicy()
+    return {
+        "settings": asdict(policy),
+        "style_prompt": policy.system_style_prompt(),
+        "initiative_is_authorization": False,
+    }
+
+
+@router.put("/persona")
+def update_persona(body: PersonaSettings, request: Request) -> dict[str, object]:
+    _require_local(request)
+    try:
+        policy = persona_from_mapping(body.model_dump())
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    request.app.state.persona_policy = policy
+    return {
+        "settings": asdict(policy),
+        "style_prompt": policy.system_style_prompt(),
+        "initiative_is_authorization": False,
+        "persistence": "process_lifetime_only",
+    }
