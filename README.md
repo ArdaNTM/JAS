@@ -62,6 +62,31 @@ CUDA availability and precision depend on the installed CTranslate2 build, NVIDI
 
 If CUDA model initialization fails (including unsupported `float16` or missing runtime libraries), Core logs a safe diagnostic and retries model loading with CPU `int8`. If CUDA initializes but fails during inference or lazy segment decoding, Core retries that recording once with CPU `int8`. The retry is bounded to one CPU attempt to avoid loops. A context-adapter, episodic-memory, or invalid context-cache setting failure falls back to `AURA_STT_INITIAL_PROMPT` (or the built-in Turkish prompt) and does not prevent transcription. The API continues to hide raw exception strings and local paths from UI responses.
 
+## Bounded autonomy, experiments, and continuous listening
+
+The autonomy work follows the research patterns in [ReAct](https://arxiv.org/abs/2210.03629) (interleaved reasoning and observations), [Generative Agents](https://arxiv.org/abs/2304.03442) (memory/reflection/planning), [Voyager](https://arxiv.org/abs/2305.16291) (reusable skills with feedback and verification), and [SWE-agent](https://arxiv.org/abs/2405.15793) (a purpose-built, constrained agent-computer interface). These papers describe useful design patterns, not a guarantee of general intelligence.
+
+### Restricted autonomy laboratory
+
+- `POST /api/autonomy/plan/validate` validates a bounded, acyclic task graph. It does not schedule or execute the graph.
+- `POST /api/autonomy/experiment` evaluates a small pure-expression language over JSON input. It rejects imports, function calls, attributes/introspection, assignments, comprehensions, and arbitrary Python. Input, syntax-tree, depth, time, exponent, and result sizes are bounded.
+- Both endpoints require a local client. This is an experiment harness for deterministic calculations, not an OS-level sandbox for arbitrary generated programs. Do not treat it as a safe general-purpose Python execution environment.
+- The response explicitly states that no tool execution or memory mutation took place. Real capabilities must still pass the Permission Engine and MCP Gateway. Proposed plans and experimental outcomes are not automatically promoted into trusted skills or memory.
+
+### Opt-in continuous listening
+
+The UI now exposes an explicit `SÜREKLİ DİNLE` control. It uses browser microphone permission, local Web Audio RMS voice-activity detection, and a bounded in-memory audio ring buffer to segment speech. Speech segments are sent to the configured local Core transcription endpoint. The user can stop listening at any time; leaving the page also releases the microphone. Captured speech only fills the directive field: it does not submit or execute the directive. ENTER remains a separate explicit execution step.
+
+Microphone access is opt-in and visible, not secretly enabled on startup. Browser/device VAD thresholds vary; this is an initial local prototype, not a guarantee of studio-quality or always-correct detection. A later production hardening step should add browser-level tests for permission denial, device removal, long speech, and repeated segmentation.
+
+### Research links
+
+- ReAct — https://arxiv.org/abs/2210.03629
+- Generative Agents — https://arxiv.org/abs/2304.03442
+- Voyager — https://arxiv.org/abs/2305.16291
+- SWE-agent — https://arxiv.org/abs/2405.15793
+- OWASP Excessive Agency — https://genai.owasp.org/llmrisk/llm062025-excessive-agency/
+
 ## Validation
 
 The implementation is validated by the Core Python test suite, frontend production build, and release-lock verification scripts.
