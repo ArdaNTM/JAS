@@ -11,7 +11,10 @@ import ast
 import operator
 import time
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Callable
+
+from aura_core.application.sandbox_contract import SandboxJob
+from aura_core.application.sandbox_runner import DockerPythonRunner, SandboxResult
 
 
 class AutonomyValidationError(ValueError):
@@ -231,3 +234,24 @@ def evaluate_safe_expression(expression: str, data: dict[str, Any] | None = None
             raise AutonomyValidationError("Experiment result exceeds its size budget")
         return result
     raise AutonomyValidationError("Experiment result type is not supported")
+
+
+def run_python_draft(
+    job: SandboxJob,
+    *,
+    authorize: Callable[[SandboxJob], bool],
+    runner: DockerPythonRunner | None = None,
+) -> SandboxResult:
+    """Run an untrusted Python draft only via an authorized isolated adapter.
+
+    This entry point deliberately has no in-process execution fallback. Missing
+    Docker, a non-digest-pinned image, or denied authorization raises a fail-closed
+    error before draft code is run. The caller's authorization callback must check
+    the principal/capability through AURA's policy boundary.
+    """
+    adapter = runner or DockerPythonRunner(authorizer=authorize)
+    if runner is not None:
+        # A test or composition-provided runner must not silently bypass the
+        # caller-supplied authorization callback.
+        adapter.authorizer = authorize
+    return adapter.run(job)
