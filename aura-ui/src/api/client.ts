@@ -1,4 +1,6 @@
-﻿export interface TaskStep {
+﻿import type { UIContractResponse, UIErrorEnvelope } from "./contracts";
+
+export interface TaskStep {
   step_id: string;
   capability_id: string;
   operation_id: string;
@@ -55,6 +57,31 @@ export interface HealthResponse {
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
+export class AuraApiError extends Error {
+  readonly status: number;
+  readonly code: string;
+  readonly retryable: boolean;
+  readonly requestId: string | null;
+  readonly details: unknown;
+
+  constructor(
+    message: string,
+    status: number,
+    code = "http_error",
+    retryable = status >= 500,
+    requestId: string | null = null,
+    details: unknown = null,
+  ) {
+    super(message);
+    this.name = "AuraApiError";
+    this.status = status;
+    this.code = code;
+    this.retryable = retryable;
+    this.requestId = requestId;
+    this.details = details;
+  }
+}
+
 async function request<T>(
   path: string,
   init?: RequestInit,
@@ -72,29 +99,32 @@ async function request<T>(
   );
 
   if (!response.ok) {
-    let detail =
-      `API request failed: ${response.status}`;
-
+    let envelope: Partial<UIErrorEnvelope> = {};
     try {
-      const body =
-        (await response.json()) as {
-          detail?: string;
-        };
-
-      if (
-        typeof body.detail === "string" &&
-        body.detail.length > 0
-      ) {
-        detail = body.detail;
-      }
+      envelope = (await response.json()) as Partial<UIErrorEnvelope>;
     } catch {
-      // Keep HTTP status error.
+      // Non-JSON responses still produce a typed HTTP error.
     }
 
-    throw new Error(detail);
+    const apiError = envelope.error;
+    const legacyDetail =
+      typeof envelope.detail === "string" ? envelope.detail : undefined;
+    throw new AuraApiError(
+      apiError?.message ?? legacyDetail ?? `API request failed: ${response.status}`,
+      response.status,
+      apiError?.code ?? "http_error",
+      apiError?.retryable ?? response.status >= 500,
+      apiError?.request_id ?? response.headers.get("X-Request-ID"),
+      apiError?.details ?? envelope.detail ?? null,
+    );
   }
 
   return response.json() as Promise<T>;
+}
+
+/** Discover supported UI contract features without binding to a model/provider. */
+export function getUIContract(): Promise<UIContractResponse> {
+  return request<UIContractResponse>("/api/ui/v1/contract");
 }
 
 export function generateTaskPlan(
