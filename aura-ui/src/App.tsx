@@ -21,6 +21,7 @@ import {
 } from "./voice/sessionState";
 
 import { useAuraVoice } from "./voice/useAuraVoice";
+import { useContinuousAuraVoice } from "./voice/useContinuousAuraVoice";
 import AuraJarvisBridge from "./AuraJarvisBridge";
 import { useTaskEvents } from "./hooks/useTaskEvents";
 
@@ -176,6 +177,20 @@ export default function App() {
     setSessionState("idle");
     pushTelemetry("SES METNİ HAZIR — ÇALIŞTIRMAK İÇİN ENTER GEREKLİ");
   });
+
+  const continuousVoice = useContinuousAuraVoice((directive) => {
+    setCommand(directive);
+    setHologramTarget(directive);
+    setError(null);
+    setSessionState("idle");
+    pushTelemetry("SÜREKLİ DİNLEMEDEN KONUŞMA METNİ HAZIR — ENTER ONAYI GEREKLİ");
+  });
+
+  useEffect(() => {
+    if (systemState !== "idle" || sessionBusy) {
+      continuousVoice.stop();
+    }
+  }, [systemState, sessionBusy, continuousVoice.stop]);
 
   const handleVoiceStatus = useCallback((
     status: "processing" | "ready" | "speaking" | "error",
@@ -657,6 +672,20 @@ export default function App() {
             </button>
 
             <button
+              type="button"
+              disabled={systemState !== "idle" || sessionBusy || voice.state === "recording" || voice.state === "transcribing"}
+              onClick={() => continuousVoice.active ? continuousVoice.stop() : void continuousVoice.start()}
+              title="Mikrofon erişimi sürekli açık kalır; konuşma metni otomatik çalıştırılmaz."
+              aria-pressed={continuousVoice.active}
+              className={[
+                "border px-3 py-2 text-[9px] tracking-[.12em] transition disabled:opacity-30",
+                continuousVoice.active ? "border-amber-400 text-amber-300" : "border-cyan-900/70 text-cyan-700 hover:text-cyan-200",
+              ].join(" ")}
+            >
+              {continuousVoice.active ? "DİNLEMEYİ KAPAT" : "SÜREKLİ DİNLE"}
+            </button>
+
+            <button
               type="submit"
               disabled={
                 !command.trim() ||
@@ -669,7 +698,7 @@ export default function App() {
             </button>
           </form>
           <div className="mx-auto mt-2 max-w-4xl text-center text-[8px] tracking-[.12em] text-slate-500">
-            {voice.message}
+            {continuousVoice.active ? continuousVoice.message : voice.message}
           </div>
         </footer>
 
