@@ -79,3 +79,15 @@ def test_async_coordinator_offloads_blocking_work_and_tracks_stats() -> None:
         assert snapshot.failed == 0
 
     asyncio.run(scenario())
+
+
+
+def test_async_coordinator_reduces_capacity_under_resource_pressure() -> None:
+    async def scenario() -> None:
+        coordinator = AsyncWorkCoordinator(capacity=3)
+        await coordinator.apply_resource_pressure(True)
+        assert (await coordinator.snapshot()).capacity == 1
+        await coordinator.apply_resource_pressure(False)
+        assert (await coordinator.snapshot()).capacity == 3
+
+    asyncio.run(scenario())
