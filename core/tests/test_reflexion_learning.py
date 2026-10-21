@@ -30,7 +30,11 @@ def test_reflexion_stops_after_verified_success_and_proposes_review_only_skill(t
         SandboxResult("exp-2", "completed", 0, "42", "", 0.1),
     ]
     source_runner = FakeRunner(results=results)
-    monkeypatch.setattr(module, "DockerPythonRunner", lambda **kwargs: source_runner)
+    def build_runner(**kwargs):
+        source_runner.authorizer = kwargs["authorizer"]
+        return source_runner
+
+    monkeypatch.setattr(module, "DockerPythonRunner", build_runner)
     memory = SQLiteEpisodicMemory(tmp_path / "episodes.sqlite3")
     skills = ProceduralSkillLibrary(tmp_path / "skills.sqlite3")
     revisions = []
@@ -67,7 +71,11 @@ def test_reflexion_is_bounded_and_never_promotes_unverified_skill(tmp_path, monk
     fake = FakeRunner(results=[
         SandboxResult(f"exp-{i}", "failed", 1, "", "error", 0.1) for i in range(3)
     ])
-    monkeypatch.setattr(module, "DockerPythonRunner", lambda **kwargs: fake)
+    def build_runner(**kwargs):
+        fake.authorizer = kwargs["authorizer"]
+        return fake
+
+    monkeypatch.setattr(module, "DockerPythonRunner", build_runner)
     skills = ProceduralSkillLibrary(tmp_path / "skills.sqlite3")
     loop = ReflexionExperimentLoop(
         runner=fake,
