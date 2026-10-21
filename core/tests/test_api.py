@@ -204,9 +204,12 @@ def test_ready_endpoint_returns_503_when_model_is_missing() -> None:
     response = client.get("/ready")
 
     assert response.status_code == 503
-    assert response.json() == {
-        "detail": "Configured model is unavailable",
-    }
+    body = response.json()
+    assert body["detail"] == "Configured model is unavailable"
+    assert body["error"]["code"] == "provider_unavailable"
+    assert body["error"]["message"] == "Inference provider is unavailable"
+    assert body["error"]["retryable"] is True
+    assert body["error"]["request_id"] == response.headers["X-Request-ID"]
 
 
 def test_ready_endpoint_returns_503_when_backend_is_unavailable() -> None:
@@ -220,9 +223,12 @@ def test_ready_endpoint_returns_503_when_backend_is_unavailable() -> None:
     response = client.get("/ready")
 
     assert response.status_code == 503
-    assert response.json() == {
-        "detail": "Inference backend is unavailable",
-    }
+    body = response.json()
+    assert body["detail"] == "Inference backend is unavailable"
+    assert body["error"]["code"] == "provider_unavailable"
+    assert body["error"]["message"] == "Inference provider is unavailable"
+    assert body["error"]["retryable"] is True
+    assert body["error"]["request_id"] == response.headers["X-Request-ID"]
 
 
 def test_ready_endpoint_returns_502_for_invalid_model_listing() -> None:
@@ -232,9 +238,12 @@ def test_ready_endpoint_returns_502_for_invalid_model_listing() -> None:
     response = client.get("/ready")
 
     assert response.status_code == 502
-    assert response.json() == {
-        "detail": "Inference backend returned an invalid response",
-    }
+    body = response.json()
+    assert body["detail"] == "Inference backend returned an invalid response"
+    assert body["error"]["code"] == "provider_invalid_response"
+    assert body["error"]["message"] == "Inference provider returned an invalid response"
+    assert body["error"]["retryable"] is False
+    assert body["error"]["request_id"] == response.headers["X-Request-ID"]
 
 
 def test_api_logs_completed_request(caplog) -> None:
