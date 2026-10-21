@@ -88,12 +88,12 @@ export default function AuraJarvisBridge({
       } catch (error) {
         if (!cancelled) {
           console.error(
-            "AURA JARVIS bridge error:",
+            "AURA JARVIS köprü hatası:",
             error,
           );
           const message = error instanceof AuraApiError
             ? `[${error.code}] ${error.message}${error.requestId ? ` (request: ${error.requestId})` : ""}`
-            : error instanceof Error ? error.message : "Voice response failed.";
+            : error instanceof Error ? error.message : "Sesli yanıt başarısız oldu.";
           onStatus?.("error", message);
         }
       }
