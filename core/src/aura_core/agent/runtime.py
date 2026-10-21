@@ -10,6 +10,7 @@ from typing import Any, Callable
 _request_id_context: ContextVar[str | None] = ContextVar("aura_request_id", default=None)
 
 from aura_core.kernel.events import EventBus, KernelEvent
+from aura_core.memory.hierarchical_memory import ContextItem
 from aura_core.kernel.permissions import AuthorizationDecision, RiskLevel
 from aura_core.mcp.gateway import MCPGateway, MCPGatewayRequest
 
@@ -39,12 +40,15 @@ class Task:
     resource_scope: str
     max_steps: int = 32
     timeout_seconds: float = 60.0
+    memory_context: tuple[ContextItem, ...] = ()
 
     def __post_init__(self) -> None:
         if not all((self.task_id, self.principal_id, self.title, self.resource_scope)):
             raise ValueError("Task identifiers, title and resource_scope are required")
         if self.max_steps < 1 or self.timeout_seconds <= 0:
             raise ValueError("Task limits must be positive")
+        if len(self.memory_context) > 32 or any(not item.untrusted for item in self.memory_context):
+            raise ValueError("Task memory context must be bounded and explicitly untrusted")
 
 
 @dataclass(frozen=True, slots=True)
