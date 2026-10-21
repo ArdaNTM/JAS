@@ -67,8 +67,8 @@ class SpeechModelLoadError(RuntimeError):
     """The configured local faster-whisper model could not be initialized."""
 
 
-class SpeechAudioDecodeError(RuntimeError):
-    """The local STT engine could not decode or transcribe the supplied audio."""
+class SpeechTranscriptionError(RuntimeError):
+    """The local STT engine failed while decoding or transcribing audio."""
 
 
 def transcribe_audio_bytes(audio_bytes: bytes, language: str, suffix: str = ".webm") -> tuple[str, str]:
@@ -109,7 +109,7 @@ def transcribe_audio_bytes(audio_bytes: bytes, language: str, suffix: str = ".we
             # faster-whisper decodes lazily while iterating the segment generator.
             text = " ".join(segment.text.strip() for segment in segments).strip()
         except Exception as exc:
-            raise SpeechAudioDecodeError("faster-whisper failed while decoding or transcribing the audio") from exc
+            raise SpeechTranscriptionError("faster-whisper failed while decoding or transcribing the audio") from exc
         return text, getattr(info, "language", None) or language
     finally:
         if temp_path:
@@ -1195,11 +1195,13 @@ def create_api(
                 exc,
                 False,
             )
-        except SpeechAudioDecodeError as exc:
+        except SpeechTranscriptionError as exc:
+            # The inference engine can fail for codec, runtime, device, or resource
+            # reasons. Do not misreport every engine failure as a client-side 422.
             return failure_response(
-                422,
-                "stt_audio_decode_failed",
-                "The local STT engine could not decode this recording. Check the browser audio codec/container and try recording again. The server log contains the diagnostic traceback.",
+                500,
+                "stt_transcription_failed",
+                "The local STT engine failed while decoding or transcribing this recording. Check the audio codec/container and the Core server log using this request ID; the underlying failure may also be a model, device, or runtime issue.",
                 exc,
                 True,
             )

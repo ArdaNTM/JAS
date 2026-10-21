@@ -118,9 +118,9 @@ def test_local_speech_transcription_model_load_failure_is_actionable(monkeypatch
     assert response.json()["error"]["details"] == {"exception_type": "SpeechModelLoadError"}
 
 
-def test_local_speech_transcription_decode_failure_is_actionable(monkeypatch) -> None:
+def test_local_speech_transcription_engine_failure_is_actionable(monkeypatch) -> None:
     def fail_decode(audio_bytes: bytes, language: str, suffix: str):
-        raise api_module.SpeechAudioDecodeError("codec details are logged only")
+        raise api_module.SpeechTranscriptionError("runtime details are logged only")
 
     monkeypatch.setattr(api_module, "transcribe_audio_bytes", fail_decode)
     response = make_client().post(
@@ -132,10 +132,10 @@ def test_local_speech_transcription_decode_failure_is_actionable(monkeypatch) ->
         },
     )
 
-    assert response.status_code == 422
-    assert response.json()["error"]["code"] == "stt_audio_decode_failed"
+    assert response.status_code == 500
+    assert response.json()["error"]["code"] == "stt_transcription_failed"
     assert "codec/container" in response.json()["error"]["message"]
-    assert "codec details" not in response.text
+    assert "runtime details" not in response.text
 
 
 def test_local_speech_transcription_accepts_m4a_alias(monkeypatch) -> None:
