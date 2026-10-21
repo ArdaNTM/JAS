@@ -268,6 +268,27 @@ def create_api(
         cpu_warning=float(os.getenv("AURA_CPU_WARNING_PERCENT", "85")),
         memory_warning=float(os.getenv("AURA_MEMORY_WARNING_PERCENT", "85")),
     )
+    from aura_core.application.telemetry_daemon import ContinuousTelemetryDaemon
+
+    def resolve_event_bus():
+        kernel = getattr(app.state, "kernel", None)
+        return getattr(kernel, "event_bus", None) if kernel is not None else getattr(app.state, "event_bus", None)
+
+    app.state.telemetry_daemon = ContinuousTelemetryDaemon(
+        app.state.system_telemetry,
+        resolve_event_bus,
+        interval_seconds=float(os.getenv("AURA_TELEMETRY_INTERVAL_SECONDS", "5")),
+        pressure_handler=lambda pressured: app.state.async_work.apply_resource_pressure(pressured),
+    )
+
+    @app.on_event("startup")
+    async def start_continuous_telemetry() -> None:
+        if os.getenv("AURA_TELEMETRY_DAEMON_ENABLED", "1").strip().lower() not in {"0", "false", "no"}:
+            app.state.telemetry_daemon.start()
+
+    @app.on_event("shutdown")
+    async def stop_continuous_telemetry() -> None:
+        await app.state.telemetry_daemon.stop()
     app.state.capability_discovery = None
     app.state.directive_planner = DirectivePlanner()
     app.state.chat_memory = ChatMemory(
@@ -645,6 +666,10 @@ def create_api(
     @app.get("/api/runtime/concurrency")
     async def runtime_concurrency() -> dict[str, object]:
         return (await app.state.async_work.snapshot()).to_dict()
+
+    @app.get("/api/runtime/telemetry/daemon")
+    def runtime_telemetry_daemon() -> dict[str, object]:
+        return app.state.telemetry_daemon.status()
 
     @app.get("/api/runtime/telemetry")
     def runtime_telemetry() -> dict[str, object]:
