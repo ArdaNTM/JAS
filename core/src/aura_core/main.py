@@ -9,6 +9,8 @@ from fastapi import FastAPI
 
 from aura_core.agent.runtime import AgentExecutor
 from aura_core.application.composition import create_composed_app
+from aura_core.application.event_bus_runtime import EventBusRuntime
+from aura_core.application.event_driven_orchestration import EventDrivenOrchestrationCoordinator
 from aura_core.application.capability_discovery import DynamicCapabilityDiscovery
 from aura_core.application.tasks import AgentTaskService
 from aura_core.application.task_memory import TaskMemoryCoordinator
@@ -135,10 +137,20 @@ def build_app() -> FastAPI:
         gateway=gateway,
     )
 
+    event_runtime = EventBusRuntime(
+        kernel.event_bus,
+        enabled=os.getenv("AURA_EVENT_RUNTIME_ENABLED", "1").strip().casefold()
+        not in {"0", "false", "no", "off"},
+        idle_seconds=float(os.getenv("AURA_EVENT_IDLE_SECONDS", "300")),
+        poll_interval_seconds=float(os.getenv("AURA_EVENT_POLL_INTERVAL_SECONDS", "0.1")),
+    )
+    app.state.event_bus_runtime = event_runtime
+
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
         research_provider = None
         kokoro_provider = None
+        event_coordinator = None
 
         # MCP_HEALTH_REPORT_PATCH: report only after successful provider setup.
         def report_mcp_healthy(config):
@@ -327,6 +339,29 @@ def build_app() -> FastAPI:
                     timeout=10.0,
                 )
 
+            # The runtime owns the sole EventBus dispatch loop. Start it only
+            # after the Kernel and existing event bridge are ready.
+            event_runtime.start()
+
+            # Reflection integration is conditional: it is activated only if
+            # the composition root explicitly provides the existing daemon.
+            reflection_daemon = getattr(
+                _app.state, "idle_memory_reflection_daemon", None
+            )
+            if reflection_daemon is not None and os.getenv(
+                "AURA_EVENT_REFLECTION_ENABLED", "0"
+            ).strip().casefold() in {"1", "true", "yes", "on"}:
+                event_coordinator = EventDrivenOrchestrationCoordinator(
+                    event_bus=kernel.event_bus,
+                    reflection_daemon=reflection_daemon,
+                    enabled=True,
+                    cooldown_seconds=float(
+                        os.getenv("AURA_EVENT_REFLECTION_COOLDOWN_SECONDS", "300")
+                    ),
+                )
+                event_coordinator.start()
+                _app.state.event_driven_orchestration = event_coordinator
+
             logger.info(
                 "AURA LIFESPAN STARTUP COMPLETE"
             )
@@ -349,6 +384,17 @@ def build_app() -> FastAPI:
             logger.info(
                 "AURA LIFESPAN SHUTDOWN BEGIN"
             )
+
+            if event_coordinator is not None:
+                try:
+                    event_coordinator.stop()
+                except Exception:
+                    logger.exception("Event-driven orchestration unsubscribe failed")
+
+            try:
+                await event_runtime.stop(timeout_seconds=5.0)
+            except Exception:
+                logger.exception("EventBus runtime shutdown failed")
 
             if learning_scheduler is not None:
                 try:
