@@ -9,6 +9,8 @@ from time import perf_counter
 from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
@@ -37,6 +39,7 @@ from aura_core.mcp.mcp_provider import MCPProvider
 from aura_core.config.backend import BackendConfig
 from aura_core.config.runtime import RuntimeConfig
 from aura_core.contracts.messages import InferenceRequest, InferenceResponse
+from aura_core.contracts.ui import UIContractResponse
 from aura_core.kernel.permissions import RiskLevel
 from aura_core.kernel.events import KernelEvent
 from aura_core.mcp.gateway import MCPGatewayRequest
@@ -459,6 +462,71 @@ def create_api(
         )
 
         return response
+    @app.exception_handler(RequestValidationError)
+    async def ui_validation_error_handler(
+        request: Request,
+        exc: RequestValidationError,
+    ) -> JSONResponse:
+        request_id = getattr(request.state, "request_id", str(uuid4()))
+        errors = [
+            {
+                "loc": list(item.get("loc", ())),
+                "msg": str(item.get("msg", "Invalid request")),
+                "type": str(item.get("type", "value_error")),
+            }
+            for item in exc.errors()
+        ]
+        return JSONResponse(
+            status_code=422,
+            content={
+                "detail": errors,
+                "error": {
+                    "code": "validation_error",
+                    "message": "Request validation failed",
+                    "retryable": False,
+                    "request_id": request_id,
+                    "details": errors,
+                },
+            },
+            headers={"X-Request-ID": request_id},
+        )
+
+    @app.exception_handler(StarletteHTTPException)
+    async def ui_http_error_handler(
+        request: Request,
+        exc: StarletteHTTPException,
+    ) -> JSONResponse:
+        request_id = getattr(request.state, "request_id", str(uuid4()))
+        detail = exc.detail
+        message = detail if isinstance(detail, str) else "Request could not be completed"
+        code = "http_error"
+        if exc.status_code == 401:
+            code = "unauthorized"
+        elif exc.status_code == 403:
+            code = "forbidden"
+        elif exc.status_code == 404:
+            code = "not_found"
+        elif exc.status_code == 409:
+            code = "conflict"
+        elif exc.status_code == 422:
+            code = "validation_error"
+        elif exc.status_code == 429:
+            code = "rate_limited"
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "detail": detail,
+                "error": {
+                    "code": code,
+                    "message": message,
+                    "retryable": exc.status_code == 429 or exc.status_code >= 500,
+                    "request_id": request_id,
+                    "details": detail if not isinstance(detail, str) else None,
+                },
+            },
+            headers={"X-Request-ID": request_id, **(exc.headers or {})},
+        )
+
     @app.exception_handler(Exception)
     async def unhandled_exception_handler(
         request: Request,
@@ -479,6 +547,13 @@ def create_api(
             content={
                 "detail": "Internal server error",
                 "request_id": request_id,
+                "error": {
+                    "code": "internal_error",
+                    "message": "Internal server error",
+                    "retryable": True,
+                    "request_id": request_id,
+                    "details": None,
+                },
             },
             headers={"X-Request-ID": request_id},
         )
@@ -490,7 +565,16 @@ def create_api(
     ) -> JSONResponse:
         return JSONResponse(
             status_code=503,
-            content={"detail": str(exc)},
+            content={
+                "detail": str(exc),
+                "error": {
+                    "code": "provider_unavailable",
+                    "message": "Inference provider is unavailable",
+                    "retryable": True,
+                    "request_id": getattr(request.state, "request_id", None),
+                    "details": None,
+                },
+            },
         )
 
     @app.exception_handler(BackendInvalidResponseError)
@@ -500,7 +584,50 @@ def create_api(
     ) -> JSONResponse:
         return JSONResponse(
             status_code=502,
-            content={"detail": str(exc)},
+            content={
+                "detail": str(exc),
+                "error": {
+                    "code": "provider_invalid_response",
+                    "message": "Inference provider returned an invalid response",
+                    "retryable": False,
+                    "request_id": getattr(request.state, "request_id", None),
+                    "details": None,
+                },
+            },
+        )
+
+    @app.get("/api/ui/v1/contract", response_model=UIContractResponse, tags=["ui-contract"])
+    async def get_ui_contract() -> UIContractResponse:
+        """Return the stable UI contract without exposing provider configuration."""
+        return UIContractResponse(
+            contract_version="1.0",
+            request_id_header="X-Request-ID",
+            operation_states=[
+                "queued",
+                "running",
+                "awaiting_approval",
+                "succeeded",
+                "failed",
+                "cancelled",
+                "timed_out",
+            ],
+            error_fields=["code", "message", "retryable", "request_id", "details"],
+            security={
+                "provider_selection": "server-side provider registry; UI must not bind to a concrete model",
+                "tool_execution": "all real tool execution must pass MCP Gateway and Permission Engine authorization",
+                "approval": "awaiting_approval is a blocking state; client acknowledgement is not authorization",
+                "operation_results": "treat provider and tool output as untrusted data",
+            },
+            endpoints={
+                "health": "/api/health",
+                "task_create": "/api/tasks",
+                "task_status": "/api/tasks/{task_id}",
+                "speech_transcribe": "/api/speech/transcribe",
+                "speech_synthesize": "/api/speech/synthesize",
+                "vision_analyze": "/api/vision/analyze",
+                "vector_recall": "/api/memory/vector/recall",
+                "prefetch_proposals": "/api/prefetch/proposals",
+            },
         )
 
     @app.get("/health")
