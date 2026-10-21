@@ -70,7 +70,7 @@ export default function CapabilityWorkbench() {
       const result = await writeVectorMemory({
         principal_id: principalId.trim(),
         content: memoryText.trim(),
-        tags: ["ui", "user-provided"],
+        tags: ["arayüz", "kullanıcı-verisi"],
       });
       setMessage(result.stored ? "Güvenilmeyen başvuru verisi olarak kaydedildi." : "Hafıza kaydedilemedi.");
       setMemoryText("");
@@ -179,7 +179,7 @@ export default function CapabilityWorkbench() {
                 <div className="space-y-3">
                   <label className="block"><span className={labelClass}>ANLAMSAL SORGU</span><input className={inputClass} value={memoryQuery} maxLength={12000} onChange={(event) => setMemoryQuery(event.target.value)} placeholder="Kapsamlı yerel hafızada ara…" /></label>
                   <button className={buttonClass} disabled={busy || !memoryQuery.trim() || !principalId.trim()} onClick={() => void searchMemory()}>HAFIZADA ARA</button>
-                  <div className="space-y-2">{memoryItems.map((item, index) => <article key={item.memory_id ?? index} className="rounded border border-cyan-950 p-3 text-xs"><p className="whitespace-pre-wrap text-cyan-100">{item.content ?? JSON.stringify(item)}</p><p className="mt-2 text-[9px] text-slate-500">Güvenilmeyen başvuru verisi · ilgililik {item.relevance_score ?? "n/a"}</p></article>)}</div>
+                  <div className="space-y-2">{memoryItems.map((item, index) => <article key={item.memory_id ?? index} className="rounded border border-cyan-950 p-3 text-xs"><p className="whitespace-pre-wrap text-cyan-100">{item.content ?? JSON.stringify(item)}</p><p className="mt-2 text-[9px] text-slate-500">Güvenilmeyen başvuru verisi · ilgililik {item.relevance_score ?? "yok"}</p></article>)}</div>
                 </div>
               </div>
             )}
@@ -215,7 +215,7 @@ export default function CapabilityWorkbench() {
                 <div className="space-y-2">{prefetchItems.map((item, index) => <article key={String(item.proposal_id ?? item.id ?? index)} className="rounded border border-cyan-950 p-3"><pre className="whitespace-pre-wrap break-words text-[10px] text-cyan-100">{JSON.stringify(item, null, 2)}</pre><p className="mt-2 text-[9px] text-slate-500">Yalnızca öneri · yürütme yetkisi verilmedi</p></article>)}</div>
               </div>
             )}
-            {busy && <p role="status" className="mt-4 text-[10px] text-cyan-500">CONTACTING AURA CORE…</p>}
+            {busy && <p role="status" className="mt-4 text-[10px] text-cyan-500">AURA CORE İLE BAĞLANTI KURULUYOR…</p>}
             {message && <p role="status" className="mt-4 break-words rounded border border-cyan-950 p-3 text-[10px] text-cyan-200">{message}</p>}
           </div>
         </section>
