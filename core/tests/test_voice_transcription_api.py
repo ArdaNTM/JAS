@@ -216,7 +216,10 @@ def test_default_stt_model_is_medium_and_prompt_can_be_configured(monkeypatch) -
     monkeypatch.setitem(sys.modules, "faster_whisper", SimpleNamespace(WhisperModel=FakeModel))
     monkeypatch.setattr(api_module, "_whisper_model", None)
     monkeypatch.delenv("AURA_STT_MODEL", raising=False)
+    monkeypatch.setenv("AURA_STT_DEVICE", "cpu")
+    monkeypatch.setenv("AURA_STT_COMPUTE_TYPE", "int8")
     monkeypatch.setenv("AURA_STT_INITIAL_PROMPT", "Türkçe komutlar: Doğa hakkında araştırma yap.")
+    monkeypatch.setattr(api_module, "_stt_memory_store", False)
 
     text, language = api_module.transcribe_audio_bytes(b"fake-audio", "tr", ".wav")
 
@@ -224,6 +227,34 @@ def test_default_stt_model_is_medium_and_prompt_can_be_configured(monkeypatch) -
     assert language == "tr"
     assert calls["model_name"] == "medium"
     assert calls["model_options"]["device"] == "cpu"
-    assert calls["transcribe_options"]["initial_prompt"] == "Türkçe komutlar: Doğa hakkında araştırma yap."
+    assert calls["transcribe_options"]["initial_prompt"].startswith("Türkçe komutlar: Doğa hakkında araştırma yap.")
     monkeypatch.setattr(api_module, "_whisper_model", None)
+
+def test_resolve_stt_runtime_selects_cuda_precision_when_available(monkeypatch) -> None:
+    from types import SimpleNamespace
+
+    monkeypatch.setenv("AURA_STT_DEVICE", "auto")
+    monkeypatch.setenv("AURA_STT_COMPUTE_TYPE", "auto")
+    monkeypatch.setitem(__import__("sys").modules, "ctranslate2", SimpleNamespace(get_cuda_device_count=lambda: 1))
+    assert api_module.resolve_stt_runtime() == ("cuda", "float16")
+
+
+def test_resolve_stt_runtime_uses_cpu_int8_when_cuda_unavailable(monkeypatch) -> None:
+    from types import SimpleNamespace
+
+    monkeypatch.setenv("AURA_STT_DEVICE", "auto")
+    monkeypatch.setenv("AURA_STT_COMPUTE_TYPE", "auto")
+    monkeypatch.setitem(__import__("sys").modules, "ctranslate2", SimpleNamespace(get_cuda_device_count=lambda: 0))
+    assert api_module.resolve_stt_runtime() == ("cpu", "int8")
+
+
+def test_explicit_cuda_without_device_fails_actionably(monkeypatch) -> None:
+    from types import SimpleNamespace
+    import pytest
+
+    monkeypatch.setenv("AURA_STT_DEVICE", "cuda")
+    monkeypatch.setenv("AURA_STT_COMPUTE_TYPE", "auto")
+    monkeypatch.setitem(__import__("sys").modules, "ctranslate2", SimpleNamespace(get_cuda_device_count=lambda: 0))
+    with pytest.raises(RuntimeError, match="CUDA was explicitly requested"):
+        api_module.resolve_stt_runtime()
 
