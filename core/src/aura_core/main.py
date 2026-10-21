@@ -11,6 +11,7 @@ from aura_core.agent.runtime import AgentExecutor
 from aura_core.application.composition import create_composed_app
 from aura_core.application.capability_discovery import DynamicCapabilityDiscovery
 from aura_core.application.tasks import AgentTaskService
+from aura_core.application.task_memory import TaskMemoryCoordinator
 from aura_core.config.kernel import KernelConfig
 from aura_core.kernel.permissions import (
     AuthorizationDecision,
@@ -96,7 +97,8 @@ def build_app() -> FastAPI:
         AgentExecutor(
             gateway=gateway,
             event_bus=kernel.event_bus,
-        )
+        ),
+        memory=TaskMemoryCoordinator.from_environment(),
     )
 
     app = create_composed_app(
