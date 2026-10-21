@@ -78,9 +78,9 @@ def test_prefetch_requires_repeated_local_patterns_and_never_executes(tmp_path) 
 
 
 def test_vision_provider_rejects_nonlocal_endpoints() -> None:
-    with pytest.raises(ValueError, match="cloud and non-loopback"):
+    with pytest.raises(ValueError, match="vision endpoint must be an explicit local HTTP URL"):
         _validate_local_endpoint("https://api.example.com")
-    with pytest.raises(ValueError, match="cloud and non-loopback"):
+    with pytest.raises(ValueError, match="vision endpoint must be an explicit local HTTP URL"):
         LocalOllamaVisionProvider(base_url="http://192.0.2.10:11434")
     provider = LocalOllamaVisionProvider(base_url="http://127.0.0.1:11434")
     assert provider.model == "qwen2.5vl:3b"
