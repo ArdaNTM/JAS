@@ -154,7 +154,7 @@ export default function App() {
     status: "processing" | "ready" | "speaking" | "error",
     errorMessage?: string,
   ) => {
-    setSessionState(status === "ready" ? "boşta" : status);
+    setSessionState(status === "ready" ? "idle" : status);
     if (status === "error") {
       // A successful task can still fail while generating or playing its answer.
       // Keep the task summary and lifecycle state consistent with that failure.
@@ -585,7 +585,7 @@ export default function App() {
                 </div>
               ))}
               <div className="text-[8px] tracking-[.16em] text-slate-600">
-                EVENT LINK: {eventsConnected ? "GÜVENLİ / BAĞLI" : "GÖREV BEKLENİYOR"}
+                OLAY BAĞLANTISI: {eventsConnected ? "GÜVENLİ / BAĞLI" : "GÖREV BEKLENİYOR"}
               </div>
             </div>
           </aside>
