@@ -234,10 +234,7 @@ def build_app() -> FastAPI:
         # external stdio processes. Production keeps providers enabled unless
         # this explicit test/deployment switch is set.
         if os.getenv("AURA_DISABLE_EXTERNAL_PROVIDERS", "0") == "1":
-            try:
-                yield
-            finally:
-                task_state_machine.close()
+            yield
             return
 
         try:
@@ -474,8 +471,6 @@ def build_app() -> FastAPI:
                     logger.exception(
                         "Event bridge shutdown failed"
                     )
-
-            task_state_machine.close()
 
             if kernel.state.value == "running":
                 try:
