@@ -18,6 +18,7 @@ from aura_core.application.ws_api import router as ws_router
 from aura_core.application.diagnostics_api import router as provider_diagnostics_router
 from aura_core.application.jarvis_api import router as jarvis_router
 from aura_core.application.autonomy_api import router as autonomy_router
+from aura_core.application.speech_api import router as speech_router
 from aura_core.application.jarvis_intelligence import InitiativeEngine, SelfAdaptationEngine
 from aura_core.kernel.diagnostics import DiagnosticsService
 from aura_core.security.ws_ticket import WebSocketTicketManager
@@ -73,6 +74,7 @@ def create_composed_app(
     app.include_router(provider_diagnostics_router)
     app.include_router(jarvis_router)
     app.include_router(autonomy_router)
+    app.include_router(speech_router)
     app.include_router(approval_router)
     app.include_router(ws_router)
     app.include_router(live_router)
