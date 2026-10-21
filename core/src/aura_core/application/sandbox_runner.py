@@ -4,6 +4,7 @@ The host never evaluates draft code. A caller must authorize each job before lau
 """
 from __future__ import annotations
 
+import hashlib
 import os
 import re
 import shutil
@@ -68,8 +69,9 @@ class DockerPythonRunner:
         if not re.fullmatch(r".+@sha256:[0-9a-f]{64}", self.image):
             raise SandboxUnavailable("A digest-pinned AURA_PYTHON_SANDBOX_IMAGE is required")
 
+        container_name = "aura-sandbox-" + hashlib.sha256(job.job_id.encode("utf-8")).hexdigest()[:20]
         command = [
-            self.docker_executable, "run", "--rm", "-i",
+            self.docker_executable, "run", "--rm", "-i", "--name", container_name,
             "--network", "none", "--read-only",
             "--cap-drop", "ALL", "--security-opt", "no-new-privileges:true",
             "--pids-limit", "32", "--memory", f"{self.policy.max_memory_mb}m",
@@ -113,6 +115,16 @@ class DockerPythonRunner:
         ]
         for reader in readers:
             reader.start()
+        def stop_container() -> None:
+            try:
+                subprocess.run(
+                    [self.docker_executable, "kill", container_name],
+                    shell=False, close_fds=True, env=env, capture_output=True,
+                    timeout=3, check=False,
+                )
+            except (OSError, subprocess.SubprocessError):
+                pass
+
         try:
             assert process.stdin is not None
             process.stdin.write(job.source.encode("utf-8"))
@@ -121,10 +133,12 @@ class DockerPythonRunner:
         except subprocess.TimeoutExpired:
             process.kill()
             process.wait()
+            stop_container()
             status = "timed_out"
         except (BrokenPipeError, OSError):
             process.kill()
             process.wait()
+            stop_container()
             status = "failed"
         else:
             status = "output_limit_exceeded" if overflow.is_set() else (
