@@ -107,6 +107,34 @@ _CMPOPS = {
 _UNARYOPS = {ast.UAdd: operator.pos, ast.USub: operator.neg, ast.Not: operator.not_}
 
 
+def _validate_input_value(value: Any, *, depth: int = 0) -> None:
+    if depth > 8:
+        raise AutonomyValidationError("Experiment input nesting exceeds its budget")
+    if value is None or isinstance(value, bool):
+        return
+    if isinstance(value, (int, float)):
+        if abs(value) > 10**12:
+            raise AutonomyValidationError("Numeric input exceeds its safe range")
+        return
+    if isinstance(value, str):
+        if len(value) > 2000:
+            raise AutonomyValidationError("String input exceeds its size budget")
+        return
+    if isinstance(value, list):
+        if len(value) > 100:
+            raise AutonomyValidationError("Input collection exceeds 100 items")
+        for item in value:
+            _validate_input_value(item, depth=depth + 1)
+        return
+    if isinstance(value, dict):
+        if len(value) > 100 or any(not isinstance(key, str) for key in value):
+            raise AutonomyValidationError("Input mappings must have at most 100 string keys")
+        for item in value.values():
+            _validate_input_value(item, depth=depth + 1)
+        return
+    raise AutonomyValidationError("Only JSON-like experiment input values are supported")
+
+
 def evaluate_safe_expression(expression: str, data: dict[str, Any] | None = None) -> Any:
     """Evaluate a tiny, pure expression language over JSON-like input data.
 
@@ -118,6 +146,7 @@ def evaluate_safe_expression(expression: str, data: dict[str, Any] | None = None
         raise AutonomyValidationError("Expression must contain 1..2000 characters")
     if len((data or {})) > 100 or len(repr(data or {})) > 12000:
         raise AutonomyValidationError("Experiment input exceeds its size budget")
+    _validate_input_value(data or {})
     try:
         tree = ast.parse(expression, mode="eval")
     except SyntaxError as exc:
@@ -135,6 +164,8 @@ def evaluate_safe_expression(expression: str, data: dict[str, Any] | None = None
         if isinstance(node, ast.Constant) and isinstance(node.value, (str, int, float, bool, type(None))):
             if isinstance(node.value, str) and len(node.value) > 2000:
                 raise AutonomyValidationError("String literal is too large")
+            if isinstance(node.value, (int, float)) and not isinstance(node.value, bool) and abs(node.value) > 10**12:
+                raise AutonomyValidationError("Numeric literal exceeds its safe range")
             return node.value
         if isinstance(node, ast.Name):
             if node.id.startswith("_") or node.id not in (data or {}):
