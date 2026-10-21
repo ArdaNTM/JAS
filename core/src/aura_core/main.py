@@ -102,7 +102,7 @@ def build_app() -> FastAPI:
             description="Executes untrusted Python only in a digest-pinned, network-isolated container after explicit authorization.",
             provider_id=sandbox_service_id,
             provider_type=ProviderType.CORE,
-            category=CapabilityCategory.EXECUTION,
+            category=CapabilityCategory.CODING,
             required_permissions=frozenset({"sandbox.python.execute"}),
         )
     )
