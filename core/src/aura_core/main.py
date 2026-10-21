@@ -28,6 +28,7 @@ from aura_core.kernel.permissions import (
     PermissionPolicy,
 )
 from aura_core.kernel.runtime import AuraKernel
+from aura_core.kernel.events import KernelEvent
 from aura_core.kernel.capabilities import CapabilityCategory, CapabilityDefinition, ProviderType
 from aura_core.kernel.health import HealthReport
 from aura_core.kernel.services import ServiceCategory, ServiceDefinition, ServiceState
@@ -161,7 +162,7 @@ def build_app() -> FastAPI:
     app.state.task_service = task_service
 
     async def deliver_proactive_notification(*, principal_id: str, message: str) -> None:
-        kernel.event_bus.publish(__import__("aura_core.kernel.events", fromlist=["KernelEvent"]).KernelEvent(
+        kernel.event_bus.publish(KernelEvent(
             event_type="ProactiveNotificationReady",
             source_component="aura.proactive_notifier",
             payload={"principal_id": principal_id, "message": message, "requires_user_attention": True},
