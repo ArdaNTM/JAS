@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+
 import pytest
 
 from aura_core.agent.runtime import ExecutionResult, Plan, PlanState, PlanStep, Task
@@ -46,8 +48,7 @@ def test_task_memory_is_loaded_untrusted_and_checkpointed(tmp_path):
     assert store.recall(principal_id="p2", task_id="t1") == []
 
 
-@pytest.mark.asyncio
-async def test_task_service_attaches_scoped_memory_without_bypassing_runtime(tmp_path):
+def test_task_service_attaches_scoped_memory_without_bypassing_runtime(tmp_path):
     store = SQLiteEpisodicMemory(tmp_path / "memory.sqlite3")
     coordinator = TaskMemoryCoordinator(store)
     runtime = CapturingRuntime()
@@ -57,7 +58,7 @@ async def test_task_service_attaches_scoped_memory_without_bypassing_runtime(tmp
         plan_id="plan-1", task_id="t1",
         steps=(PlanStep(step_id="step-1", capability_id="cap", operation_id="op", tool_name="tool", risk_level=RiskLevel.LOW),),
     )
-    result = await service.submit(SubmittedTask(task, plan))
+    result = asyncio.run(service.submit(SubmittedTask(task, plan)))
     assert result.state is PlanState.SUCCEEDED
     assert runtime.task is not None
     assert any(item.kind == "goal" and item.untrusted for item in runtime.task.memory_context)
