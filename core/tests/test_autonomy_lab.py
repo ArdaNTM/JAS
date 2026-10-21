@@ -65,3 +65,14 @@ def test_safe_expression_bounds_exponents_and_output_size():
         evaluate_safe_expression("2 ** 100", {})
     with pytest.raises(AutonomyValidationError):
         evaluate_safe_expression("'x' * 100000", {})
+
+def test_safe_expression_rejects_oversized_numeric_inputs():
+    with pytest.raises(AutonomyValidationError, match="Numeric input"):
+        evaluate_safe_expression("value + 1", {"value": 10**30})
+
+
+def test_safe_expression_rejects_deeply_nested_inputs():
+    data = {"value": [[[[[[[[[[1]]]]]]]]]]}
+    with pytest.raises(AutonomyValidationError, match="nesting"):
+        evaluate_safe_expression("1", data)
+
