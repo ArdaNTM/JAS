@@ -72,6 +72,24 @@ class PlanStep:
 
 
 @dataclass(frozen=True, slots=True)
+class CompensationStep:
+    """Explicitly declared compensating operation; never auto-generated."""
+    step_id: str
+    compensates_step_id: str
+    capability_id: str
+    operation_id: str
+    tool_name: str
+    risk_level: RiskLevel
+    arguments: dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if not all((self.step_id, self.compensates_step_id, self.capability_id,
+                    self.operation_id, self.tool_name)):
+            raise ValueError("Compensation step identifiers are required")
+        object.__setattr__(self, "arguments", dict(self.arguments))
+
+
+@dataclass(frozen=True, slots=True)
 class Plan:
     plan_id: str
     task_id: str
@@ -162,12 +180,31 @@ class AgentExecutor:
                 if remaining <= 0:
                     result = StepResult(step.step_id, StepState.CANCELLED, 0, reason="Task timed out")
                 else:
+                    execution = asyncio.create_task(self._execute_step(task, plan, step))
+                    deadline = monotonic() + remaining
                     try:
-                        result = await asyncio.wait_for(
-                            self._execute_step(task, plan, step), timeout=remaining
-                        )
-                    except asyncio.TimeoutError:
-                        result = StepResult(step.step_id, StepState.CANCELLED, 0, reason="Task timed out")
+                        while not execution.done():
+                            if cancelled is not None and cancelled():
+                                execution.cancel()
+                                await asyncio.gather(execution, return_exceptions=True)
+                                result = StepResult(step.step_id, StepState.CANCELLED, 0, reason="Task cancelled")
+                                break
+                            time_left = deadline - monotonic()
+                            if time_left <= 0:
+                                execution.cancel()
+                                await asyncio.gather(execution, return_exceptions=True)
+                                result = StepResult(step.step_id, StepState.CANCELLED, 0, reason="Task timed out")
+                                break
+                            try:
+                                await asyncio.wait_for(asyncio.shield(execution), timeout=min(0.05, time_left))
+                            except asyncio.TimeoutError:
+                                continue
+                        else:
+                            result = execution.result()
+                    except asyncio.CancelledError:
+                        execution.cancel()
+                        await asyncio.gather(execution, return_exceptions=True)
+                        raise
                 self._event("PlanStepCompleted", task, plan, step, {
                     "state": result.state.value, "attempts": result.attempts
                 })
@@ -203,6 +240,8 @@ class AgentExecutor:
             if runnable:
                 outcomes = await asyncio.gather(*(run_step(step) for step in runnable), return_exceptions=True)
                 for step, outcome in zip(runnable, outcomes):
+                    if isinstance(outcome, asyncio.CancelledError):
+                        raise outcome
                     if isinstance(outcome, BaseException):
                         completed[step.step_id] = StepResult(
                             step.step_id, StepState.FAILED, 0,
@@ -230,6 +269,66 @@ class AgentExecutor:
                 )
             )
         return ExecutionResult(plan.plan_id, state, results, monotonic() - started)
+
+    async def execute_compensations(
+        self, task: Task, plan_id: str, steps: tuple[CompensationStep, ...]
+    ) -> tuple[StepResult, ...]:
+        """Run only caller-declared compensations, with each call re-authorized by MCPGateway.
+
+        This method is deliberately explicit and is never invoked automatically on failure.
+        """
+        seen: set[str] = set()
+        results: list[StepResult] = []
+        for step in steps:
+            if step.step_id in seen:
+                raise ValueError("Compensation step IDs must be unique")
+            seen.add(step.step_id)
+            self._event_compensation("CompensationStarted", task, plan_id, step)
+            response = await self._gateway.invoke(MCPGatewayRequest(
+                request_id=f"{plan_id}:compensation:{step.step_id}",
+                principal_id=task.principal_id,
+                capability_id=step.capability_id,
+                operation_id=step.operation_id,
+                resource_scope=task.resource_scope,
+                risk_level=step.risk_level,
+                tool_name=step.tool_name,
+                arguments=step.arguments,
+                task_id=task.task_id,
+            ))
+            state = StepState.SUCCEEDED if response.decision is AuthorizationDecision.ALLOW else StepState.FAILED
+            result = StepResult(
+                step.step_id, state, 1, response.result,
+                reason="" if state is StepState.SUCCEEDED else response.reason,
+            )
+            results.append(result)
+            self._event_compensation("CompensationCompleted", task, plan_id, step, {
+                "state": state.value, "compensates_step_id": step.compensates_step_id
+            })
+            if state is StepState.FAILED:
+                # Do not proceed into additional compensations after a denied operation.
+                break
+        return tuple(results)
+
+    def _event_compensation(
+        self, event_type: str, task: Task, plan_id: str, step: CompensationStep,
+        extra: dict[str, Any] | None = None,
+    ) -> None:
+        if self._event_bus is None:
+            return
+        payload = {
+            "task_id": task.task_id,
+            "compensation_step_id": step.step_id,
+            "compensates_step_id": step.compensates_step_id,
+            **(extra or {}),
+        }
+        request_id = _request_id_context.get()
+        self._event_bus.publish(KernelEvent(
+            event_type=event_type,
+            source_component="agent_executor",
+            correlation_id=plan_id,
+            payload=payload,
+            metadata={"request_id": request_id} if request_id else {},
+        ))
 
     async def _execute_step(self, task: Task, plan: Plan, step: PlanStep) -> StepResult:
         for attempt in range(1, step.max_attempts + 1):
