@@ -33,6 +33,7 @@ from aura_core.application.async_work import AsyncWorkCoordinator
 from aura_core.application.context_synthesizer import ContextSynthesizer
 from aura_core.application.context_aware_stt import build_stt_prompt
 from aura_core.application.background_thinking import IdleMemoryReflectionDaemon
+from aura_core.application.persona_policy import PersonaPolicy
 from aura_core.application.sandbox_contract import SandboxJob
 from aura_core.application.sandbox_runner import SandboxAuthorizationError, SandboxUnavailable
 from aura_core.application.autonomy_lab import (
@@ -1258,6 +1259,16 @@ def create_api(
             tone=tone,
         )
         system_prompt = synthesized.system_prompt
+        # Persona is an explicit presentation preference, not an authority source.
+        # The local settings route may override this in-process; no initiative is
+        # executed from a persona prompt.
+        persona_policy = getattr(app.state, "persona_policy", None) or PersonaPolicy(
+            tone=os.getenv("AURA_PERSONA_TONE", "witty"),
+            language=os.getenv("AURA_PERSONA_LANGUAGE", "auto"),
+            humor_intensity=max(0, min(3, int(os.getenv("AURA_PERSONA_HUMOR", "2")))),
+            initiative_enabled=os.getenv("AURA_PERSONA_INITIATIVE_ENABLED", "0").strip().lower() in {"1", "true", "yes"},
+        )
+        system_prompt = system_prompt + "\n\n" + persona_policy.system_style_prompt()
         user_content = synthesized.user_content
 
         inference_request = InferenceRequest(
