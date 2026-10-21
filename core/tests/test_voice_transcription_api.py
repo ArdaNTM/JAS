@@ -188,8 +188,42 @@ def test_transcription_uses_quality_oriented_decode_options(monkeypatch) -> None
     assert calls["temperature"] == 0.0
     assert calls["vad_filter"] is True
     assert calls["vad_parameters"] == {
-        "min_silence_duration_ms": 350,
-        "speech_pad_ms": 250,
+        "min_silence_duration_ms": 300,
+        "speech_pad_ms": 400,
+        "threshold": 0.45,
     }
-    assert calls["condition_on_previous_text"] is False
+    assert calls["condition_on_previous_text"] is True
+    assert "Türkçe konuşma" in calls["initial_prompt"]
+    assert calls["no_speech_threshold"] == 0.6
+    assert calls["log_prob_threshold"] == -1.0
+    assert calls["compression_ratio_threshold"] == 2.4
+
+def test_default_stt_model_is_medium_and_prompt_can_be_configured(monkeypatch) -> None:
+    import sys
+    from types import SimpleNamespace
+
+    calls = {}
+
+    class FakeModel:
+        def __init__(self, model_name, **kwargs):
+            calls["model_name"] = model_name
+            calls["model_options"] = kwargs
+
+        def transcribe(self, audio, **kwargs):
+            calls["transcribe_options"] = kwargs
+            return iter([]), SimpleNamespace(language="tr")
+
+    monkeypatch.setitem(sys.modules, "faster_whisper", SimpleNamespace(WhisperModel=FakeModel))
+    monkeypatch.setattr(api_module, "_whisper_model", None)
+    monkeypatch.delenv("AURA_STT_MODEL", raising=False)
+    monkeypatch.setenv("AURA_STT_INITIAL_PROMPT", "Türkçe komutlar: Doğa hakkında araştırma yap.")
+
+    text, language = api_module.transcribe_audio_bytes(b"fake-audio", "tr", ".wav")
+
+    assert text == ""
+    assert language == "tr"
+    assert calls["model_name"] == "medium"
+    assert calls["model_options"]["device"] == "cpu"
+    assert calls["transcribe_options"]["initial_prompt"] == "Türkçe komutlar: Doğa hakkında araştırma yap."
+    monkeypatch.setattr(api_module, "_whisper_model", None)
 
