@@ -157,3 +157,39 @@ def test_local_speech_transcription_accepts_m4a_alias(monkeypatch) -> None:
 
     assert response.status_code == 200
     assert calls["suffix"] == ".m4a"
+
+def test_transcription_uses_quality_oriented_decode_options(monkeypatch) -> None:
+    calls = {}
+
+    class FakeSegment:
+        text = "Doğa hakkında araştırma yap"
+
+    class FakeInfo:
+        language = "tr"
+
+    class FakeModel:
+        def transcribe(self, audio, **kwargs):
+            calls.update(kwargs)
+            return iter([FakeSegment()]), FakeInfo()
+
+    monkeypatch.setattr(api_module, "_whisper_model", FakeModel())
+    monkeypatch.setenv("AURA_STT_BEAM_SIZE", "5")
+
+    text, language = api_module.transcribe_audio_bytes(
+        b"synthetic-audio-bytes",
+        language="tr",
+        suffix=".wav",
+    )
+
+    assert text == "Doğa hakkında araştırma yap"
+    assert language == "tr"
+    assert calls["language"] == "tr"
+    assert calls["beam_size"] == 5
+    assert calls["temperature"] == 0.0
+    assert calls["vad_filter"] is True
+    assert calls["vad_parameters"] == {
+        "min_silence_duration_ms": 350,
+        "speech_pad_ms": 250,
+    }
+    assert calls["condition_on_previous_text"] is False
+
