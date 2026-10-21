@@ -650,7 +650,7 @@ export default function App() {
           </aside>
         </main>
 
-        <FullDuplexPanel voice={fullDuplex} />
+        <FullDuplexPanel voice={fullDuplex} goal={command} />
 
         <footer className="border-t border-cyan-950/70 pt-4">
           <form
