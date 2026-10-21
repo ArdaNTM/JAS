@@ -63,7 +63,14 @@ export function useAuraVoice(onDirective: (value: string) => void) {
     };
     recognition.onerror = (event) => {
       setState("error");
-      setMessage(`SES HATASI: ${event.error}`);
+      const browserErrors: Record<string, string> = {
+        "not-allowed": "Mikrofon izni verilmedi.",
+        "audio-capture": "Mikrofon bulunamadı veya kullanılamıyor.",
+        "network": "Tarayıcı ses tanıma hizmetine bağlanamadı.",
+        "no-speech": "Konuşma algılanmadı.",
+        "service-not-allowed": "Tarayıcı ses tanıma hizmetine izin vermiyor.",
+      };
+      setMessage(browserErrors[event.error] ?? "Ses tanıma sırasında hata oluştu.");
     };
     recognition.onend = () => {
       recognitionRef.current = null;
