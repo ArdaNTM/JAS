@@ -133,8 +133,8 @@ export function useContinuousAuraVoice(onDirective: (value: string) => void) {
       };
       frameRef.current = requestAnimationFrame(tick);
     } catch (error) {
-      setMessage(error instanceof Error ? `MİKROFON AÇILAMADI: ${error.message}` : "MİKROFON AÇILAMADI");
       stop();
+      setMessage(error instanceof Error ? `MİKROFON AÇILAMADI: ${error.message}` : "MİKROFON AÇILAMADI");
     }
   }, [stop]);
 
