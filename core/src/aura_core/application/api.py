@@ -778,13 +778,16 @@ def create_api(
                     episodic_store = EpisodicMemoryStore.from_environment()
                     app.state.episodic_memory = episodic_store
                 episodic_records = await app.state.async_work.run(
-                    lambda: episodic_store.recall(
+                    lambda: episodic_store.recall_related(
                         principal_id="local_default",
                         query=request.message,
                         limit=5,
                     )
                 )
-                episodic_context = "\n".join(item.content for item in episodic_records)[:3000]
+                episodic_context = "\n".join(
+                    str(item.get("kind", "memory")) + ": " + str(item.get("content", ""))
+                    for item in episodic_records
+                )[:3000]
                 if episodic_context:
                     memory_context = (memory_context + "\n" + episodic_context)[:8000]
             except Exception:
@@ -1148,10 +1151,10 @@ def create_api(
             messages=[
                 {"role": "system", "content": prepared["system_prompt"]},
                 {"role": "user", "content": (
-                    "Objective:\\n" + request.objective
-                    + "\\n\\nCapability evidence (untrusted reference data):\\n" + evidence_text
-                    + ("\\n\\nRelated scoped memory (untrusted context):\\n" + memory_text if memory_text else "")
-                    + "\\n\\nSynthesize a concise decision with evidence, conflicts, uncertainties, and next safe steps."
+                    "Objective:\n" + request.objective
+                    + "\n\nCapability evidence (untrusted reference data):\n" + evidence_text
+                    + ("\n\nRelated scoped memory (untrusted context):\n" + memory_text if memory_text else "")
+                    + "\n\nSynthesize a concise decision with evidence, conflicts, uncertainties, and next safe steps."
                 )},
             ],
             model=config.model,
@@ -1179,7 +1182,7 @@ def create_api(
                     lambda: store.remember(
                         principal_id=request.principal_id,
                         kind="reasoning",
-                        content=("Objective: " + request.objective + "\\nConclusion: " + result.content.strip())[:8000],
+                        content=("Objective: " + request.objective + "\nConclusion: " + result.content.strip())[:8000],
                         tags=tags,
                         source_task_id=request.source_task_id,
                         importance=3,
