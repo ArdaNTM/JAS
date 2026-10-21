@@ -556,13 +556,18 @@ def create_api(
         )
     )
     app.state.last_user_activity = time.monotonic()
-    app.state.background_thinking = IdleMemoryReflectionDaemon(
-        memory_store=EpisodicMemoryStore.from_environment(),
-        principal_id=os.getenv("AURA_BACKGROUND_THINKING_PRINCIPAL_ID", "local_default"),
-        database_path=os.getenv("AURA_REFLECTION_DB", "./data/background-reflection.sqlite3"),
-        idle_seconds=int(os.getenv("AURA_BACKGROUND_THINKING_IDLE_SECONDS", "300")),
-        interval_seconds=int(os.getenv("AURA_BACKGROUND_THINKING_INTERVAL_SECONDS", "900")),
-        last_activity=lambda: app.state.last_user_activity,
+    reflection_enabled = os.getenv("AURA_BACKGROUND_THINKING_ENABLED", "0").strip().lower() in {"1", "true", "yes"}
+    app.state.background_thinking = (
+        IdleMemoryReflectionDaemon(
+            memory_store=EpisodicMemoryStore.from_environment(),
+            principal_id=os.getenv("AURA_BACKGROUND_THINKING_PRINCIPAL_ID", "local_default"),
+            database_path=os.getenv("AURA_REFLECTION_DB", "./data/background-reflection.sqlite3"),
+            idle_seconds=int(os.getenv("AURA_BACKGROUND_THINKING_IDLE_SECONDS", "300")),
+            interval_seconds=int(os.getenv("AURA_BACKGROUND_THINKING_INTERVAL_SECONDS", "900")),
+            last_activity=lambda: app.state.last_user_activity,
+        )
+        if reflection_enabled
+        else None
     )
 
     @app.middleware("http")
@@ -1256,15 +1261,21 @@ def create_api(
     @app.get("/api/background-thinking/status")
     def background_thinking_status(http_request: Request) -> dict[str, object]:
         require_local_client(http_request)
-        return app.state.background_thinking.status()
+        reflection = app.state.background_thinking
+        return reflection.status() if reflection is not None else {
+            "enabled": False,
+            "mode": "disabled",
+            "reason": "Set AURA_BACKGROUND_THINKING_ENABLED=1 to enable bounded idle suggestions.",
+        }
 
     @app.get("/api/background-thinking/proposals")
     def background_thinking_proposals(http_request: Request, limit: int = 20) -> dict[str, object]:
         require_local_client(http_request)
         bounded_limit = max(1, min(limit, 50))
+        reflection = app.state.background_thinking
         return {
-            "items": app.state.background_thinking.list_proposals(limit=bounded_limit),
-            "mode": "reviewable_suggestions_only",
+            "items": reflection.list_proposals(limit=bounded_limit) if reflection is not None else [],
+            "mode": "reviewable_suggestions_only" if reflection is not None else "disabled",
         }
 
     @app.post("/api/speech/transcribe", response_model=SpeechTranscriptionResponse)
