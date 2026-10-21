@@ -1457,7 +1457,8 @@ def create_api(
                 job,
                 authorize=lambda candidate: (
                     candidate.principal_id == "local_owner"
-                    and candidate.task_id if hasattr(candidate, "task_id") else True
+                    and candidate.job_id == task_id
+                    and candidate.authorization_id == (decision.policy_id or request_id)
                 ),
             )
         except SandboxAuthorizationError as exc:
