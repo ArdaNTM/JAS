@@ -6,7 +6,8 @@ from datetime import datetime, time, timezone
 import pytest
 
 from aura_core.application.full_duplex_session import (
-    ControlledVisionService, FullDuplexSessionManager, ProactiveNotifier,
+    ControlledVisionService, FasterWhisperRecognizer, FullDuplexSessionManager,
+    ProactiveNotifier,
 )
 
 
@@ -108,3 +109,85 @@ def test_proactive_notifications_respect_opt_in_quiet_hours_and_daily_budget():
         )
         assert len(delivered) == 1
     asyncio.run(scenario())
+
+
+def test_faster_whisper_recognizer_decodes_audio_and_passes_samples_to_model(monkeypatch):
+    import sys
+    import types
+    import numpy as np
+
+    observed = {}
+
+    class AudioFrame:
+        def __init__(self, values):
+            self.values = np.asarray(values, dtype=np.float32).reshape(1, -1)
+
+        def to_ndarray(self):
+            return self.values
+
+    class Resampler:
+        def __init__(self, *, format, layout, rate):
+            observed["resampler"] = (format, layout, rate)
+
+        def resample(self, frame):
+            if frame is None:
+                return []
+            return [AudioFrame([0.1, -0.2, 0.3])]
+
+    class Stream:
+        type = "audio"
+        index = 0
+
+    class Container:
+        streams = [Stream()]
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def decode(self, *, audio):
+            observed["audio_stream_index"] = audio
+            return [object()]
+
+    def open_audio(source, *, mode):
+        observed["source_type"] = type(source)
+        observed["mode"] = mode
+        return Container()
+
+    fake_av = types.SimpleNamespace(
+        open=open_audio,
+        AudioResampler=Resampler,
+    )
+
+    class Segment:
+        text = " decoded speech "
+
+    class Model:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def transcribe(self, samples, **kwargs):
+            observed["samples"] = samples
+            observed["transcribe_kwargs"] = kwargs
+            return iter([Segment()]), object()
+
+    fake_whisper = types.SimpleNamespace(WhisperModel=Model)
+    monkeypatch.setitem(sys.modules, "av", fake_av)
+    monkeypatch.setitem(sys.modules, "faster_whisper", fake_whisper)
+
+    async def scenario():
+        recognizer = FasterWhisperRecognizer()
+        assert await recognizer.transcribe(b"encoded audio", session_id="session-1") == "decoded speech"
+
+    asyncio.run(scenario())
+
+    assert observed["source_type"] is __import__("io").BytesIO
+    assert observed["mode"] == "r"
+    assert observed["resampler"] == ("fltp", "mono", 16000)
+    assert observed["audio_stream_index"] == 0
+    assert isinstance(observed["samples"], np.ndarray)
+    assert observed["samples"].dtype == np.float32
+    assert observed["samples"].tolist() == pytest.approx([0.1, -0.2, 0.3])
+    assert observed["transcribe_kwargs"] == {"beam_size": 1, "vad_filter": True}

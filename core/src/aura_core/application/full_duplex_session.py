@@ -8,8 +8,6 @@ from __future__ import annotations
 import asyncio
 import base64
 import io
-import tempfile
-from pathlib import Path
 from dataclasses import dataclass
 from datetime import datetime, time
 from typing import Any, Callable, Mapping, Protocol
@@ -35,7 +33,7 @@ class AudioPlayer(Protocol):
 
 
 class FasterWhisperRecognizer:
-    """Lazy local STT adapter; audio is decoded from an in-memory payload."""
+    """Lazy local STT adapter; decode audio to 16 kHz mono before inference."""
 
     def __init__(self, *, model_size: str = "small", device: str = "cpu", compute_type: str = "int8") -> None:
         self._model_size = model_size
@@ -43,6 +41,40 @@ class FasterWhisperRecognizer:
         self._compute_type = compute_type
         self._model = None
         self._lock = asyncio.Lock()
+
+    @staticmethod
+    def _decode_audio(audio_bytes: bytes):
+        """Decode arbitrary supported audio bytes to a 16 kHz mono float32 array.
+
+        Passing samples instead of a file path avoids faster-whisper's internal
+        decode_audio call, which may pass unsupported keyword arguments to PyAV.
+        """
+        import av
+        import numpy as np
+
+        with av.open(io.BytesIO(audio_bytes), mode="r") as container:
+            audio_stream = next(
+                (stream for stream in container.streams if stream.type == "audio"),
+                None,
+            )
+            if audio_stream is None:
+                raise ValueError("Audio payload contains no audio stream")
+
+            resampler = av.AudioResampler(format="fltp", layout="mono", rate=16000)
+            chunks = []
+            for frame in container.decode(audio=audio_stream.index):
+                chunks.extend(resampler.resample(frame))
+            # Flush any buffered samples from the resampler.
+            chunks.extend(resampler.resample(None))
+
+        if not chunks:
+            raise ValueError("Audio payload contains no decodable samples")
+        samples = np.concatenate(
+            [frame.to_ndarray().reshape(-1) for frame in chunks]
+        ).astype(np.float32, copy=False)
+        if samples.size == 0:
+            raise ValueError("Audio payload contains no decodable samples")
+        return samples
 
     async def transcribe(self, audio: bytes, *, session_id: str) -> str:
         if not audio or len(audio) > 20_000_000:
@@ -54,15 +86,15 @@ class FasterWhisperRecognizer:
                     WhisperModel, self._model_size, device=self._device,
                     compute_type=self._compute_type,
                 )
-            with tempfile.NamedTemporaryFile(suffix=".audio", delete=True) as handle:
-                handle.write(audio)
-                handle.flush()
-                def transcribe_file():
-                    segments, _info = self._model.transcribe(
-                        handle.name, beam_size=1, vad_filter=True,
-                    )
-                    return " ".join(segment.text.strip() for segment in segments).strip()
-                text = await asyncio.to_thread(transcribe_file)
+            samples = await asyncio.to_thread(self._decode_audio, audio)
+
+            def transcribe_samples():
+                segments, _info = self._model.transcribe(
+                    samples, beam_size=1, vad_filter=True,
+                )
+                return " ".join(segment.text.strip() for segment in segments).strip()
+
+            text = await asyncio.to_thread(transcribe_samples)
         return text[:8000]
 
 
