@@ -22,6 +22,8 @@ import {
 
 import { useAuraVoice } from "./voice/useAuraVoice";
 import { useContinuousAuraVoice } from "./voice/useContinuousAuraVoice";
+import { useFullDuplexAura } from "./voice/useFullDuplexAura";
+import FullDuplexPanel from "./FullDuplexPanel";
 import AuraJarvisBridge from "./AuraJarvisBridge";
 import { useTaskEvents } from "./hooks/useTaskEvents";
 
@@ -185,6 +187,21 @@ export default function App() {
     setSessionState("idle");
     pushTelemetry("SÜREKLİ DİNLEMEDEN KONUŞMA METNİ HAZIR — ENTER ONAYI GEREKLİ");
   });
+
+  const fullDuplex = useFullDuplexAura(
+    (directive) => {
+      setCommand(directive);
+      setHologramTarget(directive);
+      setError(null);
+      pushTelemetry("FULL-DUPLEX STT METNİ HAZIR — GÖREV İÇİN ENTER ONAYI GEREKLİ");
+    },
+    (status) => {
+      if (status === "speaking") setSessionState("speaking");
+      else if (status === "listening") setSessionState("listening");
+      else if (status === "idle") setSessionState("idle");
+      else if (status === "error") setSessionState("error");
+    },
+  );
 
   const handleVoiceStatus = useCallback((
     status: "processing" | "ready" | "speaking" | "error",
@@ -633,6 +650,8 @@ export default function App() {
           </aside>
         </main>
 
+        <FullDuplexPanel voice={fullDuplex} goal={command} />
+
         <footer className="border-t border-cyan-950/70 pt-4">
           <form
             onSubmit={handleSubmit}
@@ -714,6 +733,7 @@ export default function App() {
         researchOutput={researchOutput}
         requestId={assistantRequestId}
         onStatus={handleVoiceStatus}
+        speakThroughSession={fullDuplex.speak}
       />
     </>
 );

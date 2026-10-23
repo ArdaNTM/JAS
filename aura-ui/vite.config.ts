@@ -14,6 +14,25 @@ export default defineConfig(({ mode }) => {
     `http://127.0.0.1:${corePort}`;
 
   const proxy = {
+    // Keep this more-specific route before /api so SSE can flush its
+    // response headers immediately, even before the first event is emitted.
+    "/api/events/stream": {
+      target: proxyTarget,
+      changeOrigin: true,
+      configure: (proxyServer) => {
+        proxyServer.on("proxyRes", (_proxyResponse, request, response) => {
+          if (request.url?.startsWith("/api/events/stream")) {
+            // http-proxy copies the upstream headers after emitting proxyRes.
+            // Flush on the next event-loop turn so Content-Type is preserved.
+            setImmediate(() => {
+              if (!response.headersSent) {
+                response.flushHeaders();
+              }
+            });
+          }
+        });
+      },
+    },
     "/api": {
       target: proxyTarget,
       changeOrigin: true,

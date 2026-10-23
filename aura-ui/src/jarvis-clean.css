@@ -1,0 +1,105 @@
+/* AURA calm JARVIS interface — layered over utility classes without changing behavior. */
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap");
+
+:root {
+  font-family: "DM Sans", "Segoe UI", sans-serif;
+  color-scheme: dark;
+  background: #080c12;
+  color: #e6edf5;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  --aura-bg: #080c12;
+  --aura-panel: rgba(17, 24, 35, .88);
+  --aura-border: rgba(148, 163, 184, .16);
+  --aura-accent: #75d5d1;
+  --aura-muted: #93a1b4;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { min-height: 100%; margin: 0; }
+html, body { overflow-x: hidden; overflow-y: auto; }
+body {
+  min-width: 320px;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(55, 118, 132, .13), transparent 42%),
+    var(--aura-bg);
+  color: #e6edf5;
+}
+button, input, textarea, select { font: inherit; }
+button { cursor: pointer; transition: background-color .18s ease, border-color .18s ease, transform .18s ease; }
+button:focus-visible, input:focus-visible, textarea:focus-visible {
+  outline: 2px solid rgba(117, 213, 209, .75);
+  outline-offset: 3px;
+}
+button:disabled { cursor: not-allowed; }
+::selection { background: rgba(117, 213, 209, .25); color: #fff; }
+
+/* Improve the existing dashboard's hierarchy and remove the cramped terminal feel. */
+#root { min-height: 100vh; }
+#root main { max-width: 1440px; margin-inline: auto; }
+#root header { border-color: var(--aura-border) !important; }
+#root h1, #root h2, #root h3 { font-family: "Space Grotesk", "DM Sans", sans-serif; letter-spacing: -.025em; }
+#root button {
+  border-radius: 10px;
+  min-height: 36px;
+  padding: 8px 13px;
+  font-size: 12px;
+  letter-spacing: .015em;
+}
+#root button:not(:disabled):hover { transform: translateY(-1px); }
+#root textarea, #root input:not([type="checkbox"]):not([type="radio"]), #root select {
+  border-radius: 10px !important;
+  background: rgba(5, 10, 17, .7) !important;
+  border-color: rgba(148, 163, 184, .22) !important;
+  color: #e6edf5 !important;
+  padding: 11px 12px !important;
+}
+#root section {
+  border-color: var(--aura-border) !important;
+  border-radius: 18px !important;
+}
+#root .text-cyan-500, #root .text-cyan-600 { color: #75d5d1 !important; }
+#root .text-cyan-100, #root .text-cyan-200 { color: #dce8ef !important; }
+#root .text-slate-500, #root .text-slate-600 { color: #91a0b3 !important; }
+#root .border-cyan-950\/70, #root .border-cyan-950\/80, #root .border-cyan-900\/70 {
+  border-color: var(--aura-border) !important;
+}
+#root .bg-slate-950\/70, #root .bg-black\/20, #root .bg-black\/30 {
+  background: rgba(9, 15, 23, .56) !important;
+}
+
+/* Full-duplex is the primary interaction: clear status, spacious controls, readable copy. */
+#root section.mx-auto.mt-6 {
+  width: min(100% - 32px, 980px);
+  margin: 28px auto 36px;
+  padding: clamp(18px, 3vw, 28px) !important;
+  background: linear-gradient(145deg, rgba(20, 29, 41, .96), rgba(11, 17, 26, .96)) !important;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .22), inset 0 1px rgba(255,255,255,.025);
+}
+#root section.mx-auto.mt-6 > div { min-width: 0; }
+#root section.mx-auto.mt-6 button {
+  border-radius: 10px;
+  border-color: rgba(117, 213, 209, .32) !important;
+  background: rgba(117, 213, 209, .07);
+}
+#root section.mx-auto.mt-6 button:hover:not(:disabled) {
+  background: rgba(117, 213, 209, .14);
+  border-color: rgba(117, 213, 209, .65) !important;
+}
+#root section.mx-auto.mt-6 [role="status"] {
+  border-left-color: rgba(117, 213, 209, .55) !important;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #a9b8c9;
+}
+#root section.mx-auto.mt-6 textarea { min-height: 92px; line-height: 1.6; }
+#root section.mx-auto.mt-6 label { line-height: 1.65; }
+#root section.mx-auto.mt-6 .grid { gap: 16px; }
+#root section.mx-auto.mt-6 li { border-radius: 12px; border-color: var(--aura-border) !important; }
+
+@media (max-width: 640px) {
+  #root section.mx-auto.mt-6 { width: calc(100% - 20px); margin: 14px auto 24px; padding: 16px !important; }
+  #root section.mx-auto.mt-6 button { max-width: 100%; white-space: normal; }
+}
