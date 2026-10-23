@@ -90,7 +90,7 @@ class FasterWhisperRecognizer:
 
             def transcribe_samples():
                 segments, _info = self._model.transcribe(
-                    samples, beam_size=1, vad_filter=True,
+                    samples, language="tr", beam_size=1, vad_filter=True,
                 )
                 return " ".join(segment.text.strip() for segment in segments).strip()
 
