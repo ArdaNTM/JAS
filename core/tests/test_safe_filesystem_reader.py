@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 import pytest
@@ -93,3 +92,16 @@ def test_rejects_symlinked_directory_component(tmp_path: Path) -> None:
 def test_rejects_null_byte(tmp_path: Path) -> None:
     with pytest.raises(SafeReadError):
         read_test_data_file("bad\\x00name.txt", root=tmp_path)
+
+
+def test_rejects_symlinked_root(tmp_path: Path) -> None:
+    actual_root = tmp_path / "actual"
+    actual_root.mkdir()
+    (actual_root / "secret.txt").write_text("not allowed", encoding="utf-8")
+    root_link = tmp_path / "root-link"
+    try:
+        root_link.symlink_to(actual_root, target_is_directory=True)
+    except (OSError, NotImplementedError) as exc:
+        pytest.skip(f"symlink creation unavailable: {exc}")
+    with pytest.raises(SafeReadError, match="permitted directory"):
+        read_test_data_file("secret.txt", root=root_link)
