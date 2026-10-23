@@ -91,7 +91,7 @@ def test_rejects_symlinked_directory_component(tmp_path: Path) -> None:
 
 def test_rejects_null_byte(tmp_path: Path) -> None:
     with pytest.raises(SafeReadError):
-        read_test_data_file("bad\\x00name.txt", root=tmp_path)
+        read_test_data_file("bad" + chr(0) + "name.txt", root=tmp_path)
 
 
 def test_rejects_symlinked_root(tmp_path: Path) -> None:
