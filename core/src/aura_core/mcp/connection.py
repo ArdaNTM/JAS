@@ -2,7 +2,6 @@ from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from typing import Any
 
-import anyio
 from mcp.client.session import ClientSession
 from mcp.client.stdio import StdioServerParameters, stdio_client
 from mcp.client.streamable_http import streamable_http_client
@@ -109,15 +108,16 @@ class MCPConnection:
         if stack is None:
             return
 
-        # AnyIO cancellation scopes must be exited by the task that entered
-        # them.  A CancelScope shields cleanup without moving aclose() into a
-        # separate asyncio task (unlike asyncio.shield()).
-        with anyio.CancelScope(shield=True):
-            try:
-                await stack.aclose()
-            finally:
-                self._stack = None
-                self._session = None
+        # stdio_client and ClientSession keep their own AnyIO cancel scopes
+        # open for the lifetime of the connection.  Those scopes must be
+        # exited in strict LIFO order by AsyncExitStack.  Do not enter a new
+        # CancelScope here: it would sit above the scopes being closed and
+        # make AnyIO reject their exit as out of order.
+        try:
+            await stack.aclose()
+        finally:
+            self._stack = None
+            self._session = None
 
     async def _open(self) -> None:
         if self._stack is not None:
