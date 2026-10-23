@@ -17,27 +17,6 @@ export default defineConfig(({ mode }) => {
     "/api": {
       target: proxyTarget,
       changeOrigin: true,
-      configure: (proxyServer) => {
-        proxyServer.on("proxyReq", (_proxyReq, req) => {
-          console.log(
-            `[SSE-DEBUG] Upstream request: ${req.method} ${req.url}`
-          );
-        });
-
-        proxyServer.on("proxyRes", (proxyRes, req) => {
-          console.log(
-            `[SSE-DEBUG] Upstream response: ${req.method} ${req.url} -> ${proxyRes.statusCode}`,
-            proxyRes.headers["content-type"] ?? ""
-          );
-        });
-
-        proxyServer.on("error", (error, req) => {
-          console.error(
-            `[SSE-DEBUG] Proxy error: ${req.method} ${req.url}`,
-            error.message
-          );
-        });
-      },
     },
     "/v1": {
       target: proxyTarget,
