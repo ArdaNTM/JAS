@@ -31,7 +31,17 @@ def read_test_data_file(relative_path: str, *, root: Path | None = None) -> str:
     if not parts or any(part in {"", ".", ".."} for part in parts):
         raise SafeReadError("path traversal is not allowed")
 
-    base = (root or default_test_data_root()).resolve(strict=True)
+    configured_root = root or default_test_data_root()
+    try:
+        if stat.S_ISLNK(configured_root.lstat().st_mode):
+            raise SafeReadError("permitted directory cannot be a symbolic link")
+        base = configured_root.resolve(strict=True)
+    except SafeReadError:
+        raise
+    except OSError as exc:
+        raise SafeReadError("permitted directory is unavailable") from exc
+    if not base.is_dir():
+        raise SafeReadError("permitted path is not a directory")
     candidate = base
     # Reject symlinks/reparse points in every supplied path component.
     for part in parts:
