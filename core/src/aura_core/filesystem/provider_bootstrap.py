@@ -32,8 +32,6 @@ async def register_local_filesystem_mcp(
             args=list(config.args),
             env={
                 **os.environ,
-                "TEMP": r"D:\\AURA\\JAS\\.tmp",
-                "TMP": r"D:\\AURA\\JAS\\.tmp",
             },
         )
     )
