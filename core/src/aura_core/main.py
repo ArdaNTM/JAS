@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import anyio
 import logging
 import os
 from datetime import time
@@ -266,40 +267,34 @@ def build_app() -> FastAPI:
                 "LIFESPAN: registering research MCP"
             )
 
-            research_provider = await asyncio.wait_for(
-                register_research_mcp(
+            with anyio.fail_after(20.0):
+                research_provider = await register_research_mcp(
                     config=research_config,
                     services=kernel.service_registry,
                     providers=kernel.provider_registry,
                     capabilities=kernel.capability_registry,
                     tools=research_tools,
-                ),
-                timeout=20.0,
-            )
+                )
             report_mcp_healthy(research_config)
 
-            kokoro_provider = await asyncio.wait_for(
-                register_kokoro_mcp(
+            with anyio.fail_after(20.0):
+                kokoro_provider = await register_kokoro_mcp(
                     config=kokoro_config,
                     services=kernel.service_registry,
                     providers=kernel.provider_registry,
                     capabilities=kernel.capability_registry,
                     tools=tts_tools,
-                ),
-                timeout=20.0,
-            )
+                )
             report_mcp_healthy(kokoro_config)
 
-            filesystem_provider = await asyncio.wait_for(
-                register_local_filesystem_mcp(
+            with anyio.fail_after(20.0):
+                filesystem_provider = await register_local_filesystem_mcp(
                     config=filesystem_config,
                     services=kernel.service_registry,
                     providers=kernel.provider_registry,
                     capabilities=kernel.capability_registry,
                     tools=filesystem_tools,
-                ),
-                timeout=20.0,
-            )
+                )
             report_mcp_healthy(filesystem_config)
             # File reads are still dispatched through MCPGateway and Permission Engine.
             # Registration alone is not permission to execute the tool.
