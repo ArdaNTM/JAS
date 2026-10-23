@@ -52,7 +52,7 @@ def test_rejects_oversized_file(tmp_path: Path) -> None:
 
 
 def test_rejects_invalid_utf8(tmp_path: Path) -> None:
-    (tmp_path / "binary.txt").write_bytes(b"\\xff\\xfe")
+    (tmp_path / "binary.txt").write_bytes(bytes((255, 254)))
     with pytest.raises(SafeReadError, match="UTF-8"):
         read_test_data_file("binary.txt", root=tmp_path)
 
