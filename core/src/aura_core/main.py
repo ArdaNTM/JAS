@@ -37,6 +37,8 @@ from aura_core.mcp.gateway import MCPGateway
 from aura_core.mcp.mcp_provider import MCPProvider
 from aura_core.mcp.tool_registry import MCPToolRegistry
 from aura_core.research.config import ResearchMCPConfig
+from aura_core.filesystem.config import LocalFilesystemMCPConfig
+from aura_core.filesystem.provider_bootstrap import register_local_filesystem_mcp
 from aura_core.research.provider_bootstrap import (
     register_research_mcp,
 )
@@ -119,8 +121,10 @@ def build_app() -> FastAPI:
     )
     research_config = ResearchMCPConfig.from_env()
     kokoro_config = KokoroMCPConfig.from_env()
+    filesystem_config = LocalFilesystemMCPConfig.from_env()
     research_tools = MCPToolRegistry()
     tts_tools = MCPToolRegistry()
+    filesystem_tools = MCPToolRegistry()
 
     gateway = MCPGateway(
         capability_registry=kernel.capability_registry,
@@ -204,6 +208,7 @@ def build_app() -> FastAPI:
     async def lifespan(_app: FastAPI):
         research_provider = None
         kokoro_provider = None
+        filesystem_provider = None
         event_coordinator = None
 
         # MCP_HEALTH_REPORT_PATCH: report only after successful provider setup.
@@ -284,6 +289,21 @@ def build_app() -> FastAPI:
                 timeout=20.0,
             )
             report_mcp_healthy(kokoro_config)
+
+            filesystem_provider = await asyncio.wait_for(
+                register_local_filesystem_mcp(
+                    config=filesystem_config,
+                    services=kernel.service_registry,
+                    providers=kernel.provider_registry,
+                    capabilities=kernel.capability_registry,
+                    tools=filesystem_tools,
+                ),
+                timeout=20.0,
+            )
+            report_mcp_healthy(filesystem_config)
+            # File reads are still dispatched through MCPGateway and Permission Engine.
+            # Registration alone is not permission to execute the tool.
+
             # TTS always crosses MCPGateway + Permission Engine; the provider
             # connection itself is not an authorization grant.
             app.state.speech_synthesizer = GatewaySpeechSynthesizer(
@@ -520,6 +540,12 @@ def build_app() -> FastAPI:
                     await kokoro_provider.close()
                 except Exception:
                     logger.exception("Kokoro provider shutdown failed")
+
+            if filesystem_provider is not None:
+                try:
+                    await filesystem_provider.close()
+                except Exception:
+                    logger.exception("Local filesystem provider shutdown failed")
 
             logger.info(
                 "AURA LIFESPAN SHUTDOWN COMPLETE"
