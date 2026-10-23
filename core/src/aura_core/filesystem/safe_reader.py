@@ -6,6 +6,13 @@ import stat
 from pathlib import Path, PurePosixPath, PureWindowsPath
 
 MAX_READ_BYTES = 1_048_576
+_WINDOWS_REPARSE_POINT = 0x400
+
+
+def _is_link_or_reparse_point(metadata: os.stat_result) -> bool:
+    return stat.S_ISLNK(metadata.st_mode) or bool(
+        getattr(metadata, "st_file_attributes", 0) & _WINDOWS_REPARSE_POINT
+    )
 
 
 class SafeReadError(ValueError):
@@ -33,7 +40,7 @@ def read_test_data_file(relative_path: str, *, root: Path | None = None) -> str:
 
     configured_root = root or default_test_data_root()
     try:
-        if stat.S_ISLNK(configured_root.lstat().st_mode):
+        if _is_link_or_reparse_point(configured_root.lstat()):
             raise SafeReadError("permitted directory cannot be a symbolic link")
         base = configured_root.resolve(strict=True)
     except SafeReadError:
@@ -52,7 +59,7 @@ def read_test_data_file(relative_path: str, *, root: Path | None = None) -> str:
             raise SafeReadError("file does not exist") from exc
         except OSError as exc:
             raise SafeReadError("file cannot be accessed") from exc
-        if stat.S_ISLNK(component_stat.st_mode):
+        if _is_link_or_reparse_point(component_stat):
             raise SafeReadError("symbolic links are not allowed")
 
     try:
