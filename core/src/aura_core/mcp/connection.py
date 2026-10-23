@@ -1,8 +1,8 @@
 from contextlib import AsyncExitStack
-import asyncio
 from dataclasses import dataclass
 from typing import Any
 
+import anyio
 from mcp.client.session import ClientSession
 from mcp.client.stdio import StdioServerParameters, stdio_client
 from mcp.client.streamable_http import streamable_http_client
@@ -101,27 +101,23 @@ class MCPConnection:
             return structured
 
         return result
+
     async def close(self) -> None:
         """Close the MCP connection and all managed resources."""
 
-        if self._stack is None:
-            return
-
         stack = self._stack
-        self._stack = None
-        self._session = None
-
-        # MCP's stdio transport owns an AnyIO cancellation scope.  Closing it
-        # inside Starlette's lifespan cancellation path must be shielded so
-        # the transport can leave that scope from its owning task.
-        try:
-            await asyncio.shield(stack.aclose())
-        except asyncio.CancelledError:
-            # The close task remains shielded; do not re-enter the stack.
+        if stack is None:
             return
-        except RuntimeError as exc:
-            if "cancel scope" not in str(exc):
-                raise
+
+        # AnyIO cancellation scopes must be exited by the task that entered
+        # them.  A CancelScope shields cleanup without moving aclose() into a
+        # separate asyncio task (unlike asyncio.shield()).
+        with anyio.CancelScope(shield=True):
+            try:
+                await stack.aclose()
+            finally:
+                self._stack = None
+                self._session = None
 
     async def _open(self) -> None:
         if self._stack is not None:
