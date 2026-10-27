@@ -196,8 +196,11 @@ class MCPGateway:
             )
         )
 
-        if authorization.decision is AuthorizationDecision.DENY:
-            self._audit(request, outcome="denied", reason_code="authorization_denied")
+        if authorization.decision not in (
+            AuthorizationDecision.ALLOW,
+            AuthorizationDecision.REQUIRE_APPROVAL,
+        ):
+            self._audit(request, outcome="denied", reason_code="authorization_not_allowed")
             return MCPGatewayResponse(
                 decision=authorization.decision,
                 result=None,
@@ -262,7 +265,7 @@ class MCPGateway:
                         reason="Approval was not consumed; provider dispatch was not performed",
                         reason_code="approval_not_consumed",
                     )
-            except (ApprovalConflict, ApprovalExpired, InvalidApprovalTransition, KeyError, ValueError):
+            except (ApprovalConflict, ApprovalExpired, InvalidApprovalTransition, KeyError, ValueError, TypeError):
                 return self._approval_response(
                     request,
                     provider_id=capability.definition.provider_id,
