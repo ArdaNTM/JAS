@@ -4,6 +4,7 @@ from enum import IntEnum, StrEnum
 from threading import RLock
 from typing import Mapping
 
+from aura_core.enterprise.policy_bundle import PolicyBundle, PolicyEffect, PolicyRequest
 from aura_core.kernel.capabilities import CapabilityRegistry
 from aura_core.kernel.events import EventBus, KernelEvent
 
@@ -114,9 +115,14 @@ class PermissionEngine:
         self,
         capability_registry: CapabilityRegistry,
         event_bus: EventBus | None = None,
+        *,
+        policy_bundle: PolicyBundle | None = None,
     ) -> None:
         self._capability_registry = capability_registry
         self._event_bus = event_bus
+        # Optional, versioned enterprise policy acts as an additional authorization
+        # gate. Legacy PermissionPolicy rules remain required for an ALLOW decision.
+        self._policy_bundle = policy_bundle
         self._policies: dict[str, PermissionPolicy] = {}
         self._audit_records: list[PermissionAuditRecord] = []
         self._lock = RLock()
@@ -147,6 +153,36 @@ class PermissionEngine:
                 AuthorizationDecision.DENY,
                 "Requested capability has no available provider",
             )
+
+        # Apply the immutable enterprise policy bundle inside the PermissionEngine,
+        # which is invoked by MCPGateway before any provider dispatch. The bundle is
+        # an additional gate: it may deny or require approval, but cannot override
+        # the existing PermissionPolicy authorization requirement.
+        if self._policy_bundle is not None:
+            bundle_decision = self._policy_bundle.evaluate(
+                PolicyRequest(
+                    principal_id=request.principal_id,
+                    capability_id=request.capability_id,
+                    operation_id=request.operation_id,
+                    resource_scope=request.resource_scope,
+                )
+            )
+            bundle_context = (
+                f"Policy bundle {bundle_decision.bundle_version} "
+                f"(sha256:{bundle_decision.bundle_digest})"
+            )
+            if bundle_decision.effect is PolicyEffect.DENY:
+                return self._record(
+                    request,
+                    AuthorizationDecision.DENY,
+                    f"{bundle_context} denied request: {bundle_decision.reason_code}",
+                )
+            if bundle_decision.effect is PolicyEffect.REQUIRE_APPROVAL:
+                return self._record(
+                    request,
+                    AuthorizationDecision.REQUIRE_APPROVAL,
+                    f"{bundle_context} requires approval: {bundle_decision.reason_code}",
+                )
 
         matching = self._matching_policies(request)
         if not matching:

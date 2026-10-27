@@ -1,6 +1,7 @@
 from enum import StrEnum
 
 from aura_core.config.kernel import KernelConfig
+from aura_core.enterprise.policy_bundle import PolicyBundle
 from aura_core.kernel.capabilities import CapabilityRegistry
 from aura_core.kernel.diagnostics import DiagnosticsService
 from aura_core.kernel.events import EventBus, KernelEvent
@@ -30,8 +31,14 @@ class KernelState(StrEnum):
 class AuraKernel:
     """Deterministic composition root for the Bootable AURA Kernel."""
 
-    def __init__(self, config: KernelConfig) -> None:
+    def __init__(
+        self,
+        config: KernelConfig,
+        *,
+        policy_bundle: PolicyBundle | None = None,
+    ) -> None:
         self.config = config
+        self._policy_bundle = policy_bundle
         self.state = KernelState.CREATED
         self.event_bus: EventBus | None = None
         self.service_registry: ServiceRegistry | None = None
@@ -59,6 +66,7 @@ class AuraKernel:
         self.permission_engine = PermissionEngine(
             self.capability_registry,
             event_bus=self.event_bus,
+            policy_bundle=self._policy_bundle,
         )
         self.health_monitor = HealthMonitor(
             self.service_registry,
