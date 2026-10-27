@@ -9,6 +9,7 @@ from typing import Protocol
 from aura_core.agent.runtime import ExecutionResult, Plan, PlanState, Task, _request_id_context
 from aura_core.application.task_memory import TaskMemoryCoordinator
 from aura_core.application.task_state_machine import TaskState, TaskStateMachine
+from aura_core.enterprise.workflow_store import SQLiteWorkflowStore, WorkflowStatus
 
 
 class TaskRuntime(Protocol):
@@ -34,10 +35,12 @@ class AgentTaskService:
         *,
         memory: TaskMemoryCoordinator | None = None,
         state_machine: TaskStateMachine | None = None,
+        workflow_store: SQLiteWorkflowStore | None = None,
     ) -> None:
         self._runtime = runtime
         self._memory = memory
         self._state_machine = state_machine
+        self._workflow_store = workflow_store
         self._results: dict[str, ExecutionResult] = {}
         self._owners: dict[str, str] = {}
         self._task_locks: dict[str, asyncio.Lock] = {}
@@ -98,6 +101,7 @@ class AgentTaskService:
             if task_id in self._results:
                 raise ValueError(f"Task already submitted: {task_id}")
             task = submitted.task
+            self._ensure_workflow(submitted)
             record = None
             if self._state_machine is not None:
                 record = self._ensure_record(submitted)
@@ -106,6 +110,7 @@ class AgentTaskService:
                 record = self._state_machine.transition(
                     task_id, principal_id=task.principal_id, target=TaskState.RUNNING
                 )
+            self._transition_workflow(task_id, WorkflowStatus.RUNNING)
             cancel_event = asyncio.Event()
             self._cancel_events[task_id] = cancel_event
             memory_started = False
@@ -144,13 +149,19 @@ class AgentTaskService:
                         task_id, principal_id=task.principal_id, target=TaskState.TIMED_OUT,
                         error="Execution deadline exceeded",
                     )
+                self._transition_workflow(task_id, WorkflowStatus.FAILED, failure_code="execution_timeout")
                 raise
             except asyncio.CancelledError:
+                target = TaskState.FAILED
                 if self._state_machine is not None:
                     current = self._state_machine.get(task_id, principal_id=task.principal_id)
                     if current.state == TaskState.RUNNING:
                         target = TaskState.CANCELLED if current.cancellation_requested else TaskState.FAILED
                         self._state_machine.transition(task_id, principal_id=task.principal_id, target=target)
+                if target is TaskState.CANCELLED:
+                    self._transition_workflow(task_id, WorkflowStatus.CANCELLED)
+                else:
+                    self._transition_workflow(task_id, WorkflowStatus.FAILED, failure_code="execution_cancelled")
                 raise
             except BaseException as exc:
                 if self._state_machine is not None:
@@ -160,6 +171,7 @@ class AgentTaskService:
                             task_id, principal_id=task.principal_id, target=TaskState.FAILED,
                             error=f"Runtime raised {type(exc).__name__}",
                         )
+                self._transition_workflow(task_id, WorkflowStatus.FAILED, failure_code=f"runtime_{type(exc).__name__}"[:128])
                 if memory_started and self._memory is not None:
                     self._memory.finish(
                         principal_id=task.principal_id, task_id=task.task_id,
@@ -171,6 +183,11 @@ class AgentTaskService:
                 self._cancel_events.pop(task_id, None)
 
             result_state = getattr(result.state, "value", str(result.state)).lower()
+            target = (
+                TaskState.CANCELLED if result.state is PlanState.CANCELLED
+                else TaskState.SUCCEEDED if result.state is PlanState.SUCCEEDED
+                else TaskState.FAILED
+            )
             if self._state_machine is not None:
                 current = self._state_machine.get(task_id, principal_id=task.principal_id)
                 if current.state == TaskState.RUNNING:
@@ -189,6 +206,12 @@ class AgentTaskService:
                         result_summary=summary,
                         error=summary if target == TaskState.FAILED else None,
                     )
+            if target is TaskState.SUCCEEDED:
+                self._transition_workflow(task_id, WorkflowStatus.SUCCEEDED)
+            elif target is TaskState.CANCELLED:
+                self._transition_workflow(task_id, WorkflowStatus.CANCELLED)
+            else:
+                self._transition_workflow(task_id, WorkflowStatus.FAILED, failure_code="task_execution_failed")
             if memory_started and self._memory is not None:
                 memory_state = result_state if result_state in {"succeeded", "failed", "cancelled"} else "failed"
                 summary = "; ".join(
@@ -202,6 +225,40 @@ class AgentTaskService:
             self._results[task_id] = result
             self._owners[task_id] = submitted.task.principal_id
             return result
+
+    def _ensure_workflow(self, submitted: SubmittedTask) -> None:
+        """Create the payload-minimizing workflow envelope before execution."""
+        if self._workflow_store is None:
+            return
+        task = submitted.task
+        self._workflow_store.create(
+            workflow_id=task.task_id,
+            idempotency_key=task.task_id,
+            principal_id=task.principal_id,
+            task_id=task.task_id,
+        )
+
+    def _transition_workflow(
+        self,
+        workflow_id: str,
+        target: WorkflowStatus,
+        *,
+        failure_code: str | None = None,
+    ) -> None:
+        """Persist lifecycle changes using the store's optimistic version guard."""
+        if self._workflow_store is None:
+            return
+        record = self._workflow_store.get(workflow_id)
+        if record is None:
+            raise RuntimeError(f"Workflow record missing for task: {workflow_id}")
+        if record.status is target:
+            return
+        self._workflow_store.transition(
+            workflow_id,
+            expected_version=record.version,
+            target=target,
+            failure_code=failure_code,
+        )
 
     def _ensure_record(self, submitted: SubmittedTask):
         if self._state_machine is None:
