@@ -7,7 +7,6 @@ canonical request could contain sensitive or low-entropy values.
 """
 from __future__ import annotations
 
-import hashlib
 import hmac
 import math
 import re
@@ -161,9 +160,9 @@ class SQLiteApprovalStore:
         self.close()
 
     @staticmethod
-    def _record(row: sqlite3.Row | None) -> ApprovalRecord | None:
-        if row is None:
-            return None
+    def _record(row: sqlite3.Row | ApprovalRecord | None) -> ApprovalRecord | None:
+        if row is None or isinstance(row, ApprovalRecord):
+            return row
         return ApprovalRecord(
             approval_id=row["approval_id"],
             principal_id=row["principal_id"],
