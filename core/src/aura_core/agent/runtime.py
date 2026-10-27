@@ -22,7 +22,7 @@ from aura_core.kernel.events import EventBus, KernelEvent
 from aura_core.memory.hierarchical_memory import ContextItem
 from aura_core.kernel.permissions import AuthorizationDecision, RiskLevel
 from aura_core.mcp.gateway import MCPGateway, MCPGatewayRequest
-from aura_core.enterprise.runtime_controls import BudgetExceeded, ExecutionBudget
+from aura_core.enterprise.runtime_controls import ExecutionBudget
 
 
 _TEST_DATA_READ_OPERATION = (
