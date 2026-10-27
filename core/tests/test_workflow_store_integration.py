@@ -240,3 +240,67 @@ def test_failed_compensation_is_recoverable_by_idempotent_reconciliation(tmp_pat
 
     store.close()
     state_machine.close()
+
+class TaskCompensationFailingStateMachine(TaskStateMachine):
+    def transition(
+        self,
+        task_id,
+        *,
+        principal_id,
+        target,
+        result_summary=None,
+        error=None,
+    ):
+        if target is TaskState.FAILED:
+            raise RuntimeError("simulated task compensation failure")
+        return super().transition(
+            task_id,
+            principal_id=principal_id,
+            target=target,
+            result_summary=result_summary,
+            error=error,
+        )
+
+
+def test_task_compensation_failure_preserves_original_workflow_error_and_fails_closed(tmp_path):
+    state_machine = TaskCompensationFailingStateMachine(
+        str(tmp_path / "tasks.sqlite3")
+    )
+    store = WorkflowStartFailingStore(
+        str(tmp_path / "workflows.sqlite3"),
+        fail_targets={WorkflowStatus.RUNNING},
+    )
+    runtime = TrackingRuntime()
+    service = AgentTaskService(
+        runtime, state_machine=state_machine, workflow_store=store
+    )
+
+    with pytest.raises(
+        RuntimeError, match="simulated running persistence failure"
+    ) as raised:
+        asyncio.run(
+            service.submit(make_submission("task-workflow-task-compensation-failure"))
+        )
+
+    task_record = state_machine.get(
+        "task-workflow-task-compensation-failure", principal_id="local-user"
+    )
+    workflow_record = store.get("task-workflow-task-compensation-failure")
+    assert str(raised.value) == "simulated running persistence failure"
+    assert runtime.calls == 0
+    # The injected task-store failure prevents compensation, so neither ledger
+    # is falsely reported as FAILED/RUNNING. The mismatch needs explicit review.
+    assert task_record.state is TaskState.RUNNING
+    assert workflow_record.status is WorkflowStatus.PENDING
+
+    # A RUNNING task does not prove runtime dispatch happened. Reconciliation
+    # must refuse to manufacture a RUNNING workflow record for this ambiguous gap.
+    with pytest.raises(RuntimeError, match="runtime start is ambiguous"):
+        service.reconcile_workflow(
+            "task-workflow-task-compensation-failure", principal_id="local-user"
+        )
+    assert runtime.calls == 0
+
+    store.close()
+    state_machine.close()
+
