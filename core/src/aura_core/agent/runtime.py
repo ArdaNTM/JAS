@@ -24,6 +24,26 @@ from aura_core.kernel.permissions import AuthorizationDecision, RiskLevel
 from aura_core.mcp.gateway import MCPGateway, MCPGatewayRequest
 
 
+_TEST_DATA_READ_OPERATION = (
+    "filesystem.read_test_data",
+    "filesystem.read_test_data",
+    "read_file",
+)
+_ALLOWED_TEST_DATA_FILENAME = "governor-read-test.txt"
+
+
+def validate_test_data_path(arguments: dict[str, Any] | None) -> None:
+    """Reject every path except the exact test-data filename at execution time."""
+    path = arguments.get("path") if isinstance(arguments, dict) else None
+    if type(path) is not str or path != _ALLOWED_TEST_DATA_FILENAME:
+        raise ValueError("Rejected path for test-data read")
+
+
+def _validate_step_arguments(step: "PlanStep") -> None:
+    if (step.capability_id, step.operation_id, step.tool_name) == _TEST_DATA_READ_OPERATION:
+        validate_test_data_path(step.arguments)
+
+
 class StepState(StrEnum):
     PENDING = "pending"
     RUNNING = "running"
@@ -293,6 +313,8 @@ class AgentExecutor:
                 raise ValueError("Compensation step IDs must be unique")
             seen.add(step.step_id)
             self._event_compensation("CompensationStarted", task, plan_id, step)
+            if (step.capability_id, step.operation_id, step.tool_name) == _TEST_DATA_READ_OPERATION:
+                validate_test_data_path(step.arguments)
             response = await self._gateway.invoke(MCPGatewayRequest(
                 request_id=f"{plan_id}:compensation:{step.step_id}",
                 principal_id=task.principal_id,
@@ -340,6 +362,7 @@ class AgentExecutor:
         ))
 
     async def _execute_step(self, task: Task, plan: Plan, step: PlanStep) -> StepResult:
+        _validate_step_arguments(step)
         for attempt in range(1, step.max_attempts + 1):
             response = await self._gateway.invoke(MCPGatewayRequest(
                 request_id=f"{plan.plan_id}:{step.step_id}:{attempt}", principal_id=task.principal_id,

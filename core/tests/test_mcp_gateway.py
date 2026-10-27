@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
+from aura_core.agent.runtime import AgentExecutor, Plan, PlanState, PlanStep, Task
 from aura_core.kernel.capabilities import (
     CapabilityCategory,
     CapabilityDefinition,
@@ -34,6 +35,8 @@ from aura_core.mcp.gateway import (
 
 CAPABILITY_ID = "filesystem.read"
 OPERATION_ID = "filesystem.read_file"
+TEST_DATA_CAPABILITY_ID = "filesystem.read_test_data"
+TEST_DATA_OPERATION_ID = "filesystem.read_test_data"
 RESOURCE_SCOPE = r"D:\AURA\workspace"
 PROVIDER_ID = "mcp:test"
 
@@ -41,6 +44,7 @@ PROVIDER_ID = "mcp:test"
 def make_gateway(
     *,
     provider: object | None = None,
+    capability_id: str = CAPABILITY_ID,
 ) -> tuple[
     MCPGateway,
     PermissionEngine,
@@ -79,7 +83,7 @@ def make_gateway(
 
     capabilities.register(
         CapabilityDefinition(
-            capability_id=CAPABILITY_ID,
+            capability_id=capability_id,
             name="Filesystem Read",
             version="1.0.0",
             description="Read a file through MCP.",
@@ -101,16 +105,21 @@ def make_gateway(
     return gateway, permissions, provider
 
 
-def make_request() -> MCPGatewayRequest:
+def make_request(
+    *,
+    capability_id: str = CAPABILITY_ID,
+    operation_id: str = OPERATION_ID,
+    arguments: dict | None = None,
+) -> MCPGatewayRequest:
     return MCPGatewayRequest(
         request_id="request-123",
         principal_id="agent:planner",
-        capability_id=CAPABILITY_ID,
-        operation_id=OPERATION_ID,
+        capability_id=capability_id,
+        operation_id=operation_id,
         resource_scope=RESOURCE_SCOPE,
         risk_level=RiskLevel.LOW,
         tool_name="read_file",
-        arguments={"path": r"D:\AURA\workspace\test.txt"},
+        arguments={"path": r"D:\AURA\workspace\test.txt"} if arguments is None else arguments,
     )
 
 
@@ -118,13 +127,15 @@ def make_policy(
     decision: AuthorizationDecision,
     *,
     level: AuthorizationLevel = AuthorizationLevel.READ,
+    capability_id: str = CAPABILITY_ID,
+    operation_id: str = OPERATION_ID,
 ) -> PermissionPolicy:
     return PermissionPolicy(
         policy_id=f"aura.policy.{decision.value}",
         policy_version="1.0.0",
         principal_id="agent:planner",
-        capability_id=CAPABILITY_ID,
-        operation_id=OPERATION_ID,
+        capability_id=capability_id,
+        operation_id=operation_id,
         resource_scope=RESOURCE_SCOPE,
         authorization_level=level,
         decision=decision,
@@ -265,4 +276,65 @@ def test_gateway_preserves_tool_arguments() -> None:
     provider.connection.call_tool.assert_awaited_once_with(
         request.tool_name,
         request.arguments,
+    )
+
+
+@pytest.mark.parametrize(
+    "arguments",
+    [
+        {"path": "other.txt"},
+        {"path": r"..\governor-read-test.txt"},
+        {"path": r".\governor-read-test.txt"},
+        {"path": r"D:\test-data\governor-read-test.txt"},
+        {"path": r"C:\temp\governor-read-test.txt"},
+        {"path": r"\\server\share\governor-read-test.txt"},
+        {"path": "/test-data/governor-read-test.txt"},
+        {"path": ""},
+        {"path": None},
+        {"path": 42},
+        {},
+    ],
+)
+def test_executor_rejects_unapproved_test_data_path_before_provider(arguments: dict) -> None:
+    gateway, permissions, provider = make_gateway(capability_id=TEST_DATA_CAPABILITY_ID)
+    permissions.add_policy(make_policy(
+        AuthorizationDecision.ALLOW,
+        capability_id=TEST_DATA_CAPABILITY_ID,
+        operation_id=TEST_DATA_OPERATION_ID,
+    ))
+    task = Task("task-path-guard", "agent:planner", "Read test data", RESOURCE_SCOPE)
+    plan = Plan("plan-path-guard", task.task_id, (
+        PlanStep(
+            "step-1", TEST_DATA_CAPABILITY_ID, TEST_DATA_OPERATION_ID,
+            "read_file", RiskLevel.LOW, arguments=arguments,
+        ),
+    ))
+
+    result = asyncio.run(AgentExecutor(gateway).execute(task, plan))
+
+    assert result.state is PlanState.FAILED
+    provider.connection.call_tool.assert_not_awaited()
+
+
+def test_executor_allows_only_exact_test_data_filename_through_gateway() -> None:
+    gateway, permissions, provider = make_gateway(capability_id=TEST_DATA_CAPABILITY_ID)
+    permissions.add_policy(make_policy(
+        AuthorizationDecision.ALLOW,
+        capability_id=TEST_DATA_CAPABILITY_ID,
+        operation_id=TEST_DATA_OPERATION_ID,
+    ))
+    task = Task("task-path-allowed", "agent:planner", "Read test data", RESOURCE_SCOPE)
+    plan = Plan("plan-path-allowed", task.task_id, (
+        PlanStep(
+            "step-1", TEST_DATA_CAPABILITY_ID, TEST_DATA_OPERATION_ID,
+            "read_file", RiskLevel.LOW, arguments={"path": "governor-read-test.txt"},
+        ),
+    ))
+    provider.connection.call_tool.return_value = {"content": [{"type": "text", "text": "ok"}]}
+
+    result = asyncio.run(AgentExecutor(gateway).execute(task, plan))
+
+    assert result.state is PlanState.SUCCEEDED
+    provider.connection.call_tool.assert_awaited_once_with(
+        "read_file", {"path": "governor-read-test.txt"}
     )
