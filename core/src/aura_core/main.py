@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+import hmac
 import logging
 import os
+import re
 from datetime import time
 from contextlib import asynccontextmanager
 
@@ -57,17 +59,31 @@ logger = logging.getLogger(
 class VisualizationPlanService:
     """Registry marker for the deterministic, UI-only visualization plan."""
 
+def _load_policy_bundle_from_environment() -> PolicyBundle | None:
+    """Load the configured policy bundle and enforce an optional semantic digest pin."""
+    policy_bundle_path = os.getenv("AURA_POLICY_BUNDLE_PATH", "").strip()
+    expected_digest = os.getenv("AURA_POLICY_BUNDLE_SHA256", "").strip()
+
+    if expected_digest and not policy_bundle_path:
+        raise ValueError("AURA_POLICY_BUNDLE_SHA256 requires AURA_POLICY_BUNDLE_PATH")
+    if expected_digest and re.fullmatch(r"[0-9a-fA-F]{64}", expected_digest) is None:
+        raise ValueError("AURA_POLICY_BUNDLE_SHA256 must be a 64-character hexadecimal SHA-256 digest")
+    if not policy_bundle_path:
+        return None
+
+    # A configured path is fail-closed. The optional pin is checked against the
+    # canonical policy digest, so formatting/BOM differences do not change policy identity.
+    policy_bundle = PolicyBundle.from_json_file(policy_bundle_path)
+    if expected_digest and not hmac.compare_digest(
+        policy_bundle.digest, expected_digest.casefold()
+    ):
+        raise ValueError("Policy bundle digest does not match AURA_POLICY_BUNDLE_SHA256")
+    return policy_bundle
+
+
 def build_app() -> FastAPI:
     kernel_config = KernelConfig.from_environment()
-
-    # Policy configuration is opt-in but fail-closed: if a path is configured,
-    # malformed/unreadable policy must stop startup rather than disable the gate.
-    policy_bundle_path = os.getenv("AURA_POLICY_BUNDLE_PATH", "").strip()
-    policy_bundle = (
-        PolicyBundle.from_json_file(policy_bundle_path)
-        if policy_bundle_path
-        else None
-    )
+    policy_bundle = _load_policy_bundle_from_environment()
     kernel = AuraKernel(kernel_config, policy_bundle=policy_bundle)
     kernel.bootstrap()
 
