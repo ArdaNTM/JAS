@@ -10,6 +10,7 @@ from aura_core.kernel.permissions import (
 )
 from aura_core.mcp.mcp_provider import MCPProvider
 from aura_core.mcp.provider import ProviderRegistry
+from aura_core.enterprise.runtime_controls import CircuitBreaker, HashChainAuditLedger
 
 
 @dataclass(frozen=True, slots=True)
@@ -57,10 +58,27 @@ class MCPGateway:
         capability_registry: CapabilityRegistry,
         provider_registry: ProviderRegistry,
         permission_engine: PermissionEngine,
+        *,
+        circuit_breakers: dict[str, CircuitBreaker] | None = None,
+        audit_ledger: HashChainAuditLedger | None = None,
     ) -> None:
         self._capability_registry = capability_registry
         self._provider_registry = provider_registry
         self._permission_engine = permission_engine
+        self._circuit_breakers = dict(circuit_breakers or {})
+        self._audit_ledger = audit_ledger
+
+    def _audit(self, request: MCPGatewayRequest, *, outcome: str, reason_code: str) -> None:
+        if self._audit_ledger is None:
+            return
+        # Deliberately metadata-only: never persist arguments, prompts, or results.
+        self._audit_ledger.append(
+            principal_id=request.principal_id,
+            action=f"{request.capability_id}.{request.operation_id}",
+            resource_scope=request.resource_scope,
+            outcome=outcome,
+            reason_code=reason_code,
+        )
 
     async def invoke(
         self,
@@ -84,6 +102,7 @@ class MCPGateway:
         )
 
         if authorization.decision is not AuthorizationDecision.ALLOW:
+            self._audit(request, outcome="denied", reason_code="authorization_denied")
             return MCPGatewayResponse(
                 decision=authorization.decision,
                 result=None,
@@ -101,11 +120,19 @@ class MCPGateway:
                 "Resolved provider is not an MCPProvider"
             )
 
-        result = await provider.call_tool(
-            request.tool_name,
-            request.arguments,
-        )
+        breaker = self._circuit_breakers.get(capability.definition.provider_id)
+        try:
+            if breaker is None:
+                result = await provider.call_tool(request.tool_name, request.arguments)
+            else:
+                result = await breaker.call(
+                    lambda: provider.call_tool(request.tool_name, request.arguments)
+                )
+        except Exception:
+            self._audit(request, outcome="error", reason_code="provider_call_failed")
+            raise
 
+        self._audit(request, outcome="allowed", reason_code="provider_call_completed")
         return MCPGatewayResponse(
             decision=AuthorizationDecision.ALLOW,
             result=result,
