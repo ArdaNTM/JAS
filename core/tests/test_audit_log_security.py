@@ -34,9 +34,9 @@ def test_audit_event_is_frozen_and_has_only_allowlisted_fields() -> None:
 
 
 @pytest.mark.parametrize("field,value", [
-    ("principal_id", "agent:planner\\nFORGED outcome=allowed"),
-    ("capability_id", "filesystem.read\\r\\nFORGED"),
-    ("operation_id", "filesystem.read_file\\tFORGED"),
+    ("principal_id", "agent:planner\nFORGED outcome=allowed"),
+    ("capability_id", "filesystem.read\\r\nFORGED"),
+    ("operation_id", "filesystem.read_file\tFORGED"),
 ])
 def test_audit_event_rejects_secret_like_or_injection_metadata(field: str, value: str) -> None:
     values = {
@@ -107,7 +107,7 @@ def test_gateway_log_injection_in_audited_identifier_is_rejected_before_dispatch
     from dataclasses import replace
 
     with pytest.raises(ValueError, match="safe audit identifier"):
-        malicious = replace(request, principal_id="agent:planner\\nFORGED outcome=allowed")
+        malicious = replace(request, principal_id="agent:planner\nFORGED outcome=allowed")
         asyncio.run(gateway.invoke(malicious))
 
     provider.connection.call_tool.assert_not_awaited()
