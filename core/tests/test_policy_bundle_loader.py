@@ -63,11 +63,11 @@ def test_policy_bundle_loader_accepts_utf8_bom_json(tmp_path):
             "principal_id": "local-user",
             "capability_id": "filesystem.read_test_data",
             "operation_id": "filesystem.read_test_data",
-            "resource_scope": r"D:\\AURA\\workspace",
+            "resource_scope": "workspace:main",
             "effect": "allow",
         }],
     }
-    path.write_bytes(b"\\xef\\xbb\\xbf" + json.dumps(payload).encode("utf-8"))
+    path.write_bytes(bytes.fromhex("efbbbf") + json.dumps(payload).encode("utf-8"))
 
     bundle = PolicyBundle.from_json_file(path)
 
