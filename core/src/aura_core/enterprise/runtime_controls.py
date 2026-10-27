@@ -81,8 +81,8 @@ class AuditRecord:
 class HashChainAuditLedger:
     """Thread-safe in-memory hash chain that stores metadata, never payloads.
 
-    append intentionally accepts only scalar metadata fields. Do not pass tool
-    arguments, prompts, credentials, transcripts, or provider responses.
+    append accepts only a validated AuditEvent. Tool arguments, prompts, credentials,
+    transcripts, raw resource scopes, and provider responses are not representable.
     This class is a testable integrity primitive, not durable/WORM storage.
     """
 
