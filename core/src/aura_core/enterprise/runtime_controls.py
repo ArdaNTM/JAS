@@ -183,6 +183,7 @@ class CircuitBreaker:
     _failures: int = field(default=0, init=False)
     _opened_at: float | None = field(default=None, init=False)
     _probe_active: bool = field(default=False, init=False)
+    _generation: int = field(default=0, init=False)
     _lock: asyncio.Lock = field(default_factory=asyncio.Lock, init=False)
 
     def __post_init__(self) -> None:
@@ -204,10 +205,13 @@ class CircuitBreaker:
                 if time.monotonic() - self._opened_at < self.recovery_seconds:
                     raise CircuitOpenError("Provider circuit is open")
                 self._state = CircuitState.HALF_OPEN
+                self._generation += 1
             if self._state is CircuitState.HALF_OPEN:
                 if self._probe_active:
                     raise CircuitOpenError("Provider recovery probe already in progress")
                 self._probe_active = True
+            call_generation = self._generation
+            is_probe = self._state is CircuitState.HALF_OPEN
 
         try:
             result = (
@@ -223,15 +227,23 @@ class CircuitBreaker:
         except Exception:
             async with self._lock:
                 self._failures += 1
-                if self._state is CircuitState.HALF_OPEN or self._failures >= self.failure_threshold:
+                if self._state is CircuitState.HALF_OPEN or (
+                    self._state is CircuitState.CLOSED and self._failures >= self.failure_threshold
+                ):
                     self._state = CircuitState.OPEN
                     self._opened_at = time.monotonic()
-                self._probe_active = False
+                    self._generation += 1
+                if is_probe:
+                    self._probe_active = False
             raise
         else:
             async with self._lock:
-                self._failures = 0
-                self._state = CircuitState.CLOSED
-                self._opened_at = None
-                self._probe_active = False
+                # A late success from a call started in CLOSED must not close a
+                # circuit opened by a concurrent failing call.
+                if self._generation == call_generation:
+                    self._failures = 0
+                    self._state = CircuitState.CLOSED
+                    self._opened_at = None
+                if is_probe:
+                    self._probe_active = False
             return result
