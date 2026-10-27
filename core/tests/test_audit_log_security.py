@@ -1,6 +1,5 @@
 from dataclasses import FrozenInstanceError, fields
 import asyncio
-from unittest.mock import AsyncMock
 
 import pytest
 
@@ -38,7 +37,7 @@ def test_audit_event_is_frozen_and_has_only_allowlisted_fields() -> None:
     ("capability_id", "filesystem.read\\r\nFORGED"),
     ("operation_id", "filesystem.read_file\tFORGED"),
 ])
-def test_audit_event_rejects_secret_like_or_injection_metadata(field: str, value: str) -> None:
+def test_audit_event_rejects_control_character_injection_metadata(field: str, value: str) -> None:
     values = {
         "principal_id": "agent:planner",
         "capability_id": "filesystem.read",
