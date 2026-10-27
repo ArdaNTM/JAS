@@ -858,3 +858,34 @@ def test_gateway_requires_a_strong_hmac_key_when_approval_store_is_configured(tm
         with pytest.raises(ValueError, match="at least 32 bytes"):
             make_gateway(approval_store=store, approval_fingerprint_key=b"short")
 
+
+def test_gateway_rejects_replay_after_approval_was_consumed(tmp_path) -> None:
+    key = b"k" * 32
+    with SQLiteApprovalStore(str(tmp_path / "approvals.db")) as store:
+        gateway, permissions, provider = make_gateway(
+            approval_store=store,
+            approval_fingerprint_key=key,
+        )
+        _require_approval_policy(permissions)
+        provider.connection.call_tool.return_value = {"content": [{"type": "text", "text": "ok"}]}
+        request = make_request()
+        pending = asyncio.run(gateway.invoke(request))
+        record = store.get(pending.approval_id)
+        assert record is not None
+        store.decide(
+            record.approval_id,
+            expected_version=record.version,
+            approver_id="human:reviewer",
+            decision=ApprovalStatus.APPROVED,
+        )
+        approved_request = replace(request, approval_id=record.approval_id)
+
+        first = asyncio.run(gateway.invoke(approved_request))
+        replay = asyncio.run(gateway.invoke(approved_request))
+
+        assert first.decision is AuthorizationDecision.ALLOW
+        assert replay.decision is AuthorizationDecision.REQUIRE_APPROVAL
+        assert replay.result is None
+        provider.connection.call_tool.assert_awaited_once()
+        assert store.get(record.approval_id).status is ApprovalStatus.CONSUMED
+
