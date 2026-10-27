@@ -39,7 +39,7 @@ def validate_test_data_path(arguments: dict[str, Any] | None) -> None:
         raise ValueError("Rejected path for test-data read")
 
 
-def _validate_step_arguments(step: PlanStep) -> None:
+def _validate_step_arguments(step: "PlanStep") -> None:
     if (step.capability_id, step.operation_id, step.tool_name) == _TEST_DATA_READ_OPERATION:
         validate_test_data_path(step.arguments)
 
