@@ -525,7 +525,7 @@ def test_gateway_does_not_treat_sibling_resource_scope_as_authorized() -> None:
             principal_id="agent:planner",
             capability_id=CAPABILITY_ID,
             operation_id=OPERATION_ID,
-            resource_scope=r"D:\\AURA\\workspace-a",
+            resource_scope=r"D:\AURA\workspace-a",
             authorization_level=AuthorizationLevel.READ,
             decision=AuthorizationDecision.ALLOW,
         )
