@@ -22,6 +22,7 @@ from aura_core.kernel.events import EventBus, KernelEvent
 from aura_core.memory.hierarchical_memory import ContextItem
 from aura_core.kernel.permissions import AuthorizationDecision, RiskLevel
 from aura_core.mcp.gateway import MCPGateway, MCPGatewayRequest
+from aura_core.enterprise.runtime_controls import BudgetExceeded, ExecutionBudget
 
 
 _TEST_DATA_READ_OPERATION = (
@@ -197,6 +198,11 @@ class AgentExecutor:
         if plan.task_id != task.task_id:
             raise ValueError("Plan does not belong to task")
         started = monotonic()
+        budget = ExecutionBudget(
+            max_steps=task.max_steps,
+            max_tool_calls=task.max_steps,
+            deadline_monotonic=started + task.timeout_seconds,
+        )
         completed: dict[str, StepResult] = {}
         pending = list(plan.steps)
         capacity = max(1, min(8, int(__import__("os").getenv("AURA_MAX_PARALLEL_STEPS", "4"))))
@@ -209,7 +215,7 @@ class AgentExecutor:
                 if remaining <= 0:
                     result = StepResult(step.step_id, StepState.CANCELLED, 0, reason="Task timed out")
                 else:
-                    execution = asyncio.create_task(self._execute_step(task, plan, step))
+                    execution = asyncio.create_task(self._execute_step(task, plan, step, budget=budget, cancelled=cancelled))
                     deadline = monotonic() + remaining
                     try:
                         while not execution.done():
@@ -361,9 +367,18 @@ class AgentExecutor:
             metadata={"request_id": request_id} if request_id else {},
         ))
 
-    async def _execute_step(self, task: Task, plan: Plan, step: PlanStep) -> StepResult:
+    async def _execute_step(
+        self, task: Task, plan: Plan, step: PlanStep,
+        *, budget: ExecutionBudget | None = None,
+        cancelled: Callable[[], bool] | None = None,
+    ) -> StepResult:
         _validate_step_arguments(step)
+        if budget is not None:
+            budget.consume_step(cancelled=cancelled() if cancelled is not None else False)
         for attempt in range(1, step.max_attempts + 1):
+            if budget is not None:
+                budget.check(cancelled=cancelled() if cancelled is not None else False)
+                budget.consume_tool_call()
             response = await self._gateway.invoke(MCPGatewayRequest(
                 request_id=f"{plan.plan_id}:{step.step_id}:{attempt}", principal_id=task.principal_id,
                 capability_id=step.capability_id, operation_id=step.operation_id,
