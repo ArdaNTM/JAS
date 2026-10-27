@@ -24,6 +24,7 @@ from aura_core.application.full_duplex_session import (
 from aura_core.application.vision_adapters import DesktopScreenCapture, OllamaVisionProvider
 from aura_core.config.kernel import KernelConfig
 from aura_core.enterprise.policy_bundle import PolicyBundle
+from aura_core.enterprise.workflow_store import SQLiteWorkflowStore
 from aura_core.kernel.permissions import (
     AuthorizationDecision,
     AuthorizationLevel,
@@ -145,6 +146,12 @@ def build_app() -> FastAPI:
         "AURA_TASK_DB_PATH", str(os.getenv("LOCALAPPDATA", os.path.expanduser("~"))) + "/AURA/tasks.sqlite3"
     )
     task_state_machine = TaskStateMachine(task_database_path, event_bus=kernel.event_bus)
+    workflow_database_path = os.getenv(
+        "AURA_WORKFLOW_DB_PATH",
+        str(os.getenv("LOCALAPPDATA", os.path.expanduser("~"))) + "/AURA/workflows.sqlite3",
+    )
+    os.makedirs(os.path.dirname(os.path.abspath(workflow_database_path)), exist_ok=True)
+    workflow_store = SQLiteWorkflowStore(workflow_database_path)
     task_service = AgentTaskService(
         AgentExecutor(
             gateway=gateway,
@@ -152,6 +159,7 @@ def build_app() -> FastAPI:
         ),
         memory=TaskMemoryCoordinator.from_environment(),
         state_machine=task_state_machine,
+        workflow_store=workflow_store,
     )
 
     app = create_composed_app(
@@ -173,6 +181,7 @@ def build_app() -> FastAPI:
     )
     app.state.event_bus_runtime = event_runtime
     app.state.task_state_machine = task_state_machine
+    app.state.workflow_store = workflow_store
     app.state.task_service = task_service
 
     async def deliver_proactive_notification(*, principal_id: str, message: str) -> None:
@@ -561,6 +570,11 @@ def build_app() -> FastAPI:
                     await filesystem_provider.close()
                 except Exception:
                     logger.exception("Local filesystem provider shutdown failed")
+
+            try:
+                workflow_store.close()
+            except Exception:
+                logger.exception("WorkflowStore shutdown failed")
 
             logger.info(
                 "AURA LIFESPAN SHUTDOWN COMPLETE"
