@@ -388,6 +388,21 @@ def build_app() -> FastAPI:
                 )
             )
 
+            # Local filesystem reads are limited to the registered test-data capability.
+            # MCPGateway still enforces this policy before any provider tool invocation.
+            kernel.permission_engine.add_policy(
+                PermissionPolicy(
+                    policy_id="local-owner:filesystem.read_test_data:test-data",
+                    policy_version="1.0.0",
+                    principal_id="local_owner",
+                    capability_id="filesystem.read_test_data",
+                    operation_id="filesystem.read_test_data",
+                    resource_scope="local_default",
+                    authorization_level=AuthorizationLevel.READ,
+                    decision=AuthorizationDecision.ALLOW,
+                )
+            )
+
             logger.info(
                 "LIFESPAN: starting kernel"
             )
