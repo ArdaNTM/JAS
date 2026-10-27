@@ -41,9 +41,20 @@ async def register_local_filesystem_mcp(
         matching = [tool for tool in discovered if tool.name == config.tool_name]
         if len(matching) != 1:
             raise RuntimeError("Local filesystem MCP must expose exactly one read_file tool")
-        schema = getattr(matching[0], "input_schema", {}) or {}
+        schema = matching[0].input_schema
         properties = schema.get("properties", {}) if isinstance(schema, dict) else {}
-        if set(properties) != {"path"} or schema.get("additionalProperties", True) is not False:
+        required = schema.get("required", []) if isinstance(schema, dict) else []
+        additional_properties = schema.get("additionalProperties") if isinstance(schema, dict) else None
+        # MCP SDK versions may normalize away JSON Schema's default false/true
+        # value for additionalProperties. The server independently rejects
+        # every argument except "path", so absence here is safe; explicit true
+        # is not accepted.
+        if (
+            not isinstance(schema, dict)
+            or set(properties) != {"path"}
+            or "path" not in required
+            or additional_properties is True
+        ):
             raise RuntimeError("Local filesystem MCP read_file schema is not restricted to path")
         providers.register(
             ProviderDefinition(
