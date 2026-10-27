@@ -127,3 +127,30 @@ def test_circuit_breaker_validates_configuration():
         CircuitBreaker(failure_threshold=0)
     with pytest.raises(ValueError):
         CircuitBreaker(timeout_seconds=0)
+
+
+
+def test_circuit_breaker_late_success_cannot_close_circuit_opened_by_concurrent_failure():
+    async def scenario():
+        breaker = CircuitBreaker(failure_threshold=1, recovery_seconds=60)
+        started = asyncio.Event()
+        release = asyncio.Event()
+
+        async def slow_success():
+            started.set()
+            await release.wait()
+            return "late success"
+
+        async def fail():
+            raise RuntimeError("provider failure")
+
+        slow_task = asyncio.create_task(breaker.call(slow_success))
+        await started.wait()
+        with pytest.raises(RuntimeError):
+            await breaker.call(fail)
+        assert breaker.state is CircuitState.OPEN
+        release.set()
+        assert await slow_task == "late success"
+        assert breaker.state is CircuitState.OPEN
+
+    asyncio.run(scenario())
