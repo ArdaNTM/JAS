@@ -250,8 +250,10 @@ class SQLiteApprovalStore:
         approval_id = _required(approval_id, "approval_id")
         approver_id = _required(approver_id, "approver_id")
         self._validate_version(expected_version)
-        if decision not in (ApprovalStatus.APPROVED, ApprovalStatus.DENIED):
-            raise ValueError("decision must be APPROVED or DENIED")
+        if not isinstance(decision, ApprovalStatus) or decision not in (
+            ApprovalStatus.APPROVED, ApprovalStatus.DENIED,
+        ):
+            raise ValueError("decision must be an ApprovalStatus of APPROVED or DENIED")
         now = _utc(self._clock())
         expired = False
         with self._lock:
@@ -331,9 +333,11 @@ class SQLiteApprovalStore:
                         record.principal_id, record.capability_id, record.operation_id,
                         record.resource_scope, record.request_fingerprint, record.policy_digest,
                     )
-                    if not all(
-                        hmac.compare_digest(actual, wanted)
-                        for actual, wanted in zip(supplied, expected, strict=True)
+                    # Compare identity dimensions exactly; compare the fixed-length digests
+                    # in constant time. compare_digest(str, str) only accepts ASCII.
+                    if supplied[:4] != expected[:4] or not (
+                        hmac.compare_digest(supplied[4], expected[4])
+                        and hmac.compare_digest(supplied[5], expected[5])
                     ):
                         raise ApprovalConflict("Approval does not match the current request or policy")
                     updated = connection.execute(
