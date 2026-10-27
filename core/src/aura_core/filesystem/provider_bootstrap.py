@@ -42,20 +42,29 @@ async def register_local_filesystem_mcp(
         if len(matching) != 1:
             raise RuntimeError("Local filesystem MCP must expose exactly one read_file tool")
         schema = matching[0].input_schema
-        properties = schema.get("properties", {}) if isinstance(schema, dict) else {}
-        required = schema.get("required", []) if isinstance(schema, dict) else []
-        additional_properties = schema.get("additionalProperties") if isinstance(schema, dict) else None
-        # MCP SDK versions may normalize away JSON Schema's default false/true
-        # value for additionalProperties. The server independently rejects
-        # every argument except "path", so absence here is safe; explicit true
-        # is not accepted.
-        if (
-            not isinstance(schema, dict)
-            or set(properties) != {"path"}
-            or "path" not in required
-            or additional_properties is True
-        ):
-            raise RuntimeError("Local filesystem MCP read_file schema is not restricted to path")
+        if not isinstance(schema, dict):
+            raise RuntimeError(
+                f"Local filesystem MCP returned a non-object input schema: {schema!r}"
+            )
+
+        properties = schema.get("properties", {})
+        required = schema.get("required", [])
+        additional_properties = schema.get("additionalProperties")
+        # MCP SDK versions may normalize away additionalProperties. Unknown
+        # arguments are also rejected by the server handler itself.
+        valid = (
+            isinstance(properties, dict)
+            and set(properties) == {"path"}
+            and isinstance(required, list)
+            and "path" in required
+            and additional_properties is not True
+        )
+        if not valid:
+            raise RuntimeError(
+                "Local filesystem MCP read_file schema is not restricted to path; "
+                f"properties={properties!r}, required={required!r}, "
+                f"additionalProperties={additional_properties!r}, schema={schema!r}"
+            )
         providers.register(
             ProviderDefinition(
                 provider_id=config.provider_id, name=config.service_name,
