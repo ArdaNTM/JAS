@@ -539,3 +539,69 @@ def test_gateway_does_not_treat_sibling_resource_scope_as_authorized() -> None:
     assert response.result is None
     assert "No applicable explicit authorization policy" in response.reason
     provider.connection.call_tool.assert_not_awaited()
+
+
+
+@pytest.mark.parametrize(
+    ("policy_field", "policy_value"),
+    [
+        ("principal_id", "agent:other"),
+        ("capability_id", "filesystem.write"),
+        ("operation_id", "filesystem.write_file"),
+        ("resource_scope", r"D:\\AURA\\workspace-sibling"),
+    ],
+)
+def test_authorization_matrix_mismatched_policy_dimension_denies_before_dispatch(
+    policy_field: str, policy_value: str,
+) -> None:
+    gateway, permissions, provider = make_gateway()
+    values = {
+        "policy_id": f"aura.policy.matrix.{policy_field}",
+        "policy_version": "1.0.0",
+        "principal_id": "agent:planner",
+        "capability_id": CAPABILITY_ID,
+        "operation_id": OPERATION_ID,
+        "resource_scope": RESOURCE_SCOPE,
+        "authorization_level": AuthorizationLevel.READ,
+        "decision": AuthorizationDecision.ALLOW,
+    }
+    values[policy_field] = policy_value
+    permissions.add_policy(PermissionPolicy(**values))
+
+    response = asyncio.run(gateway.invoke(make_request()))
+
+    assert response.decision is AuthorizationDecision.DENY
+    assert response.result is None
+    provider.connection.call_tool.assert_not_awaited()
+
+
+@pytest.mark.parametrize(
+    ("decision", "expected"),
+    [
+        (AuthorizationDecision.DENY, AuthorizationDecision.DENY),
+        (AuthorizationDecision.REQUIRE_APPROVAL, AuthorizationDecision.REQUIRE_APPROVAL),
+    ],
+)
+def test_authorization_matrix_non_allow_decisions_never_dispatch(
+    decision: AuthorizationDecision, expected: AuthorizationDecision,
+) -> None:
+    gateway, permissions, provider = make_gateway()
+    permissions.add_policy(make_policy(decision))
+
+    response = asyncio.run(gateway.invoke(make_request()))
+
+    assert response.decision is expected
+    assert response.result is None
+    provider.connection.call_tool.assert_not_awaited()
+
+
+def test_authorization_matrix_explicit_allow_dispatches_exact_request() -> None:
+    gateway, permissions, provider = make_gateway()
+    provider.connection.call_tool.return_value = {"content": [{"type": "text", "text": "ok"}]}
+    permissions.add_policy(make_policy(AuthorizationDecision.ALLOW))
+    request = make_request(arguments={"path": "approved.txt"})
+
+    response = asyncio.run(gateway.invoke(request))
+
+    assert response.decision is AuthorizationDecision.ALLOW
+    provider.connection.call_tool.assert_awaited_once_with("read_file", {"path": "approved.txt"})
