@@ -89,7 +89,7 @@ def test_workflow_store_rejects_control_characters_and_invalid_versions(tmp_path
         with pytest.raises(ValueError):
             store.create(
                 workflow_id="wf-1", idempotency_key="idem-1",
-                principal_id="user\\nsecret", task_id="task-1",
+                principal_id="user\nsecret", task_id="task-1",
             )
         record = store.create(
             workflow_id="wf-1", idempotency_key="idem-1",
