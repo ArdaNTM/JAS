@@ -226,6 +226,22 @@ class PermissionEngine:
                 approval,
             )
 
+        defer = next(
+            (
+                policy
+                for policy in matching
+                if policy.decision is AuthorizationDecision.DEFER
+            ),
+            None,
+        )
+        if defer is not None:
+            return self._record(
+                request,
+                AuthorizationDecision.DEFER,
+                "Applicable policy deferred authorization",
+                defer,
+            )
+
         allow = next(
             (
                 policy
