@@ -589,6 +589,7 @@ def test_authorization_matrix_mismatched_policy_dimension_denies_before_dispatch
     [
         (AuthorizationDecision.DENY, AuthorizationDecision.DENY),
         (AuthorizationDecision.REQUIRE_APPROVAL, AuthorizationDecision.REQUIRE_APPROVAL),
+        (AuthorizationDecision.DEFER, AuthorizationDecision.DEFER),
     ],
 )
 def test_authorization_matrix_non_allow_decisions_never_dispatch(
