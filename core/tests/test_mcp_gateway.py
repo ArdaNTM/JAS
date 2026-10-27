@@ -34,6 +34,9 @@ from aura_core.mcp.gateway import (
 from aura_core.enterprise.runtime_controls import (
     CircuitBreaker, CircuitOpenError, CircuitState, HashChainAuditLedger,
 )
+from aura_core.enterprise.policy_bundle import (
+    PolicyBundle, PolicyEffect, PolicyRule,
+)
 
 
 CAPABILITY_ID = "filesystem.read"
@@ -48,6 +51,7 @@ def make_gateway(
     *,
     provider: object | None = None,
     capability_id: str = CAPABILITY_ID,
+    policy_bundle: PolicyBundle | None = None,
 ) -> tuple[
     MCPGateway,
     PermissionEngine,
@@ -97,7 +101,7 @@ def make_gateway(
         )
     )
 
-    permissions = PermissionEngine(capabilities)
+    permissions = PermissionEngine(capabilities, policy_bundle=policy_bundle)
 
     gateway = MCPGateway(
         capability_registry=capabilities,
@@ -394,3 +398,90 @@ def test_gateway_applies_provider_breaker_and_metadata_only_audit() -> None:
 
     assert len(ledger.snapshot()) == 2
     assert ledger.verify()
+
+
+
+def make_enterprise_bundle(
+    effect: PolicyEffect,
+    *,
+    principal_id: str = "agent:planner",
+    capability_id: str = CAPABILITY_ID,
+    operation_id: str = OPERATION_ID,
+    resource_scope: str = RESOURCE_SCOPE,
+) -> PolicyBundle:
+    return PolicyBundle(
+        version="test-v1",
+        rules=(
+            PolicyRule(
+                rule_id=f"enterprise-{effect.value}",
+                principal_id=principal_id,
+                capability_id=capability_id,
+                operation_id=operation_id,
+                resource_scope=resource_scope,
+                effect=effect,
+            ),
+        ),
+    )
+
+
+def test_enterprise_policy_bundle_allow_still_requires_permission_engine_allow() -> None:
+    bundle = make_enterprise_bundle(PolicyEffect.ALLOW)
+    gateway, _, provider = make_gateway(policy_bundle=bundle)
+
+    response = asyncio.run(gateway.invoke(make_request()))
+
+    # The bundle is an additional gate, not a replacement for the core PermissionPolicy.
+    assert response.decision is AuthorizationDecision.DENY
+    provider.connection.call_tool.assert_not_awaited()
+
+
+def test_enterprise_policy_bundle_allow_dispatches_only_after_core_allow() -> None:
+    bundle = make_enterprise_bundle(PolicyEffect.ALLOW)
+    gateway, permissions, provider = make_gateway(policy_bundle=bundle)
+    permissions.add_policy(make_policy(AuthorizationDecision.ALLOW))
+    provider.connection.call_tool.return_value = {"content": [{"type": "text", "text": "ok"}]}
+
+    response = asyncio.run(gateway.invoke(make_request()))
+
+    assert response.decision is AuthorizationDecision.ALLOW
+    provider.connection.call_tool.assert_awaited_once()
+
+
+def test_enterprise_policy_bundle_explicit_deny_prevents_provider_dispatch() -> None:
+    bundle = make_enterprise_bundle(PolicyEffect.DENY)
+    gateway, permissions, provider = make_gateway(policy_bundle=bundle)
+    permissions.add_policy(make_policy(AuthorizationDecision.ALLOW))
+
+    response = asyncio.run(gateway.invoke(make_request()))
+
+    assert response.decision is AuthorizationDecision.DENY
+    assert "test-v1" in response.reason
+    assert "explicit_deny" in response.reason
+    provider.connection.call_tool.assert_not_awaited()
+
+
+def test_enterprise_policy_bundle_missing_or_mismatched_rule_fails_closed() -> None:
+    bundle = make_enterprise_bundle(
+        PolicyEffect.ALLOW,
+        principal_id="some-other-principal",
+    )
+    gateway, permissions, provider = make_gateway(policy_bundle=bundle)
+    permissions.add_policy(make_policy(AuthorizationDecision.ALLOW))
+
+    response = asyncio.run(gateway.invoke(make_request()))
+
+    assert response.decision is AuthorizationDecision.DENY
+    assert "no_matching_rule" in response.reason
+    provider.connection.call_tool.assert_not_awaited()
+
+
+def test_enterprise_policy_bundle_approval_required_prevents_provider_dispatch() -> None:
+    bundle = make_enterprise_bundle(PolicyEffect.REQUIRE_APPROVAL)
+    gateway, permissions, provider = make_gateway(policy_bundle=bundle)
+    permissions.add_policy(make_policy(AuthorizationDecision.ALLOW))
+
+    response = asyncio.run(gateway.invoke(make_request()))
+
+    assert response.decision is AuthorizationDecision.REQUIRE_APPROVAL
+    assert "approval_required" in response.reason
+    provider.connection.call_tool.assert_not_awaited()
