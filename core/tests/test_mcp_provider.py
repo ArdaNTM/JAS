@@ -44,6 +44,59 @@ def test_mcp_provider_lists_tools() -> None:
     assert tools[1].input_schema == {}
 
 
+def test_mcp_provider_reads_snake_case_input_schema() -> None:
+    connection = AsyncMock(spec=MCPConnection)
+    connection.list_tools.return_value = SimpleNamespace(
+        tools=[
+            SimpleNamespace(
+                name="read_file",
+                description="Read a file",
+                input_schema={
+                    "type": "object",
+                    "properties": {"path": {"type": "string"}},
+                    "required": ["path"],
+                    "additionalProperties": False,
+                },
+            )
+        ]
+    )
+
+    tools = asyncio.run(MCPProvider(connection).list_tools())
+
+    assert tools[0].input_schema["properties"] == {
+        "path": {"type": "string"}
+    }
+    assert tools[0].input_schema["required"] == ["path"]
+
+
+def test_mcp_provider_reads_schema_from_model_dump() -> None:
+    connection = AsyncMock(spec=MCPConnection)
+
+    class SDKTool:
+        name = "read_file"
+        description = "Read a file"
+        input_schema = None
+        inputSchema = None
+
+        def model_dump(self, *, by_alias: bool = False):
+            key = "inputSchema" if by_alias else "input_schema"
+            return {
+                "name": self.name,
+                key: {
+                    "type": "object",
+                    "properties": {"path": {"type": "string"}},
+                    "required": ["path"],
+                },
+            }
+
+    connection.list_tools.return_value = SimpleNamespace(tools=[SDKTool()])
+    tools = asyncio.run(MCPProvider(connection).list_tools())
+
+    assert tools[0].input_schema["properties"] == {
+        "path": {"type": "string"}
+    }
+
+
 def test_mcp_provider_calls_tool() -> None:
     connection = AsyncMock(spec=MCPConnection)
 
