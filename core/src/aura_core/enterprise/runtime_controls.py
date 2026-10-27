@@ -63,6 +63,35 @@ class ExecutionBudget:
 
 
 @dataclass(frozen=True, slots=True)
+class AuditEvent:
+    """Allowlisted audit input; payloads, paths, and free text are not representable."""
+
+    principal_id: str
+    capability_id: str
+    operation_id: str
+    outcome: str
+    reason_code: str
+
+    _IDENTIFIER_PATTERN: ClassVar[re.Pattern[str]] = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:@/-]{0,127}$")
+    _OUTCOMES: ClassVar[frozenset[str]] = frozenset({"denied", "error", "allowed"})
+    _REASONS: ClassVar[frozenset[str]] = frozenset({
+        "authorization_denied",
+        "provider_call_failed",
+        "provider_call_completed",
+    })
+
+    def __post_init__(self) -> None:
+        for field_name in ("principal_id", "capability_id", "operation_id"):
+            value = getattr(self, field_name)
+            if not isinstance(value, str) or self._IDENTIFIER_PATTERN.fullmatch(value) is None:
+                raise ValueError(f"{field_name} is not a safe audit identifier")
+        if not isinstance(self.outcome, str) or self.outcome not in self._OUTCOMES:
+            raise ValueError("outcome is not an allowed audit value")
+        if not isinstance(self.reason_code, str) or self.reason_code not in self._REASONS:
+            raise ValueError("reason_code is not an allowed audit value")
+
+
+@dataclass(frozen=True, slots=True)
 class AuditRecord:
     """Allowlisted audit metadata; arguments and provider output are excluded."""
 
@@ -110,26 +139,21 @@ class HashChainAuditLedger:
         ).encode("utf-8")
         return hashlib.sha256(encoded).hexdigest()
 
-    def append(
-        self, *, principal_id: str, action: str, resource_scope: str,
-        outcome: str, reason_code: str,
-    ) -> AuditRecord:
-        principal_id = self._required(principal_id, "principal_id")
-        action = self._required(action, "action")
-        resource_scope = self._required(resource_scope, "resource_scope")
-        outcome = self._required(outcome, "outcome", 64)
-        reason_code = self._required(reason_code, "reason_code", 128)
+    def append(self, event: AuditEvent) -> AuditRecord:
+        """Persist only a validated allowlisted event; no caller-supplied payload fields."""
+        if not isinstance(event, AuditEvent):
+            raise TypeError("audit ledger accepts only AuditEvent")
         with self._lock:
             previous_hash = self._records[-1].record_hash if self._records else self._GENESIS
             fields: dict[str, object] = {
                 "sequence": len(self._records) + 1,
                 "event_id": str(uuid4()),
                 "timestamp": datetime.now(timezone.utc).isoformat(),
-                "principal_id": principal_id,
-                "action": action,
-                "resource_scope": resource_scope,
-                "outcome": outcome,
-                "reason_code": reason_code,
+                "principal_id": event.principal_id,
+                "action": f"{event.capability_id}.{event.operation_id}",
+                "resource_scope": "[omitted]",
+                "outcome": event.outcome,
+                "reason_code": event.reason_code,
                 "previous_hash": previous_hash,
             }
             record = AuditRecord(**fields, record_hash=self._digest(fields))
