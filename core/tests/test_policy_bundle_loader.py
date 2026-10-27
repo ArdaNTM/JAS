@@ -53,3 +53,25 @@ def test_policy_bundle_loader_rejects_invalid_schema_or_values(tmp_path, payload
 def test_policy_bundle_loader_fails_closed_for_missing_file(tmp_path):
     with pytest.raises(ValueError, match="Unable to load policy bundle JSON"):
         PolicyBundle.from_json_file(tmp_path / "missing.json")
+
+def test_policy_bundle_loader_accepts_utf8_bom_json(tmp_path):
+    path = tmp_path / "policy-bundle.json"
+    payload = {
+        "version": "bom-test-v1",
+        "rules": [{
+            "rule_id": "allow-test-read",
+            "principal_id": "local-user",
+            "capability_id": "filesystem.read_test_data",
+            "operation_id": "filesystem.read_test_data",
+            "resource_scope": r"D:\\AURA\\workspace",
+            "effect": "allow",
+        }],
+    }
+    path.write_bytes(b"\\xef\\xbb\\xbf" + json.dumps(payload).encode("utf-8"))
+
+    bundle = PolicyBundle.from_json_file(path)
+
+    assert bundle.version == "bom-test-v1"
+    assert len(bundle.rules) == 1
+    assert bundle.rules[0].effect is PolicyEffect.ALLOW
+
