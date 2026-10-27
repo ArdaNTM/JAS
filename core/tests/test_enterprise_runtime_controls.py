@@ -5,8 +5,13 @@ from dataclasses import replace
 import pytest
 
 from aura_core.enterprise.runtime_controls import (
-    BudgetExceeded, CircuitBreaker, CircuitOpenError, CircuitState,
-    ExecutionBudget, HashChainAuditLedger,
+    AuditEvent,
+    BudgetExceeded,
+    CircuitBreaker,
+    CircuitOpenError,
+    CircuitState,
+    ExecutionBudget,
+    HashChainAuditLedger,
 )
 
 
@@ -36,39 +41,69 @@ def test_execution_budget_rejects_negative_limits():
 def test_audit_ledger_is_hash_chained_and_excludes_arbitrary_payloads():
     ledger = HashChainAuditLedger()
     first = ledger.append(
-        principal_id="local-user", action="filesystem.read",
-        resource_scope="test-data", outcome="denied", reason_code="policy_denied",
+        AuditEvent(
+            principal_id="local-user",
+            capability_id="filesystem",
+            operation_id="read",
+            outcome="denied",
+            reason_code="authorization_denied",
+        )
     )
     second = ledger.append(
-        principal_id="local-user", action="filesystem.read",
-        resource_scope="test-data", outcome="allowed", reason_code="policy_allowed",
+        AuditEvent(
+            principal_id="local-user",
+            capability_id="filesystem",
+            operation_id="read",
+            outcome="allowed",
+            reason_code="provider_call_completed",
+        )
     )
     assert first.sequence == 1
     assert second.sequence == 2
     assert second.previous_hash == first.record_hash
     assert ledger.verify()
     assert "arguments" not in first.__dataclass_fields__
+    assert first.resource_scope == "[omitted]"
+    assert "test-data" not in repr(first)
 
 
 def test_audit_ledger_rejects_empty_or_control_character_metadata():
-    ledger = HashChainAuditLedger()
-    with pytest.raises(ValueError):
-        ledger.append(
-            principal_id=" ", action="tool.call", resource_scope="local",
-            outcome="denied", reason_code="invalid",
+    with pytest.raises(ValueError, match="safe audit identifier"):
+        AuditEvent(
+            principal_id=" ",
+            capability_id="tool",
+            operation_id="call",
+            outcome="denied",
+            reason_code="authorization_denied",
         )
-    with pytest.raises(ValueError):
-        ledger.append(
-            principal_id="user\nsecret", action="tool.call", resource_scope="local",
-            outcome="denied", reason_code="invalid",
+    with pytest.raises(ValueError, match="safe audit identifier"):
+        AuditEvent(
+            principal_id="user\nsecret",
+            capability_id="tool",
+            operation_id="call",
+            outcome="denied",
+            reason_code="authorization_denied",
+        )
+    with pytest.raises(ValueError, match="reason_code"):
+        AuditEvent(
+            principal_id="local-user",
+            capability_id="tool",
+            operation_id="call",
+            outcome="denied",
+            reason_code="invalid",
         )
 
 
 def test_audit_ledger_detects_record_tampering():
     ledger = HashChainAuditLedger()
     record = ledger.append(
-        principal_id="local-user", action="tool.call", resource_scope="local",
-        outcome="allowed", reason_code="policy_allowed",
+        AuditEvent(
+            principal_id="local-user",
+            capability_id="tool",
+            operation_id="call",
+            outcome="allowed",
+            reason_code="provider_call_completed",
+        )
     )
     ledger._records[0] = replace(record, outcome="denied")
     assert not ledger.verify()

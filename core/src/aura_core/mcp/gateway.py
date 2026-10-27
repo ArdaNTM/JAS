@@ -10,7 +10,7 @@ from aura_core.kernel.permissions import (
 )
 from aura_core.mcp.mcp_provider import MCPProvider
 from aura_core.mcp.provider import ProviderRegistry
-from aura_core.enterprise.runtime_controls import CircuitBreaker, HashChainAuditLedger
+from aura_core.enterprise.runtime_controls import AuditEvent, CircuitBreaker, HashChainAuditLedger
 
 
 @dataclass(frozen=True, slots=True)
@@ -28,17 +28,19 @@ class MCPGatewayRequest:
 
     def __post_init__(self) -> None:
         for field_name in (
-            "request_id",
-            "principal_id",
-            "capability_id",
-            "operation_id",
-            "resource_scope",
-            "tool_name",
+            "request_id", "principal_id", "capability_id", "operation_id",
+            "resource_scope", "tool_name",
         ):
             if not getattr(self, field_name):
-                raise ValueError(
-                    f"MCP gateway {field_name} is required"
-                )
+                raise ValueError(f"MCP gateway {field_name} is required")
+        # Validate audit identifiers before authorization or provider dispatch.
+        AuditEvent(
+            principal_id=self.principal_id,
+            capability_id=self.capability_id,
+            operation_id=self.operation_id,
+            outcome="denied",
+            reason_code="authorization_denied",
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -71,14 +73,15 @@ class MCPGateway:
     def _audit(self, request: MCPGatewayRequest, *, outcome: str, reason_code: str) -> None:
         if self._audit_ledger is None:
             return
-        # Deliberately metadata-only: never persist arguments, prompts, or results.
-        self._audit_ledger.append(
+        # Allowlist-only event: arguments, results, prompts, exception text,
+        # tool names, and raw resource scopes cannot enter this API.
+        self._audit_ledger.append(AuditEvent(
             principal_id=request.principal_id,
-            action=f"{request.capability_id}.{request.operation_id}",
-            resource_scope=request.resource_scope,
+            capability_id=request.capability_id,
+            operation_id=request.operation_id,
             outcome=outcome,
             reason_code=reason_code,
-        )
+        ))
 
     async def invoke(
         self,
