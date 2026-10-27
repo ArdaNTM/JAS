@@ -9,6 +9,15 @@ from typing import Any, Callable
 
 _request_id_context: ContextVar[str | None] = ContextVar("aura_request_id", default=None)
 
+def _mcp_result_is_error(result: Any) -> bool:
+    """Recognize MCP tool-level errors without trusting result payload as authority."""
+    if isinstance(result, dict):
+        return result.get("isError", result.get("is_error", False)) is True
+    return (
+        getattr(result, "isError", getattr(result, "is_error", False)) is True
+    )
+
+
 from aura_core.kernel.events import EventBus, KernelEvent
 from aura_core.memory.hierarchical_memory import ContextItem
 from aura_core.kernel.permissions import AuthorizationDecision, RiskLevel
@@ -339,6 +348,14 @@ class AgentExecutor:
                 tool_name=step.tool_name, arguments=step.arguments, task_id=task.task_id,
             ))
             if response.decision is AuthorizationDecision.ALLOW:
+                if _mcp_result_is_error(response.result):
+                    return StepResult(
+                        step.step_id,
+                        StepState.FAILED,
+                        attempt,
+                        result=response.result,
+                        reason="MCP tool returned an error result",
+                    )
                 return StepResult(step.step_id, StepState.SUCCEEDED, attempt, response.result)
             return StepResult(step.step_id, StepState.FAILED, attempt, reason=response.reason)
         raise RuntimeError("Unreachable execution state")
