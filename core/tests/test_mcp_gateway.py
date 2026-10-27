@@ -485,3 +485,57 @@ def test_enterprise_policy_bundle_approval_required_prevents_provider_dispatch()
     assert response.decision is AuthorizationDecision.REQUIRE_APPROVAL
     assert "approval_required" in response.reason
     provider.connection.call_tool.assert_not_awaited()
+
+
+
+def test_gateway_denial_audit_is_metadata_only_and_never_dispatches() -> None:
+    base_gateway, permissions, provider = make_gateway()
+    ledger = HashChainAuditLedger()
+    gateway = MCPGateway(
+        base_gateway._capability_registry,
+        base_gateway._provider_registry,
+        permissions,
+        audit_ledger=ledger,
+    )
+    permissions.add_policy(make_policy(AuthorizationDecision.DENY))
+    secret_arguments = {"path": "sensitive/private.txt", "token": "do-not-log"}
+
+    response = asyncio.run(
+        gateway.invoke(make_request(arguments=secret_arguments))
+    )
+
+    assert response.decision is AuthorizationDecision.DENY
+    assert response.result is None
+    provider.connection.call_tool.assert_not_awaited()
+    records = ledger.snapshot()
+    assert len(records) == 1
+    assert records[0].outcome == "denied"
+    assert records[0].reason_code == "authorization_denied"
+    assert "sensitive/private.txt" not in repr(records)
+    assert "do-not-log" not in repr(records)
+    assert ledger.verify()
+
+
+def test_gateway_does_not_treat_sibling_resource_scope_as_authorized() -> None:
+    gateway, permissions, provider = make_gateway()
+    permissions.add_policy(
+        PermissionPolicy(
+            policy_id="aura.policy.workspace-a",
+            policy_version="1.0.0",
+            principal_id="agent:planner",
+            capability_id=CAPABILITY_ID,
+            operation_id=OPERATION_ID,
+            resource_scope=r"D:\\AURA\\workspace-a",
+            authorization_level=AuthorizationLevel.READ,
+            decision=AuthorizationDecision.ALLOW,
+        )
+    )
+
+    response = asyncio.run(
+        gateway.invoke(make_request())
+    )
+
+    assert response.decision is AuthorizationDecision.DENY
+    assert response.result is None
+    assert "No applicable explicit authorization policy" in response.reason
+    provider.connection.call_tool.assert_not_awaited()
