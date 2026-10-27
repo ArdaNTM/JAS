@@ -200,7 +200,12 @@ class MCPGateway:
             AuthorizationDecision.ALLOW,
             AuthorizationDecision.REQUIRE_APPROVAL,
         ):
-            self._audit(request, outcome="denied", reason_code="authorization_not_allowed")
+            reason_code = (
+                "authorization_denied"
+                if authorization.decision is AuthorizationDecision.DENY
+                else "authorization_deferred"
+            )
+            self._audit(request, outcome="denied", reason_code=reason_code)
             return MCPGatewayResponse(
                 decision=authorization.decision,
                 result=None,
