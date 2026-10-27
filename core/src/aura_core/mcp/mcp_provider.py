@@ -11,6 +11,44 @@ class MCPTool:
     input_schema: dict[str, Any]
 
 
+def _extract_input_schema(tool: Any) -> dict[str, Any]:
+    """Read MCP tool schemas across SDK/Pydantic field naming conventions."""
+
+    schema = getattr(tool, "input_schema", None)
+    if schema is None:
+        schema = getattr(tool, "inputSchema", None)
+
+    if schema is None:
+        model_dump = getattr(tool, "model_dump", None)
+        if callable(model_dump):
+            # MCP SDK models may expose aliased JSON fields only in the dump.
+            for by_alias in (True, False):
+                dumped = model_dump(by_alias=by_alias)
+                if isinstance(dumped, dict):
+                    schema = dumped.get("inputSchema", dumped.get("input_schema"))
+                    if schema is not None:
+                        break
+
+    if schema is None:
+        legacy_dict = getattr(tool, "dict", None)
+        if callable(legacy_dict):
+            for by_alias in (True, False):
+                dumped = legacy_dict(by_alias=by_alias)
+                if isinstance(dumped, dict):
+                    schema = dumped.get("inputSchema", dumped.get("input_schema"))
+                    if schema is not None:
+                        break
+
+    if schema is None:
+        return {}
+    if not isinstance(schema, dict):
+        raise RuntimeError(
+            f"MCP tool {getattr(tool, 'name', '<unknown>')!r} returned "
+            f"a non-dictionary input schema: {type(schema).__name__}"
+        )
+    return dict(schema)
+
+
 class MCPProvider:
     """Provider adapter for an MCP server connection."""
 
@@ -44,10 +82,7 @@ class MCPProvider:
             MCPTool(
                 name=tool.name,
                 description=getattr(tool, "description", None),
-                input_schema=dict(
-                    getattr(tool, "inputSchema", {})
-                    or {}
-                ),
+                input_schema=_extract_input_schema(tool),
             )
             for tool in tools
         )
@@ -57,7 +92,7 @@ class MCPProvider:
         name: str,
         arguments: dict[str, Any] | None = None,
     ) -> Any:
-        """Invoke a tool exposed by the MCP server."""
+        """Invoke a tool exposed by an MCP server."""
 
         return await self._connection.call_tool(
             name,
