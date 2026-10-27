@@ -260,6 +260,73 @@ class AgentTaskService:
             failure_code=failure_code,
         )
 
+    def reconcile_workflow(self, task_id: str, *, principal_id: str):
+        """Reconcile workflow metadata from the authoritative task-state ledger.
+
+        This method never starts or resumes runtime execution. It only repairs
+        lifecycle metadata after a partial persistence failure. Ambiguous
+        contradictions are surfaced rather than silently overwriting terminal
+        records.
+        """
+        if self._state_machine is None or self._workflow_store is None:
+            raise RuntimeError("Workflow reconciliation requires both persistent stores")
+
+        task = self._state_machine.get(task_id, principal_id=principal_id)
+        workflow = self._workflow_store.get(task_id)
+        if workflow is None:
+            raise RuntimeError(f"Workflow record missing for task: {task_id}")
+        if workflow.principal_id != principal_id or workflow.task_id != task_id:
+            raise RuntimeError("Workflow identity does not match the requested task")
+
+        target_by_task_state = {
+            TaskState.PENDING: WorkflowStatus.PENDING,
+            TaskState.READY: WorkflowStatus.PENDING,
+            TaskState.RUNNING: WorkflowStatus.RUNNING,
+            TaskState.SUCCEEDED: WorkflowStatus.SUCCEEDED,
+            TaskState.FAILED: WorkflowStatus.FAILED,
+            TaskState.TIMED_OUT: WorkflowStatus.FAILED,
+            TaskState.BLOCKED: WorkflowStatus.FAILED,
+            TaskState.CANCELLED: WorkflowStatus.CANCELLED,
+        }
+        target = target_by_task_state[task.state]
+        if workflow.status is target:
+            return workflow
+
+        terminal = {
+            WorkflowStatus.SUCCEEDED,
+            WorkflowStatus.FAILED,
+            WorkflowStatus.CANCELLED,
+        }
+        if workflow.status in terminal:
+            raise RuntimeError(
+                f"Cannot reconcile terminal workflow {workflow.status.value} "
+                f"against task state {task.state.value}"
+            )
+        if target is WorkflowStatus.PENDING:
+            raise RuntimeError(
+                f"Cannot roll workflow back to pending from {workflow.status.value}"
+            )
+
+        # A task can finish between its RUNNING write and the workflow RUNNING
+        # write. Preserve valid store transitions while repairing that gap.
+        if workflow.status is WorkflowStatus.PENDING and target is WorkflowStatus.SUCCEEDED:
+            workflow = self._workflow_store.transition(
+                task_id, expected_version=workflow.version, target=WorkflowStatus.RUNNING
+            )
+        failure_code = None
+        if target is WorkflowStatus.FAILED:
+            failure_code = (
+                "reconciled_task_timeout" if task.state is TaskState.TIMED_OUT
+                else "reconciled_task_blocked" if task.state is TaskState.BLOCKED
+                else "reconciled_task_failure"
+            )
+        return self._workflow_store.transition(
+            task_id,
+            expected_version=workflow.version,
+            target=target,
+            failure_code=failure_code,
+        )
+
     def _ensure_record(self, submitted: SubmittedTask):
         if self._state_machine is None:
             return None
