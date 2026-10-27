@@ -31,6 +31,9 @@ from aura_core.mcp.gateway import (
     MCPGateway,
     MCPGatewayRequest,
 )
+from aura_core.enterprise.runtime_controls import (
+    CircuitBreaker, CircuitOpenError, CircuitState, HashChainAuditLedger,
+)
 
 
 CAPABILITY_ID = "filesystem.read"
@@ -338,3 +341,56 @@ def test_executor_allows_only_exact_test_data_filename_through_gateway() -> None
     provider.connection.call_tool.assert_awaited_once_with(
         "read_file", {"path": "governor-read-test.txt"}
     )
+
+
+
+def test_executor_enforces_shared_step_budget_before_gateway_dispatch() -> None:
+    gateway, permissions, provider = make_gateway()
+    permissions.add_policy(make_policy(AuthorizationDecision.ALLOW))
+    provider.connection.call_tool.return_value = {"content": [{"type": "text", "text": "ok"}]}
+    task = Task(
+        "task-budget", "agent:planner", "Budget test", RESOURCE_SCOPE,
+        max_steps=1, timeout_seconds=5,
+    )
+    plan = Plan("plan-budget", task.task_id, (
+        PlanStep("step-a", CAPABILITY_ID, OPERATION_ID, "read_file", RiskLevel.LOW),
+        PlanStep("step-b", CAPABILITY_ID, OPERATION_ID, "read_file", RiskLevel.LOW),
+    ))
+
+    result = asyncio.run(AgentExecutor(gateway).execute(task, plan))
+
+    assert result.state is PlanState.FAILED
+    assert sum(step.state.value == "succeeded" for step in result.steps) == 1
+    provider.connection.call_tool.assert_awaited_once()
+
+
+def test_gateway_applies_provider_breaker_and_metadata_only_audit() -> None:
+    base_gateway, permissions, provider = make_gateway()
+    ledger = HashChainAuditLedger()
+    breaker = CircuitBreaker(failure_threshold=1, recovery_seconds=60)
+    gateway = MCPGateway(
+        base_gateway._capability_registry,
+        base_gateway._provider_registry,
+        permissions,
+        circuit_breakers={PROVIDER_ID: breaker},
+        audit_ledger=ledger,
+    )
+    permissions.add_policy(make_policy(AuthorizationDecision.ALLOW))
+    provider.connection.call_tool.side_effect = RuntimeError("sensitive provider detail")
+
+    with pytest.raises(RuntimeError, match="sensitive provider detail"):
+        asyncio.run(gateway.invoke(make_request()))
+
+    assert breaker.state is CircuitState.OPEN
+    records = ledger.snapshot()
+    assert len(records) == 1
+    assert records[0].outcome == "error"
+    assert records[0].reason_code == "provider_call_failed"
+    assert "sensitive provider detail" not in repr(records)
+    assert ledger.verify()
+
+    with pytest.raises(CircuitOpenError):
+        asyncio.run(gateway.invoke(make_request()))
+
+    assert len(ledger.snapshot()) == 2
+    assert ledger.verify()
