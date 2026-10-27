@@ -23,6 +23,7 @@ from aura_core.application.full_duplex_session import (
 )
 from aura_core.application.vision_adapters import DesktopScreenCapture, OllamaVisionProvider
 from aura_core.config.kernel import KernelConfig
+from aura_core.enterprise.policy_bundle import PolicyBundle
 from aura_core.kernel.permissions import (
     AuthorizationDecision,
     AuthorizationLevel,
@@ -58,7 +59,15 @@ class VisualizationPlanService:
 def build_app() -> FastAPI:
     kernel_config = KernelConfig.from_environment()
 
-    kernel = AuraKernel(kernel_config)
+    # Policy configuration is opt-in but fail-closed: if a path is configured,
+    # malformed/unreadable policy must stop startup rather than disable the gate.
+    policy_bundle_path = os.getenv("AURA_POLICY_BUNDLE_PATH", "").strip()
+    policy_bundle = (
+        PolicyBundle.from_json_file(policy_bundle_path)
+        if policy_bundle_path
+        else None
+    )
+    kernel = AuraKernel(kernel_config, policy_bundle=policy_bundle)
     kernel.bootstrap()
 
     if (
