@@ -605,3 +605,87 @@ def test_authorization_matrix_explicit_allow_dispatches_exact_request() -> None:
 
     assert response.decision is AuthorizationDecision.ALLOW
     provider.connection.call_tool.assert_awaited_once_with("read_file", {"path": "approved.txt"})
+
+
+@pytest.mark.parametrize(
+    ("effects", "expected"),
+    [
+        ((PolicyEffect.ALLOW, PolicyEffect.DENY), AuthorizationDecision.DENY),
+        ((PolicyEffect.ALLOW, PolicyEffect.REQUIRE_APPROVAL), AuthorizationDecision.REQUIRE_APPROVAL),
+        (
+            (PolicyEffect.ALLOW, PolicyEffect.REQUIRE_APPROVAL, PolicyEffect.DENY),
+            AuthorizationDecision.DENY,
+        ),
+    ],
+)
+def test_policy_bundle_restrictive_effects_override_allow(
+    effects: tuple[PolicyEffect, ...],
+    expected: AuthorizationDecision,
+) -> None:
+    bundle = PolicyBundle(
+        version="precedence-v1",
+        rules=tuple(
+            PolicyRule(
+                rule_id=f"precedence-{index}-{effect.value}",
+                principal_id="agent:planner",
+                capability_id=CAPABILITY_ID,
+                operation_id=OPERATION_ID,
+                resource_scope=RESOURCE_SCOPE,
+                effect=effect,
+                priority=100 if effect is PolicyEffect.ALLOW else -100,
+            )
+            for index, effect in enumerate(effects)
+        ),
+    )
+    gateway, permissions, provider = make_gateway(policy_bundle=bundle)
+    permissions.add_policy(make_policy(AuthorizationDecision.ALLOW))
+
+    response = asyncio.run(gateway.invoke(make_request()))
+
+    assert response.decision is expected
+    assert response.result is None
+    provider.connection.call_tool.assert_not_awaited()
+
+
+@pytest.mark.parametrize(
+    ("field_name", "wrong_value"),
+    [
+        ("principal_id", "agent:other"),
+        ("capability_id", "filesystem.write"),
+        ("operation_id", "filesystem.write_file"),
+        ("resource_scope", RESOURCE_SCOPE + "-sibling"),
+    ],
+)
+def test_policy_bundle_requires_exact_match_for_every_request_dimension(
+    field_name: str,
+    wrong_value: str,
+) -> None:
+    values = {
+        "principal_id": "agent:planner",
+        "capability_id": CAPABILITY_ID,
+        "operation_id": OPERATION_ID,
+        "resource_scope": RESOURCE_SCOPE,
+    }
+    values[field_name] = wrong_value
+    bundle = PolicyBundle(
+        version="exact-match-v1",
+        rules=(
+            PolicyRule(
+                rule_id=f"exact-match-{field_name}",
+                principal_id=values["principal_id"],
+                capability_id=values["capability_id"],
+                operation_id=values["operation_id"],
+                resource_scope=values["resource_scope"],
+                effect=PolicyEffect.ALLOW,
+            ),
+        ),
+    )
+    gateway, permissions, provider = make_gateway(policy_bundle=bundle)
+    permissions.add_policy(make_policy(AuthorizationDecision.ALLOW))
+
+    response = asyncio.run(gateway.invoke(make_request()))
+
+    assert response.decision is AuthorizationDecision.DENY
+    assert "no_matching_rule" in response.reason
+    assert response.result is None
+    provider.connection.call_tool.assert_not_awaited()
