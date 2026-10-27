@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import asyncio
 
+import pytest
+
 from aura_core.agent.runtime import ExecutionResult, Plan, PlanState, PlanStep, StepResult, StepState, Task
 from aura_core.application.tasks import AgentTaskService, SubmittedTask
-from aura_core.application.task_state_machine import TaskStateMachine
+from aura_core.application.task_state_machine import TaskState, TaskStateMachine
 from aura_core.enterprise.workflow_store import SQLiteWorkflowStore, WorkflowStatus
 from aura_core.kernel.permissions import RiskLevel
 
@@ -71,6 +73,78 @@ def test_task_service_marks_workflow_failed_when_runtime_raises(tmp_path):
     assert record is not None
     assert record.status is WorkflowStatus.FAILED
     assert record.failure_code == "runtime_RuntimeError"
+
+    store.close()
+    state_machine.close()
+
+
+
+def test_reconcile_repairs_terminal_task_with_pending_workflow(tmp_path):
+    state_machine = TaskStateMachine(str(tmp_path / "tasks.sqlite3"))
+    store = SQLiteWorkflowStore(str(tmp_path / "workflows.sqlite3"))
+    state_machine.create_task(
+        principal_id="local-user", task_id="task-reconcile-success", goal="recover"
+    )
+    state_machine.transition(
+        "task-reconcile-success", principal_id="local-user", target=TaskState.RUNNING
+    )
+    state_machine.transition(
+        "task-reconcile-success", principal_id="local-user", target=TaskState.SUCCEEDED,
+        result_summary="completed before workflow metadata was persisted",
+    )
+    store.create(
+        workflow_id="task-reconcile-success",
+        idempotency_key="task-reconcile-success",
+        principal_id="local-user",
+        task_id="task-reconcile-success",
+    )
+    service = AgentTaskService(
+        SuccessfulRuntime(), state_machine=state_machine, workflow_store=store
+    )
+
+    reconciled = service.reconcile_workflow(
+        "task-reconcile-success", principal_id="local-user"
+    )
+
+    assert reconciled.status is WorkflowStatus.SUCCEEDED
+    assert reconciled.version == 3
+    assert service.reconcile_workflow(
+        "task-reconcile-success", principal_id="local-user"
+    ) == reconciled
+
+    store.close()
+    state_machine.close()
+
+
+def test_reconcile_refuses_to_overwrite_terminal_workflow_conflict(tmp_path):
+    state_machine = TaskStateMachine(str(tmp_path / "tasks.sqlite3"))
+    store = SQLiteWorkflowStore(str(tmp_path / "workflows.sqlite3"))
+    state_machine.create_task(
+        principal_id="local-user", task_id="task-reconcile-conflict", goal="recover"
+    )
+    state_machine.transition(
+        "task-reconcile-conflict", principal_id="local-user", target=TaskState.RUNNING
+    )
+    store.create(
+        workflow_id="task-reconcile-conflict",
+        idempotency_key="task-reconcile-conflict",
+        principal_id="local-user",
+        task_id="task-reconcile-conflict",
+    )
+    store.transition(
+        "task-reconcile-conflict", expected_version=1, target=WorkflowStatus.RUNNING
+    )
+    store.transition(
+        "task-reconcile-conflict", expected_version=2, target=WorkflowStatus.SUCCEEDED
+    )
+    service = AgentTaskService(
+        SuccessfulRuntime(), state_machine=state_machine, workflow_store=store
+    )
+
+    with pytest.raises(RuntimeError, match="Cannot reconcile terminal workflow"):
+        service.reconcile_workflow(
+            "task-reconcile-conflict", principal_id="local-user"
+        )
 
     store.close()
     state_machine.close()
