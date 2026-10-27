@@ -62,7 +62,9 @@ async def handle_call_tool(
         )
     try:
         arguments = params.arguments or {}
-        text = read_test_data_file(arguments.get("path"), root=TEST_DATA_ROOT)
+        if not isinstance(arguments, dict) or set(arguments) != {"path"}:
+            raise SafeReadError("read_file accepts exactly one argument: path")
+        text = read_test_data_file(arguments["path"], root=TEST_DATA_ROOT)
         return types.CallToolResult(
             content=[types.TextContent(type="text", text=text)]
         )
