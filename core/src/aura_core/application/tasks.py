@@ -343,6 +343,15 @@ class AgentTaskService:
                 f"Cannot roll workflow back to pending from {workflow.status.value}"
             )
 
+        # A RUNNING task paired with a PENDING workflow is ambiguous: the
+        # task-state write may have succeeded while workflow persistence failed
+        # before runtime dispatch. Reconciliation must not imply that execution
+        # started when the runtime may never have been called.
+        if workflow.status is WorkflowStatus.PENDING and target is WorkflowStatus.RUNNING:
+            raise RuntimeError(
+                "Cannot reconcile RUNNING task with pending workflow; runtime start is ambiguous"
+            )
+
         # A task can finish between its RUNNING write and the workflow RUNNING
         # write. Preserve valid store transitions while repairing that gap.
         if workflow.status is WorkflowStatus.PENDING and target is WorkflowStatus.SUCCEEDED:
