@@ -7,12 +7,14 @@ from aura_core.persistence.s3_object_storage import S3PresignedObjectStorage
 
 
 class URLProvider:
-    def __init__(self, url: str = "https://objects.example.test/bucket/key?signature=temporary") -> None:
+    def __init__(self, url: str = "https://objects.example.test/bucket") -> None:
         self.url = url
         self.operations: list[tuple[str, str]] = []
 
     def url_for(self, operation: str, key: str) -> str:
         self.operations.append((operation, key))
+        if self.url == "https://objects.example.test/bucket":
+            return f"{self.url}/{key}?signature=temporary"
         return self.url
 
 
