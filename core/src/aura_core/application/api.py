@@ -11,7 +11,7 @@ import time
 from time import perf_counter
 from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
+from fastapi import Depends, FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -63,6 +63,7 @@ from aura_core.contracts.ui import UIContractResponse
 from aura_core.kernel.permissions import AuthorizationDecision, AuthorizationRequest, RiskLevel
 from aura_core.kernel.events import KernelEvent
 from aura_core.mcp.gateway import MCPGatewayRequest
+from aura_core.security.http_auth import authenticated_principal
 from aura_core.observability.metrics import RequestMetrics
 from aura_core.runtime.errors import (
     BackendInvalidResponseError,
@@ -1758,12 +1759,15 @@ def create_api(
         return SpeechTranscriptionResponse(text=text, language=detected_language)
 
     @app.post("/api/speech/synthesize", response_model=SpeechSynthesisResponse)
-    async def synthesize_speech(request: SpeechSynthesisRequest) -> SpeechSynthesisResponse:
+    async def synthesize_speech(
+        request: SpeechSynthesisRequest,
+        principal_id: str = Depends(authenticated_principal),
+    ) -> SpeechSynthesisResponse:
         gateway = getattr(app.state, "mcp_gateway", None)
         if gateway is None:
             raise HTTPException(status_code=503, detail="Local speech provider is unavailable")
         response = await gateway.invoke(MCPGatewayRequest(
-            request_id=f"speech:{uuid4()}", principal_id="local_owner",
+            request_id=f"speech:{uuid4()}", principal_id=principal_id,
             capability_id="speech.synthesize", operation_id="speech.synthesize",
             resource_scope="local_default", risk_level=RiskLevel.LOW,
             tool_name="synthesize", arguments={"text": request.text, "voice": request.voice},
@@ -1824,6 +1828,7 @@ def create_api(
     async def submit_task(
         request: TaskRequest,
         http_request: Request,
+        principal_id: str = Depends(authenticated_principal),
     ) -> TaskResponse:
 
         if task_service is None:
@@ -1834,7 +1839,7 @@ def create_api(
 
         task = Task(
             request.task_id,
-            "local_owner",
+            principal_id,
             request.title,
             "local_default",
         )
@@ -1891,7 +1896,10 @@ def create_api(
         "/api/tasks/{task_id}",
         response_model=TaskResponse,
     )
-    def task_status(task_id: str) -> TaskResponse:
+    def task_status(
+        task_id: str,
+        principal_id: str = Depends(authenticated_principal),
+    ) -> TaskResponse:
 
         if task_service is None:
             raise HTTPException(
@@ -1900,7 +1908,7 @@ def create_api(
             )
 
         try:
-            result = task_service.get_for_owner(task_id, "local_owner")
+            result = task_service.get_for_owner(task_id, principal_id)
         except KeyError as exc:
             raise HTTPException(
                 status_code=404,
