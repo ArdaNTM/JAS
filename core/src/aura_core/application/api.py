@@ -928,6 +928,7 @@ def create_api(
     async def reasoning_execute(
         request: ReasoningExecuteRequest,
         http_request: Request,
+        principal_id: str = Depends(authenticated_principal),
     ) -> dict[str, object]:
         """Execute the allow-listed research step through AgentTaskService/Gateway."""
         if task_service is None:
@@ -966,7 +967,7 @@ def create_api(
         def make_task(_attempt: int) -> Task:
             return Task(
                 task_id=f"reasoning:{uuid4()}",
-                principal_id="local_owner",
+                principal_id=principal_id,
                 title=request.directive[:160],
                 resource_scope="public-web",
                 max_steps=1,
@@ -1124,6 +1125,7 @@ def create_api(
         proposal_id: str,
         request: CapabilityApprovalRequest,
         http_request: Request,
+        principal_id: str = Depends(authenticated_principal),
     ) -> dict[str, object]:
         host = http_request.client.host if http_request.client else ""
         if host not in {"127.0.0.1", "::1", "localhost", "testclient"}:
@@ -1459,6 +1461,7 @@ def create_api(
     def run_isolated_python_draft(
         body: AutonomyPythonRequest,
         http_request: Request,
+        principal_id: str = Depends(authenticated_principal),
     ) -> dict[str, object]:
         """Run a Python draft only after explicit Permission Engine authorization."""
         require_local_client(http_request)
@@ -1470,7 +1473,7 @@ def create_api(
         request_id = f"authorize:{task_id}"
         authorization = AuthorizationRequest(
             request_id=request_id,
-            principal_id="local_owner",
+            principal_id=principal_id,
             capability_id="sandbox.python.execute",
             operation_id="sandbox.python.execute",
             resource_scope="local-sandbox",
@@ -1486,7 +1489,7 @@ def create_api(
 
         job = SandboxJob(
             job_id=task_id,
-            principal_id="local_owner",
+            principal_id=principal_id,
             runner="docker",
             source=body.source,
             input_json=json.dumps(body.data, ensure_ascii=False, allow_nan=False),
@@ -1496,7 +1499,7 @@ def create_api(
             result = run_python_draft(
                 job,
                 authorize=lambda candidate: (
-                    candidate.principal_id == "local_owner"
+                    candidate.principal_id == principal_id
                     and candidate.job_id == task_id
                     and candidate.authorization_id == (decision.policy_id or request_id)
                 ),
@@ -1524,6 +1527,7 @@ def create_api(
     async def run_model_backed_reflexion(
         body: ReflexionExperimentRequest,
         http_request: Request,
+        principal_id: str = Depends(authenticated_principal),
     ) -> dict[str, object]:
         """Run a bounded, local-only model-revised experiment through the Permission Engine."""
         require_local_client(http_request)
@@ -1531,7 +1535,6 @@ def create_api(
         if permission_engine is None:
             raise HTTPException(status_code=503, detail="Permission Engine is unavailable")
 
-        principal_id = "local_owner"
         experiment_id = f"reflexion:{uuid4()}"
         try:
             input_json = json.dumps(body.input_data, ensure_ascii=False, allow_nan=False)
