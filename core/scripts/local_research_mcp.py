@@ -7,6 +7,7 @@ import traceback
 from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, quote_plus, urljoin, urlparse
+import urllib.request
 
 
 SERVER_PATH = Path(__file__).resolve()
@@ -340,6 +341,33 @@ def rank_results(
 # FETCH
 # ============================================================
 
+def _fetch_with_urllib(
+    url: str,
+    headers: dict[str, str],
+) -> tuple[str, int, str, str]:
+    """Fallback for servers whose HTTP framing httpx/httpcore rejects.
+
+    Keep the fallback narrowly scoped to RemoteProtocolError; ordinary HTTP
+    status errors and other transport failures should retain their normal
+    error behavior.
+    """
+    request = urllib.request.Request(url, headers=headers)
+
+    with urllib.request.urlopen(request, timeout=30.0) as response:
+        raw_content = response.read()
+        response_headers = response.headers
+        content_type = response_headers.get("content-type", "")
+        get_charset = getattr(response_headers, "get_content_charset", None)
+        charset = get_charset() if callable(get_charset) else None
+        text = raw_content.decode(charset or "utf-8", errors="replace")
+        return (
+            str(response.geturl()),
+            int(response.status),
+            content_type,
+            text,
+        )
+
+
 async def perform_fetch(
     url: str,
 ) -> dict[str, Any]:
@@ -364,24 +392,28 @@ async def perform_fetch(
         )
     }
 
-    async with httpx.AsyncClient(
-        timeout=30.0,
-        follow_redirects=True,
-        headers=headers,
-    ) as client:
-
-        response = await client.get(url)
-
-        response.raise_for_status()
-
-        content_type = (
-            response.headers.get(
-                "content-type",
-                "",
-            )
+    try:
+        async with httpx.AsyncClient(
+            timeout=30.0,
+            follow_redirects=True,
+            headers=headers,
+        ) as client:
+            response = await client.get(url)
+            response.raise_for_status()
+            content_type = response.headers.get("content-type", "")
+            text = response.text
+            final_url = str(response.url)
+            status_code = response.status_code
+    except httpx.RemoteProtocolError as exc:
+        debug(
+            "FETCH httpx protocol error; retrying with urllib fallback: "
+            f"{exc}"
         )
-
-        text = response.text
+        final_url, status_code, content_type, text = await asyncio.to_thread(
+            _fetch_with_urllib,
+            url,
+            headers,
+        )
 
     max_chars = 50000
 
@@ -389,14 +421,14 @@ async def perform_fetch(
         text = text[:max_chars]
 
     debug(
-        f"FETCH status={response.status_code} "
+        f"FETCH status={status_code} "
         f"content_type={content_type!r} "
         f"chars={len(text)}"
     )
 
     return {
-        "url": str(response.url),
-        "status_code": response.status_code,
+        "url": final_url,
+        "status_code": status_code,
         "content_type": content_type,
         "content": text,
     }
