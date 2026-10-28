@@ -41,7 +41,7 @@ def test_postgresql_stores_enforce_scope_lifecycle_and_one_time_approval():
             assert succeeded.status is WorkflowStatus.SUCCEEDED
             assert (await workflow.get(task_id)).principal_id == principal
 
-            remembered = await memory.remember(principal_id=principal, kind="episodic", content=f"private remote memory marker {suffix}", tags=["ci", "remote"], source_task_id=task_id, importance=4)
+            remembered = await memory.remember(principal_id=principal, kind="episode", content=f"private remote memory marker {suffix}", tags=["ci", "remote"], source_task_id=task_id, importance=4)
             assert remembered.principal_id == principal
             assert await memory.count(principal_id=principal) >= 1
             assert await memory.count(principal_id=other_principal) == 0
