@@ -1861,7 +1861,7 @@ def create_api(
             request.task_id,
             principal_id,
             request.title,
-            "local_default",
+            request.resource_scope,
         )
 
         plan = Plan(
