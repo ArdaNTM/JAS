@@ -48,7 +48,9 @@ def client(decision: AuthorizationDecision) -> TestClient:
     gateway = MCPGateway(capabilities, providers, permissions)
     runtime = CapabilityAgentRuntime(AgentExecutor(gateway, bus), ToolDiscoveryService(capabilities, tools, bus), ToolSelectionService(), bus)
     app = create_api(RuntimeConfig(model="test"), BackendConfig(endpoint="http://test", timeout=1), Transport(), AgentTaskService(runtime))
-    return TestClient(app)
+    app.state.http_bearer_token = "t" * 40
+    app.state.http_principal_id = "local_owner"
+    return TestClient(app, headers={"Authorization": "Bearer " + "t" * 40})
 
 
 def payload():
