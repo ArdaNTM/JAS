@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import inspect
-from dataclasses import dataclass, replace
+from dataclasses import asdict, dataclass, replace
 from typing import Protocol
 
 from aura_core.agent.runtime import ExecutionResult, Plan, PlanState, Task, _request_id_context
@@ -36,11 +36,13 @@ class AgentTaskService:
         memory: TaskMemoryCoordinator | None = None,
         state_machine: TaskStateMachine | None = None,
         workflow_store: SQLiteWorkflowStore | None = None,
+        checkpoint_artifacts=None,
     ) -> None:
         self._runtime = runtime
         self._memory = memory
         self._state_machine = state_machine
         self._workflow_store = workflow_store
+        self._checkpoint_artifacts = checkpoint_artifacts
         self._results: dict[str, ExecutionResult] = {}
         self._owners: dict[str, str] = {}
         self._task_locks: dict[str, asyncio.Lock] = {}
@@ -50,7 +52,7 @@ class AgentTaskService:
         """Submit one task; dependency-blocked tasks must be submitted via submit_chain."""
         self._validate_submission(submitted)
         if self._state_machine is not None:
-            record = self._ensure_record(submitted)
+            record = await self._ensure_record(submitted)
             if record.state == TaskState.PENDING:
                 raise RuntimeError("Task dependencies are not yet succeeded; use submit_chain()")
         return await self._execute_submitted(submitted)
@@ -75,21 +77,21 @@ class AgentTaskService:
             unknown_later = set(item.dependencies) & (known_ids - prepared - {item.task.task_id})
             if unknown_later:
                 raise ValueError("Task chain must be ordered before its dependents")
-            self._ensure_record(item)
+            await self._ensure_record(item)
             prepared.add(item.task.task_id)
         results: list[ExecutionResult] = []
         for item in chain:
-            record = self._state_machine.get(item.task.task_id, principal_id=item.task.principal_id)
+            record = await self._invoke(self._state_machine.get, item.task.task_id, principal_id=item.task.principal_id)
             if record.state == TaskState.PENDING:
                 raise RuntimeError(f"Task dependencies are not yet succeeded: {item.task.task_id}")
             results.append(await self._execute_submitted(item))
         return tuple(results)
 
-    def cancel(self, task_id: str, *, principal_id: str) -> None:
+    async def cancel(self, task_id: str, *, principal_id: str) -> None:
         """Request cancellation only within the task owner's scope."""
         if self._state_machine is None:
             raise RuntimeError("Cancellation requires a persistent TaskStateMachine")
-        self._state_machine.request_cancel(task_id, principal_id=principal_id)
+        await self._invoke(self._state_machine.request_cancel, task_id, principal_id=principal_id)
         event = self._cancel_events.get(task_id)
         if event is not None:
             event.set()
@@ -101,17 +103,17 @@ class AgentTaskService:
             if task_id in self._results:
                 raise ValueError(f"Task already submitted: {task_id}")
             task = submitted.task
-            self._ensure_workflow(submitted)
+            await self._ensure_workflow(submitted)
             record = None
             if self._state_machine is not None:
-                record = self._ensure_record(submitted)
+                record = await self._ensure_record(submitted)
                 if record.state != TaskState.READY:
                     raise RuntimeError(f"Task is not ready for execution: {record.state.value}")
-                record = self._state_machine.transition(
+                record = await self._invoke(self._state_machine.transition,
                     task_id, principal_id=task.principal_id, target=TaskState.RUNNING
                 )
             try:
-                self._transition_workflow(task_id, WorkflowStatus.RUNNING)
+                await self._transition_workflow(task_id, WorkflowStatus.RUNNING)
             except Exception:
                 # Do not start runtime work unless both independent lifecycle
                 # stores confirm the RUNNING transition. If workflow persistence
@@ -121,11 +123,11 @@ class AgentTaskService:
                 # workflow from the terminal task record later.
                 if self._state_machine is not None:
                     try:
-                        current = self._state_machine.get(
+                        current = await self._invoke(self._state_machine.get,
                             task_id, principal_id=task.principal_id
                         )
                         if current.state is TaskState.RUNNING:
-                            current = self._state_machine.transition(
+                            current = await self._invoke(self._state_machine.transition,
                                 task_id,
                                 principal_id=task.principal_id,
                                 target=TaskState.FAILED,
@@ -133,7 +135,7 @@ class AgentTaskService:
                             )
                         if current.state is TaskState.FAILED:
                             try:
-                                self._transition_workflow(
+                                await self._transition_workflow(
                                     task_id,
                                     WorkflowStatus.FAILED,
                                     failure_code="workflow_start_persistence_failed",
@@ -151,27 +153,30 @@ class AgentTaskService:
             self._cancel_events[task_id] = cancel_event
             memory_started = False
             if self._memory is not None:
-                context = self._memory.begin(
+                context = await self._invoke(
+                    self._memory.begin,
                     principal_id=task.principal_id, task_id=task.task_id, goal=task.title
                 )
                 task = replace(task, memory_context=context)
                 memory_started = True
+                if self._checkpoint_artifacts is not None:
+                    await self._checkpoint_artifacts.save(
+                        principal_id=task.principal_id, task_id=task.task_id,
+                        checkpoint={
+                            "schema_version": 1, "state": "running",
+                            "context": [asdict(item) for item in context],
+                        },
+                    )
 
             def cancelled() -> bool:
                 if cancel_event.is_set():
                     return True
                 if self._state_machine is None:
                     return False
-                try:
-                    current = self._state_machine.get(task_id, principal_id=task.principal_id)
-                    if current.cancellation_requested:
-                        cancel_event.set()
-                        return True
-                    return current.state in {TaskState.CANCELLED, TaskState.TIMED_OUT}
-                except KeyError:
-                    return True
+                return False  # Async-store cancellation is observed by the watcher.
 
             token = _request_id_context.set(submitted.request_id)
+            cancellation_watcher = asyncio.create_task(self._watch_cancellation(task_id, task.principal_id, cancel_event)) if self._state_machine is not None else None
             try:
                 execute_method = self._runtime.execute
                 if "cancelled" in inspect.signature(execute_method).parameters:
@@ -181,40 +186,47 @@ class AgentTaskService:
                 result = await asyncio.wait_for(execution, timeout=task.timeout_seconds)
             except asyncio.TimeoutError:
                 if self._state_machine is not None:
-                    self._state_machine.transition(
+                    await self._invoke(self._state_machine.transition,
                         task_id, principal_id=task.principal_id, target=TaskState.TIMED_OUT,
                         error="Execution deadline exceeded",
                     )
-                self._transition_workflow(task_id, WorkflowStatus.FAILED, failure_code="execution_timeout")
+                await self._transition_workflow(task_id, WorkflowStatus.FAILED, failure_code="execution_timeout")
                 raise
             except asyncio.CancelledError:
                 target = TaskState.FAILED
                 if self._state_machine is not None:
-                    current = self._state_machine.get(task_id, principal_id=task.principal_id)
+                    current = await self._invoke(self._state_machine.get, task_id, principal_id=task.principal_id)
                     if current.state == TaskState.RUNNING:
                         target = TaskState.CANCELLED if current.cancellation_requested else TaskState.FAILED
-                        self._state_machine.transition(task_id, principal_id=task.principal_id, target=target)
+                        await self._invoke(self._state_machine.transition, task_id, principal_id=task.principal_id, target=target)
                 if target is TaskState.CANCELLED:
-                    self._transition_workflow(task_id, WorkflowStatus.CANCELLED)
+                    await self._transition_workflow(task_id, WorkflowStatus.CANCELLED)
                 else:
-                    self._transition_workflow(task_id, WorkflowStatus.FAILED, failure_code="execution_cancelled")
+                    await self._transition_workflow(task_id, WorkflowStatus.FAILED, failure_code="execution_cancelled")
                 raise
             except BaseException as exc:
                 if self._state_machine is not None:
-                    current = self._state_machine.get(task_id, principal_id=task.principal_id)
+                    current = await self._invoke(self._state_machine.get, task_id, principal_id=task.principal_id)
                     if current.state == TaskState.RUNNING:
-                        self._state_machine.transition(
+                        await self._invoke(self._state_machine.transition,
                             task_id, principal_id=task.principal_id, target=TaskState.FAILED,
                             error=f"Runtime raised {type(exc).__name__}",
                         )
-                self._transition_workflow(task_id, WorkflowStatus.FAILED, failure_code=f"runtime_{type(exc).__name__}"[:128])
+                await self._transition_workflow(task_id, WorkflowStatus.FAILED, failure_code=f"runtime_{type(exc).__name__}"[:128])
                 if memory_started and self._memory is not None:
-                    self._memory.finish(
+                    await self._invoke(
+                        self._memory.finish,
                         principal_id=task.principal_id, task_id=task.task_id,
                         state="failed", summary="Task runtime raised an exception.",
                     )
                 raise
             finally:
+                if cancellation_watcher is not None:
+                    cancellation_watcher.cancel()
+                    try:
+                        await cancellation_watcher
+                    except asyncio.CancelledError:
+                        pass
                 _request_id_context.reset(token)
                 self._cancel_events.pop(task_id, None)
 
@@ -225,7 +237,7 @@ class AgentTaskService:
                 else TaskState.FAILED
             )
             if self._state_machine is not None:
-                current = self._state_machine.get(task_id, principal_id=task.principal_id)
+                current = await self._invoke(self._state_machine.get, task_id, principal_id=task.principal_id)
                 if current.state == TaskState.RUNNING:
                     if current.cancellation_requested or result.state is PlanState.CANCELLED:
                         target = TaskState.CANCELLED
@@ -237,24 +249,25 @@ class AgentTaskService:
                         f"{step.step_id}:{getattr(step.state, 'value', step.state)}"
                         for step in result.steps
                     )[:4000]
-                    self._state_machine.transition(
+                    await self._invoke(self._state_machine.transition,
                         task_id, principal_id=task.principal_id, target=target,
                         result_summary=summary,
                         error=summary if target == TaskState.FAILED else None,
                     )
             if target is TaskState.SUCCEEDED:
-                self._transition_workflow(task_id, WorkflowStatus.SUCCEEDED)
+                await self._transition_workflow(task_id, WorkflowStatus.SUCCEEDED)
             elif target is TaskState.CANCELLED:
-                self._transition_workflow(task_id, WorkflowStatus.CANCELLED)
+                await self._transition_workflow(task_id, WorkflowStatus.CANCELLED)
             else:
-                self._transition_workflow(task_id, WorkflowStatus.FAILED, failure_code="task_execution_failed")
+                await self._transition_workflow(task_id, WorkflowStatus.FAILED, failure_code="task_execution_failed")
             if memory_started and self._memory is not None:
                 memory_state = result_state if result_state in {"succeeded", "failed", "cancelled"} else "failed"
                 summary = "; ".join(
                     f"{step.step_id}:{getattr(step.state, 'value', step.state)}"
                     for step in result.steps
                 )[:4000]
-                self._memory.finish(
+                await self._invoke(
+                    self._memory.finish,
                     principal_id=task.principal_id, task_id=task.task_id,
                     state=memory_state, summary=summary,
                 )
@@ -262,19 +275,40 @@ class AgentTaskService:
             self._owners[task_id] = submitted.task.principal_id
             return result
 
-    def _ensure_workflow(self, submitted: SubmittedTask) -> None:
+    @staticmethod
+    async def _invoke(method, *args, **kwargs):
+        """Support synchronous test adapters and awaitable production stores."""
+        result = method(*args, **kwargs)
+        return await result if inspect.isawaitable(result) else result
+
+    async def _watch_cancellation(self, task_id: str, principal_id: str, event: asyncio.Event) -> None:
+        """Observe cancellation requests persisted by another worker."""
+        while not event.is_set():
+            try:
+                record = await self._invoke(self._state_machine.get, task_id, principal_id=principal_id)
+                if record.cancellation_requested or record.state in {TaskState.CANCELLED, TaskState.TIMED_OUT, TaskState.FAILED}:
+                    event.set()
+                    return
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                event.set()
+                return
+            await asyncio.sleep(0.05)
+
+    async def _ensure_workflow(self, submitted: SubmittedTask) -> None:
         """Create the payload-minimizing workflow envelope before execution."""
         if self._workflow_store is None:
             return
         task = submitted.task
-        self._workflow_store.create(
+        await self._invoke(self._workflow_store.create,
             workflow_id=task.task_id,
             idempotency_key=task.task_id,
             principal_id=task.principal_id,
             task_id=task.task_id,
         )
 
-    def _transition_workflow(
+    async def _transition_workflow(
         self,
         workflow_id: str,
         target: WorkflowStatus,
@@ -284,19 +318,19 @@ class AgentTaskService:
         """Persist lifecycle changes using the store's optimistic version guard."""
         if self._workflow_store is None:
             return
-        record = self._workflow_store.get(workflow_id)
+        record = await self._invoke(self._workflow_store.get, workflow_id)
         if record is None:
             raise RuntimeError(f"Workflow record missing for task: {workflow_id}")
         if record.status is target:
             return
-        self._workflow_store.transition(
+        await self._invoke(self._workflow_store.transition,
             workflow_id,
             expected_version=record.version,
             target=target,
             failure_code=failure_code,
         )
 
-    def reconcile_workflow(self, task_id: str, *, principal_id: str):
+    async def reconcile_workflow(self, task_id: str, *, principal_id: str):
         """Reconcile workflow metadata from the authoritative task-state ledger.
 
         This method never starts or resumes runtime execution. It only repairs
@@ -307,8 +341,8 @@ class AgentTaskService:
         if self._state_machine is None or self._workflow_store is None:
             raise RuntimeError("Workflow reconciliation requires both persistent stores")
 
-        task = self._state_machine.get(task_id, principal_id=principal_id)
-        workflow = self._workflow_store.get(task_id)
+        task = await self._invoke(self._state_machine.get, task_id, principal_id=principal_id)
+        workflow = await self._invoke(self._workflow_store.get, task_id)
         if workflow is None:
             raise RuntimeError(f"Workflow record missing for task: {task_id}")
         if workflow.principal_id != principal_id or workflow.task_id != task_id:
@@ -355,7 +389,7 @@ class AgentTaskService:
         # A task can finish between its RUNNING write and the workflow RUNNING
         # write. Preserve valid store transitions while repairing that gap.
         if workflow.status is WorkflowStatus.PENDING and target is WorkflowStatus.SUCCEEDED:
-            workflow = self._workflow_store.transition(
+            workflow = await self._invoke(self._workflow_store.transition,
                 task_id, expected_version=workflow.version, target=WorkflowStatus.RUNNING
             )
         failure_code = None
@@ -365,24 +399,24 @@ class AgentTaskService:
                 else "reconciled_task_blocked" if task.state is TaskState.BLOCKED
                 else "reconciled_task_failure"
             )
-        return self._workflow_store.transition(
+        return await self._invoke(self._workflow_store.transition,
             task_id,
             expected_version=workflow.version,
             target=target,
             failure_code=failure_code,
         )
 
-    def _ensure_record(self, submitted: SubmittedTask):
+    async def _ensure_record(self, submitted: SubmittedTask):
         if self._state_machine is None:
             return None
         task = submitted.task
         try:
-            record = self._state_machine.get(task.task_id, principal_id=task.principal_id)
+            record = await self._invoke(self._state_machine.get, task.task_id, principal_id=task.principal_id)
             if record.dependencies != tuple(submitted.dependencies):
                 raise ValueError("Submitted dependencies do not match persisted task record")
             return record
         except KeyError:
-            return self._state_machine.create_task(
+            return await self._invoke(self._state_machine.create_task,
                 principal_id=task.principal_id,
                 task_id=task.task_id,
                 goal=task.title,

@@ -101,7 +101,7 @@ def test_cooperative_cancel_stops_runtime_and_persists_state(tmp_path):
                     break
             except KeyError:
                 pass
-        service.cancel("cancel-me", principal_id="principal:test")
+        await service.cancel("cancel-me", principal_id="principal:test")
         result = await running
         assert result.state == PlanState.CANCELLED
         assert machine.get("cancel-me", principal_id="principal:test").state == TaskState.CANCELLED
@@ -134,4 +134,35 @@ def test_compensation_is_explicit_and_gateway_authorized():
         assert gateway.requests[0].tool_name == "delete_file"
         assert results[0].state is StepState.FAILED
         assert results[0].reason == "permission denied"
+    asyncio.run(scenario())
+
+
+
+def test_agent_task_service_awaits_async_task_state_store(tmp_path):
+    class AsyncStateStore:
+        def __init__(self, path):
+            self.inner = TaskStateMachine(path)
+        async def get(self, *args, **kwargs):
+            await asyncio.sleep(0)
+            return self.inner.get(*args, **kwargs)
+        async def create_task(self, *args, **kwargs):
+            await asyncio.sleep(0)
+            return self.inner.create_task(*args, **kwargs)
+        async def transition(self, *args, **kwargs):
+            await asyncio.sleep(0)
+            return self.inner.transition(*args, **kwargs)
+        async def request_cancel(self, *args, **kwargs):
+            await asyncio.sleep(0)
+            return self.inner.request_cancel(*args, **kwargs)
+        def close(self):
+            self.inner.close()
+
+    async def scenario():
+        store = AsyncStateStore(tmp_path / "async-store.sqlite3")
+        runtime = OrderedRuntime()
+        service = AgentTaskService(runtime, state_machine=store)
+        result = await service.submit(SubmittedTask(make_task("async-task"), make_plan("async-task")))
+        assert result.state is PlanState.SUCCEEDED
+        assert (await store.get("async-task", principal_id="principal:test")).state is TaskState.SUCCEEDED
+        store.close()
     asyncio.run(scenario())
