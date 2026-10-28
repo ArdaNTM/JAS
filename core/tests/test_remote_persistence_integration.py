@@ -69,21 +69,29 @@ def test_minio_s3_compatible_service_round_trip_and_delete():
     minio = pytest.importorskip("minio")
     from minio import Minio
     from io import BytesIO
+    from urllib.request import urlopen
+    from aura_core.storage.s3_object_storage import S3ObjectStorage
 
     client = Minio(os.environ.get("AURA_TEST_S3_ENDPOINT", "127.0.0.1:4566"), access_key=os.environ.get("AURA_TEST_S3_ACCESS_KEY", "test"), secret_key=os.environ.get("AURA_TEST_S3_SECRET_KEY", "minioadmin"), secure=False)
     bucket = f"aura-ci-{uuid4().hex[:20]}"
     payload = f"remote-object-{uuid4().hex}".encode()
     key = "integration/checkpoint.bin"
+    adapter = S3ObjectStorage(endpoint_url=f"http://{os.environ.get(\"AURA_TEST_S3_ENDPOINT\", \"127.0.0.1:9000\")}", bucket=bucket, access_key=os.environ.get("AURA_TEST_S3_ACCESS_KEY", "minioadmin"), secret_key=os.environ.get("AURA_TEST_S3_SECRET_KEY", "minioadmin"), region="us-east-1")
     try:
         client.make_bucket(bucket)
-        client.put_object(bucket, key, BytesIO(payload), length=len(payload))
+        adapter.put_bytes(key, payload, content_type="application/octet-stream")
+        assert adapter.get_bytes(key) == payload
+        signed_url = adapter.create_presigned_get_url(key, expires_in=60)
+        with urlopen(signed_url, timeout=5) as signed_response:
+            assert signed_response.status == 200
+            assert signed_response.read() == payload
         result = client.get_object(bucket, key)
         try:
             assert result.read() == payload
         finally:
             result.close()
             result.release_conn()
-        client.remove_object(bucket, key)
+        adapter.delete(key)
         assert not any(obj.object_name == key for obj in client.list_objects(bucket))
     finally:
         if client.bucket_exists(bucket):
