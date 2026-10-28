@@ -24,12 +24,11 @@ def test_proactive_suggestions_api_starts_empty_and_is_read_only():
     assert response.json() == {"suggestions": []}
 
 
-def test_capability_proposals_api_requires_bearer_auth_and_starts_empty(monkeypatch):
+def test_capability_proposals_api_requires_bearer_auth_and_starts_empty():
     token = "test-capability-proposals-token-123456"
-    monkeypatch.setenv("AURA_API_BEARER_TOKEN", token)
-    monkeypatch.setenv("AURA_API_PRINCIPAL_ID", "local_owner")
-
     client = _client()
+    client.app.state.http_bearer_token = token
+    client.app.state.http_principal_id = "local_owner"
 
     unauthenticated = client.get("/api/capabilities/proposals")
     assert unauthenticated.status_code == 401
