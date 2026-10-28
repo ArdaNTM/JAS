@@ -286,14 +286,19 @@ class MCPGateway:
                     outcome="error",
                 )
 
-        provider = self._provider_registry.resolve(
-            capability.definition.provider_id
-        )
-
-        if not isinstance(provider, MCPProvider):
-            raise TypeError(
-                "Resolved provider is not an MCPProvider"
+        try:
+            provider = self._provider_registry.resolve(
+                capability.definition.provider_id
             )
+            if not isinstance(provider, MCPProvider):
+                raise TypeError("Resolved provider is not an MCPProvider")
+        except Exception:
+            self._audit(
+                request,
+                outcome="error",
+                reason_code="provider_resolution_failed",
+            )
+            raise
 
         breaker = self._circuit_breakers.get(capability.definition.provider_id)
         try:
@@ -304,7 +309,13 @@ class MCPGateway:
                     lambda: provider.call_tool(request.tool_name, request.arguments)
                 )
         except Exception:
-            self._audit(request, outcome="error", reason_code="provider_call_failed")
+            # A transport error can happen after a provider performed the side
+            # effect. Record UNKNOWN rather than implying the tool did not run.
+            self._audit(
+                request,
+                outcome="unknown",
+                reason_code="provider_dispatch_outcome_unknown",
+            )
             raise
 
         self._audit(request, outcome="allowed", reason_code="provider_call_completed")
