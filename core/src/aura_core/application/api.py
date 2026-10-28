@@ -1204,6 +1204,7 @@ def create_api(
     async def assistant_respond(
         request: AssistantRespondRequest,
         http_request: Request,
+        principal_id: str = Depends(authenticated_principal),
     ) -> AssistantRespondResponse:
         app.state.last_user_activity = time.monotonic()
 
@@ -1242,7 +1243,7 @@ def create_api(
             try:
                 memories = await app.state.async_work.run_async(
                     lambda: app.state.chat_memory.recall(
-                        scope="local_default",
+                        scope=principal_id,
                         query=request.message,
                     )
                 )
@@ -1255,7 +1256,7 @@ def create_api(
                     app.state.episodic_memory = episodic_store
                 episodic_records = await app.state.async_work.run(
                     lambda: episodic_store.recall_related(
-                        principal_id="local_default",
+                        principal_id=principal_id,
                         query=request.message,
                         limit=5,
                     )
@@ -1350,7 +1351,7 @@ def create_api(
             try:
                 await app.state.async_work.run_async(
                     lambda: app.state.chat_memory.remember(
-                        scope="local_default",
+                        scope=principal_id,
                         content=(
                             "User: "
                             + request.message
@@ -1367,7 +1368,7 @@ def create_api(
                     app.state.episodic_memory = episodic_store
                 await app.state.async_work.run(
                     lambda: episodic_store.remember(
-                        principal_id="local_default",
+                        principal_id=principal_id,
                         kind="episode",
                         content=("User: " + request.message + "\nAssistant: " + assistant_reply)[:8000],
                         tags=("conversation",),
@@ -1390,7 +1391,11 @@ def create_api(
 
 
     @app.post("/api/autonomy/plan/validate")
-    def validate_autonomy_plan(body: AutonomyPlanRequest, http_request: Request) -> dict[str, object]:
+    def validate_autonomy_plan(
+        body: AutonomyPlanRequest,
+        http_request: Request,
+        principal_id: str = Depends(authenticated_principal),
+    ) -> dict[str, object]:
         """Validate a bounded task graph without scheduling or executing its steps."""
         require_local_client(http_request)
         nodes = [
@@ -1439,6 +1444,7 @@ def create_api(
     def run_safe_autonomy_experiment(
         body: AutonomyExperimentRequest,
         http_request: Request,
+        principal_id: str = Depends(authenticated_principal),
     ) -> dict[str, object]:
         """Evaluate a restricted pure expression; never execute arbitrary code."""
         require_local_client(http_request)
@@ -1633,7 +1639,10 @@ def create_api(
         }
 
     @app.get("/api/background-thinking/status")
-    def background_thinking_status(http_request: Request) -> dict[str, object]:
+    def background_thinking_status(
+        http_request: Request,
+        principal_id: str = Depends(authenticated_principal),
+    ) -> dict[str, object]:
         require_local_client(http_request)
         reflection = app.state.background_thinking
         return reflection.status() if reflection is not None else {
@@ -1643,7 +1652,11 @@ def create_api(
         }
 
     @app.get("/api/background-thinking/proposals")
-    def background_thinking_proposals(http_request: Request, limit: int = 20) -> dict[str, object]:
+    def background_thinking_proposals(
+        http_request: Request,
+        limit: int = 20,
+        principal_id: str = Depends(authenticated_principal),
+    ) -> dict[str, object]:
         require_local_client(http_request)
         bounded_limit = max(1, min(limit, 50))
         reflection = app.state.background_thinking
@@ -1656,6 +1669,7 @@ def create_api(
     async def transcribe_speech(
         request: SpeechTranscriptionRequest,
         http_request: Request,
+        principal_id: str = Depends(authenticated_principal),
     ) -> SpeechTranscriptionResponse | JSONResponse:
         # Local STT is a local capability; do not make it a remote transcription service.
         require_local_client(http_request)
@@ -2043,7 +2057,11 @@ def create_api(
             raise HTTPException(status_code=403, detail="Local client required")
 
     @app.post("/api/tools/synthesize")
-    async def synthesize_candidate_tool(body: ToolSynthesisRequest, http_request: Request) -> dict[str, object]:
+    async def synthesize_candidate_tool(
+        body: ToolSynthesisRequest,
+        http_request: Request,
+        principal_id: str = Depends(authenticated_principal),
+    ) -> dict[str, object]:
         require_local_client(http_request)
         prompt = (
             "Design a candidate pure-data Python helper for AURA. Return only one JSON object with keys "
@@ -2079,7 +2097,11 @@ def create_api(
         return CandidateToolValidator().create_proposal(candidate)
 
     @app.post("/api/tools/proposals")
-    def propose_candidate_tool(body: ToolCandidateRequest, http_request: Request) -> dict[str, object]:
+    def propose_candidate_tool(
+        body: ToolCandidateRequest,
+        http_request: Request,
+        principal_id: str = Depends(authenticated_principal),
+    ) -> dict[str, object]:
         require_local_client(http_request)
         candidate = ToolCandidate(
             tool_name=body.tool_name, description=body.description,
@@ -2089,7 +2111,11 @@ def create_api(
         return CandidateToolValidator().create_proposal(candidate)
 
     @app.post("/api/vision/analyze")
-    async def analyze_local_vision(body: VisionAnalyzeRequest, http_request: Request) -> dict[str, object]:
+    async def analyze_local_vision(
+        body: VisionAnalyzeRequest,
+        http_request: Request,
+        principal_id: str = Depends(authenticated_principal),
+    ) -> dict[str, object]:
         require_local_client(http_request)
         import binascii
         from aura_core.providers.local_vision import LocalOllamaVisionProvider
@@ -2132,22 +2158,30 @@ def create_api(
         return store
 
     @app.post("/api/memory/vector")
-    async def write_vector_memory(body: VectorMemoryWrite, http_request: Request) -> dict[str, object]:
+    async def write_vector_memory(
+        body: VectorMemoryWrite,
+        http_request: Request,
+        principal_id: str = Depends(authenticated_principal),
+    ) -> dict[str, object]:
         require_local_client(http_request)
         store = get_local_vector_memory()
         try:
-            memory_id = await store.remember(principal_id=body.principal_id, content=body.content, tags=body.tags)
+            memory_id = await store.remember(principal_id=principal_id, content=body.content, tags=body.tags)
         except Exception as exc:
             logger.warning("Local vector memory write failed", exc_info=True)
             raise HTTPException(status_code=503, detail="Local embedding or vector memory write failed") from exc
-        return {"memory_id": memory_id, "principal_id": body.principal_id, "stored": True, "trust": "untrusted_reference_data"}
+        return {"memory_id": memory_id, "principal_id": principal_id, "stored": True, "trust": "untrusted_reference_data"}
 
     @app.post("/api/memory/vector/recall")
-    async def recall_vector_memory(body: VectorMemoryQuery, http_request: Request) -> dict[str, object]:
+    async def recall_vector_memory(
+        body: VectorMemoryQuery,
+        http_request: Request,
+        principal_id: str = Depends(authenticated_principal),
+    ) -> dict[str, object]:
         require_local_client(http_request)
         store = get_local_vector_memory()
         try:
-            items = await store.recall(principal_id=body.principal_id, query=body.query, limit=body.limit)
+            items = await store.recall(principal_id=principal_id, query=body.query, limit=body.limit)
         except Exception as exc:
             logger.warning("Local vector memory recall failed", exc_info=True)
             raise HTTPException(status_code=503, detail="Local embedding or vector recall failed") from exc
@@ -2164,11 +2198,15 @@ def create_api(
         return planner
 
     @app.post("/api/prefetch/observe")
-    def observe_prefetch_pattern(body: PrefetchObservationRequest, http_request: Request) -> dict[str, object]:
+    def observe_prefetch_pattern(
+        body: PrefetchObservationRequest,
+        http_request: Request,
+        principal_id: str = Depends(authenticated_principal),
+    ) -> dict[str, object]:
         require_local_client(http_request)
         try:
             proposal = get_prefetch_planner().observe(
-                principal_id=body.principal_id, event_key=body.event_key,
+                principal_id=principal_id, event_key=body.event_key,
                 capability_id=body.capability_id, hour_local=body.hour_local,
             )
         except ValueError as exc:
@@ -2176,7 +2214,11 @@ def create_api(
         return {"proposal": proposal, "execution_performed": False}
 
     @app.get("/api/prefetch/proposals")
-    def list_prefetch_proposals(http_request: Request, principal_id: str, limit: int = 20) -> dict[str, object]:
+    def list_prefetch_proposals(
+        http_request: Request,
+        limit: int = 20,
+        principal_id: str = Depends(authenticated_principal),
+    ) -> dict[str, object]:
         require_local_client(http_request)
         try:
             items = get_prefetch_planner().proposals(principal_id=principal_id, limit=limit)
