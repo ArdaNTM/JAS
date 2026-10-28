@@ -701,6 +701,24 @@ def test_policy_bundle_requires_exact_match_for_every_request_dimension(
     provider.connection.call_tool.assert_not_awaited()
 
 
+
+def test_provider_dispatch_exception_is_audited_as_unknown() -> None:
+    gateway, permissions, provider = make_gateway()
+    ledger = HashChainAuditLedger()
+    gateway._audit_ledger = ledger
+    permissions.add_policy(make_policy(AuthorizationDecision.ALLOW))
+    provider.connection.call_tool.side_effect = RuntimeError("transport disconnected")
+
+    with pytest.raises(RuntimeError, match="transport disconnected"):
+        asyncio.run(gateway.invoke(make_request()))
+
+    records = ledger.snapshot()
+    assert len(records) == 1
+    assert records[0].outcome == "unknown"
+    assert records[0].reason_code == "provider_dispatch_outcome_unknown"
+    assert "transport disconnected" not in repr(records)
+    assert ledger.verify()
+
 def _require_approval_policy(
     permissions: PermissionEngine,
     *,
