@@ -1968,7 +1968,7 @@ def create_api(
                     app.state.episodic_memory = store
                 memory_items = await app.state.async_work.run(
                     lambda: store.recall_related(
-                        principal_id=request.principal_id,
+                        principal_id=principal_id,
                         query=request.objective,
                         limit=5,
                     )
