@@ -14,7 +14,10 @@ def make_client() -> TestClient:
         max_tokens=32,
     )
     backend = BackendConfig(endpoint="http://127.0.0.1:11434", timeout=30.0)
-    return TestClient(create_api(config, backend_config=backend))
+    app = create_api(config, backend_config=backend)
+    app.state.http_bearer_token = "test-token-" + "x" * 40
+    app.state.http_principal_id = "local_owner"
+    return TestClient(app)
 
 
 def test_reasoning_plan_endpoint_returns_plan_without_execution() -> None:
@@ -61,6 +64,7 @@ def test_reasoning_execute_requires_runtime_instead_of_bypassing_gateway() -> No
     response = make_client().post(
         "/api/reasoning/execute",
         json={"directive": "Yapay zekâ modellerini araştır."},
+        headers={"Authorization": "Bearer " + "test-token-" + "x" * 40},
     )
 
     assert response.status_code == 503
