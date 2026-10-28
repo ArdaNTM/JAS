@@ -26,6 +26,8 @@ def make_client() -> TestClient:
         backend_config=BackendConfig(endpoint="http://127.0.0.1:11434", timeout=2.0),
         transport=StubTransport(),
     )
+    app.state.http_bearer_token = "test-token-" + "x" * 40
+    app.state.http_principal_id = "local_owner"
     return TestClient(app)
 
 
@@ -89,7 +91,7 @@ def test_cross_capability_endpoint_synthesizes_multi_provider_evidence() -> None
                 {"capability_id": "weather.read", "provider_id": "weather-provider", "result": {"temperature_c": 31}},
                 {"capability_id": "system.telemetry", "provider_id": "local-telemetry", "result": {"cpu_percent": 94}},
             ],
-        })
+        }, headers={"Authorization": "Bearer " + "test-token-" + "x" * 40})
         assert response.status_code == 200
         body = response.json()
         assert body["evidence_count"] == 2
