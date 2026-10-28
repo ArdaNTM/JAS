@@ -14,6 +14,8 @@ from uuid import uuid4
 import pytest
 
 from aura_core.application.postgresql_episodic_memory import PostgreSQLEpisodicMemoryStore
+from aura_core.application.postgresql_task_state_machine import PostgreSQLTaskStateMachine
+from aura_core.application.task_state_machine import TaskState
 from aura_core.config.storage import validate_storage_mode
 from aura_core.enterprise.approval_store import ApprovalStatus
 from aura_core.enterprise.postgresql_approval_store import PostgreSQLApprovalStore
@@ -62,6 +64,38 @@ def test_postgresql_stores_enforce_scope_lifecycle_and_one_time_approval():
             await memory.close()
             await approvals.close()
             await workflow.close()
+    asyncio.run(scenario())
+
+
+
+def test_postgresql_task_state_machine_persists_dependency_gates_and_owner_scope():
+    if not DATABASE_URL:
+        pytest.skip("requires AURA_TEST_DATABASE_URL and a running PostgreSQL service")
+
+    async def scenario():
+        suffix = uuid4().hex
+        principal = f"state-principal-{suffix}"
+        other = f"state-other-{suffix}"
+        store = PostgreSQLTaskStateMachine(DATABASE_URL)
+        try:
+            await store.initialize()
+            parent = await store.create_task(principal_id=principal, task_id=f"parent-{suffix}", goal="parent")
+            child = await store.create_task(principal_id=principal, task_id=f"child-{suffix}", goal="child", dependencies=[parent.task_id])
+            assert parent.state is TaskState.READY
+            assert child.state is TaskState.PENDING
+            with pytest.raises(ValueError, match="dependencies are not all succeeded"):
+                await store.transition(child.task_id, principal_id=principal, target=TaskState.READY)
+            await store.transition(parent.task_id, principal_id=principal, target=TaskState.RUNNING)
+            await store.transition(parent.task_id, principal_id=principal, target=TaskState.SUCCEEDED)
+            assert (await store.get(child.task_id, principal_id=principal)).state is TaskState.READY
+            with pytest.raises(KeyError):
+                await store.get(parent.task_id, principal_id=other)
+            await store.close()
+            store = PostgreSQLTaskStateMachine(DATABASE_URL)
+            await store.initialize()
+            assert (await store.get(parent.task_id, principal_id=principal)).state is TaskState.SUCCEEDED
+        finally:
+            await store.close()
     asyncio.run(scenario())
 
 
