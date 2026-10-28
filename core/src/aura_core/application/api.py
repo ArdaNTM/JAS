@@ -1089,6 +1089,7 @@ def create_api(
     async def discover_provider_capabilities(
         provider_id: str,
         request: CapabilityDiscoveryRequest,
+        principal_id: str = Depends(authenticated_principal),
     ) -> dict[str, object]:
         """Discover tools only from a provider already registered by the host."""
         kernel = getattr(app.state, "kernel", None)
@@ -1937,6 +1938,7 @@ def create_api(
     async def cross_capability_reasoning(
         request: CrossCapabilitySynthesisRequest,
         http_request: Request,
+        principal_id: str = Depends(authenticated_principal),
     ) -> dict[str, object]:
         host = http_request.client.host if http_request.client else ""
         if host not in {"127.0.0.1", "::1", "localhost", "testclient"}:
