@@ -1,0 +1,80 @@
+name: AURA Remote Persistence Integration
+
+on:
+  pull_request:
+    paths:
+      - "core/**"
+      - ".github/workflows/aura-remote-persistence-integration.yml"
+  push:
+    branches:
+      - main
+      - "feat/**"
+    paths:
+      - "core/**"
+      - ".github/workflows/aura-remote-persistence-integration.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aura-remote-persistence-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  remote-persistence-integration:
+    name: PostgreSQL and S3-compatible integration tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: aura
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d aura"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+      minio:
+        image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+        env:
+          MINIO_ROOT_USER: minioadmin
+          MINIO_ROOT_PASSWORD: minioadmin
+        ports:
+          - 9000:9000
+        options: >-
+          --health-cmd "curl -f http://localhost:9000/minio/health/ready"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+        command: server /data --address ":9000"
+    defaults:
+      run:
+        working-directory: core
+    env:
+      AURA_TEST_DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/aura
+      AURA_TEST_S3_ENDPOINT: 127.0.0.1:9000
+      AURA_TEST_S3_ACCESS_KEY: minioadmin
+      AURA_TEST_S3_SECRET_KEY: minioadmin
+      AURA_STORAGE_MODE: local
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: core/uv.lock
+      - name: Install locked project and test dependencies
+        run: uv sync --frozen --group dev
+      - name: Run real PostgreSQL and MinIO integration tests
+        run: uv run --with minio pytest -q tests/test_remote_persistence_integration.py
