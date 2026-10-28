@@ -109,6 +109,9 @@ def make_client(
         backend_config=make_backend_config(),
         transport=transport,
     )
+    # create_api is a lower-level factory; build_app normally configures these.
+    app.state.http_bearer_token = "t" * 40
+    app.state.http_principal_id = "local_owner"
 
     return TestClient(app)
 
@@ -470,3 +473,24 @@ def test_backend_invalid_response_maps_to_502() -> None:
     assert body["error"]["request_id"] == response.headers["X-Request-ID"]
 
     assert len(transport.calls) == 1
+
+
+def test_capability_proposals_require_bearer_authentication() -> None:
+    client = make_client(make_success_transport())
+
+    response = client.get("/api/capabilities/proposals")
+
+    assert response.status_code == 401
+    assert response.headers["www-authenticate"] == "Bearer"
+
+
+def test_capability_proposals_allow_valid_bearer_authentication() -> None:
+    client = make_client(make_success_transport())
+
+    response = client.get(
+        "/api/capabilities/proposals",
+        headers={"Authorization": "Bearer " + "t" * 40},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"proposals": []}
