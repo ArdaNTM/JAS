@@ -20,10 +20,12 @@ from aura_core.enterprise.postgresql_approval_store import PostgreSQLApprovalSto
 from aura_core.enterprise.postgresql_workflow_store import PostgreSQLWorkflowStore
 from aura_core.enterprise.workflow_store import WorkflowStatus
 
-DATABASE_URL = os.environ.get("AURA_TEST_DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5432/aura")
+DATABASE_URL = os.environ.get("AURA_TEST_DATABASE_URL")
 
 
 def test_postgresql_stores_enforce_scope_lifecycle_and_one_time_approval():
+    if not DATABASE_URL:
+        pytest.skip("requires AURA_TEST_DATABASE_URL and a running PostgreSQL service")
     async def scenario():
         suffix = uuid4().hex
         principal = f"ci-principal-{suffix}"
@@ -55,7 +57,7 @@ def test_postgresql_stores_enforce_scope_lifecycle_and_one_time_approval():
             consumed = await approvals.consume(approved.approval_id, expected_version=approved.version, principal_id=principal, capability_id="research.fetch", operation_id="research.fetch", resource_scope=f"ci:{suffix}", request_fingerprint=fingerprint, policy_digest=policy_digest)
             assert consumed.status is ApprovalStatus.CONSUMED
             with pytest.raises(Exception):
-                await approvals.consume(approved.approval_id, expected_version=consumed.version, principal_id=principal, capability_id="research.fetch", operation_id="research.fetch", resource_scope=f"ci:{suffix}", request_fingerprint=f"fingerprint-{suffix}", policy_digest=f"policy-{suffix}")
+                await approvals.consume(approved.approval_id, expected_version=consumed.version, principal_id=principal, capability_id="research.fetch", operation_id="research.fetch", resource_scope=f"ci:{suffix}", request_fingerprint=fingerprint, policy_digest=policy_digest)
         finally:
             await memory.close()
             await approvals.close()
