@@ -27,9 +27,16 @@ from aura_core.application.full_duplex_session import (
 )
 from aura_core.application.vision_adapters import DesktopScreenCapture, OllamaVisionProvider
 from aura_core.config.kernel import KernelConfig
-from aura_core.config.storage import validate_storage_mode
+from aura_core.config.storage import StorageMode, storage_mode_from_environment, validate_storage_mode
 from aura_core.enterprise.policy_bundle import PolicyBundle
 from aura_core.enterprise.approval_store import SQLiteApprovalStore
+from aura_core.enterprise.postgresql_approval_store import PostgreSQLApprovalStore
+from aura_core.enterprise.postgresql_workflow_store import PostgreSQLWorkflowStore
+from aura_core.application.postgresql_task_state_machine import PostgreSQLTaskStateMachine
+from aura_core.application.postgresql_task_memory import PostgreSQLTaskMemoryCoordinator
+from aura_core.memory.postgresql_hierarchical_memory import PostgreSQLHierarchicalMemory
+from aura_core.persistence.remote_checkpoint_artifacts import RemoteCheckpointArtifacts
+from aura_core.storage.s3_object_storage import S3ObjectStorage
 from aura_core.enterprise.workflow_store import SQLiteWorkflowStore
 from aura_core.security.http_auth import load_http_auth_config
 from aura_core.kernel.permissions import (
@@ -105,8 +112,10 @@ def _load_approval_fingerprint_key() -> bytes | None:
 
 
 def build_app() -> FastAPI:
-    # Remote mode must fail closed until all persistence adapters are remote-backed.
+    # Keep the remote rollout gate authoritative; once released, the remote branch
+    # below selects only remote stores and never constructs SQLite persistence.
     validate_storage_mode()
+    storage_mode = storage_mode_from_environment()
     kernel_config = KernelConfig.from_environment()
     policy_bundle = _load_policy_bundle_from_environment()
     kernel = AuraKernel(kernel_config, policy_bundle=policy_bundle)
@@ -180,20 +189,56 @@ def build_app() -> FastAPI:
     http_bearer_token, http_principal_id = load_http_auth_config()
     approval_fingerprint_key = _load_approval_fingerprint_key()
     approval_store = None
-    if approval_fingerprint_key is not None:
-        approval_database_path = os.getenv(
-            "AURA_APPROVAL_DB_PATH",
-            os.path.join(
-                os.getenv("LOCALAPPDATA", os.path.expanduser("~")),
-                "AURA",
-                "approvals.sqlite3",
-            ),
+    task_state_machine = None
+    workflow_store = None
+    task_memory = None
+    checkpoint_artifacts = None
+    startup_stores = []
+    remote_objects = None
+
+    if storage_mode is StorageMode.REMOTE:
+        database_url = os.getenv("AURA_DATABASE_URL", "").strip()
+        if not database_url:
+            raise RuntimeError("AURA_DATABASE_URL is required in remote storage mode")
+        task_state_machine = PostgreSQLTaskStateMachine(database_url, event_bus=kernel.event_bus)
+        workflow_store = PostgreSQLWorkflowStore(database_url)
+        task_memory_store = PostgreSQLHierarchicalMemory(database_url)
+        task_memory = PostgreSQLTaskMemoryCoordinator(task_memory_store)
+        if approval_fingerprint_key is not None:
+            approval_store = PostgreSQLApprovalStore(database_url)
+        remote_objects = S3ObjectStorage(
+            endpoint_url=os.environ["AURA_OBJECT_STORAGE_ENDPOINT"],
+            bucket=os.environ["AURA_OBJECT_STORAGE_BUCKET"],
+            access_key=os.getenv("AURA_OBJECT_STORAGE_ACCESS_KEY", os.getenv("AURA_OBJECT_STORAGE_ACCESS_KEY_ID", "")),
+            secret_key=os.getenv("AURA_OBJECT_STORAGE_SECRET_KEY", os.getenv("AURA_OBJECT_STORAGE_SECRET_ACCESS_KEY", "")),
+            region=os.getenv("AURA_OBJECT_STORAGE_REGION", "us-east-1"),
+            session_token=os.getenv("AURA_OBJECT_STORAGE_SESSION_TOKEN"),
         )
-        os.makedirs(
-            os.path.dirname(os.path.abspath(approval_database_path)),
-            exist_ok=True,
+        checkpoint_artifacts = RemoteCheckpointArtifacts(remote_objects, workflow_store)
+        startup_stores = [task_state_machine, workflow_store, task_memory]
+        if approval_store is not None:
+            startup_stores.append(approval_store)
+    else:
+        if approval_fingerprint_key is not None:
+            approval_database_path = os.getenv(
+                "AURA_APPROVAL_DB_PATH",
+                os.path.join(os.getenv("LOCALAPPDATA", os.path.expanduser("~")), "AURA", "approvals.sqlite3"),
+            )
+            os.makedirs(os.path.dirname(os.path.abspath(approval_database_path)), exist_ok=True)
+            approval_store = SQLiteApprovalStore(approval_database_path)
+
+        task_database_path = os.getenv(
+            "AURA_TASK_DB_PATH",
+            str(os.getenv("LOCALAPPDATA", os.path.expanduser("~"))) + "/AURA/tasks.sqlite3",
         )
-        approval_store = SQLiteApprovalStore(approval_database_path)
+        task_state_machine = TaskStateMachine(task_database_path, event_bus=kernel.event_bus)
+        workflow_database_path = os.getenv(
+            "AURA_WORKFLOW_DB_PATH",
+            str(os.getenv("LOCALAPPDATA", os.path.expanduser("~"))) + "/AURA/workflows.sqlite3",
+        )
+        os.makedirs(os.path.dirname(os.path.abspath(workflow_database_path)), exist_ok=True)
+        workflow_store = SQLiteWorkflowStore(workflow_database_path)
+        task_memory = TaskMemoryCoordinator.from_environment()
 
     gateway = MCPGateway(
         capability_registry=kernel.capability_registry,
@@ -203,24 +248,12 @@ def build_app() -> FastAPI:
         approval_fingerprint_key=approval_fingerprint_key,
     )
 
-    task_database_path = os.getenv(
-        "AURA_TASK_DB_PATH", str(os.getenv("LOCALAPPDATA", os.path.expanduser("~"))) + "/AURA/tasks.sqlite3"
-    )
-    task_state_machine = TaskStateMachine(task_database_path, event_bus=kernel.event_bus)
-    workflow_database_path = os.getenv(
-        "AURA_WORKFLOW_DB_PATH",
-        str(os.getenv("LOCALAPPDATA", os.path.expanduser("~"))) + "/AURA/workflows.sqlite3",
-    )
-    os.makedirs(os.path.dirname(os.path.abspath(workflow_database_path)), exist_ok=True)
-    workflow_store = SQLiteWorkflowStore(workflow_database_path)
     task_service = AgentTaskService(
-        AgentExecutor(
-            gateway=gateway,
-            event_bus=kernel.event_bus,
-        ),
-        memory=TaskMemoryCoordinator.from_environment(),
+        AgentExecutor(gateway=gateway, event_bus=kernel.event_bus),
+        memory=task_memory,
         state_machine=task_state_machine,
         workflow_store=workflow_store,
+        checkpoint_artifacts=checkpoint_artifacts,
     )
 
     app = create_composed_app(
@@ -294,6 +327,29 @@ def build_app() -> FastAPI:
         kokoro_provider = None
         filesystem_provider = None
         event_coordinator = None
+        initialized_stores = []
+
+        async def close_store(store):
+            close = getattr(store, "close", None)
+            if close is None:
+                return
+            result = close()
+            if hasattr(result, "__await__"):
+                await result
+
+        # Initialize durable adapters before serving requests. If any remote
+        # store fails, startup aborts instead of falling back to local files.
+        try:
+            for store in startup_stores:
+                await store.initialize()
+                initialized_stores.append(store)
+        except Exception:
+            for store in reversed(initialized_stores):
+                try:
+                    await close_store(store)
+                except Exception:
+                    logger.exception("Persistence rollback failed")
+            raise
 
         # MCP_HEALTH_REPORT_PATCH: report only after successful provider setup.
         def report_mcp_healthy(config):
@@ -345,15 +401,18 @@ def build_app() -> FastAPI:
             try:
                 yield
             finally:
-                if approval_store is not None:
+                for store in reversed(startup_stores):
                     try:
-                        approval_store.close()
+                        await close_store(store)
                     except Exception:
-                        logger.exception("ApprovalStore shutdown failed")
-                try:
-                    workflow_store.close()
-                except Exception:
-                    logger.exception("WorkflowStore shutdown failed")
+                        logger.exception("Persistence shutdown failed")
+                if not startup_stores:
+                    for store in (approval_store, workflow_store, task_state_machine, task_memory):
+                        if store is not None:
+                            try:
+                                await close_store(store)
+                            except Exception:
+                                logger.exception("Local persistence shutdown failed")
             return
 
         try:
@@ -662,16 +721,19 @@ def build_app() -> FastAPI:
                 except Exception:
                     logger.exception("Local filesystem provider shutdown failed")
 
-            if approval_store is not None:
-                try:
-                    approval_store.close()
-                except Exception:
-                    logger.exception("ApprovalStore shutdown failed")
-
-            try:
-                workflow_store.close()
-            except Exception:
-                logger.exception("WorkflowStore shutdown failed")
+            if startup_stores:
+                for store in reversed(startup_stores):
+                    try:
+                        await close_store(store)
+                    except Exception:
+                        logger.exception("Persistence shutdown failed")
+            else:
+                for store in (approval_store, workflow_store, task_state_machine, task_memory):
+                    if store is not None:
+                        try:
+                            await close_store(store)
+                        except Exception:
+                            logger.exception("Local persistence shutdown failed")
 
             logger.info(
                 "AURA LIFESPAN SHUTDOWN COMPLETE"

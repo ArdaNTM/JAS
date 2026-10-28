@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import inspect
-from dataclasses import dataclass, replace
+from dataclasses import asdict, dataclass, replace
 from typing import Protocol
 
 from aura_core.agent.runtime import ExecutionResult, Plan, PlanState, Task, _request_id_context
@@ -36,11 +36,13 @@ class AgentTaskService:
         memory: TaskMemoryCoordinator | None = None,
         state_machine: TaskStateMachine | None = None,
         workflow_store: SQLiteWorkflowStore | None = None,
+        checkpoint_artifacts=None,
     ) -> None:
         self._runtime = runtime
         self._memory = memory
         self._state_machine = state_machine
         self._workflow_store = workflow_store
+        self._checkpoint_artifacts = checkpoint_artifacts
         self._results: dict[str, ExecutionResult] = {}
         self._owners: dict[str, str] = {}
         self._task_locks: dict[str, asyncio.Lock] = {}
@@ -151,11 +153,20 @@ class AgentTaskService:
             self._cancel_events[task_id] = cancel_event
             memory_started = False
             if self._memory is not None:
-                context = self._memory.begin(
+                context = await self._invoke(
+                    self._memory.begin,
                     principal_id=task.principal_id, task_id=task.task_id, goal=task.title
                 )
                 task = replace(task, memory_context=context)
                 memory_started = True
+                if self._checkpoint_artifacts is not None:
+                    await self._checkpoint_artifacts.save(
+                        principal_id=task.principal_id, task_id=task.task_id,
+                        checkpoint={
+                            "schema_version": 1, "state": "running",
+                            "context": [asdict(item) for item in context],
+                        },
+                    )
 
             def cancelled() -> bool:
                 if cancel_event.is_set():
@@ -203,7 +214,8 @@ class AgentTaskService:
                         )
                 await self._transition_workflow(task_id, WorkflowStatus.FAILED, failure_code=f"runtime_{type(exc).__name__}"[:128])
                 if memory_started and self._memory is not None:
-                    self._memory.finish(
+                    await self._invoke(
+                        self._memory.finish,
                         principal_id=task.principal_id, task_id=task.task_id,
                         state="failed", summary="Task runtime raised an exception.",
                     )
@@ -254,7 +266,8 @@ class AgentTaskService:
                     f"{step.step_id}:{getattr(step.state, 'value', step.state)}"
                     for step in result.steps
                 )[:4000]
-                self._memory.finish(
+                await self._invoke(
+                    self._memory.finish,
                     principal_id=task.principal_id, task_id=task.task_id,
                     state=memory_state, summary=summary,
                 )

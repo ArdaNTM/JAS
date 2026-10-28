@@ -169,3 +169,65 @@ def test_remote_mode_remains_fail_closed_until_every_production_path_is_remote(m
     monkeypatch.setenv("AURA_OBJECT_STORAGE_ENDPOINT", "https://objects.example.invalid")
     with pytest.raises(RuntimeError, match="Startup is blocked"):
         validate_storage_mode()
+
+
+def test_s3_checkpoint_is_published_only_after_object_is_durable_and_retry_is_idempotent():
+    minio = pytest.importorskip("minio")
+    from aura_core.enterprise.postgresql_workflow_store import PostgreSQLWorkflowStore
+    from aura_core.persistence.remote_checkpoint_artifacts import RemoteCheckpointArtifacts
+    from aura_core.storage.s3_object_storage import S3ObjectStorage
+
+    if not DATABASE_URL:
+        pytest.skip("requires AURA_TEST_DATABASE_URL and a running PostgreSQL service")
+    from minio import Minio
+    suffix = uuid4().hex[:20]
+    endpoint = os.environ.get("AURA_TEST_S3_ENDPOINT", "127.0.0.1:9000")
+    access_key = os.environ.get("AURA_TEST_S3_ACCESS_KEY", "minioadmin")
+    secret_key = os.environ.get("AURA_TEST_S3_SECRET_KEY", "minioadmin")
+    bucket = f"aura-checkpoint-{suffix}"
+    client = Minio(endpoint, access_key=access_key, secret_key=secret_key, secure=False)
+    objects = S3ObjectStorage(
+        endpoint_url=f"http://{endpoint}", bucket=bucket,
+        access_key=access_key, secret_key=secret_key,
+        region=os.environ.get("AURA_TEST_S3_REGION", "us-east-1"),
+    )
+    workflows = PostgreSQLWorkflowStore(DATABASE_URL)
+
+    async def scenario():
+        workflow_id = f"checkpoint-{suffix}"
+        principal_id = f"principal-{suffix}"
+        try:
+            client.make_bucket(bucket)
+            await workflows.initialize()
+            created = await workflows.create(
+                workflow_id=workflow_id, idempotency_key=workflow_id,
+                principal_id=principal_id, task_id=workflow_id,
+            )
+            running = await workflows.transition(
+                workflow_id, expected_version=created.version, target=WorkflowStatus.RUNNING
+            )
+            artifacts = RemoteCheckpointArtifacts(objects, workflows)
+            payload = {"schema_version": 1, "state": "running", "cursor": 3}
+            key = await artifacts.save(
+                principal_id=principal_id, task_id=workflow_id, checkpoint=payload
+            )
+            first = await workflows.get(workflow_id)
+            assert first.checkpoint_ref == key
+            assert await artifacts.load(principal_id=principal_id, task_id=workflow_id) == payload
+            repeated = await artifacts.save(
+                principal_id=principal_id, task_id=workflow_id, checkpoint=payload
+            )
+            second = await workflows.get(workflow_id)
+            assert repeated == key
+            assert second.version == first.version
+            assert second.checkpoint_ref == key
+            with pytest.raises(PermissionError):
+                await artifacts.load(principal_id=f"other-{suffix}", task_id=workflow_id)
+        finally:
+            await workflows.close()
+            if client.bucket_exists(bucket):
+                for obj in client.list_objects(bucket, recursive=True):
+                    client.remove_object(bucket, obj.object_name)
+                client.remove_bucket(bucket)
+
+    asyncio.run(scenario())

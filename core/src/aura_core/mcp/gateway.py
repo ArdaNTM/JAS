@@ -4,6 +4,7 @@ import hashlib
 import hmac
 import json
 import sqlite3
+import inspect
 from dataclasses import dataclass
 from typing import Any
 
@@ -114,6 +115,11 @@ class MCPGateway:
             outcome=outcome,
             reason_code=reason_code,
         )
+
+    @staticmethod
+    async def _call_store(method, *args, **kwargs):
+        result = method(*args, **kwargs)
+        return await result if inspect.isawaitable(result) else result
 
     def _request_fingerprint(self, request: MCPGatewayRequest) -> str:
         # Canonicalization must be deterministic; never persist this payload.
@@ -229,7 +235,7 @@ class MCPGateway:
                 fingerprint = self._request_fingerprint(request)
                 policy_digest = self._policy_digest(authorization)
                 if request.approval_id is None:
-                    record = self._approval_store.create(
+                    record = await self._call_store(self._approval_store.create,
                         principal_id=request.principal_id,
                         capability_id=request.capability_id,
                         operation_id=request.operation_id,
@@ -245,7 +251,7 @@ class MCPGateway:
                         outcome="pending",
                     )
 
-                record = self._approval_store.get(request.approval_id)
+                record = await self._call_store(self._approval_store.get, request.approval_id)
                 if record is None:
                     return self._approval_response(
                         request,
@@ -253,7 +259,7 @@ class MCPGateway:
                         reason="Approval record not found; provider dispatch was not performed",
                         reason_code="approval_not_found",
                     )
-                consumed = self._approval_store.consume(
+                consumed = await self._call_store(self._approval_store.consume,
                     request.approval_id,
                     expected_version=record.version,
                     principal_id=request.principal_id,
