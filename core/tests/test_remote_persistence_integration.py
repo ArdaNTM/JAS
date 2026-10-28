@@ -68,7 +68,7 @@ def test_minio_s3_compatible_service_round_trip_and_delete():
     from minio import Minio
     from io import BytesIO
 
-    client = Minio(os.environ.get("AURA_TEST_S3_ENDPOINT", "127.0.0.1:9000"), access_key=os.environ.get("AURA_TEST_S3_ACCESS_KEY", "minioadmin"), secret_key=os.environ.get("AURA_TEST_S3_SECRET_KEY", "minioadmin"), secure=False)
+    client = Minio(os.environ.get("AURA_TEST_S3_ENDPOINT", "127.0.0.1:4566"), access_key=os.environ.get("AURA_TEST_S3_ACCESS_KEY", "test"), secret_key=os.environ.get("AURA_TEST_S3_SECRET_KEY", "minioadmin"), secure=False)
     bucket = f"aura-ci-{uuid4().hex[:20]}"
     payload = f"remote-object-{uuid4().hex}".encode()
     key = "integration/checkpoint.bin"
