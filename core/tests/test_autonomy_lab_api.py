@@ -17,11 +17,14 @@ class StubTransport:
 
 
 def make_client() -> TestClient:
-    return TestClient(create_api(
+    app = create_api(
         RuntimeConfig(runtime="ollama", model="qwen3:4b-instruct-2507-q4_K_M", temperature=0.7, max_tokens=32),
         backend_config=BackendConfig(endpoint="http://127.0.0.1:11434", timeout=30.0),
         transport=StubTransport(),
-    ))
+    )
+    app.state.http_bearer_token = "t" * 40
+    app.state.http_principal_id = "local_owner"
+    return TestClient(app, headers={"Authorization": "Bearer " + "t" * 40})
 
 
 def test_autonomy_plan_validation_is_local_and_never_executes():

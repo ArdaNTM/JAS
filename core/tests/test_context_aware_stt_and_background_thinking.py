@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from dataclasses import dataclass
 
 from aura_core.application.context_aware_stt import (
@@ -108,7 +109,7 @@ def test_idle_reflection_proposes_links_without_modifying_memories(tmp_path):
         database_path=tmp_path / "reflection.sqlite3",
         idle_seconds=60,
         interval_seconds=60,
-        last_activity=lambda: 0.0,
+        last_activity=lambda: time.monotonic() - 120,
     )
     saved = asyncio.run(daemon.run_once())
     assert saved > 0

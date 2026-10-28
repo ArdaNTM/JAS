@@ -28,10 +28,15 @@ class Transport:
 def test_task_endpoint_composes_http_to_agent_runtime_without_provider_access() -> None:
     runtime = Runtime()
     app = create_api(RuntimeConfig(model="test"), BackendConfig(endpoint="http://test", timeout=1), Transport(), AgentTaskService(runtime))
+    app.state.http_bearer_token = "t" * 40
+    app.state.http_principal_id = "local_owner"
     response = TestClient(app).post("/api/tasks", json={
         "task_id": "task-1", "principal_id": "agent:web", "title": "Read", "resource_scope": "D:/workspace",
         "steps": [{"step_id": "one", "capability_id": "filesystem.read", "operation_id": "filesystem.read_file", "tool_name": "read_file", "risk_level": "low"}],
-    }, headers={"X-Request-ID": "request-trace-test-123"})
+    }, headers={
+        "X-Request-ID": "request-trace-test-123",
+        "Authorization": "Bearer " + "t" * 40,
+    })
     assert response.status_code == 200
     assert response.json()["state"] == "succeeded"
     assert runtime.calls[0][1].steps[0].tool_name == "read_file"

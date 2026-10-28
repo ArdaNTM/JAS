@@ -98,7 +98,7 @@ class PolicyBundle:
         try:
             if source.stat().st_size > 1_048_576:
                 raise ValueError("Policy bundle file exceeds 1 MiB")
-            payload = json.loads(source.read_text(encoding="utf-8"))
+            payload = json.loads(source.read_text(encoding="utf-8-sig"))
         except (OSError, UnicodeError, json.JSONDecodeError) as exc:
             raise ValueError("Unable to load policy bundle JSON") from exc
 

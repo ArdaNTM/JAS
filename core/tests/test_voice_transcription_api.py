@@ -19,7 +19,10 @@ def make_client() -> TestClient:
         endpoint="http://127.0.0.1:11434",
         timeout=30.0,
     )
-    return TestClient(create_api(config, backend_config=backend))
+    app = create_api(config, backend_config=backend)
+    app.state.http_bearer_token = "t" * 40
+    app.state.http_principal_id = "local_owner"
+    return TestClient(app, headers={"Authorization": "Bearer " + "t" * 40})
 
 
 def test_local_speech_transcription_returns_transcript(monkeypatch) -> None:

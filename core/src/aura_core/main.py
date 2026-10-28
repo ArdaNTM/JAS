@@ -1,8 +1,12 @@
 from __future__ import annotations
 
 import asyncio
+import base64
+import binascii
+import hmac
 import logging
 import os
+import re
 from datetime import time
 from contextlib import asynccontextmanager
 
@@ -24,7 +28,9 @@ from aura_core.application.full_duplex_session import (
 from aura_core.application.vision_adapters import DesktopScreenCapture, OllamaVisionProvider
 from aura_core.config.kernel import KernelConfig
 from aura_core.enterprise.policy_bundle import PolicyBundle
+from aura_core.enterprise.approval_store import SQLiteApprovalStore
 from aura_core.enterprise.workflow_store import SQLiteWorkflowStore
+from aura_core.security.http_auth import load_http_auth_config
 from aura_core.kernel.permissions import (
     AuthorizationDecision,
     AuthorizationLevel,
@@ -57,17 +63,49 @@ logger = logging.getLogger(
 class VisualizationPlanService:
     """Registry marker for the deterministic, UI-only visualization plan."""
 
+def _load_policy_bundle_from_environment() -> PolicyBundle | None:
+    """Load the configured policy bundle and enforce an optional semantic digest pin."""
+    policy_bundle_path = os.getenv("AURA_POLICY_BUNDLE_PATH", "").strip()
+    expected_digest = os.getenv("AURA_POLICY_BUNDLE_SHA256", "").strip()
+
+    if expected_digest and not policy_bundle_path:
+        raise ValueError("AURA_POLICY_BUNDLE_SHA256 requires AURA_POLICY_BUNDLE_PATH")
+    if expected_digest and re.fullmatch(r"[0-9a-fA-F]{64}", expected_digest) is None:
+        raise ValueError("AURA_POLICY_BUNDLE_SHA256 must be a 64-character hexadecimal SHA-256 digest")
+    if not policy_bundle_path:
+        return None
+
+    # A configured path is fail-closed. The optional pin is checked against the
+    # canonical policy digest, so formatting/BOM differences do not change policy identity.
+    policy_bundle = PolicyBundle.from_json_file(policy_bundle_path)
+    if expected_digest and not hmac.compare_digest(
+        policy_bundle.digest, expected_digest.casefold()
+    ):
+        raise ValueError("Policy bundle digest does not match AURA_POLICY_BUNDLE_SHA256")
+    return policy_bundle
+
+
+def _load_approval_fingerprint_key() -> bytes | None:
+    """Load an optional base64 HMAC key; approvals stay disabled if it is absent."""
+    encoded = os.getenv("AURA_APPROVAL_FINGERPRINT_KEY", "").strip()
+    if not encoded:
+        return None
+    try:
+        key = base64.b64decode(encoded, validate=True)
+    except (ValueError, binascii.Error) as exc:
+        raise RuntimeError(
+            "AURA_APPROVAL_FINGERPRINT_KEY must be valid base64"
+        ) from exc
+    if len(key) < 32:
+        raise RuntimeError(
+            "AURA_APPROVAL_FINGERPRINT_KEY must decode to at least 32 bytes"
+        )
+    return key
+
+
 def build_app() -> FastAPI:
     kernel_config = KernelConfig.from_environment()
-
-    # Policy configuration is opt-in but fail-closed: if a path is configured,
-    # malformed/unreadable policy must stop startup rather than disable the gate.
-    policy_bundle_path = os.getenv("AURA_POLICY_BUNDLE_PATH", "").strip()
-    policy_bundle = (
-        PolicyBundle.from_json_file(policy_bundle_path)
-        if policy_bundle_path
-        else None
-    )
+    policy_bundle = _load_policy_bundle_from_environment()
     kernel = AuraKernel(kernel_config, policy_bundle=policy_bundle)
     kernel.bootstrap()
 
@@ -136,10 +174,30 @@ def build_app() -> FastAPI:
     tts_tools = MCPToolRegistry()
     filesystem_tools = MCPToolRegistry()
 
+    http_bearer_token, http_principal_id = load_http_auth_config()
+    approval_fingerprint_key = _load_approval_fingerprint_key()
+    approval_store = None
+    if approval_fingerprint_key is not None:
+        approval_database_path = os.getenv(
+            "AURA_APPROVAL_DB_PATH",
+            os.path.join(
+                os.getenv("LOCALAPPDATA", os.path.expanduser("~")),
+                "AURA",
+                "approvals.sqlite3",
+            ),
+        )
+        os.makedirs(
+            os.path.dirname(os.path.abspath(approval_database_path)),
+            exist_ok=True,
+        )
+        approval_store = SQLiteApprovalStore(approval_database_path)
+
     gateway = MCPGateway(
         capability_registry=kernel.capability_registry,
         provider_registry=kernel.provider_registry,
         permission_engine=kernel.permission_engine,
+        approval_store=approval_store,
+        approval_fingerprint_key=approval_fingerprint_key,
     )
 
     task_database_path = os.getenv(
@@ -170,7 +228,12 @@ def build_app() -> FastAPI:
         permission_engine=kernel.permission_engine,
         kernel=kernel,
         gateway=gateway,
+        approval_store=approval_store,
     )
+
+    app.state.http_bearer_token = http_bearer_token
+    app.state.http_principal_id = http_principal_id
+    app.state.approval_store = approval_store
 
     event_runtime = EventBusRuntime(
         kernel.event_bus,
@@ -276,7 +339,18 @@ def build_app() -> FastAPI:
         # external stdio processes. Production keeps providers enabled unless
         # this explicit test/deployment switch is set.
         if os.getenv("AURA_DISABLE_EXTERNAL_PROVIDERS", "0") == "1":
-            yield
+            try:
+                yield
+            finally:
+                if approval_store is not None:
+                    try:
+                        approval_store.close()
+                    except Exception:
+                        logger.exception("ApprovalStore shutdown failed")
+                try:
+                    workflow_store.close()
+                except Exception:
+                    logger.exception("WorkflowStore shutdown failed")
             return
 
         try:
@@ -570,6 +644,12 @@ def build_app() -> FastAPI:
                     await filesystem_provider.close()
                 except Exception:
                     logger.exception("Local filesystem provider shutdown failed")
+
+            if approval_store is not None:
+                try:
+                    approval_store.close()
+                except Exception:
+                    logger.exception("ApprovalStore shutdown failed")
 
             try:
                 workflow_store.close()

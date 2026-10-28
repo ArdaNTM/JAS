@@ -110,7 +110,43 @@ class AgentTaskService:
                 record = self._state_machine.transition(
                     task_id, principal_id=task.principal_id, target=TaskState.RUNNING
                 )
-            self._transition_workflow(task_id, WorkflowStatus.RUNNING)
+            try:
+                self._transition_workflow(task_id, WorkflowStatus.RUNNING)
+            except Exception:
+                # Do not start runtime work unless both independent lifecycle
+                # stores confirm the RUNNING transition. If workflow persistence
+                # fails, fail the task before propagating the original error.
+                # The workflow failure write is best-effort: if storage remains
+                # unavailable, reconcile_workflow() can repair the pending
+                # workflow from the terminal task record later.
+                if self._state_machine is not None:
+                    try:
+                        current = self._state_machine.get(
+                            task_id, principal_id=task.principal_id
+                        )
+                        if current.state is TaskState.RUNNING:
+                            current = self._state_machine.transition(
+                                task_id,
+                                principal_id=task.principal_id,
+                                target=TaskState.FAILED,
+                                error="Workflow start persistence failed",
+                            )
+                        if current.state is TaskState.FAILED:
+                            try:
+                                self._transition_workflow(
+                                    task_id,
+                                    WorkflowStatus.FAILED,
+                                    failure_code="workflow_start_persistence_failed",
+                                )
+                            except Exception:
+                                # Preserve the original persistence failure;
+                                # explicit reconciliation handles this gap.
+                                pass
+                    except Exception:
+                        # Preserve the original persistence failure. A later
+                        # reconciliation call surfaces any remaining mismatch.
+                        pass
+                raise
             cancel_event = asyncio.Event()
             self._cancel_events[task_id] = cancel_event
             memory_started = False
@@ -305,6 +341,15 @@ class AgentTaskService:
         if target is WorkflowStatus.PENDING:
             raise RuntimeError(
                 f"Cannot roll workflow back to pending from {workflow.status.value}"
+            )
+
+        # A RUNNING task paired with a PENDING workflow is ambiguous: the
+        # task-state write may have succeeded while workflow persistence failed
+        # before runtime dispatch. Reconciliation must not imply that execution
+        # started when the runtime may never have been called.
+        if workflow.status is WorkflowStatus.PENDING and target is WorkflowStatus.RUNNING:
+            raise RuntimeError(
+                "Cannot reconcile RUNNING task with pending workflow; runtime start is ambiguous"
             )
 
         # A task can finish between its RUNNING write and the workflow RUNNING

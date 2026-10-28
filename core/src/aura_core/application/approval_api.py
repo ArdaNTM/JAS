@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request
+
+from aura_core.security.http_auth import authenticated_principal
 
 from aura_core.kernel.permissions import AuthorizationDecision
 
@@ -10,6 +12,7 @@ router = APIRouter(tags=["approvals"])
 @router.get("/api/approvals")
 async def pending_approvals(
     request: Request,
+    principal_id: str = Depends(authenticated_principal),
 ) -> list[dict[str, object]]:
     """
     Read-only projection of recent approval-required decisions.
@@ -34,6 +37,11 @@ async def pending_approvals(
     result: list[dict[str, object]] = []
 
     for record in reversed(records):
+        # Audit records may contain requests from multiple principals. Never
+        # expose another principal's approval metadata through this projection.
+        if record.request.principal_id != principal_id:
+            continue
+
         if (
             record.decision.decision
             is not AuthorizationDecision.REQUIRE_APPROVAL

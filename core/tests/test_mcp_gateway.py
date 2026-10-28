@@ -1,4 +1,5 @@
 import asyncio
+from dataclasses import replace
 from unittest.mock import AsyncMock
 
 import pytest
@@ -34,6 +35,10 @@ from aura_core.mcp.gateway import (
 from aura_core.enterprise.runtime_controls import (
     CircuitBreaker, CircuitOpenError, CircuitState, HashChainAuditLedger,
 )
+from aura_core.enterprise.approval_store import (
+    ApprovalStatus,
+    SQLiteApprovalStore,
+)
 from aura_core.enterprise.policy_bundle import (
     PolicyBundle, PolicyEffect, PolicyRule,
 )
@@ -52,6 +57,8 @@ def make_gateway(
     provider: object | None = None,
     capability_id: str = CAPABILITY_ID,
     policy_bundle: PolicyBundle | None = None,
+    approval_store: SQLiteApprovalStore | None = None,
+    approval_fingerprint_key: bytes | None = None,
 ) -> tuple[
     MCPGateway,
     PermissionEngine,
@@ -107,6 +114,8 @@ def make_gateway(
         capability_registry=capabilities,
         provider_registry=provider_registry,
         permission_engine=permissions,
+        approval_store=approval_store,
+        approval_fingerprint_key=approval_fingerprint_key,
     )
 
     return gateway, permissions, provider
@@ -388,8 +397,8 @@ def test_gateway_applies_provider_breaker_and_metadata_only_audit() -> None:
     assert breaker.state is CircuitState.OPEN
     records = ledger.snapshot()
     assert len(records) == 1
-    assert records[0].outcome == "error"
-    assert records[0].reason_code == "provider_call_failed"
+    assert records[0].outcome == "unknown"
+    assert records[0].reason_code == "provider_dispatch_outcome_unknown"
     assert "sensitive provider detail" not in repr(records)
     assert ledger.verify()
 
@@ -485,3 +494,416 @@ def test_enterprise_policy_bundle_approval_required_prevents_provider_dispatch()
     assert response.decision is AuthorizationDecision.REQUIRE_APPROVAL
     assert "approval_required" in response.reason
     provider.connection.call_tool.assert_not_awaited()
+
+
+
+def test_gateway_denial_audit_is_metadata_only_and_never_dispatches() -> None:
+    base_gateway, permissions, provider = make_gateway()
+    ledger = HashChainAuditLedger()
+    gateway = MCPGateway(
+        base_gateway._capability_registry,
+        base_gateway._provider_registry,
+        permissions,
+        audit_ledger=ledger,
+    )
+    permissions.add_policy(make_policy(AuthorizationDecision.DENY))
+    secret_arguments = {"path": "sensitive/private.txt", "token": "do-not-log"}
+
+    response = asyncio.run(
+        gateway.invoke(make_request(arguments=secret_arguments))
+    )
+
+    assert response.decision is AuthorizationDecision.DENY
+    assert response.result is None
+    provider.connection.call_tool.assert_not_awaited()
+    records = ledger.snapshot()
+    assert len(records) == 1
+    assert records[0].outcome == "denied"
+    assert records[0].reason_code == "authorization_denied"
+    assert "sensitive/private.txt" not in repr(records)
+    assert "do-not-log" not in repr(records)
+    assert ledger.verify()
+
+
+def test_gateway_does_not_treat_sibling_resource_scope_as_authorized() -> None:
+    gateway, permissions, provider = make_gateway()
+    permissions.add_policy(
+        PermissionPolicy(
+            policy_id="aura.policy.workspace-a",
+            policy_version="1.0.0",
+            principal_id="agent:planner",
+            capability_id=CAPABILITY_ID,
+            operation_id=OPERATION_ID,
+            resource_scope=r"D:\AURA\workspace-a",
+            authorization_level=AuthorizationLevel.READ,
+            decision=AuthorizationDecision.ALLOW,
+        )
+    )
+
+    response = asyncio.run(
+        gateway.invoke(make_request())
+    )
+
+    assert response.decision is AuthorizationDecision.DENY
+    assert response.result is None
+    assert "No applicable explicit authorization policy" in response.reason
+    provider.connection.call_tool.assert_not_awaited()
+
+
+
+@pytest.mark.parametrize(
+    ("policy_field", "policy_value"),
+    [
+        ("principal_id", "agent:other"),
+        ("capability_id", "filesystem.write"),
+        ("operation_id", "filesystem.write_file"),
+        ("resource_scope", r"D:\\AURA\\workspace-sibling"),
+    ],
+)
+def test_authorization_matrix_mismatched_policy_dimension_denies_before_dispatch(
+    policy_field: str, policy_value: str,
+) -> None:
+    gateway, permissions, provider = make_gateway()
+    values = {
+        "policy_id": f"aura.policy.matrix.{policy_field}",
+        "policy_version": "1.0.0",
+        "principal_id": "agent:planner",
+        "capability_id": CAPABILITY_ID,
+        "operation_id": OPERATION_ID,
+        "resource_scope": RESOURCE_SCOPE,
+        "authorization_level": AuthorizationLevel.READ,
+        "decision": AuthorizationDecision.ALLOW,
+    }
+    values[policy_field] = policy_value
+    permissions.add_policy(PermissionPolicy(**values))
+
+    response = asyncio.run(gateway.invoke(make_request()))
+
+    assert response.decision is AuthorizationDecision.DENY
+    assert response.result is None
+    provider.connection.call_tool.assert_not_awaited()
+
+
+@pytest.mark.parametrize(
+    ("decision", "expected"),
+    [
+        (AuthorizationDecision.DENY, AuthorizationDecision.DENY),
+        (AuthorizationDecision.REQUIRE_APPROVAL, AuthorizationDecision.REQUIRE_APPROVAL),
+        (AuthorizationDecision.DEFER, AuthorizationDecision.DEFER),
+    ],
+)
+def test_authorization_matrix_non_allow_decisions_never_dispatch(
+    decision: AuthorizationDecision, expected: AuthorizationDecision,
+) -> None:
+    gateway, permissions, provider = make_gateway()
+    permissions.add_policy(make_policy(decision))
+
+    response = asyncio.run(gateway.invoke(make_request()))
+
+    assert response.decision is expected
+    assert response.result is None
+    provider.connection.call_tool.assert_not_awaited()
+
+
+def test_authorization_matrix_explicit_allow_dispatches_exact_request() -> None:
+    gateway, permissions, provider = make_gateway()
+    provider.connection.call_tool.return_value = {"content": [{"type": "text", "text": "ok"}]}
+    permissions.add_policy(make_policy(AuthorizationDecision.ALLOW))
+    request = make_request(arguments={"path": "approved.txt"})
+
+    response = asyncio.run(gateway.invoke(request))
+
+    assert response.decision is AuthorizationDecision.ALLOW
+    provider.connection.call_tool.assert_awaited_once_with("read_file", {"path": "approved.txt"})
+
+
+@pytest.mark.parametrize(
+    ("effects", "expected"),
+    [
+        ((PolicyEffect.ALLOW, PolicyEffect.DENY), AuthorizationDecision.DENY),
+        ((PolicyEffect.ALLOW, PolicyEffect.REQUIRE_APPROVAL), AuthorizationDecision.REQUIRE_APPROVAL),
+        (
+            (PolicyEffect.ALLOW, PolicyEffect.REQUIRE_APPROVAL, PolicyEffect.DENY),
+            AuthorizationDecision.DENY,
+        ),
+    ],
+)
+def test_policy_bundle_restrictive_effects_override_allow(
+    effects: tuple[PolicyEffect, ...],
+    expected: AuthorizationDecision,
+) -> None:
+    bundle = PolicyBundle(
+        version="precedence-v1",
+        rules=tuple(
+            PolicyRule(
+                rule_id=f"precedence-{index}-{effect.value}",
+                principal_id="agent:planner",
+                capability_id=CAPABILITY_ID,
+                operation_id=OPERATION_ID,
+                resource_scope=RESOURCE_SCOPE,
+                effect=effect,
+                priority=100 if effect is PolicyEffect.ALLOW else -100,
+            )
+            for index, effect in enumerate(effects)
+        ),
+    )
+    gateway, permissions, provider = make_gateway(policy_bundle=bundle)
+    permissions.add_policy(make_policy(AuthorizationDecision.ALLOW))
+
+    response = asyncio.run(gateway.invoke(make_request()))
+
+    assert response.decision is expected
+    assert response.result is None
+    provider.connection.call_tool.assert_not_awaited()
+
+
+@pytest.mark.parametrize(
+    ("field_name", "wrong_value"),
+    [
+        ("principal_id", "agent:other"),
+        ("capability_id", "filesystem.write"),
+        ("operation_id", "filesystem.write_file"),
+        ("resource_scope", RESOURCE_SCOPE + "-sibling"),
+    ],
+)
+def test_policy_bundle_requires_exact_match_for_every_request_dimension(
+    field_name: str,
+    wrong_value: str,
+) -> None:
+    values = {
+        "principal_id": "agent:planner",
+        "capability_id": CAPABILITY_ID,
+        "operation_id": OPERATION_ID,
+        "resource_scope": RESOURCE_SCOPE,
+    }
+    values[field_name] = wrong_value
+    bundle = PolicyBundle(
+        version="exact-match-v1",
+        rules=(
+            PolicyRule(
+                rule_id=f"exact-match-{field_name}",
+                principal_id=values["principal_id"],
+                capability_id=values["capability_id"],
+                operation_id=values["operation_id"],
+                resource_scope=values["resource_scope"],
+                effect=PolicyEffect.ALLOW,
+            ),
+        ),
+    )
+    gateway, permissions, provider = make_gateway(policy_bundle=bundle)
+    permissions.add_policy(make_policy(AuthorizationDecision.ALLOW))
+
+    response = asyncio.run(gateway.invoke(make_request()))
+
+    assert response.decision is AuthorizationDecision.DENY
+    assert "no_matching_rule" in response.reason
+    assert response.result is None
+    provider.connection.call_tool.assert_not_awaited()
+
+
+
+def test_provider_dispatch_exception_is_audited_as_unknown() -> None:
+    gateway, permissions, provider = make_gateway()
+    ledger = HashChainAuditLedger()
+    gateway._audit_ledger = ledger
+    permissions.add_policy(make_policy(AuthorizationDecision.ALLOW))
+    provider.connection.call_tool.side_effect = RuntimeError("transport disconnected")
+
+    with pytest.raises(RuntimeError, match="transport disconnected"):
+        asyncio.run(gateway.invoke(make_request()))
+
+    records = ledger.snapshot()
+    assert len(records) == 1
+    assert records[0].outcome == "unknown"
+    assert records[0].reason_code == "provider_dispatch_outcome_unknown"
+    assert "transport disconnected" not in repr(records)
+    assert ledger.verify()
+
+def _require_approval_policy(
+    permissions: PermissionEngine,
+    *,
+    policy_id: str = "approval-required-v1",
+    policy_version: str = "1.0.0",
+) -> None:
+    permissions.add_policy(
+        PermissionPolicy(
+            policy_id=policy_id,
+            policy_version=policy_version,
+            principal_id="agent:planner",
+            capability_id=CAPABILITY_ID,
+            operation_id=OPERATION_ID,
+            resource_scope=RESOURCE_SCOPE,
+            authorization_level=AuthorizationLevel.USER_APPROVAL_REQUIRED,
+            decision=AuthorizationDecision.REQUIRE_APPROVAL,
+        )
+    )
+
+
+def test_gateway_creates_pending_approval_without_dispatch(tmp_path) -> None:
+    key = b"k" * 32
+    with SQLiteApprovalStore(str(tmp_path / "approvals.db")) as store:
+        gateway, permissions, provider = make_gateway(
+            approval_store=store,
+            approval_fingerprint_key=key,
+        )
+        _require_approval_policy(permissions)
+
+        response = asyncio.run(gateway.invoke(make_request()))
+
+        assert response.decision is AuthorizationDecision.REQUIRE_APPROVAL
+        assert response.approval_id
+        assert response.result is None
+        record = store.get(response.approval_id)
+        assert record is not None
+        assert record.status is ApprovalStatus.PENDING
+        provider.connection.call_tool.assert_not_awaited()
+
+
+def test_gateway_consumes_matching_approval_once_then_dispatches(tmp_path) -> None:
+    key = b"k" * 32
+    with SQLiteApprovalStore(str(tmp_path / "approvals.db")) as store:
+        gateway, permissions, provider = make_gateway(
+            approval_store=store,
+            approval_fingerprint_key=key,
+        )
+        _require_approval_policy(permissions)
+        provider.connection.call_tool.return_value = {"content": [{"type": "text", "text": "ok"}]}
+        request = make_request()
+
+        pending = asyncio.run(gateway.invoke(request))
+        record = store.get(pending.approval_id)
+        assert record is not None
+        approved = store.decide(
+            record.approval_id,
+            expected_version=record.version,
+            approver_id="human:reviewer",
+            decision=ApprovalStatus.APPROVED,
+        )
+        assert approved.status is ApprovalStatus.APPROVED
+
+        response = asyncio.run(gateway.invoke(replace(request, approval_id=record.approval_id)))
+
+        assert response.decision is AuthorizationDecision.ALLOW
+        assert response.result == {"content": [{"type": "text", "text": "ok"}]}
+        assert store.get(record.approval_id).status is ApprovalStatus.CONSUMED
+        provider.connection.call_tool.assert_awaited_once_with(
+            request.tool_name, request.arguments
+        )
+
+
+def test_gateway_rejects_approved_record_when_arguments_fingerprint_changes(tmp_path) -> None:
+    key = b"k" * 32
+    with SQLiteApprovalStore(str(tmp_path / "approvals.db")) as store:
+        gateway, permissions, provider = make_gateway(
+            approval_store=store,
+            approval_fingerprint_key=key,
+        )
+        _require_approval_policy(permissions)
+        request = make_request(arguments={"path": "approved.txt"})
+        pending = asyncio.run(gateway.invoke(request))
+        record = store.get(pending.approval_id)
+        assert record is not None
+        store.decide(
+            record.approval_id,
+            expected_version=record.version,
+            approver_id="human:reviewer",
+            decision=ApprovalStatus.APPROVED,
+        )
+
+        changed_request = replace(
+            request,
+            arguments={"path": "different-secret.txt"},
+            approval_id=record.approval_id,
+        )
+        response = asyncio.run(gateway.invoke(changed_request))
+
+        assert response.decision is AuthorizationDecision.REQUIRE_APPROVAL
+        assert response.result is None
+        assert "validation failed" in response.reason
+        assert store.get(record.approval_id).status is ApprovalStatus.APPROVED
+        provider.connection.call_tool.assert_not_awaited()
+
+
+def test_gateway_rejects_approval_after_policy_version_changes(tmp_path) -> None:
+    key = b"k" * 32
+    with SQLiteApprovalStore(str(tmp_path / "approvals.db")) as store:
+        gateway, permissions, provider = make_gateway(
+            approval_store=store,
+            approval_fingerprint_key=key,
+        )
+        _require_approval_policy(permissions, policy_id="approval-v1", policy_version="1.0.0")
+        request = make_request()
+        pending = asyncio.run(gateway.invoke(request))
+        record = store.get(pending.approval_id)
+        assert record is not None
+        store.decide(
+            record.approval_id,
+            expected_version=record.version,
+            approver_id="human:reviewer",
+            decision=ApprovalStatus.APPROVED,
+        )
+
+        permissions.revoke_policy("approval-v1")
+        _require_approval_policy(permissions, policy_id="approval-v2", policy_version="2.0.0")
+        response = asyncio.run(
+            gateway.invoke(replace(request, approval_id=record.approval_id))
+        )
+
+        assert response.decision is AuthorizationDecision.REQUIRE_APPROVAL
+        assert response.result is None
+        provider.connection.call_tool.assert_not_awaited()
+
+
+def test_gateway_fails_closed_when_approval_store_is_unavailable(tmp_path) -> None:
+    store = SQLiteApprovalStore(str(tmp_path / "approvals.db"))
+    gateway, permissions, provider = make_gateway(
+        approval_store=store,
+        approval_fingerprint_key=b"k" * 32,
+    )
+    _require_approval_policy(permissions)
+    store.close()
+
+    response = asyncio.run(gateway.invoke(make_request()))
+
+    assert response.decision is AuthorizationDecision.REQUIRE_APPROVAL
+    assert response.result is None
+    assert "store unavailable" in response.reason
+    provider.connection.call_tool.assert_not_awaited()
+
+
+def test_gateway_requires_a_strong_hmac_key_when_approval_store_is_configured(tmp_path) -> None:
+    with SQLiteApprovalStore(str(tmp_path / "approvals.db")) as store:
+        with pytest.raises(ValueError, match="at least 32 bytes"):
+            make_gateway(approval_store=store, approval_fingerprint_key=b"short")
+
+
+def test_gateway_rejects_replay_after_approval_was_consumed(tmp_path) -> None:
+    key = b"k" * 32
+    with SQLiteApprovalStore(str(tmp_path / "approvals.db")) as store:
+        gateway, permissions, provider = make_gateway(
+            approval_store=store,
+            approval_fingerprint_key=key,
+        )
+        _require_approval_policy(permissions)
+        provider.connection.call_tool.return_value = {"content": [{"type": "text", "text": "ok"}]}
+        request = make_request()
+        pending = asyncio.run(gateway.invoke(request))
+        record = store.get(pending.approval_id)
+        assert record is not None
+        store.decide(
+            record.approval_id,
+            expected_version=record.version,
+            approver_id="human:reviewer",
+            decision=ApprovalStatus.APPROVED,
+        )
+        approved_request = replace(request, approval_id=record.approval_id)
+
+        first = asyncio.run(gateway.invoke(approved_request))
+        replay = asyncio.run(gateway.invoke(approved_request))
+
+        assert first.decision is AuthorizationDecision.ALLOW
+        assert replay.decision is AuthorizationDecision.REQUIRE_APPROVAL
+        assert replay.result is None
+        provider.connection.call_tool.assert_awaited_once()
+        assert store.get(record.approval_id).status is ApprovalStatus.CONSUMED
+
