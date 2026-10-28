@@ -16,6 +16,8 @@ import pytest
 from aura_core.application.postgresql_episodic_memory import PostgreSQLEpisodicMemoryStore
 from aura_core.application.postgresql_task_state_machine import PostgreSQLTaskStateMachine
 from aura_core.application.task_state_machine import TaskState
+from aura_core.memory.postgresql_hierarchical_memory import PostgreSQLHierarchicalMemory
+from aura_core.application.postgresql_task_memory import PostgreSQLTaskMemoryCoordinator
 from aura_core.config.storage import validate_storage_mode
 from aura_core.enterprise.approval_store import ApprovalStatus
 from aura_core.enterprise.postgresql_approval_store import PostgreSQLApprovalStore
@@ -96,6 +98,32 @@ def test_postgresql_task_state_machine_persists_dependency_gates_and_owner_scope
             assert (await store.get(parent.task_id, principal_id=principal)).state is TaskState.SUCCEEDED
         finally:
             await store.close()
+    asyncio.run(scenario())
+
+
+
+def test_postgresql_hierarchical_memory_checkpoints_survive_reopen_and_are_scoped():
+    if not DATABASE_URL:
+        pytest.skip("requires AURA_TEST_DATABASE_URL and a running PostgreSQL service")
+
+    async def scenario():
+        suffix = uuid4().hex
+        principal = f"memory-principal-{suffix}"
+        other = f"memory-other-{suffix}"
+        store = PostgreSQLHierarchicalMemory(DATABASE_URL)
+        coordinator = PostgreSQLTaskMemoryCoordinator(store)
+        try:
+            await coordinator.initialize()
+            context = await coordinator.begin(principal_id=principal, task_id=f"memory-task-{suffix}", goal="test restart recovery")
+            assert any(item.kind == "goal" for item in context)
+            await coordinator.finish(principal_id=principal, task_id=f"memory-task-{suffix}", state="succeeded", summary="remote checkpoint persisted")
+            checkpoint = await store.load_checkpoint(principal_id=principal, task_id=f"memory-task-{suffix}")
+            assert checkpoint and checkpoint["state"] == "succeeded"
+            assert await store.load_checkpoint(principal_id=other, task_id=f"memory-task-{suffix}") is None
+            records = await store.recall(principal_id=principal, task_id=f"memory-task-{suffix}")
+            assert any("remote checkpoint persisted" in item.content for item in records)
+        finally:
+            await coordinator.close()
     asyncio.run(scenario())
 
 
