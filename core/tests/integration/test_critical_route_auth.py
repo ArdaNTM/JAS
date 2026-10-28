@@ -70,3 +70,24 @@ def test_authenticated_capability_approval_reaches_governed_handler() -> None:
     # handler's 404 confirms auth passed without performing any approval.
     assert response.status_code == 404
     assert response.json()["detail"] == "No capability proposals are pending"
+
+def test_capability_discovery_rejects_missing_bearer() -> None:
+    response = _client().post(
+        "/api/capabilities/discover/provider-1",
+        json={"category": "research"},
+    )
+    assert response.status_code == 401
+    assert response.headers["www-authenticate"] == "Bearer"
+
+
+def test_cross_capability_reasoning_rejects_missing_bearer() -> None:
+    response = _client().post(
+        "/api/reasoning/cross-capability",
+        json={
+            "objective": "summarize evidence",
+            "evidence": [{"capability_id": "test.capability", "provider_id": "test.provider", "result": {"value": "example"}}],
+            "principal_id": "attacker-selected-principal",
+        },
+    )
+    assert response.status_code == 401
+    assert response.headers["www-authenticate"] == "Bearer"
