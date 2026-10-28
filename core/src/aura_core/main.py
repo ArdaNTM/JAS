@@ -467,6 +467,20 @@ def build_app() -> FastAPI:
                     ),
                 )
             )
+            # Public web retrieval is read-only but still requires an explicit,
+            # principal- and scope-bound grant before MCP dispatch.
+            kernel.permission_engine.add_policy(
+                PermissionPolicy(
+                    policy_id="local-owner:internet.fetch:local_default",
+                    policy_version="1.0.0",
+                    principal_id="local_owner",
+                    capability_id="internet.fetch",
+                    operation_id="internet.fetch",
+                    resource_scope="local_default",
+                    authorization_level=AuthorizationLevel.EXECUTE,
+                    decision=AuthorizationDecision.ALLOW,
+                )
+            )
             kernel.permission_engine.add_policy(
                 PermissionPolicy(
                     policy_id="local-user:speech.synthesize:local_default",
