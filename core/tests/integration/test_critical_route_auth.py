@@ -91,3 +91,72 @@ def test_cross_capability_reasoning_rejects_missing_bearer() -> None:
     )
     assert response.status_code == 401
     assert response.headers["www-authenticate"] == "Bearer"
+
+def test_vector_memory_rejects_missing_bearer_before_store_access() -> None:
+    response = _client().post(
+        "/api/memory/vector",
+        json={"principal_id": "attacker", "content": "private", "tags": []},
+    )
+    assert response.status_code == 401
+    assert response.headers["www-authenticate"] == "Bearer"
+
+
+def test_vector_memory_uses_authenticated_principal_not_request_body() -> None:
+    client = _client()
+
+    class MemoryStore:
+        principal_id = None
+
+        async def remember(self, *, principal_id, content, tags):
+            self.principal_id = principal_id
+            return "memory-1"
+
+    store = MemoryStore()
+    client.app.state.local_vector_memory = store
+    response = client.post(
+        "/api/memory/vector",
+        json={"principal_id": "attacker-selected-principal", "content": "private", "tags": []},
+        headers={"Authorization": "Bearer " + "t" * 40},
+    )
+    assert response.status_code == 200
+    assert store.principal_id == "local_owner"
+    assert response.json()["principal_id"] == "local_owner"
+
+
+def test_prefetch_observation_rejects_missing_bearer() -> None:
+    response = _client().post(
+        "/api/prefetch/observe",
+        json={
+            "principal_id": "attacker",
+            "event_key": "test",
+            "capability_id": "test.capability",
+            "hour_local": 12,
+        },
+    )
+    assert response.status_code == 401
+    assert response.headers["www-authenticate"] == "Bearer"
+
+
+def test_tool_proposal_creation_rejects_missing_bearer() -> None:
+    response = _client().post(
+        "/api/tools/proposals",
+        json={
+            "tool_name": "candidate",
+            "description": "test proposal",
+            "source_code": "def run(data):\n    return data",
+            "input_schema": {"type": "object"},
+            "output_schema": {"type": "object"},
+        },
+    )
+    assert response.status_code == 401
+    assert response.headers["www-authenticate"] == "Bearer"
+
+
+def test_speech_transcription_rejects_missing_bearer() -> None:
+    response = _client().post(
+        "/api/speech/transcribe",
+        json={"audio_base64": "YQ==", "language": "tr", "mime_type": "audio/wav"},
+    )
+    assert response.status_code == 401
+    assert response.headers["www-authenticate"] == "Bearer"
+
