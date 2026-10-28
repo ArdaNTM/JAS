@@ -7,6 +7,7 @@ gate must remain in place until those interfaces are migrated too.
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import os
 from uuid import uuid4
 
@@ -47,9 +48,11 @@ def test_postgresql_stores_enforce_scope_lifecycle_and_one_time_approval():
             assert await memory.count(principal_id=other_principal) == 0
             assert await memory.recall(principal_id=other_principal, query=suffix) == []
 
-            approval = await approvals.create(principal_id=principal, capability_id="research.fetch", operation_id="research.fetch", resource_scope=f"ci:{suffix}", request_fingerprint=f"fingerprint-{suffix}", policy_digest=f"policy-{suffix}", approval_id=f"ci-approval-{suffix}")
+            fingerprint = hashlib.sha256(f"fingerprint-{suffix}".encode()).hexdigest()
+            policy_digest = hashlib.sha256(f"policy-{suffix}".encode()).hexdigest()
+            approval = await approvals.create(principal_id=principal, capability_id="research.fetch", operation_id="research.fetch", resource_scope=f"ci:{suffix}", request_fingerprint=fingerprint, policy_digest=policy_digest, approval_id=f"ci-approval-{suffix}")
             approved = await approvals.decide(approval.approval_id, expected_version=approval.version, approver_id=principal, decision=ApprovalStatus.APPROVED)
-            consumed = await approvals.consume(approved.approval_id, expected_version=approved.version, principal_id=principal, capability_id="research.fetch", operation_id="research.fetch", resource_scope=f"ci:{suffix}", request_fingerprint=f"fingerprint-{suffix}", policy_digest=f"policy-{suffix}")
+            consumed = await approvals.consume(approved.approval_id, expected_version=approved.version, principal_id=principal, capability_id="research.fetch", operation_id="research.fetch", resource_scope=f"ci:{suffix}", request_fingerprint=fingerprint, policy_digest=policy_digest)
             assert consumed.status is ApprovalStatus.CONSUMED
             with pytest.raises(Exception):
                 await approvals.consume(approved.approval_id, expected_version=consumed.version, principal_id=principal, capability_id="research.fetch", operation_id="research.fetch", resource_scope=f"ci:{suffix}", request_fingerprint=f"fingerprint-{suffix}", policy_digest=f"policy-{suffix}")
