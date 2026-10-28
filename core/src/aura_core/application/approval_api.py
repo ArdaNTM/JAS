@@ -37,6 +37,11 @@ async def pending_approvals(
     result: list[dict[str, object]] = []
 
     for record in reversed(records):
+        # Audit records may contain requests from multiple principals. Never
+        # expose another principal's approval metadata through this projection.
+        if record.request.principal_id != principal_id:
+            continue
+
         if (
             record.decision.decision
             is not AuthorizationDecision.REQUIRE_APPROVAL
