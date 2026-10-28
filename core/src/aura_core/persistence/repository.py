@@ -6,6 +6,7 @@ those stores and artifact writes are migrated and composed through it.
 """
 from __future__ import annotations
 
+import copy
 import json
 from dataclasses import dataclass
 from typing import Any, Protocol
@@ -40,7 +41,7 @@ class InMemoryRepository:
         key = record.entity_type, record.entity_id
         previous = self._records.get(key)
         saved = PersistedRecord(
-            record.entity_type, record.entity_id, dict(record.data),
+            record.entity_type, record.entity_id, copy.deepcopy(record.data),
             1 if previous is None else previous.revision + 1,
         )
         self._records[key] = saved
@@ -115,7 +116,7 @@ class PostgreSQLRepository:
         data = row["data"]
         if isinstance(data, str):
             data = json.loads(data)
-        return PersistedRecord(entity_type, entity_id, dict(data), int(row["revision"]))
+        return PersistedRecord(entity_type, entity_id, copy.deepcopy(dict(data)), int(row["revision"]))
 
     async def close(self) -> None:
         if self._owns_engine:
