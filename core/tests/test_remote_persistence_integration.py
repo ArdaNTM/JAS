@@ -72,11 +72,12 @@ def test_minio_s3_compatible_service_round_trip_and_delete():
     from urllib.request import urlopen
     from aura_core.storage.s3_object_storage import S3ObjectStorage
 
-    client = Minio(os.environ.get("AURA_TEST_S3_ENDPOINT", "127.0.0.1:4566"), access_key=os.environ.get("AURA_TEST_S3_ACCESS_KEY", "test"), secret_key=os.environ.get("AURA_TEST_S3_SECRET_KEY", "minioadmin"), secure=False)
+    client = Minio(os.environ.get("AURA_TEST_S3_ENDPOINT", "127.0.0.1:9000"), access_key=os.environ.get("AURA_TEST_S3_ACCESS_KEY", "minioadmin"), secret_key=os.environ.get("AURA_TEST_S3_SECRET_KEY", "minioadmin"), secure=False)
     bucket = f"aura-ci-{uuid4().hex[:20]}"
     payload = f"remote-object-{uuid4().hex}".encode()
     key = "integration/checkpoint.bin"
-    adapter = S3ObjectStorage(endpoint_url=f"http://{os.environ.get(\"AURA_TEST_S3_ENDPOINT\", \"127.0.0.1:9000\")}", bucket=bucket, access_key=os.environ.get("AURA_TEST_S3_ACCESS_KEY", "minioadmin"), secret_key=os.environ.get("AURA_TEST_S3_SECRET_KEY", "minioadmin"), region="us-east-1")
+    endpoint = os.environ.get("AURA_TEST_S3_ENDPOINT", "127.0.0.1:9000")
+    adapter = S3ObjectStorage(endpoint_url=f"http://{endpoint}", bucket=bucket, access_key=os.environ.get("AURA_TEST_S3_ACCESS_KEY", "minioadmin"), secret_key=os.environ.get("AURA_TEST_S3_SECRET_KEY", "minioadmin"), region="us-east-1")
     try:
         client.make_bucket(bucket)
         adapter.put_bytes(key, payload, content_type="application/octet-stream")
