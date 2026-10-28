@@ -397,8 +397,8 @@ def test_gateway_applies_provider_breaker_and_metadata_only_audit() -> None:
     assert breaker.state is CircuitState.OPEN
     records = ledger.snapshot()
     assert len(records) == 1
-    assert records[0].outcome == "error"
-    assert records[0].reason_code == "provider_call_failed"
+    assert records[0].outcome == "unknown"
+    assert records[0].reason_code == "provider_dispatch_outcome_unknown"
     assert "sensitive provider detail" not in repr(records)
     assert ledger.verify()
 
