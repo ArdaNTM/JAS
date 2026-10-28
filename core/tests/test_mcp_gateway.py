@@ -1,4 +1,5 @@
 import asyncio
+from dataclasses import replace
 from unittest.mock import AsyncMock
 
 import pytest
@@ -34,6 +35,10 @@ from aura_core.mcp.gateway import (
 from aura_core.enterprise.runtime_controls import (
     CircuitBreaker, CircuitOpenError, CircuitState, HashChainAuditLedger,
 )
+from aura_core.enterprise.approval_store import (
+    ApprovalStatus,
+    SQLiteApprovalStore,
+)
 from aura_core.enterprise.policy_bundle import (
     PolicyBundle, PolicyEffect, PolicyRule,
 )
@@ -52,6 +57,8 @@ def make_gateway(
     provider: object | None = None,
     capability_id: str = CAPABILITY_ID,
     policy_bundle: PolicyBundle | None = None,
+    approval_store: SQLiteApprovalStore | None = None,
+    approval_fingerprint_key: bytes | None = None,
 ) -> tuple[
     MCPGateway,
     PermissionEngine,
@@ -107,6 +114,8 @@ def make_gateway(
         capability_registry=capabilities,
         provider_registry=provider_registry,
         permission_engine=permissions,
+        approval_store=approval_store,
+        approval_fingerprint_key=approval_fingerprint_key,
     )
 
     return gateway, permissions, provider
@@ -580,6 +589,7 @@ def test_authorization_matrix_mismatched_policy_dimension_denies_before_dispatch
     [
         (AuthorizationDecision.DENY, AuthorizationDecision.DENY),
         (AuthorizationDecision.REQUIRE_APPROVAL, AuthorizationDecision.REQUIRE_APPROVAL),
+        (AuthorizationDecision.DEFER, AuthorizationDecision.DEFER),
     ],
 )
 def test_authorization_matrix_non_allow_decisions_never_dispatch(
@@ -689,3 +699,193 @@ def test_policy_bundle_requires_exact_match_for_every_request_dimension(
     assert "no_matching_rule" in response.reason
     assert response.result is None
     provider.connection.call_tool.assert_not_awaited()
+
+
+def _require_approval_policy(
+    permissions: PermissionEngine,
+    *,
+    policy_id: str = "approval-required-v1",
+    policy_version: str = "1.0.0",
+) -> None:
+    permissions.add_policy(
+        PermissionPolicy(
+            policy_id=policy_id,
+            policy_version=policy_version,
+            principal_id="agent:planner",
+            capability_id=CAPABILITY_ID,
+            operation_id=OPERATION_ID,
+            resource_scope=RESOURCE_SCOPE,
+            authorization_level=AuthorizationLevel.USER_APPROVAL_REQUIRED,
+            decision=AuthorizationDecision.REQUIRE_APPROVAL,
+        )
+    )
+
+
+def test_gateway_creates_pending_approval_without_dispatch(tmp_path) -> None:
+    key = b"k" * 32
+    with SQLiteApprovalStore(str(tmp_path / "approvals.db")) as store:
+        gateway, permissions, provider = make_gateway(
+            approval_store=store,
+            approval_fingerprint_key=key,
+        )
+        _require_approval_policy(permissions)
+
+        response = asyncio.run(gateway.invoke(make_request()))
+
+        assert response.decision is AuthorizationDecision.REQUIRE_APPROVAL
+        assert response.approval_id
+        assert response.result is None
+        record = store.get(response.approval_id)
+        assert record is not None
+        assert record.status is ApprovalStatus.PENDING
+        provider.connection.call_tool.assert_not_awaited()
+
+
+def test_gateway_consumes_matching_approval_once_then_dispatches(tmp_path) -> None:
+    key = b"k" * 32
+    with SQLiteApprovalStore(str(tmp_path / "approvals.db")) as store:
+        gateway, permissions, provider = make_gateway(
+            approval_store=store,
+            approval_fingerprint_key=key,
+        )
+        _require_approval_policy(permissions)
+        provider.connection.call_tool.return_value = {"content": [{"type": "text", "text": "ok"}]}
+        request = make_request()
+
+        pending = asyncio.run(gateway.invoke(request))
+        record = store.get(pending.approval_id)
+        assert record is not None
+        approved = store.decide(
+            record.approval_id,
+            expected_version=record.version,
+            approver_id="human:reviewer",
+            decision=ApprovalStatus.APPROVED,
+        )
+        assert approved.status is ApprovalStatus.APPROVED
+
+        response = asyncio.run(gateway.invoke(replace(request, approval_id=record.approval_id)))
+
+        assert response.decision is AuthorizationDecision.ALLOW
+        assert response.result == {"content": [{"type": "text", "text": "ok"}]}
+        assert store.get(record.approval_id).status is ApprovalStatus.CONSUMED
+        provider.connection.call_tool.assert_awaited_once_with(
+            request.tool_name, request.arguments
+        )
+
+
+def test_gateway_rejects_approved_record_when_arguments_fingerprint_changes(tmp_path) -> None:
+    key = b"k" * 32
+    with SQLiteApprovalStore(str(tmp_path / "approvals.db")) as store:
+        gateway, permissions, provider = make_gateway(
+            approval_store=store,
+            approval_fingerprint_key=key,
+        )
+        _require_approval_policy(permissions)
+        request = make_request(arguments={"path": "approved.txt"})
+        pending = asyncio.run(gateway.invoke(request))
+        record = store.get(pending.approval_id)
+        assert record is not None
+        store.decide(
+            record.approval_id,
+            expected_version=record.version,
+            approver_id="human:reviewer",
+            decision=ApprovalStatus.APPROVED,
+        )
+
+        changed_request = replace(
+            request,
+            arguments={"path": "different-secret.txt"},
+            approval_id=record.approval_id,
+        )
+        response = asyncio.run(gateway.invoke(changed_request))
+
+        assert response.decision is AuthorizationDecision.REQUIRE_APPROVAL
+        assert response.result is None
+        assert "validation failed" in response.reason
+        assert store.get(record.approval_id).status is ApprovalStatus.APPROVED
+        provider.connection.call_tool.assert_not_awaited()
+
+
+def test_gateway_rejects_approval_after_policy_version_changes(tmp_path) -> None:
+    key = b"k" * 32
+    with SQLiteApprovalStore(str(tmp_path / "approvals.db")) as store:
+        gateway, permissions, provider = make_gateway(
+            approval_store=store,
+            approval_fingerprint_key=key,
+        )
+        _require_approval_policy(permissions, policy_id="approval-v1", policy_version="1.0.0")
+        request = make_request()
+        pending = asyncio.run(gateway.invoke(request))
+        record = store.get(pending.approval_id)
+        assert record is not None
+        store.decide(
+            record.approval_id,
+            expected_version=record.version,
+            approver_id="human:reviewer",
+            decision=ApprovalStatus.APPROVED,
+        )
+
+        permissions.revoke_policy("approval-v1")
+        _require_approval_policy(permissions, policy_id="approval-v2", policy_version="2.0.0")
+        response = asyncio.run(
+            gateway.invoke(replace(request, approval_id=record.approval_id))
+        )
+
+        assert response.decision is AuthorizationDecision.REQUIRE_APPROVAL
+        assert response.result is None
+        provider.connection.call_tool.assert_not_awaited()
+
+
+def test_gateway_fails_closed_when_approval_store_is_unavailable(tmp_path) -> None:
+    store = SQLiteApprovalStore(str(tmp_path / "approvals.db"))
+    gateway, permissions, provider = make_gateway(
+        approval_store=store,
+        approval_fingerprint_key=b"k" * 32,
+    )
+    _require_approval_policy(permissions)
+    store.close()
+
+    response = asyncio.run(gateway.invoke(make_request()))
+
+    assert response.decision is AuthorizationDecision.REQUIRE_APPROVAL
+    assert response.result is None
+    assert "store unavailable" in response.reason
+    provider.connection.call_tool.assert_not_awaited()
+
+
+def test_gateway_requires_a_strong_hmac_key_when_approval_store_is_configured(tmp_path) -> None:
+    with SQLiteApprovalStore(str(tmp_path / "approvals.db")) as store:
+        with pytest.raises(ValueError, match="at least 32 bytes"):
+            make_gateway(approval_store=store, approval_fingerprint_key=b"short")
+
+
+def test_gateway_rejects_replay_after_approval_was_consumed(tmp_path) -> None:
+    key = b"k" * 32
+    with SQLiteApprovalStore(str(tmp_path / "approvals.db")) as store:
+        gateway, permissions, provider = make_gateway(
+            approval_store=store,
+            approval_fingerprint_key=key,
+        )
+        _require_approval_policy(permissions)
+        provider.connection.call_tool.return_value = {"content": [{"type": "text", "text": "ok"}]}
+        request = make_request()
+        pending = asyncio.run(gateway.invoke(request))
+        record = store.get(pending.approval_id)
+        assert record is not None
+        store.decide(
+            record.approval_id,
+            expected_version=record.version,
+            approver_id="human:reviewer",
+            decision=ApprovalStatus.APPROVED,
+        )
+        approved_request = replace(request, approval_id=record.approval_id)
+
+        first = asyncio.run(gateway.invoke(approved_request))
+        replay = asyncio.run(gateway.invoke(approved_request))
+
+        assert first.decision is AuthorizationDecision.ALLOW
+        assert replay.decision is AuthorizationDecision.REQUIRE_APPROVAL
+        assert replay.result is None
+        provider.connection.call_tool.assert_awaited_once()
+        assert store.get(record.approval_id).status is ApprovalStatus.CONSUMED
+
