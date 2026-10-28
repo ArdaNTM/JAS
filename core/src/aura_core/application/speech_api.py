@@ -4,8 +4,10 @@ from __future__ import annotations
 import base64
 import binascii
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
+
+from aura_core.security.http_auth import authenticated_principal
 
 
 router = APIRouter(prefix="/api/speech", tags=["full-duplex-speech"])
@@ -39,7 +41,11 @@ class SpeakRequest(SessionRequest):
 
 
 @router.post("/sessions")
-async def start_session(body: SessionRequest, request: Request) -> dict[str, object]:
+async def start_session(
+    body: SessionRequest,
+    request: Request,
+    principal_id: str = Depends(authenticated_principal),
+) -> dict[str, object]:
     _require_local(request)
     if not body.confirmed:
         raise HTTPException(status_code=409, detail="Explicit confirmation is required to activate microphone processing")
@@ -51,7 +57,11 @@ async def start_session(body: SessionRequest, request: Request) -> dict[str, obj
 
 
 @router.post("/sessions/audio")
-async def ingest_audio(body: AudioRequest, request: Request) -> dict[str, object]:
+async def ingest_audio(
+    body: AudioRequest,
+    request: Request,
+    principal_id: str = Depends(authenticated_principal),
+) -> dict[str, object]:
     _require_local(request)
     manager = _manager(request)
     if manager.snapshot().session_id != body.session_id:
@@ -67,7 +77,11 @@ async def ingest_audio(body: AudioRequest, request: Request) -> dict[str, object
 
 
 @router.post("/sessions/speak")
-async def speak(body: SpeakRequest, request: Request) -> dict[str, object]:
+async def speak(
+    body: SpeakRequest,
+    request: Request,
+    principal_id: str = Depends(authenticated_principal),
+) -> dict[str, object]:
     _require_local(request)
     manager = _manager(request)
     if manager.snapshot().session_id != body.session_id:
@@ -82,7 +96,11 @@ async def speak(body: SpeakRequest, request: Request) -> dict[str, object]:
 
 
 @router.post("/sessions/interrupt")
-async def interrupt(body: SessionRequest, request: Request) -> dict[str, object]:
+async def interrupt(
+    body: SessionRequest,
+    request: Request,
+    principal_id: str = Depends(authenticated_principal),
+) -> dict[str, object]:
     _require_local(request)
     manager = _manager(request)
     if manager.snapshot().session_id != body.session_id:
@@ -92,7 +110,11 @@ async def interrupt(body: SessionRequest, request: Request) -> dict[str, object]
 
 
 @router.delete("/sessions/{session_id}")
-async def close_session(session_id: str, request: Request) -> dict[str, object]:
+async def close_session(
+    session_id: str,
+    request: Request,
+    principal_id: str = Depends(authenticated_principal),
+) -> dict[str, object]:
     _require_local(request)
     manager = _manager(request)
     if manager.snapshot().session_id != session_id:

@@ -64,3 +64,27 @@ def test_executor_events_include_request_id_metadata_without_changing_correlatio
     assert len(received) == 2
     assert all(event.metadata["request_id"] == "request-trace-test-123" for event in received)
     assert all(event.correlation_id == plan.plan_id for event in received)
+
+def test_executor_marks_mcp_tool_error_result_as_failed() -> None:
+    class ErrorGateway:
+        async def invoke(self, request):
+            return MCPGatewayResponse(
+                AuthorizationDecision.ALLOW,
+                {"isError": True, "content": [{"type": "text", "text": "Read rejected"}]},
+                "mcp:test",
+                request.tool_name,
+                "MCP tool invocation completed",
+            )
+
+    result = asyncio.run(
+        AgentExecutor(ErrorGateway()).execute(
+            task(),
+            Plan("plan-error", "task-1", (step("read"),)),
+        )
+    )
+
+    assert result.state is PlanState.FAILED
+    assert result.steps[0].state.value == "failed"
+    assert result.steps[0].reason == "MCP tool returned an error result"
+    assert result.steps[0].result["isError"] is True
+

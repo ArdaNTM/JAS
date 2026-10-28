@@ -1,6 +1,7 @@
 from pathlib import Path
 
-JAS_SNAPSHOT = Path(r"D:\AURA\JAS\acquisition\host_snapshot\host_snapshot.txt")
+REPO_ROOT = Path(__file__).resolve().parents[2]
+JAS_SNAPSHOT = REPO_ROOT / "acquisition" / "host_snapshot" / "host_snapshot.txt"
 
 
 def test_jas_snapshot_contains_required_sections():

@@ -1,0 +1,49 @@
+name: AURA Core Assurance
+
+on:
+  pull_request:
+    paths:
+      - "core/**"
+      - ".github/workflows/aura-core-assurance.yml"
+  push:
+    branches:
+      - main
+      - "feat/**"
+    paths:
+      - "core/**"
+      - ".github/workflows/aura-core-assurance.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aura-core-assurance-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  core-tests:
+    name: Core tests and bytecode compilation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: core
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: core/uv.lock
+      - name: Install locked project and test dependencies
+        run: uv sync --frozen --group dev
+      - name: Compile Core sources and tests
+        run: uv run python -m compileall -q src tests
+      - name: Run Core unit tests
+        run: uv run pytest -q

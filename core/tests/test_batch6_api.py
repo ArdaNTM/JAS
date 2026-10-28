@@ -25,7 +25,9 @@ def make_client() -> TestClient:
         backend_config=BackendConfig(endpoint="http://127.0.0.1:11434", timeout=2.0),
         transport=StubTransport(),
     )
-    return TestClient(app)
+    app.state.http_bearer_token = "t" * 40
+    app.state.http_principal_id = "local_owner"
+    return TestClient(app, headers={"Authorization": "Bearer " + "t" * 40})
 
 
 def test_simulation_endpoint_returns_plan_and_non_executing_analysis() -> None:

@@ -9,10 +9,40 @@ from typing import Any, Callable
 
 _request_id_context: ContextVar[str | None] = ContextVar("aura_request_id", default=None)
 
+def _mcp_result_is_error(result: Any) -> bool:
+    """Recognize MCP tool-level errors without trusting result payload as authority."""
+    if isinstance(result, dict):
+        return result.get("isError", result.get("is_error", False)) is True
+    return (
+        getattr(result, "isError", getattr(result, "is_error", False)) is True
+    )
+
+
 from aura_core.kernel.events import EventBus, KernelEvent
 from aura_core.memory.hierarchical_memory import ContextItem
 from aura_core.kernel.permissions import AuthorizationDecision, RiskLevel
 from aura_core.mcp.gateway import MCPGateway, MCPGatewayRequest
+from aura_core.enterprise.runtime_controls import ExecutionBudget
+
+
+_TEST_DATA_READ_OPERATION = (
+    "filesystem.read_test_data",
+    "filesystem.read_test_data",
+    "read_file",
+)
+_ALLOWED_TEST_DATA_FILENAME = "governor-read-test.txt"
+
+
+def validate_test_data_path(arguments: dict[str, Any] | None) -> None:
+    """Reject every path except the exact test-data filename at execution time."""
+    path = arguments.get("path") if isinstance(arguments, dict) else None
+    if type(path) is not str or path != _ALLOWED_TEST_DATA_FILENAME:
+        raise ValueError("Rejected path for test-data read")
+
+
+def _validate_step_arguments(step: "PlanStep") -> None:
+    if (step.capability_id, step.operation_id, step.tool_name) == _TEST_DATA_READ_OPERATION:
+        validate_test_data_path(step.arguments)
 
 
 class StepState(StrEnum):
@@ -168,6 +198,11 @@ class AgentExecutor:
         if plan.task_id != task.task_id:
             raise ValueError("Plan does not belong to task")
         started = monotonic()
+        budget = ExecutionBudget(
+            max_steps=task.max_steps,
+            max_tool_calls=task.max_steps,
+            deadline_monotonic=started + task.timeout_seconds,
+        )
         completed: dict[str, StepResult] = {}
         pending = list(plan.steps)
         capacity = max(1, min(8, int(__import__("os").getenv("AURA_MAX_PARALLEL_STEPS", "4"))))
@@ -180,7 +215,7 @@ class AgentExecutor:
                 if remaining <= 0:
                     result = StepResult(step.step_id, StepState.CANCELLED, 0, reason="Task timed out")
                 else:
-                    execution = asyncio.create_task(self._execute_step(task, plan, step))
+                    execution = asyncio.create_task(self._execute_step(task, plan, step, budget=budget, cancelled=cancelled))
                     deadline = monotonic() + remaining
                     try:
                         while not execution.done():
@@ -284,6 +319,8 @@ class AgentExecutor:
                 raise ValueError("Compensation step IDs must be unique")
             seen.add(step.step_id)
             self._event_compensation("CompensationStarted", task, plan_id, step)
+            if (step.capability_id, step.operation_id, step.tool_name) == _TEST_DATA_READ_OPERATION:
+                validate_test_data_path(step.arguments)
             response = await self._gateway.invoke(MCPGatewayRequest(
                 request_id=f"{plan_id}:compensation:{step.step_id}",
                 principal_id=task.principal_id,
@@ -330,8 +367,18 @@ class AgentExecutor:
             metadata={"request_id": request_id} if request_id else {},
         ))
 
-    async def _execute_step(self, task: Task, plan: Plan, step: PlanStep) -> StepResult:
+    async def _execute_step(
+        self, task: Task, plan: Plan, step: PlanStep,
+        *, budget: ExecutionBudget | None = None,
+        cancelled: Callable[[], bool] | None = None,
+    ) -> StepResult:
+        _validate_step_arguments(step)
+        if budget is not None:
+            budget.consume_step(cancelled=cancelled() if cancelled is not None else False)
         for attempt in range(1, step.max_attempts + 1):
+            if budget is not None:
+                budget.check(cancelled=cancelled() if cancelled is not None else False)
+                budget.consume_tool_call()
             response = await self._gateway.invoke(MCPGatewayRequest(
                 request_id=f"{plan.plan_id}:{step.step_id}:{attempt}", principal_id=task.principal_id,
                 capability_id=step.capability_id, operation_id=step.operation_id,
@@ -339,6 +386,14 @@ class AgentExecutor:
                 tool_name=step.tool_name, arguments=step.arguments, task_id=task.task_id,
             ))
             if response.decision is AuthorizationDecision.ALLOW:
+                if _mcp_result_is_error(response.result):
+                    return StepResult(
+                        step.step_id,
+                        StepState.FAILED,
+                        attempt,
+                        result=response.result,
+                        reason="MCP tool returned an error result",
+                    )
                 return StepResult(step.step_id, StepState.SUCCEEDED, attempt, response.result)
             return StepResult(step.step_id, StepState.FAILED, attempt, reason=response.reason)
         raise RuntimeError("Unreachable execution state")

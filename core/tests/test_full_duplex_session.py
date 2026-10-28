@@ -191,3 +191,93 @@ def test_faster_whisper_recognizer_decodes_audio_and_passes_samples_to_model(mon
     assert observed["samples"].dtype == np.float32
     assert observed["samples"].tolist() == pytest.approx([0.1, -0.2, 0.3])
     assert observed["transcribe_kwargs"] == {"language": "tr", "beam_size": 1, "vad_filter": True}
+
+
+
+def test_vision_denial_never_calls_provider_and_supports_async_consent():
+    class Capture:
+        def __init__(self):
+            self.calls = 0
+
+        async def capture(self):
+            self.calls += 1
+            return b"image"
+
+    class Vision:
+        def __init__(self):
+            self.calls = 0
+
+        async def describe(self, image, *, prompt):
+            self.calls += 1
+            return "description"
+
+    async def scenario():
+        capture = Capture()
+        vision = Vision()
+
+        async def deny(_principal):
+            await asyncio.sleep(0)
+            return False
+
+        service = ControlledVisionService(
+            capture=capture, provider=vision, consent=deny,
+        )
+        with pytest.raises(PermissionError):
+            await service.describe_screen(principal_id="alice")
+        assert capture.calls == 0
+        assert vision.calls == 0
+
+    asyncio.run(scenario())
+
+
+def test_vision_rejects_oversized_capture_before_provider_dispatch():
+    class Capture:
+        async def capture(self):
+            return b"0123456789"
+
+    class Vision:
+        def __init__(self):
+            self.calls = 0
+
+        async def describe(self, image, *, prompt):
+            self.calls += 1
+            return "description"
+
+    async def scenario():
+        vision = Vision()
+        service = ControlledVisionService(
+            capture=Capture(), provider=vision, consent=lambda _: True,
+            max_image_bytes=4,
+        )
+        with pytest.raises(ValueError, match="exceeds configured bounds"):
+            await service.describe_screen(principal_id="alice")
+        assert vision.calls == 0
+
+    asyncio.run(scenario())
+
+
+def test_vision_bounds_prompt_and_output():
+    class Capture:
+        async def capture(self):
+            return b"image"
+
+    class Vision:
+        def __init__(self):
+            self.prompt = None
+
+        async def describe(self, image, *, prompt):
+            self.prompt = prompt
+            return "x" * 9000
+
+    async def scenario():
+        vision = Vision()
+        service = ControlledVisionService(
+            capture=Capture(), provider=vision, consent=lambda _: True,
+        )
+        result = await service.describe_screen(
+            principal_id="alice", prompt="p" * 1000,
+        )
+        assert vision.prompt == "p" * 1000
+        assert len(result) == 8000
+
+    asyncio.run(scenario())
