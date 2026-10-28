@@ -5,8 +5,10 @@ import asyncio
 from dataclasses import asdict
 from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
+
+from aura_core.security.http_auth import authenticated_principal
 
 
 router = APIRouter(prefix="/api/autonomy", tags=["governed-autonomy"])
@@ -35,14 +37,20 @@ def _runs(request: Request) -> dict:
 
 
 @router.post("/runs", status_code=202)
-async def start_run(body: RunRequest, request: Request) -> dict[str, object]:
+async def start_run(
+    body: RunRequest,
+    request: Request,
+    principal_id: str = Depends(authenticated_principal),
+) -> dict[str, object]:
     _require_local(request)
+    if body.principal_id != principal_id:
+        raise HTTPException(status_code=403, detail="Authenticated principal mismatch")
     loop = getattr(request.app.state, "governed_autonomous_loop", None)
     if loop is None:
         raise HTTPException(status_code=503, detail="Governed autonomy is disabled or not configured")
     if not body.confirmed:
         raise HTTPException(status_code=409, detail="Explicit confirmation is required to start autonomous execution")
-    if body.principal_id not in {
+    if principal_id not in {
         item.strip() for item in __import__("os").getenv("AURA_AUTONOMY_PRINCIPALS", "local_owner").split(",")
         if item.strip()
     }:
@@ -53,7 +61,7 @@ async def start_run(body: RunRequest, request: Request) -> dict[str, object]:
     async def execute():
         try:
             result = await loop.run(
-                goal=body.goal, principal_id=body.principal_id,
+                goal=body.goal, principal_id=principal_id,
                 resource_scope=body.resource_scope, cancelled=cancel_event.is_set,
             )
             record["result"] = asdict(result)
@@ -66,7 +74,7 @@ async def start_run(body: RunRequest, request: Request) -> dict[str, object]:
             record["error"] = type(exc).__name__
 
     record = {
-        "run_id": run_id, "principal_id": body.principal_id,
+        "run_id": run_id, "principal_id": principal_id,
         "goal": body.goal, "state": "running", "result": None, "error": None,
         "cancel_event": cancel_event, "task": None,
     }
@@ -76,7 +84,11 @@ async def start_run(body: RunRequest, request: Request) -> dict[str, object]:
 
 
 @router.get("/runs/{run_id}")
-async def get_run(run_id: str, request: Request, principal_id: str) -> dict[str, object]:
+async def get_run(
+    run_id: str,
+    request: Request,
+    principal_id: str = Depends(authenticated_principal),
+) -> dict[str, object]:
     _require_local(request)
     record = _runs(request).get(run_id)
     if record is None or record["principal_id"] != principal_id:
@@ -85,7 +97,11 @@ async def get_run(run_id: str, request: Request, principal_id: str) -> dict[str,
 
 
 @router.post("/runs/{run_id}/cancel")
-async def cancel_run(run_id: str, request: Request, principal_id: str) -> dict[str, object]:
+async def cancel_run(
+    run_id: str,
+    request: Request,
+    principal_id: str = Depends(authenticated_principal),
+) -> dict[str, object]:
     _require_local(request)
     record = _runs(request).get(run_id)
     if record is None or record["principal_id"] != principal_id:
