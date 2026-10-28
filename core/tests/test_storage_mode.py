@@ -26,17 +26,29 @@ def test_storage_mode_rejects_unknown_value(monkeypatch) -> None:
         validate_storage_mode()
 
 
-def test_remote_mode_fails_closed_even_if_endpoints_are_configured(monkeypatch) -> None:
+def test_remote_mode_requires_complete_remote_configuration(monkeypatch) -> None:
     monkeypatch.setenv("AURA_STORAGE_MODE", "remote")
     monkeypatch.setenv("AURA_DATABASE_URL", "postgresql+asyncpg://example.invalid/aura")
     monkeypatch.setenv("AURA_OBJECT_STORAGE_ENDPOINT", "https://objects.example.invalid")
     monkeypatch.setenv("AURA_OBJECT_STORAGE_BUCKET", "aura")
     monkeypatch.setenv("AURA_OBJECT_STORAGE_ACCESS_KEY_ID", "not-a-real-key")
     monkeypatch.setenv("AURA_OBJECT_STORAGE_SECRET_ACCESS_KEY", "not-a-real-secret")
-    with pytest.raises(RuntimeError, match="Startup is blocked"):
+    validate_storage_mode()
+
+
+def test_remote_mode_rejects_missing_object_credentials(monkeypatch) -> None:
+    monkeypatch.setenv("AURA_STORAGE_MODE", "remote")
+    monkeypatch.setenv("AURA_DATABASE_URL", "postgresql+asyncpg://example.invalid/aura")
+    monkeypatch.setenv("AURA_OBJECT_STORAGE_ENDPOINT", "https://objects.example.invalid")
+    monkeypatch.setenv("AURA_OBJECT_STORAGE_BUCKET", "aura")
+    monkeypatch.delenv("AURA_OBJECT_STORAGE_ACCESS_KEY", raising=False)
+    monkeypatch.delenv("AURA_OBJECT_STORAGE_ACCESS_KEY_ID", raising=False)
+    monkeypatch.delenv("AURA_OBJECT_STORAGE_SECRET_KEY", raising=False)
+    monkeypatch.delenv("AURA_OBJECT_STORAGE_SECRET_ACCESS_KEY", raising=False)
+    with pytest.raises(RuntimeError, match="requires remote persistence settings"):
         validate_storage_mode()
 
-def test_build_app_rejects_remote_mode_before_any_local_store_is_created(
+def test_build_app_selects_remote_stores_without_creating_local_state(
     monkeypatch, tmp_path
 ) -> None:
     """The production composition root must stop before opening SQLite in remote mode."""
@@ -52,7 +64,11 @@ def test_build_app_rejects_remote_mode_before_any_local_store_is_created(
     monkeypatch.setenv("LOCALAPPDATA", str(local_data))
     monkeypatch.setenv("HOME", str(local_data))
 
-    with pytest.raises(RuntimeError, match="Startup is blocked"):
-        build_app()
+    app = build_app()
 
-    assert not local_data.exists(), "remote startup must fail before creating local persistent state"
+    assert not local_data.exists(), "remote composition must not create local persistent state"
+    assert app.state.storage_mode is StorageMode.REMOTE
+    assert type(app.state.task_state_machine).__name__ == "PostgreSQLTaskStateMachine"
+    assert type(app.state.workflow_store).__name__ == "PostgreSQLWorkflowStore"
+    assert type(app.state.task_memory).__name__ == "PostgreSQLTaskMemoryCoordinator"
+    assert app.state.checkpoint_artifacts is not None

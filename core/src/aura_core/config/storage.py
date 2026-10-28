@@ -1,9 +1,7 @@
-"""Fail-closed rollout gate for portable remote-persistence mode.
+"""Configuration validation for portable remote-persistence mode.
 
-Local mode preserves the existing development/test behavior. Remote mode is
-intentionally blocked until every durable store and artifact writer has been
-migrated to remote adapters; accepting endpoint settings alone would create a
-false sense of safety while SQLite stores still write to disk.
+Remote composition selects PostgreSQL and S3-backed adapters exclusively. Missing
+remote settings are fatal; there is no SQLite or local-file fallback.
 """
 from __future__ import annotations
 
@@ -25,16 +23,25 @@ def storage_mode_from_environment() -> StorageMode:
 
 
 def validate_storage_mode() -> None:
-    """Prevent remote deployments from silently using the existing local stores.
-
-    The remote persistence adapters are not yet wired into every composition
-    path. Refusing startup is safer than partially remote operation with hidden
-    SQLite/temp-file persistence.
-    """
-    if storage_mode_from_environment() is StorageMode.REMOTE:
+    """Validate every mandatory endpoint before selecting remote persistence."""
+    if storage_mode_from_environment() is not StorageMode.REMOTE:
+        return
+    database_url = os.getenv("AURA_DATABASE_URL", "").strip()
+    if not database_url.startswith(("postgresql://", "postgresql+asyncpg://")):
+        raise RuntimeError("AURA_STORAGE_MODE=remote requires a PostgreSQL AURA_DATABASE_URL")
+    required = (
+        "AURA_OBJECT_STORAGE_ENDPOINT",
+        "AURA_OBJECT_STORAGE_BUCKET",
+    )
+    missing = [name for name in required if not os.getenv(name, "").strip()]
+    if not (os.getenv("AURA_OBJECT_STORAGE_ACCESS_KEY", "").strip()
+            or os.getenv("AURA_OBJECT_STORAGE_ACCESS_KEY_ID", "").strip()):
+        missing.append("AURA_OBJECT_STORAGE_ACCESS_KEY")
+    if not (os.getenv("AURA_OBJECT_STORAGE_SECRET_KEY", "").strip()
+            or os.getenv("AURA_OBJECT_STORAGE_SECRET_ACCESS_KEY", "").strip()):
+        missing.append("AURA_OBJECT_STORAGE_SECRET_KEY")
+    if missing:
         raise RuntimeError(
-            "AURA_STORAGE_MODE=remote is fail-closed: remote persistence adapters "
-            "are not yet integrated across all durable stores. Startup is blocked "
-            "to prevent local-disk fallback. Use local mode only for development "
-            "until the remote-storage migration is complete."
+            "AURA_STORAGE_MODE=remote requires remote persistence settings: "
+            + ", ".join(missing)
         )

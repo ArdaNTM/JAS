@@ -270,6 +270,9 @@ def build_app() -> FastAPI:
     app.state.http_bearer_token = http_bearer_token
     app.state.http_principal_id = http_principal_id
     app.state.approval_store = approval_store
+    app.state.storage_mode = storage_mode
+    app.state.task_memory = task_memory
+    app.state.checkpoint_artifacts = checkpoint_artifacts
 
     event_runtime = EventBusRuntime(
         kernel.event_bus,

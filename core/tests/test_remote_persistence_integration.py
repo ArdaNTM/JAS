@@ -1,9 +1,4 @@
-"""Real-service checks for remote persistence adapters and S3-compatible storage.
-
-These tests deliberately do not enable AURA_STORAGE_MODE=remote: production
-composition still has SQLite task-state/checkpoint paths, so the fail-closed
-gate must remain in place until those interfaces are migrated too.
-"""
+"""Real-service checks for remote persistence composition and S3-compatible storage."""
 from __future__ import annotations
 
 import asyncio
@@ -163,12 +158,14 @@ def test_minio_s3_compatible_service_round_trip_and_delete():
             client.remove_bucket(bucket)
 
 
-def test_remote_mode_remains_fail_closed_until_every_production_path_is_remote(monkeypatch):
+def test_remote_mode_validates_remote_endpoints_without_local_fallback(monkeypatch):
     monkeypatch.setenv("AURA_STORAGE_MODE", "remote")
-    monkeypatch.setenv("AURA_DATABASE_URL", DATABASE_URL)
+    monkeypatch.setenv("AURA_DATABASE_URL", DATABASE_URL or "postgresql+asyncpg://ci.invalid/aura")
     monkeypatch.setenv("AURA_OBJECT_STORAGE_ENDPOINT", "https://objects.example.invalid")
-    with pytest.raises(RuntimeError, match="Startup is blocked"):
-        validate_storage_mode()
+    monkeypatch.setenv("AURA_OBJECT_STORAGE_BUCKET", "aura-test")
+    monkeypatch.setenv("AURA_OBJECT_STORAGE_ACCESS_KEY", "test-key")
+    monkeypatch.setenv("AURA_OBJECT_STORAGE_SECRET_KEY", "test-secret")
+    validate_storage_mode()
 
 
 def test_s3_checkpoint_is_published_only_after_object_is_durable_and_retry_is_idempotent():
