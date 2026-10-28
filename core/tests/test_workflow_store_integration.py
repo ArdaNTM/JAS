@@ -102,15 +102,15 @@ def test_reconcile_repairs_terminal_task_with_pending_workflow(tmp_path):
         SuccessfulRuntime(), state_machine=state_machine, workflow_store=store
     )
 
-    reconciled = service.reconcile_workflow(
+    reconciled = asyncio.run(service.reconcile_workflow(
         "task-reconcile-success", principal_id="local-user"
-    )
+    ))
 
     assert reconciled.status is WorkflowStatus.SUCCEEDED
     assert reconciled.version == 3
-    assert service.reconcile_workflow(
+    assert asyncio.run(service.reconcile_workflow(
         "task-reconcile-success", principal_id="local-user"
-    ) == reconciled
+    )) == reconciled
 
     store.close()
     state_machine.close()
@@ -142,9 +142,9 @@ def test_reconcile_refuses_to_overwrite_terminal_workflow_conflict(tmp_path):
     )
 
     with pytest.raises(RuntimeError, match="Cannot reconcile terminal workflow"):
-        service.reconcile_workflow(
+        asyncio.run(service.reconcile_workflow(
             "task-reconcile-conflict", principal_id="local-user"
-        )
+        ))
 
     store.close()
     state_machine.close()
@@ -228,14 +228,14 @@ def test_failed_compensation_is_recoverable_by_idempotent_reconciliation(tmp_pat
 
     # Simulated storage failure has cleared; reconciliation repairs metadata
     # without resuming execution, and repeating it is a no-op.
-    reconciled = service.reconcile_workflow(
+    reconciled = asyncio.run(service.reconcile_workflow(
         "task-workflow-reconcile-start-failure", principal_id="local-user"
-    )
+    ))
     assert reconciled.status is WorkflowStatus.FAILED
     assert reconciled.failure_code == "reconciled_task_failure"
-    assert service.reconcile_workflow(
+    assert asyncio.run(service.reconcile_workflow(
         "task-workflow-reconcile-start-failure", principal_id="local-user"
-    ) == reconciled
+    )) == reconciled
     assert runtime.calls == 0
 
     store.close()
@@ -296,11 +296,46 @@ def test_task_compensation_failure_preserves_original_workflow_error_and_fails_c
     # A RUNNING task does not prove runtime dispatch happened. Reconciliation
     # must refuse to manufacture a RUNNING workflow record for this ambiguous gap.
     with pytest.raises(RuntimeError, match="runtime start is ambiguous"):
-        service.reconcile_workflow(
+        asyncio.run(service.reconcile_workflow(
             "task-workflow-task-compensation-failure", principal_id="local-user"
-        )
+        ))
     assert runtime.calls == 0
 
     store.close()
     state_machine.close()
 
+
+
+def test_task_service_awaits_async_workflow_store(tmp_path):
+    class AsyncWorkflowStore:
+        def __init__(self, path):
+            self.inner = SQLiteWorkflowStore(str(path))
+        async def create(self, **kwargs):
+            await asyncio.sleep(0)
+            return self.inner.create(**kwargs)
+        async def get(self, *args, **kwargs):
+            await asyncio.sleep(0)
+            return self.inner.get(*args, **kwargs)
+        async def transition(self, *args, **kwargs):
+            await asyncio.sleep(0)
+            return self.inner.transition(*args, **kwargs)
+        def close(self):
+            self.inner.close()
+
+    async def scenario():
+        state_machine = TaskStateMachine(str(tmp_path / "async-tasks.sqlite3"))
+        store = AsyncWorkflowStore(tmp_path / "async-workflows.sqlite3")
+        service = AgentTaskService(
+            SuccessfulRuntime(), state_machine=state_machine, workflow_store=store
+        )
+        try:
+            result = await service.submit(make_submission("task-async-workflow"))
+            record = await store.get("task-async-workflow")
+            assert result.state is PlanState.SUCCEEDED
+            assert record is not None
+            assert record.status is WorkflowStatus.SUCCEEDED
+        finally:
+            store.close()
+            state_machine.close()
+
+    asyncio.run(scenario())
