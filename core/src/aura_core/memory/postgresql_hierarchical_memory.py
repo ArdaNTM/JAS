@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import json
 from datetime import UTC, datetime
-import time
 from uuid import uuid4
 
 from sqlalchemy import text
@@ -71,7 +70,7 @@ class PostgreSQLHierarchicalMemory:
         record = EpisodicRecord(
             record_id=str(uuid4()), principal_id=principal_id, task_id=task_id,
             content=content.strip(), source=source.strip(),
-            created_at=time.time(),
+            created_at=datetime.now(UTC).timestamp(),
             metadata=metadata or {},
         )
         async with self._engine.begin() as conn:
@@ -80,7 +79,7 @@ class PostgreSQLHierarchicalMemory:
                 (record_id, principal_id, task_id, content, source, created_at, metadata_json)
                 VALUES (:id,:principal,:task,:content,:source,:created,CAST(:metadata AS JSONB))
             """), {"id":record.record_id,"principal":principal_id,"task":task_id,
-                   "content":record.content,"source":record.source,"created":record.created_at,
+                   "content":record.content,"source":record.source,"created":datetime.fromtimestamp(record.created_at, UTC),
                    "metadata":json.dumps(record.metadata)})
         return record
 
@@ -103,7 +102,7 @@ class PostgreSQLHierarchicalMemory:
                 metadata = json.loads(metadata)
             records.append(EpisodicRecord(
                 record_id=row["record_id"],principal_id=row["principal_id"],task_id=row["task_id"],
-                content=row["content"],source=row["source"],created_at=float(row["created_at"]),
+                content=row["content"],source=row["source"],created_at=row["created_at"].timestamp(),
                 metadata=metadata or {},
             ))
         return tuple(records)
