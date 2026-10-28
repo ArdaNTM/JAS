@@ -21,6 +21,7 @@ _UI_EVENT_ALLOWLIST = frozenset({
     "SpeechAudioStop",
     "ProactiveNotificationReady",
 })
+SSE_HEARTBEAT_SECONDS = 15.0
 
 
 @router.get("/api/events/stream")
@@ -35,8 +36,32 @@ async def ui_event_stream(request: Request) -> StreamingResponse:
 
     async def stream() -> AsyncIterator[str]:
         connected_at = datetime.now(UTC)
+        event_iterator = broker.stream().__aiter__()
+        pending_event: asyncio.Task[dict[str, object]] | None = None
         try:
-            async for event in broker.stream():
+            # Tell clients immediately that the stream is established. This is an
+            # SSE comment, not an application event, and does not expose Kernel events.
+            yield ": connected\n\n"
+            pending_event = asyncio.create_task(event_iterator.__anext__())
+            while True:
+                done, _ = await asyncio.wait(
+                    {pending_event},
+                    timeout=SSE_HEARTBEAT_SECONDS,
+                )
+                if not done:
+                    if await request.is_disconnected():
+                        break
+                    # Heartbeats make idle connections observable and prevent
+                    # intermediaries from treating a healthy stream as stalled.
+                    yield ": keep-alive\n\n"
+                    continue
+
+                try:
+                    event = pending_event.result()
+                except StopAsyncIteration:
+                    break
+                pending_event = asyncio.create_task(event_iterator.__anext__())
+
                 if await request.is_disconnected():
                     break
                 if event.get("event") not in _UI_EVENT_ALLOWLIST:
@@ -53,6 +78,13 @@ async def ui_event_stream(request: Request) -> StreamingResponse:
                 yield f"data: {payload}\n\n"
         except asyncio.CancelledError:
             raise
+        finally:
+            if pending_event is not None and not pending_event.done():
+                pending_event.cancel()
+                await asyncio.gather(pending_event, return_exceptions=True)
+            close_iterator = getattr(event_iterator, "aclose", None)
+            if close_iterator is not None:
+                await close_iterator()
 
     return StreamingResponse(
         stream(),

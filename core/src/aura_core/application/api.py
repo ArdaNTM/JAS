@@ -1117,7 +1117,9 @@ def create_api(
         return {"provider_id": provider_id, "proposals": [item.to_dict() for item in proposals]}
 
     @app.get("/api/capabilities/proposals")
-    def list_capability_proposals() -> dict[str, object]:
+    def list_capability_proposals(
+        principal_id: str = Depends(authenticated_principal),
+    ) -> dict[str, object]:
         discovery = app.state.capability_discovery
         return {"proposals": [item.to_dict() for item in discovery.proposals()] if discovery else []}
 
@@ -1859,7 +1861,7 @@ def create_api(
             request.task_id,
             principal_id,
             request.title,
-            "local_default",
+            request.resource_scope,
         )
 
         plan = Plan(
