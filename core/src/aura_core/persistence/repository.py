@@ -48,7 +48,12 @@ class InMemoryRepository:
         return saved
 
     async def get(self, entity_type: str, entity_id: str) -> PersistedRecord | None:
-        return self._records.get((entity_type, entity_id))
+        record = self._records.get((entity_type, entity_id))
+        if record is None:
+            return None
+        return PersistedRecord(
+            record.entity_type, record.entity_id, copy.deepcopy(record.data), record.revision
+        )
 
 
 class PostgreSQLRepository:
@@ -102,7 +107,7 @@ class PostgreSQLRepository:
                 "data": payload,
             })
             revision = int(result.scalar_one())
-        return PersistedRecord(record.entity_type, record.entity_id, dict(record.data), revision)
+        return PersistedRecord(record.entity_type, record.entity_id, copy.deepcopy(record.data), revision)
 
     async def get(self, entity_type: str, entity_id: str) -> PersistedRecord | None:
         async with self._engine.connect() as connection:

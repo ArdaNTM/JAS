@@ -16,7 +16,10 @@ def test_in_memory_repository_increments_revision_and_copies_data() -> None:
 
         second = await repository.save(PersistedRecord("task", "task-1", {"state": "done"}))
         assert second.revision == 2
-        assert (await repository.get("task", "task-1")) == second
+        fetched = await repository.get("task", "task-1")
+        assert fetched == second
+        fetched.data["state"] = "mutated outside repository"
+        assert (await repository.get("task", "task-1")).data == {"state": "done"}
 
     asyncio.run(scenario())
 
