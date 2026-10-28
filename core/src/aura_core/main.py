@@ -27,6 +27,7 @@ from aura_core.application.full_duplex_session import (
 )
 from aura_core.application.vision_adapters import DesktopScreenCapture, OllamaVisionProvider
 from aura_core.config.kernel import KernelConfig
+from aura_core.config.storage import validate_storage_mode
 from aura_core.enterprise.policy_bundle import PolicyBundle
 from aura_core.enterprise.approval_store import SQLiteApprovalStore
 from aura_core.enterprise.workflow_store import SQLiteWorkflowStore
@@ -104,6 +105,8 @@ def _load_approval_fingerprint_key() -> bytes | None:
 
 
 def build_app() -> FastAPI:
+    # Remote mode must fail closed until all persistence adapters are remote-backed.
+    validate_storage_mode()
     kernel_config = KernelConfig.from_environment()
     policy_bundle = _load_policy_bundle_from_environment()
     kernel = AuraKernel(kernel_config, policy_bundle=policy_bundle)
