@@ -12,6 +12,14 @@ from aura_core.application.task_state_machine import TaskState, TaskStateMachine
 from aura_core.enterprise.workflow_store import SQLiteWorkflowStore, WorkflowStatus
 
 
+async def _storage_call(target, method_name: str, *args, **kwargs):
+    """Call the legacy synchronous local store or an awaitable remote adapter."""
+    result = getattr(target, method_name)(*args, **kwargs)
+    if inspect.isawaitable(result):
+        return await result
+    return result
+
+
 class TaskRuntime(Protocol):
     async def execute(self, task: Task, plan: Plan, cancelled=None) -> ExecutionResult:
         """Execute only through the existing authorized runtime."""
@@ -50,7 +58,7 @@ class AgentTaskService:
         """Submit one task; dependency-blocked tasks must be submitted via submit_chain."""
         self._validate_submission(submitted)
         if self._state_machine is not None:
-            record = self._ensure_record(submitted)
+            record = await self._ensure_record(submitted)
             if record.state == TaskState.PENDING:
                 raise RuntimeError("Task dependencies are not yet succeeded; use submit_chain()")
         return await self._execute_submitted(submitted)
@@ -79,17 +87,17 @@ class AgentTaskService:
             prepared.add(item.task.task_id)
         results: list[ExecutionResult] = []
         for item in chain:
-            record = self._state_machine.get(item.task.task_id, principal_id=item.task.principal_id)
+            record = await _storage_call(self._state_machine, 'get', item.task.task_id, principal_id=item.task.principal_id)
             if record.state == TaskState.PENDING:
                 raise RuntimeError(f"Task dependencies are not yet succeeded: {item.task.task_id}")
             results.append(await self._execute_submitted(item))
         return tuple(results)
 
-    def cancel(self, task_id: str, *, principal_id: str) -> None:
+    async def cancel(self, task_id: str, *, principal_id: str) -> None:
         """Request cancellation only within the task owner's scope."""
         if self._state_machine is None:
             raise RuntimeError("Cancellation requires a persistent TaskStateMachine")
-        self._state_machine.request_cancel(task_id, principal_id=principal_id)
+        await _storage_call(self._state_machine, 'request_cancel', task_id, principal_id=principal_id)
         event = self._cancel_events.get(task_id)
         if event is not None:
             event.set()
@@ -101,15 +109,13 @@ class AgentTaskService:
             if task_id in self._results:
                 raise ValueError(f"Task already submitted: {task_id}")
             task = submitted.task
-            self._ensure_workflow(submitted)
+            await self._ensure_workflow(submitted)
             record = None
             if self._state_machine is not None:
                 record = self._ensure_record(submitted)
                 if record.state != TaskState.READY:
                     raise RuntimeError(f"Task is not ready for execution: {record.state.value}")
-                record = self._state_machine.transition(
-                    task_id, principal_id=task.principal_id, target=TaskState.RUNNING
-                )
+                record = await _storage_call(self._state_machine, 'transition', task_id, principal_id=task.principal_id, target=TaskState.RUNNING)
             try:
                 self._transition_workflow(task_id, WorkflowStatus.RUNNING)
             except Exception:
