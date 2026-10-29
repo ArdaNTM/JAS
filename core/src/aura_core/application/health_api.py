@@ -117,13 +117,18 @@ async def health_ready(request: Request) -> JSONResponse:
 
     try:
         readiness.check()
+        storage_mode = getattr(request.app.state, "storage_mode", "local")
+        storage_mode = getattr(storage_mode, "value", storage_mode)
+        if str(storage_mode).lower() == "remote":
+            task_state_machine = getattr(request.app.state, "task_state_machine", None)
+            object_storage = getattr(request.app.state, "remote_object_storage", None)
+            if task_state_machine is None or object_storage is None:
+                raise RuntimeError("Remote persistence health checks are not configured")
+            from sqlalchemy import text
+            async with task_state_machine._engine.connect() as connection:
+                await connection.execute(text("SELECT 1"))
+            await __import__("asyncio").to_thread(object_storage.head_bucket)
     except Exception as exc:
-        return JSONResponse(
-            {
-                "status": "not_ready",
-                "error": type(exc).__name__,
-            },
-            status_code=503,
-        )
+        return JSONResponse({"status": "not_ready", "error": type(exc).__name__}, status_code=503)
 
     return JSONResponse({"status": "ready"})

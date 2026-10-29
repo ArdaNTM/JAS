@@ -91,6 +91,7 @@ class PlanStep:
     arguments: dict[str, Any] = field(default_factory=dict)
     depends_on: frozenset[str] = frozenset()
     max_attempts: int = 1
+    approval_id: str | None = None
 
     def __post_init__(self) -> None:
         if not all((self.step_id, self.capability_id, self.operation_id, self.tool_name)):
@@ -176,6 +177,7 @@ class StepResult:
     attempts: int
     result: Any | None = None
     reason: str = ""
+    approval_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -384,6 +386,7 @@ class AgentExecutor:
                 capability_id=step.capability_id, operation_id=step.operation_id,
                 resource_scope=task.resource_scope, risk_level=step.risk_level,
                 tool_name=step.tool_name, arguments=step.arguments, task_id=task.task_id,
+                approval_id=step.approval_id,
             ))
             if response.decision is AuthorizationDecision.ALLOW:
                 if _mcp_result_is_error(response.result):
@@ -395,7 +398,7 @@ class AgentExecutor:
                         reason="MCP tool returned an error result",
                     )
                 return StepResult(step.step_id, StepState.SUCCEEDED, attempt, response.result)
-            return StepResult(step.step_id, StepState.FAILED, attempt, reason=response.reason)
+            return StepResult(step.step_id, StepState.FAILED, attempt, reason=response.reason, approval_id=response.approval_id)
         raise RuntimeError("Unreachable execution state")
 
     def _event(self, event_type: str, task: Task, plan: Plan, step: PlanStep, payload: dict[str, Any] | None = None) -> None:

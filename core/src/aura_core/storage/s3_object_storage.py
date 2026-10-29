@@ -61,6 +61,10 @@ class S3ObjectStorage:
             session_token=os.getenv("AURA_OBJECT_STORAGE_SESSION_TOKEN"),
         )
 
+    def head_bucket(self) -> None:
+        """Verify bucket reachability and credentials using an authenticated S3 HEAD."""
+        self._request("HEAD", "")
+
     def put_bytes(self, key: str, body: bytes, *, content_type: str = "application/octet-stream") -> None:
         if not isinstance(body, bytes):
             raise TypeError("body must be bytes")
@@ -105,11 +109,14 @@ class S3ObjectStorage:
         return f"{self.endpoint_url}{path}?{canonical_query}&X-Amz-Signature={signature}"
 
     def _request(self, method: str, key: str, body: bytes = b"", headers: dict[str, str] | None = None) -> bytes:
-        key = self._validate_key(key)
+        if key:
+            key = self._validate_key(key)
+        elif method != "HEAD":
+            raise ValueError("An empty key is permitted only for bucket HEAD")
         now = datetime.now(UTC)
         amz_date = now.strftime("%Y%m%dT%H%M%SZ")
         date = now.strftime("%Y%m%d")
-        path = self._path(key)
+        path = f"/{quote(self.bucket, safe='-_.~')}" if not key else self._path(key)
         payload_hash = hashlib.sha256(body).hexdigest()
         request_headers = {
             "host": self._parsed.netloc,

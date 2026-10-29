@@ -27,22 +27,34 @@ def _audit_record(*, principal_id: str, request_id: str) -> SimpleNamespace:
     return SimpleNamespace(request=request, decision=decision)
 
 
+def _approval_record(*, principal_id: str, approval_id: str) -> SimpleNamespace:
+    return SimpleNamespace(
+        approval_id=approval_id,
+        principal_id=principal_id,
+        capability_id="test.capability",
+        operation_id="read",
+        resource_scope="/safe",
+        status=SimpleNamespace(value="pending"),
+        version=1,
+        requested_at="2026-01-01T00:00:00+00:00",
+        expires_at="2026-01-01T00:15:00+00:00",
+    )
+
+
 def _client(records: tuple[SimpleNamespace, ...]) -> TestClient:
     app = FastAPI()
     app.state.http_bearer_token = "t" * 40
     app.state.http_principal_id = "principal-a"
-    app.state.permission_engine = SimpleNamespace(
-        audit_records=lambda: records,
-    )
+    app.state.approval_store = SimpleNamespace(list_pending=lambda *, limit=100: records)
     app.include_router(approval_router)
     return TestClient(app)
 
 
-def test_approval_projection_only_returns_authenticated_principals_records() -> None:
+def test_approval_queue_reads_pending_records_from_approval_store() -> None:
     client = _client(
         (
-            _audit_record(principal_id="principal-a", request_id="visible"),
-            _audit_record(principal_id="principal-b", request_id="secret"),
+            _approval_record(principal_id="principal-a", approval_id="visible"),
+            _approval_record(principal_id="principal-b", approval_id="another-principal"),
         )
     )
 
@@ -52,8 +64,8 @@ def test_approval_projection_only_returns_authenticated_principals_records() -> 
     )
 
     assert response.status_code == 200
-    assert [item["id"] for item in response.json()] == ["visible"]
-    assert all(item["principal_id"] == "principal-a" for item in response.json())
+    assert [item["approval_id"] for item in response.json()] == ["visible", "another-principal"]
+    assert all(item["status"] == "pending" for item in response.json())
 
 
 def test_approval_projection_still_requires_bearer_authentication() -> None:

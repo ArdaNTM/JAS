@@ -37,6 +37,7 @@ def create_composed_app(
     kernel=None,
     gateway=None,
     approval_store=None,
+    storage_mode=None,
 ) -> FastAPI:
     """
     Canonical AURA HTTP composition root.
@@ -50,6 +51,7 @@ def create_composed_app(
         backend_config=backend_config,
         transport=transport,
         task_service=task_service,
+        storage_mode=storage_mode,
     )
 
     app.state.kernel = kernel

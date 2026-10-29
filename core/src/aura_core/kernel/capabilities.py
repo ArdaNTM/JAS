@@ -73,6 +73,8 @@ class CapabilityDefinition:
     required_permissions: frozenset[str] = field(default_factory=frozenset)
     latency_class: LatencyClass = LatencyClass.MEDIUM
     quality_class: QualityClass = QualityClass.STANDARD
+    tool_name: str | None = None
+    risk_level: str = "medium"
 
     def __post_init__(self) -> None:
         for field_name in (
@@ -85,6 +87,10 @@ class CapabilityDefinition:
             if not getattr(self, field_name):
                 raise ValueError(f"Capability {field_name} is required")
 
+        if self.tool_name is not None and (not isinstance(self.tool_name, str) or not self.tool_name.strip()):
+            raise ValueError("Capability tool_name must be non-empty when provided")
+        if self.risk_level not in {"low", "medium", "high", "critical"}:
+            raise ValueError("Capability risk_level must be low, medium, high, or critical")
         object.__setattr__(self, "dependencies", frozenset(self.dependencies))
         object.__setattr__(
             self,

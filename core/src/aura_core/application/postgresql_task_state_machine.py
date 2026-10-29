@@ -162,11 +162,37 @@ class PostgreSQLTaskStateMachine:
                    "summary": result_summary[:4000] if result_summary else None,
                    "error": error[:2000] if error else None, "id": task_id, "principal": principal_id})
             record = self._record(result.mappings().one())
+            if target is TaskState.SUCCEEDED:
+                await conn.execute(text("""
+                    UPDATE aura_orchestration_tasks AS dependent
+                    SET state='ready', updated_at=:now, revision=revision+1
+                    WHERE dependent.principal_id=:principal AND dependent.state='pending'
+                      AND dependent.dependencies_json ? :task_id
+                      AND NOT EXISTS (
+                        SELECT 1 FROM jsonb_array_elements_text(dependent.dependencies_json) AS dependency(task_id)
+                        LEFT JOIN aura_orchestration_tasks AS prerequisite
+                          ON prerequisite.task_id=dependency.task_id
+                         AND prerequisite.principal_id=dependent.principal_id
+                        WHERE prerequisite.state IS DISTINCT FROM 'succeeded'
+                      )
+                """), {"now": datetime.now(UTC), "principal": principal_id, "task_id": task_id})
+            if target in {TaskState.FAILED, TaskState.CANCELLED, TaskState.TIMED_OUT, TaskState.BLOCKED}:
+                await conn.execute(text("""
+                    WITH RECURSIVE descendants(task_id) AS (
+                        SELECT task_id FROM aura_orchestration_tasks
+                        WHERE principal_id=:principal AND state IN ('pending','ready')
+                          AND dependencies_json ? :failed_id
+                        UNION
+                        SELECT child.task_id FROM aura_orchestration_tasks AS child
+                        JOIN descendants AS parent ON child.dependencies_json ? parent.task_id
+                        WHERE child.principal_id=:principal AND child.state IN ('pending','ready')
+                    )
+                    UPDATE aura_orchestration_tasks
+                    SET state='blocked', updated_at=:now, revision=revision+1, error=:failure_error
+                    WHERE principal_id=:principal AND task_id IN (SELECT task_id FROM descendants)
+                """), {"principal": principal_id, "failed_id": task_id, "now": datetime.now(UTC),
+                       "failure_error": f"Dependency {task_id} ended as {target.value}"})
         self._emit("TaskStateChanged", record, extra={"previous_state": current.value})
-        if target is TaskState.SUCCEEDED:
-            await self._refresh_dependents(record)
-        if target in {TaskState.FAILED, TaskState.CANCELLED, TaskState.TIMED_OUT, TaskState.BLOCKED}:
-            await self._block_dependents(record)
         return record
 
     async def request_cancel(self, task_id: str, *, principal_id: str) -> TaskStateRecord:

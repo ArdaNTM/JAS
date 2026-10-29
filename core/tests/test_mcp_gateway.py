@@ -1,6 +1,7 @@
 import asyncio
 from dataclasses import replace
 from unittest.mock import AsyncMock
+from types import SimpleNamespace
 
 import pytest
 
@@ -81,6 +82,18 @@ def make_gateway(
     if provider is None:
         connection = AsyncMock()
         connection.is_connected = True
+        connection.list_tools.return_value = SimpleNamespace(tools=[
+            SimpleNamespace(
+                name="read_file",
+                description="Read a file",
+                inputSchema={
+                    "type": "object",
+                    "properties": {"path": {"type": "string"}},
+                    "required": ["path"],
+                    "additionalProperties": False,
+                },
+            )
+        ])
         provider = MCPProvider(connection)
 
     provider_registry.register(
@@ -366,8 +379,8 @@ def test_executor_enforces_shared_step_budget_before_gateway_dispatch() -> None:
         max_steps=1, timeout_seconds=5,
     )
     plan = Plan("plan-budget", task.task_id, (
-        PlanStep("step-a", CAPABILITY_ID, OPERATION_ID, "read_file", RiskLevel.LOW),
-        PlanStep("step-b", CAPABILITY_ID, OPERATION_ID, "read_file", RiskLevel.LOW),
+        PlanStep("step-a", CAPABILITY_ID, OPERATION_ID, "read_file", RiskLevel.LOW, arguments={"path": "a.txt"}),
+        PlanStep("step-b", CAPABILITY_ID, OPERATION_ID, "read_file", RiskLevel.LOW, arguments={"path": "b.txt"}),
     ))
 
     result = asyncio.run(AgentExecutor(gateway).execute(task, plan))

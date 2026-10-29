@@ -41,6 +41,7 @@ class AuthorizationRequest:
     operation_id: str
     resource_scope: str
     risk_level: RiskLevel
+    tool_name: str | None = None
     session_id: str | None = None
     task_id: str | None = None
     timestamp: datetime = field(
@@ -281,7 +282,7 @@ class PermissionEngine:
             for policy in policies
             if not policy.revoked
             and (policy.expires_at is None or policy.expires_at > now)
-            and not policy.conditions
+            and self._conditions_match(policy, request)
             and policy.principal_id == request.principal_id
             and policy.capability_id == request.capability_id
             and policy.operation_id == request.operation_id
@@ -293,6 +294,23 @@ class PermissionEngine:
         return tuple(
             sorted(matching, key=lambda policy: (-policy.priority, policy.policy_id))
         )
+
+    @staticmethod
+    def _conditions_match(policy: PermissionPolicy, request: AuthorizationRequest) -> bool:
+        if not policy.conditions:
+            return True
+        context = {
+            "principal_id": request.principal_id, "capability_id": request.capability_id,
+            "operation_id": request.operation_id, "resource_scope": request.resource_scope,
+            "tool_name": request.tool_name or "", "risk_level": request.risk_level.value,
+            "session_id": request.session_id or "", "task_id": request.task_id or "",
+        }
+        for key, expected in policy.conditions.items():
+            if key not in context:
+                return policy.decision is AuthorizationDecision.DENY
+            if context[key] != expected:
+                return False
+        return True
 
     @staticmethod
     def _scope_matches(policy_scope: str, requested_scope: str) -> bool:

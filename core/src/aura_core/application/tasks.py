@@ -152,21 +152,40 @@ class AgentTaskService:
             cancel_event = asyncio.Event()
             self._cancel_events[task_id] = cancel_event
             memory_started = False
-            if self._memory is not None:
-                context = await self._invoke(
-                    self._memory.begin,
-                    principal_id=task.principal_id, task_id=task.task_id, goal=task.title
-                )
-                task = replace(task, memory_context=context)
-                memory_started = True
-                if self._checkpoint_artifacts is not None:
-                    await self._checkpoint_artifacts.save(
-                        principal_id=task.principal_id, task_id=task.task_id,
-                        checkpoint={
-                            "schema_version": 1, "state": "running",
-                            "context": [asdict(item) for item in context],
-                        },
+            try:
+                if self._memory is not None:
+                    context = await self._invoke(
+                        self._memory.begin,
+                        principal_id=task.principal_id, task_id=task.task_id, goal=task.title
                     )
+                    task = replace(task, memory_context=context)
+                    memory_started = True
+                    if self._checkpoint_artifacts is not None:
+                        await self._checkpoint_artifacts.save(
+                            principal_id=task.principal_id, task_id=task.task_id,
+                            checkpoint={
+                                "schema_version": 1, "state": "running",
+                                "context": [asdict(item) for item in context],
+                            },
+                        )
+            except Exception as exc:
+                self._cancel_events.pop(task_id, None)
+                if self._state_machine is not None:
+                    try:
+                        current = await self._invoke(self._state_machine.get, task_id, principal_id=task.principal_id)
+                        if current.state is TaskState.RUNNING:
+                            await self._invoke(
+                                self._state_machine.transition, task_id,
+                                principal_id=task.principal_id, target=TaskState.FAILED,
+                                error=f"Task initialization failed: {type(exc).__name__}",
+                            )
+                    except Exception:
+                        pass
+                try:
+                    await self._transition_workflow(task_id, WorkflowStatus.FAILED, failure_code="task_initialization_failed")
+                except Exception:
+                    pass
+                raise
 
             def cancelled() -> bool:
                 if cancel_event.is_set():

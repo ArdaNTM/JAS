@@ -15,6 +15,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request, WebSocket, WebSock
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -332,6 +333,7 @@ class TaskStepPayload(BaseModel):
     arguments: dict[str, object] = Field(default_factory=dict)
     depends_on: set[str] = Field(default_factory=set)
     max_attempts: int = Field(default=1, ge=1, le=3)
+    approval_id: str | None = Field(default=None, min_length=1)
 
 
 class TaskRequest(BaseModel):
@@ -523,6 +525,7 @@ def create_api(
     transport: JsonTransport | None = None,
     task_service: AgentTaskService | None = None,
     live_events: LiveEventBroker | None = None,
+    storage_mode: object | None = None,
 ) -> FastAPI:
 
     resolved_backend_config = (
@@ -555,7 +558,7 @@ def create_api(
         prefetch_enabled = os.getenv("AURA_PREFETCH_ENABLED", "0").strip().lower() in {"1", "true", "yes"}
         kernel = getattr(application.state, "kernel", None)
         event_bus = getattr(kernel, "event_bus", None) if kernel is not None else getattr(application.state, "event_bus", None)
-        if prefetch_enabled and event_bus is not None:
+        if prefetch_enabled and event_bus is not None and str(getattr(app.state.storage_mode, "value", app.state.storage_mode)).lower() != "remote":
             def observe_prefetch_event(event: KernelEvent) -> None:
                 try:
                     planner = getattr(application.state, "predictive_prefetch_planner", None)
@@ -583,6 +586,21 @@ def create_api(
         title="AURA Core",
         version="0.1.0",
         lifespan=lifespan,
+    )
+    app.state.storage_mode = storage_mode if storage_mode is not None else os.getenv("AURA_STORAGE_MODE", "local")
+
+    def require_local_storage() -> None:
+        mode = getattr(app.state.storage_mode, "value", app.state.storage_mode)
+        if str(mode).strip().lower() == "remote":
+            raise HTTPException(status_code=503, detail="Local SQLite-backed capability is disabled in remote storage mode")
+
+    def local_episodic_store():
+        require_local_storage()
+        return EpisodicMemoryStore.from_environment()
+
+    app.add_middleware(
+        TrustedHostMiddleware,
+        allowed_hosts=[host.strip() for host in os.getenv("AURA_ALLOWED_HOSTS", "localhost,127.0.0.1,testserver").split(",") if host.strip()],
     )
 
     # ========================================================
@@ -671,7 +689,7 @@ def create_api(
     reflection_enabled = os.getenv("AURA_BACKGROUND_THINKING_ENABLED", "0").strip().lower() in {"1", "true", "yes"}
     app.state.background_thinking = (
         IdleMemoryReflectionDaemon(
-            memory_store=EpisodicMemoryStore.from_environment(),
+            memory_store=local_episodic_store(),
             principal_id=os.getenv("AURA_BACKGROUND_THINKING_PRINCIPAL_ID", "local_default"),
             database_path=os.getenv("AURA_REFLECTION_DB", "./data/background-reflection.sqlite3"),
             idle_seconds=int(os.getenv("AURA_BACKGROUND_THINKING_IDLE_SECONDS", "300")),
@@ -1025,6 +1043,7 @@ def create_api(
                         "step_id": step.step_id,
                         "state": step.state,
                         "reason": step.reason,
+                        "approval_id": step.approval_id,
                     }
                     for step in execution.steps
                 ],
@@ -1077,6 +1096,7 @@ def create_api(
                     "step_id": step.step_id,
                     "state": step.state,
                     "reason": step.reason,
+                        "approval_id": step.approval_id,
                     "attempts": step.attempts,
                 }
                 for step in execution.steps
@@ -1254,7 +1274,7 @@ def create_api(
                 )[:6000]
                 episodic_store = getattr(app.state, "episodic_memory", None)
                 if episodic_store is None:
-                    episodic_store = EpisodicMemoryStore.from_environment()
+                    episodic_store = local_episodic_store()
                     app.state.episodic_memory = episodic_store
                 episodic_records = await app.state.async_work.run(
                     lambda: episodic_store.recall_related(
@@ -1366,7 +1386,7 @@ def create_api(
                 )
                 episodic_store = getattr(app.state, "episodic_memory", None)
                 if episodic_store is None:
-                    episodic_store = EpisodicMemoryStore.from_environment()
+                    episodic_store = local_episodic_store()
                     app.state.episodic_memory = episodic_store
                 await app.state.async_work.run(
                     lambda: episodic_store.remember(
@@ -1572,6 +1592,7 @@ def create_api(
 
         try:
             runner = DockerPythonRunner(authorizer=authorize_attempt)
+            require_local_storage()
             memory = SQLiteEpisodicMemory(
                 os.getenv("AURA_REFLEXION_MEMORY_DB", "./data/reflexion-episodes.sqlite3")
             )
@@ -1803,6 +1824,7 @@ def create_api(
     )
     def inference(
         request: InferenceRequest,
+        principal_id: str = Depends(authenticated_principal),
     ) -> InferenceResponse:
         return application.infer(request)
 
@@ -1812,6 +1834,7 @@ def create_api(
     )
     def generate_task_plan(
         request: DirectivePlanRequest,
+        principal_id: str = Depends(authenticated_principal),
     ) -> DirectivePlanResponse:
 
         try:
@@ -1877,6 +1900,7 @@ def create_api(
                     step.arguments,
                     frozenset(step.depends_on),
                     step.max_attempts,
+                    approval_id=step.approval_id,
                 )
                 for step in request.steps
             ),
@@ -1906,6 +1930,7 @@ def create_api(
                     "state": step.state,
                     "attempts": step.attempts,
                     "reason": step.reason,
+                        "approval_id": step.approval_id,
                     "result": step.result,
                 }
                 for step in result.steps
@@ -1945,6 +1970,7 @@ def create_api(
                     "state": step.state,
                     "attempts": step.attempts,
                     "reason": step.reason,
+                        "approval_id": step.approval_id,
                 }
                 for step in result.steps
             ],
@@ -1957,7 +1983,8 @@ def create_api(
         principal_id: str = Depends(authenticated_principal),
     ) -> dict[str, object]:
         host = http_request.client.host if http_request.client else ""
-        if host not in {"127.0.0.1", "::1", "localhost", "testclient"}:
+        test_client = host == "testclient" and bool(os.getenv("PYTEST_CURRENT_TEST"))
+        if host not in {"127.0.0.1", "::1", "localhost"} and not test_client:
             raise HTTPException(status_code=403, detail="Local client required")
         engine = CrossCapabilitySynthesizer()
         try:
@@ -1980,7 +2007,7 @@ def create_api(
             try:
                 store = getattr(app.state, "episodic_memory", None)
                 if store is None:
-                    store = EpisodicMemoryStore.from_environment()
+                    store = local_episodic_store()
                     app.state.episodic_memory = store
                 memory_items = await app.state.async_work.run(
                     lambda: store.recall_related(
@@ -2022,7 +2049,7 @@ def create_api(
             try:
                 store = getattr(app.state, "episodic_memory", None)
                 if store is None:
-                    store = EpisodicMemoryStore.from_environment()
+                    store = local_episodic_store()
                     app.state.episodic_memory = store
                 tags = tuple(sorted({
                     "cross_capability",
@@ -2137,6 +2164,7 @@ def create_api(
         return {"model": os.getenv("AURA_VISION_MODEL", "qwen2.5vl:3b"), "analysis": description, "provider": "local_ollama", "cloud_used": False}
 
     def get_local_vector_memory():
+        require_local_storage()
         store = getattr(app.state, "local_vector_memory", None)
         if store is not None:
             return store
@@ -2192,6 +2220,7 @@ def create_api(
     def get_prefetch_planner():
         planner = getattr(app.state, "predictive_prefetch_planner", None)
         if planner is None:
+            require_local_storage()
             planner = PredictivePrefetchPlanner(
                 os.getenv("AURA_PREFETCH_DB", "./data/predictive_prefetch.sqlite3"),
                 min_observations=int(os.getenv("AURA_PREFETCH_MIN_OBSERVATIONS", "3")),

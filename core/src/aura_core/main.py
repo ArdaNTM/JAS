@@ -265,6 +265,7 @@ def build_app() -> FastAPI:
         kernel=kernel,
         gateway=gateway,
         approval_store=approval_store,
+        storage_mode=storage_mode,
     )
 
     app.state.http_bearer_token = http_bearer_token
@@ -273,6 +274,7 @@ def build_app() -> FastAPI:
     app.state.storage_mode = storage_mode
     app.state.task_memory = task_memory
     app.state.checkpoint_artifacts = checkpoint_artifacts
+    app.state.remote_object_storage = remote_objects
 
     event_runtime = EventBusRuntime(
         kernel.event_bus,
