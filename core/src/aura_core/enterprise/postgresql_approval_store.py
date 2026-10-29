@@ -120,6 +120,16 @@ class PostgreSQLApprovalStore:
                 raise ApprovalConflict("Approval ID already exists")
             return self._record(row)
 
+    async def list_pending(self, *, limit: int = 100) -> list[ApprovalRecord]:
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 1000:
+            raise ValueError("limit must be between 1 and 1000")
+        async with self._engine.connect() as conn:
+            result = await conn.execute(text("""
+                SELECT * FROM aura_approvals WHERE status='pending'
+                ORDER BY requested_at DESC LIMIT :limit
+            """), {"limit": limit})
+            return [self._record(row) for row in result.mappings().all()]
+
     async def get(self, approval_id: str) -> ApprovalRecord | None:
         approval_id = _required(approval_id, "approval_id")
         async with self._engine.connect() as conn:

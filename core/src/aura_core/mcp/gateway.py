@@ -3,10 +3,9 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
-import sqlite3
 import inspect
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Protocol
 
 from aura_core.kernel.capabilities import CapabilityRegistry
 from aura_core.kernel.permissions import (
@@ -25,6 +24,56 @@ from aura_core.enterprise.approval_store import (
     InvalidApprovalTransition,
     SQLiteApprovalStore,
 )
+
+
+class ApprovalStoreProtocol(Protocol):
+    def create(self, **kwargs): ...
+    def get(self, approval_id: str): ...
+    def consume(self, approval_id: str, **kwargs): ...
+
+
+def _schema_type_matches(value: Any, expected: str) -> bool:
+    predicates = {
+        "object": lambda v: isinstance(v, dict), "array": lambda v: isinstance(v, list),
+        "string": lambda v: isinstance(v, str),
+        "integer": lambda v: isinstance(v, int) and not isinstance(v, bool),
+        "number": lambda v: isinstance(v, (int, float)) and not isinstance(v, bool),
+        "boolean": lambda v: isinstance(v, bool), "null": lambda v: v is None,
+    }
+    return predicates.get(expected, lambda _v: False)(value)
+
+
+def _validate_json_schema(value: Any, schema: dict[str, Any], path: str = "$") -> None:
+    """Validate the safety-relevant JSON Schema subset used for MCP tool inputs."""
+    if not isinstance(schema, dict) or any(k in schema for k in ("$ref", "allOf", "anyOf", "oneOf")):
+        raise ValueError(f"Unsupported or invalid input schema at {path}")
+    expected = schema.get("type")
+    if isinstance(expected, str) and not _schema_type_matches(value, expected):
+        raise ValueError(f"Invalid argument type at {path}; expected {expected}")
+    if "enum" in schema and value not in schema["enum"]:
+        raise ValueError(f"Argument is outside the allowed enum at {path}")
+    if isinstance(value, dict):
+        required, properties = schema.get("required", []), schema.get("properties", {})
+        if not isinstance(required, list) or any(key not in value for key in required):
+            raise ValueError(f"Missing required argument at {path}")
+        if not isinstance(properties, dict):
+            raise ValueError(f"Invalid object schema at {path}")
+        if schema.get("additionalProperties") is False and set(value) - set(properties):
+            raise ValueError(f"Unexpected argument at {path}")
+        for key, item in value.items():
+            if key in properties:
+                _validate_json_schema(item, properties[key], f"{path}.{key}")
+            elif isinstance(schema.get("additionalProperties"), dict):
+                _validate_json_schema(item, schema["additionalProperties"], f"{path}.{key}")
+    elif isinstance(value, list):
+        if len(value) < schema.get("minItems", 0) or len(value) > schema.get("maxItems", float("inf")):
+            raise ValueError(f"Array length is invalid at {path}")
+        if isinstance(schema.get("items"), dict):
+            for index, item in enumerate(value):
+                _validate_json_schema(item, schema["items"], f"{path}[{index}]")
+    elif isinstance(value, str):
+        if len(value) < schema.get("minLength", 0) or len(value) > schema.get("maxLength", float("inf")):
+            raise ValueError(f"String length is invalid at {path}")
 
 
 @dataclass(frozen=True, slots=True)
@@ -85,7 +134,7 @@ class MCPGateway:
         *,
         circuit_breakers: dict[str, CircuitBreaker] | None = None,
         audit_ledger: HashChainAuditLedger | None = None,
-        approval_store: SQLiteApprovalStore | None = None,
+        approval_store: ApprovalStoreProtocol | None = None,
         approval_fingerprint_key: bytes | None = None,
     ) -> None:
         if approval_store is not None:
@@ -196,7 +245,8 @@ class MCPGateway:
                 capability_id=request.capability_id,
                 operation_id=request.operation_id,
                 resource_scope=request.resource_scope,
-                risk_level=request.risk_level,
+                risk_level=RiskLevel(capability.definition.risk_level),
+                tool_name=request.tool_name,
                 session_id=request.session_id,
                 task_id=request.task_id,
             )
@@ -283,7 +333,7 @@ class MCPGateway:
                     reason="Approval validation failed; provider dispatch was not performed",
                     reason_code="approval_validation_failed",
                 )
-            except (sqlite3.Error, OSError):
+            except Exception:
                 return self._approval_response(
                     request,
                     provider_id=capability.definition.provider_id,
@@ -308,12 +358,25 @@ class MCPGateway:
 
         breaker = self._circuit_breakers.get(capability.definition.provider_id)
         try:
+            if capability.definition.tool_name and request.tool_name != capability.definition.tool_name:
+                raise ValueError("Tool does not match the registered capability")
+            discovered = await provider.list_tools()
+            tool = next((item for item in discovered if item.name == request.tool_name), None)
+            if tool is None:
+                raise ValueError("Tool is not registered by the capability provider")
+            arguments = request.arguments if request.arguments is not None else {}
+            _validate_json_schema(arguments, tool.input_schema)
             if breaker is None:
-                result = await provider.call_tool(request.tool_name, request.arguments)
+                result = await provider.call_tool(request.tool_name, arguments)
             else:
-                result = await breaker.call(
-                    lambda: provider.call_tool(request.tool_name, request.arguments)
-                )
+                result = await breaker.call(lambda: provider.call_tool(request.tool_name, arguments))
+        except ValueError:
+            self._audit(request, outcome="denied", reason_code="tool_binding_or_schema_invalid")
+            return MCPGatewayResponse(
+                decision=AuthorizationDecision.DENY, result=None,
+                provider_id=capability.definition.provider_id, tool_name=request.tool_name,
+                reason="Tool is not bound to this capability or its arguments failed schema validation",
+            )
         except Exception:
             # A transport error can happen after a provider performed the side
             # effect. Record UNKNOWN rather than implying the tool did not run.

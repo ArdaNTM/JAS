@@ -32,5 +32,5 @@ async def register_kokoro_mcp(*, config: KokoroMCPConfig, services, providers, c
         await provider.close()
         raise RuntimeError("Kokoro MCP server does not expose synthesize")
     tools.register_many(config.provider_id, discovered)
-    capabilities.register(CapabilityDefinition(capability_id=config.capability_id, name="Local speech synthesis", version="1.0.0", description="Synthesizes speech through the local Kokoro MCP service.", provider_id=config.provider_id, provider_type=ProviderType.MCP, category=CapabilityCategory.VOICE, priority=100, latency_class=LatencyClass.LOW, quality_class=QualityClass.HIGH))
+    capabilities.register(CapabilityDefinition(capability_id=config.capability_id, name="Local speech synthesis", version="1.0.0", description="Synthesizes speech through the local Kokoro MCP service.", provider_id=config.provider_id, provider_type=ProviderType.MCP, category=CapabilityCategory.VOICE, priority=100, latency_class=LatencyClass.LOW, quality_class=QualityClass.HIGH, tool_name=config.tool_name, risk_level="low"))
     return provider

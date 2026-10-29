@@ -127,6 +127,8 @@ async def register_research_mcp(
             provider_id=config.provider_id,
             provider_type=ProviderType.MCP,
             category=CapabilityCategory.RESEARCH,
+            tool_name=config.search_tool_name,
+            risk_level="medium",
         )
     )
 
@@ -148,6 +150,8 @@ async def register_research_mcp(
                 provider_id=config.provider_id,
                 provider_type=ProviderType.MCP,
                 category=CapabilityCategory.RESEARCH,
+                tool_name=config.fetch_tool_name,
+                risk_level="medium",
             )
         )
 

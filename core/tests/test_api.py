@@ -103,6 +103,8 @@ def make_success_transport() -> StubTransport:
 
 def make_client(
     transport: StubTransport,
+    *,
+    authenticated: bool = True,
 ) -> TestClient:
     app = create_api(
         make_config(),
@@ -113,7 +115,8 @@ def make_client(
     app.state.http_bearer_token = "t" * 40
     app.state.http_principal_id = "local_owner"
 
-    return TestClient(app)
+    headers = {"Authorization": "Bearer " + "t" * 40} if authenticated else {}
+    return TestClient(app, headers=headers)
 
 
 def test_health_endpoint_reports_core_is_alive() -> None:
@@ -476,7 +479,7 @@ def test_backend_invalid_response_maps_to_502() -> None:
 
 
 def test_capability_proposals_require_bearer_authentication() -> None:
-    client = make_client(make_success_transport())
+    client = make_client(make_success_transport(), authenticated=False)
 
     response = client.get("/api/capabilities/proposals")
 

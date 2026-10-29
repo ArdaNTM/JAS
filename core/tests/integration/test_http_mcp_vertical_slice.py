@@ -1,4 +1,5 @@
 from fastapi.testclient import TestClient
+from types import SimpleNamespace
 
 from aura_core.agent.integration import CapabilityAgentRuntime
 from aura_core.agent.runtime import AgentExecutor
@@ -19,6 +20,19 @@ from aura_core.mcp.tool_registry import MCPToolRegistry
 
 class Connection:
     is_connected = True
+    async def list_tools(self):
+        return SimpleNamespace(tools=[
+            SimpleNamespace(
+                name="echo",
+                description="Echo a test payload",
+                inputSchema={
+                    "type": "object",
+                    "properties": {"message": {"type": "string"}},
+                    "required": ["message"],
+                    "additionalProperties": False,
+                },
+            )
+        ])
     async def call_tool(self, name, arguments):
         return {"tool": name, "arguments": arguments}
 

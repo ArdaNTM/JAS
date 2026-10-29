@@ -83,6 +83,8 @@ async def register_local_filesystem_mcp(
                 provider_type=ProviderType.MCP,
                 category=CapabilityCategory.RESEARCH,
                 required_permissions=frozenset({config.capability_id}),
+                tool_name=config.tool_name,
+                risk_level="low",
             )
         )
         return provider

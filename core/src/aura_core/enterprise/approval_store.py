@@ -230,6 +230,16 @@ class SQLiteApprovalStore:
             ).fetchone()
             return self._record(row)
 
+    def list_pending(self, *, limit: int = 100) -> list[ApprovalRecord]:
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 1000:
+            raise ValueError("limit must be between 1 and 1000")
+        with self._lock:
+            rows = self._connection.execute(
+                "SELECT * FROM approvals WHERE status = ? ORDER BY requested_at DESC LIMIT ?",
+                (ApprovalStatus.PENDING.value, limit),
+            ).fetchall()
+            return [self._record(row) for row in rows]
+
     def get(self, approval_id: str) -> ApprovalRecord | None:
         approval_id = _required(approval_id, "approval_id")
         with self._lock:
