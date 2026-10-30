@@ -436,7 +436,7 @@ class MCPGateway:
             raise
         finally:
             leave_dispatch(token)
-        if getattr(result, "isError", False) is True or (
+        if getattr(result, "is_error", False) is True or getattr(result, "isError", False) is True or (
             isinstance(result, dict) and result.get("isError") is True
         ):
             self._publish_tool_failure(request, capability.definition.provider_id, "MCPToolError")
