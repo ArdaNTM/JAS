@@ -16,8 +16,10 @@ try {
 
     $wrong = Join-Path $folder "english.onnx.json"
     [IO.File]::WriteAllText($wrong, '{"language":{"code":"en_US"}}', [Text.UTF8Encoding]::new($false))
-    & $python $validator $wrong 2>&1 | Out-Null
-    if ($LASTEXITCODE -eq 0) { throw "Non-Turkish model unexpectedly accepted." }
+    $failure = Start-Process -FilePath $python -ArgumentList @($validator, $wrong) `
+        -NoNewWindow -Wait -PassThru `
+        -RedirectStandardError (Join-Path $folder "expected-error.log")
+    if ($failure.ExitCode -eq 0) { throw "Non-Turkish model unexpectedly accepted." }
 
     $setup = [IO.File]::ReadAllText((Join-Path $PSScriptRoot "setup-turkish-tts.ps1"))
     if (-not $setup.Contains("validate_piper_voice_config.py")) {
