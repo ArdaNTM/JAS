@@ -506,7 +506,10 @@ class SpeechTranscriptionResponse(BaseModel):
 class SpeechSynthesisRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     text: str = Field(min_length=1, max_length=4000)
-    voice: str = Field(default="af_heart", min_length=1)
+    # Voice selection is optional: each registered MCP TTS provider defines its
+    # own supported arguments. Kokoro defaults internally to af_heart, while
+    # Turkish Piper accepts only text and forbids unknown schema properties.
+    voice: str | None = Field(default=None, min_length=1)
 
 class SpeechSynthesisResponse(BaseModel):
     mime_type: str
@@ -1811,7 +1814,11 @@ def create_api(
             request_id=f"speech:{uuid4()}", principal_id=principal_id,
             capability_id="speech.synthesize", operation_id="speech.synthesize",
             resource_scope="local_default", risk_level=RiskLevel.LOW,
-            tool_name="synthesize", arguments={"text": request.text, "voice": request.voice},
+            tool_name="synthesize",
+            arguments={
+                "text": request.text,
+                **({"voice": request.voice} if request.voice is not None else {}),
+            },
         ))
         if response.result is None:
             raise HTTPException(status_code=403, detail=response.reason)
