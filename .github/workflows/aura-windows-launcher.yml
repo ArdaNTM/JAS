@@ -11,6 +11,10 @@ on:
       - "scripts/test-aura-app-window.ps1"
       - "scripts/aura-processes.ps1"
       - "scripts/test-aura-processes.ps1"
+      - "scripts/setup-turkish-tts.ps1"
+      - "scripts/test-piper-voice-config.ps1"
+      - "core/scripts/validate_piper_voice_config.py"
+      - "core/tests/test_piper_voice_config_validation.py"
       - "aura-ui/vite.config.ts"
       - "aura-ui/tests/aura-proxy.test.mjs"
       - ".github/workflows/aura-windows-launcher.yml"
@@ -27,6 +31,10 @@ on:
       - "scripts/test-aura-app-window.ps1"
       - "scripts/aura-processes.ps1"
       - "scripts/test-aura-processes.ps1"
+      - "scripts/setup-turkish-tts.ps1"
+      - "scripts/test-piper-voice-config.ps1"
+      - "core/scripts/validate_piper_voice_config.py"
+      - "core/tests/test_piper_voice_config_validation.py"
       - "aura-ui/vite.config.ts"
       - "aura-ui/tests/aura-proxy.test.mjs"
       - ".github/workflows/aura-windows-launcher.yml"
@@ -72,6 +80,16 @@ jobs:
         working-directory: aura-ui
         shell: pwsh
         run: npm run build
+      - name: Set up Python for Piper voice JSON regression
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Piper Unicode configuration regression (Windows PowerShell 5.1)
+        shell: cmd
+        run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\test-piper-voice-config.ps1
+      - name: Piper Unicode configuration regression (PowerShell 7)
+        shell: pwsh
+        run: ./scripts/test-piper-voice-config.ps1
       - name: Check optional Turkish TTS setup script syntax
         shell: pwsh
         run: |
