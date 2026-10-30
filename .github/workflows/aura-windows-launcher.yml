@@ -5,8 +5,10 @@ on:
     paths:
       - "scripts/Start-AURA.bat"
       - "scripts/start_aura.ps1"
+      - "scripts/aura-app-window.ps1"
       - "scripts/aura-env.ps1"
       - "scripts/test-aura-env.ps1"
+      - "scripts/test-aura-app-window.ps1"
       - ".github/workflows/aura-windows-launcher.yml"
   push:
     branches:
@@ -15,8 +17,10 @@ on:
     paths:
       - "scripts/Start-AURA.bat"
       - "scripts/start_aura.ps1"
+      - "scripts/aura-app-window.ps1"
       - "scripts/aura-env.ps1"
       - "scripts/test-aura-env.ps1"
+      - "scripts/test-aura-app-window.ps1"
       - ".github/workflows/aura-windows-launcher.yml"
   workflow_dispatch:
 
@@ -36,3 +40,9 @@ jobs:
       - name: PowerShell 7 parser regression
         shell: pwsh
         run: ./scripts/test-aura-env.ps1
+      - name: Chromium app-mode arguments (Windows PowerShell 5.1)
+        shell: cmd
+        run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\test-aura-app-window.ps1
+      - name: Chromium app-mode arguments (PowerShell 7)
+        shell: pwsh
+        run: ./scripts/test-aura-app-window.ps1

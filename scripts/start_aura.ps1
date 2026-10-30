@@ -3,6 +3,7 @@ $Root = Split-Path -Parent $PSScriptRoot
 $Core = Join-Path $Root "core"; $Ui = Join-Path $Root "aura-ui"; $Logs = Join-Path $Root "logs"
 New-Item -ItemType Directory -Path $Logs -Force | Out-Null
 . (Join-Path $PSScriptRoot "aura-env.ps1")
+. (Join-Path $PSScriptRoot "aura-app-window.ps1")
 function Find-Python {
  foreach ($p in @((Join-Path $Core ".venv\Scripts\python.exe"),(Join-Path $Root ".venv\Scripts\python.exe"),(Join-Path $Core "venv\Scripts\python.exe"),(Join-Path $Root "venv\Scripts\python.exe"))) {
   if (Test-Path $p) { return $p }
@@ -41,6 +42,7 @@ try {
  if (-not $env:AURA_RUNTIME) { $env:AURA_RUNTIME="ollama" }
  if (-not $env:AURA_MODEL) { $env:AURA_MODEL="qwen3:latest" }
  if (-not $env:AURA_BACKEND_ENDPOINT) { $env:AURA_BACKEND_ENDPOINT="http://127.0.0.1:11434" }
+ if (-not $env:AURA_STT_MODEL) { $env:AURA_STT_MODEL="small" }
  $bytes=New-Object byte[] 32; $rng=[Security.Cryptography.RandomNumberGenerator]::Create()
  try { $rng.GetBytes($bytes); $env:AURA_EVENT_STREAM_TOKEN=[Convert]::ToBase64String($bytes) }
  finally { $rng.Dispose(); [Array]::Clear($bytes,0,$bytes.Length) }
@@ -50,6 +52,9 @@ try {
  if ($LASTEXITCODE -ne 0 -or $v.Trim() -ne "3.13") { throw "Python 3.13 required; found $v." }
  & $Python -c "import aura_core.main"
  if ($LASTEXITCODE -ne 0) { throw "Core import check failed." }
+ Write-Host "Preparing local faster-whisper STT model (first run may download the model)..."
+ & $Python (Join-Path $Core "scripts\prepare_stt.py")
+ if ($LASTEXITCODE -ne 0) { throw "Local STT model preparation failed. Inspect the diagnostic above; Core was not started." }
  if (-not (Test-Path (Join-Path $Ui "node_modules"))) {
   Push-Location $Ui
   try { & $npm.Source ci --no-audit --no-fund; if ($LASTEXITCODE -ne 0) { throw "npm ci failed." } }
@@ -63,7 +68,7 @@ try {
  $uiProc=Start-Process $npm.Source -ArgumentList @("run","dev","--","--host","127.0.0.1","--port","$up","--strictPort") -WorkingDirectory $Ui -PassThru -WindowStyle Hidden -RedirectStandardOutput $uo -RedirectStandardError $ue
  if (-not (Wait-Http "http://127.0.0.1:$up/" 60)) { throw "UI readiness failed. Inspect $ue" }
  Write-Host "AURA ready: Core http://127.0.0.1:$cp  UI http://127.0.0.1:$up" -ForegroundColor Green
- Start-Process "http://127.0.0.1:$up/"
+ Start-AuraAppWindow -Url "http://127.0.0.1:$up/"
 } catch {
  Write-Host "AURA startup failed: $($_.Exception.Message)" -ForegroundColor Red
  Write-Host "Logs: $Logs"; Read-Host "Press Enter to close"; exit 1
