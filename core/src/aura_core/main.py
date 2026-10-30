@@ -32,6 +32,8 @@ from aura_core.enterprise.policy_bundle import PolicyBundle
 from aura_core.enterprise.approval_store import SQLiteApprovalStore
 from aura_core.enterprise.runtime_controls import HashChainAuditLedger
 from aura_core.mcp.graph_memory_provider import GraphMemoryMCPProvider
+from aura_core.memory.graph_store import SQLiteGraphStore, PostgreSQLGraphStore
+from aura_core.application.windows_screen_driver import WindowsDesktopInputDriver, DesktopVLMAdapter
 from aura_core.mcp.screen_control_provider import ScreenControlMCPProvider
 from aura_core.application.swarm_orchestration import SwarmOrchestrator
 from aura_core.enterprise.postgresql_approval_store import PostgreSQLApprovalStore
@@ -249,6 +251,49 @@ def build_app() -> FastAPI:
         workflow_store = SQLiteWorkflowStore(workflow_database_path)
         task_memory = TaskMemoryCoordinator.from_environment()
 
+    # Local mode uses durable SQLite, remote mode uses PostgreSQL only.
+    # Remote graph initialization participates in the existing startup rollback.
+    if storage_mode is StorageMode.REMOTE:
+        graph_store = PostgreSQLGraphStore(database_url)
+        startup_stores.append(graph_store)
+    else:
+        graph_path = os.getenv(
+            "AURA_GRAPH_DB_PATH",
+            os.path.join(os.getenv("LOCALAPPDATA", os.path.expanduser("~")),
+                         "AURA", "graph-memory.sqlite3"),
+        )
+        graph_store = SQLiteGraphStore(graph_path)
+
+    # Desktop control is disabled unless explicitly configured with an
+    # interactive ApprovalStore. Enabling it on unsupported platforms aborts.
+    screen_control_enabled = os.getenv(
+        "AURA_SCREEN_CONTROL_ENABLED", "0"
+    ).strip().casefold() in {"1", "true", "yes", "on"}
+    screen_control_provider = ScreenControlMCPProvider()
+    if screen_control_enabled:
+        if approval_store is None:
+            raise RuntimeError("ScreenControl requires AURA_APPROVAL_FINGERPRINT_KEY and ApprovalStore")
+        screen_control_provider = ScreenControlMCPProvider(
+            vision=DesktopVLMAdapter(
+                DesktopScreenCapture(),
+                OllamaVisionProvider(
+                    base_url=os.getenv("AURA_OLLAMA_BASE_URL", "http://127.0.0.1:11434"),
+                    model=os.getenv("AURA_VISION_MODEL", "qwen3-vl"),
+                    timeout_seconds=float(os.getenv("AURA_VISION_TIMEOUT_SECONDS", "30")),
+                ),
+            ),
+            input_driver=WindowsDesktopInputDriver(),
+        )
+        kernel.permission_engine.add_policy(PermissionPolicy(
+            policy_id="local-owner:screen-control:interactive",
+            policy_version="1.0.0",
+            principal_id=http_principal_id,
+            capability_id="ScreenControl", operation_id="ScreenControl",
+            resource_scope="local_default",
+            authorization_level=AuthorizationLevel.USER_APPROVAL_REQUIRED,
+            decision=AuthorizationDecision.REQUIRE_APPROVAL,
+        ))
+
     # Register governed MCP adapters through the Kernel registries.
     memory_service = ServiceDefinition(
         name="tiered_memory_mcp", version="1.0.0", provider="aura",
@@ -304,11 +349,11 @@ def build_app() -> FastAPI:
     gateway_audit_ledger = HashChainAuditLedger()
     # Registration declares availability, never grants authorization.
     for provider_id, service_name, instance, definitions in (
-        ("aura.graph-memory", "graph_memory_mcp", GraphMemoryMCPProvider(), (
+        ("aura.graph-memory", "graph_memory_mcp", GraphMemoryMCPProvider(graph_store), (
             ("memory.graph.query", "graph_memory_query", "low", CapabilityCategory.MEMORY),
             ("memory.graph.insert", "graph_memory_insert", "medium", CapabilityCategory.MEMORY),
         )),
-        ("aura.screen-control", "screen_control_mcp", ScreenControlMCPProvider(), (
+        ("aura.screen-control", "screen_control_mcp", screen_control_provider, (
             ("ScreenControl", "screen_control", "high", CapabilityCategory.AUTOMATION),
         )),
     ):
@@ -366,6 +411,8 @@ def build_app() -> FastAPI:
     app.state.http_principal_id = http_principal_id
     app.state.approval_store = approval_store
     app.state.gateway_audit_ledger = gateway_audit_ledger
+    app.state.graph_store = graph_store
+    app.state.screen_control_enabled = screen_control_enabled
     app.state.swarm_orchestrator = SwarmOrchestrator(gateway=gateway, event_bus=kernel.event_bus)
     app.state.storage_mode = storage_mode
     app.state.task_memory = task_memory

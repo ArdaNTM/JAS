@@ -228,3 +228,36 @@ def test_s3_checkpoint_is_published_only_after_object_is_durable_and_retry_is_id
                 client.remove_bucket(bucket)
 
     asyncio.run(scenario())
+
+
+def test_postgresql_graph_edges_persist_and_are_principal_isolated():
+    if not DATABASE_URL:
+        pytest.skip("requires AURA_TEST_DATABASE_URL and a running PostgreSQL service")
+
+    from aura_core.memory.graph_store import PostgreSQLGraphStore
+
+    async def scenario():
+        principal = f"graph-{uuid4().hex}"
+        other = f"graph-other-{uuid4().hex}"
+        store = PostgreSQLGraphStore(DATABASE_URL)
+        try:
+            await store.initialize()
+            first = await store.insert(principal_id=principal, subject="alpha",
+                predicate="relates", object="beta")
+            second = await store.insert(principal_id=principal, subject="beta",
+                predicate="relates", object="gamma")
+            await store.insert(principal_id=other, subject="alpha",
+                predicate="private", object="secret")
+            edges = await store.query(principal_id=principal, subject="alpha", depth=2)
+            assert {edge["fact_id"] for edge in edges} == {first, second}
+            assert not any(edge["object"] == "secret" for edge in edges)
+            await store.close()
+            store = PostgreSQLGraphStore(DATABASE_URL)
+            await store.initialize()
+            again = await store.query(principal_id=principal, subject="alpha", depth=2)
+            assert {edge["fact_id"] for edge in again} == {first, second}
+            assert await store.query(principal_id="unknown", subject="alpha") == []
+        finally:
+            await store.close()
+
+    asyncio.run(scenario())

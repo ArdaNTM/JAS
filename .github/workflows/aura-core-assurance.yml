@@ -47,3 +47,5 @@ jobs:
         run: uv run python -m compileall -q src tests
       - name: Run Core unit tests
         run: uv run pytest -q
+      - name: Verify complete production release lock
+        run: uv run python scripts/verify_final_lock.py
