@@ -107,7 +107,7 @@ def test_piper_text_only_request_dispatches_through_existing_scope_policy():
     }
     assert provider.calls == [("synthesize", {"text": "Merhaba AURA"})]
     records = engine.audit_records()
-    assert records and records[-1].decision is AuthorizationDecision.ALLOW
+    assert records and records[-1].decision.decision is AuthorizationDecision.ALLOW
 
 
 def test_kokoro_explicit_voice_is_preserved():
@@ -135,7 +135,7 @@ def test_tts_missing_policy_stays_default_deny():
     response = client.post("/api/speech/synthesize", json={"text": "Merhaba"})
     assert response.status_code == 403
     assert provider.calls == []
-    assert engine.audit_records()[-1].decision is AuthorizationDecision.DENY
+    assert engine.audit_records()[-1].decision.decision is AuthorizationDecision.DENY
 
 
 def test_tts_wrong_principal_is_denied_even_when_policy_exists():
@@ -143,7 +143,7 @@ def test_tts_wrong_principal_is_denied_even_when_policy_exists():
     response = client.post("/api/speech/synthesize", json={"text": "Merhaba"})
     assert response.status_code == 403
     assert provider.calls == []
-    assert engine.audit_records()[-1].decision is AuthorizationDecision.DENY
+    assert engine.audit_records()[-1].decision.decision is AuthorizationDecision.DENY
 
 
 def test_tts_requires_bearer_even_with_gateway_and_policy():
