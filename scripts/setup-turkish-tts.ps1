@@ -28,8 +28,10 @@ if (-not (Test-Path -LiteralPath $config)) {
     Invoke-WebRequest -Uri ($base + "tr_TR-dfki-medium.onnx.json") -OutFile "$config.download"
     Move-Item "$config.download" $config -Force
 }
-$metadata = Get-Content -LiteralPath $config -Raw | ConvertFrom-Json
-if ($metadata.language.code -ne "tr_TR") { throw "Downloaded voice config is not Turkish." }
+# Windows PowerShell 5.1 ConvertFrom-Json treats IPA map keys case-insensitively.
+# Python JSON is UTF-8 aware and preserves case-distinct phoneme keys.
+& $python (Join-Path $root "core\scripts\validate_piper_voice_config.py") $config
+if ($LASTEXITCODE -ne 0) { throw "Downloaded Piper voice config is invalid or not Turkish." }
 if ((Get-Item -LiteralPath $model).Length -lt 1000000) { throw "Downloaded ONNX model is too small." }
 
 # uv sync re-resolves the locked environment; reinstall this optional package
