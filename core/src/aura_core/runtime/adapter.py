@@ -1,4 +1,5 @@
 ﻿from typing import Any
+import os
 
 from aura_core.config.backend import BackendConfig
 from aura_core.contracts.messages import (
@@ -38,6 +39,17 @@ class AdapterBackend(InferenceBackend):
 
         if request.max_tokens is not None:
             options["num_predict"] = request.max_tokens
+
+        # Opt-in interactive profile: reduce excessive Qwen3 thinking and
+        # bound generation. The user's explicit max_tokens always wins.
+        if os.getenv("AURA_OLLAMA_FAST_RESPONSE", "0").strip().lower() in {"1", "true", "yes"}:
+            if request.max_tokens is None:
+                # Bounded independently from untrusted model/user input.
+                options["num_predict"] = max(
+                    64, min(1024, int(os.getenv("AURA_OLLAMA_FAST_MAX_TOKENS", "384")))
+                )
+            payload["think"] = False
+            payload["keep_alive"] = "10m"
 
         payload["options"] = options
 
