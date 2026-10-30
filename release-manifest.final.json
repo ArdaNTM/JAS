@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-10-30T22:37:46.312Z",
-  "git_commit": "52695e24d806469634688ea0b650ef8c6b737cf8",
+  "generated_at": "2026-10-30T23:08:12.240Z",
+  "git_commit": "ca35295390670f168ea9643f38cf5725cbd02350",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:147d24d18722f710c76df90ea55dee41ec25097aef5df10cc8454dc0e1a95f52",
+  "release_digest": "sha256:b52285949b4a048938e0322e4d5147c0ef5f301c8fbde87c804c88a4391353ef",
   "file_count": 228,
   "files": [
     {
@@ -30,7 +30,7 @@
     },
     {
       "path": "aura-ui/src/App.tsx",
-      "sha256": "241e5f905d12a96d3877c4b335569c449ecdcf223f7cc55e0a2ffdf218cf3b0c"
+      "sha256": "68e74fad0938cb8d3e0a61bc197ad5dc67b003c08c05f31e5fbff96c81e4db52"
     },
     {
       "path": "aura-ui/src/assets/hero.png",
@@ -150,7 +150,7 @@
     },
     {
       "path": "core/src/aura_core/application/api.py",
-      "sha256": "65acbab81f5c444522a638a0ebfd42d46c5df7fe2cb7b01596182de3be912fc1"
+      "sha256": "ee5843665be1d2b207471b70cf81eb93b4285be2ca02c6bcfb7778ad64a3476f"
     },
     {
       "path": "core/src/aura_core/application/approval_api.py",
@@ -242,7 +242,7 @@
     },
     {
       "path": "core/src/aura_core/application/health_api.py",
-      "sha256": "9a9d9164dbd3169850c8739dee5ecfb0efc4b6940cecac6ba120d51f9a55bf99"
+      "sha256": "ec0c505314953bc3a451137e859c4a4a9808e6e2ab34388b3310cd20cc3232e5"
     },
     {
       "path": "core/src/aura_core/application/jarvis_api.py",
@@ -834,7 +834,7 @@
     },
     {
       "path": "core/src/aura_core/runtime/adapter.py",
-      "sha256": "9618a9a727a703558eb743cd1766eaf78fedbf08618c47d92197094c8cd3266b"
+      "sha256": "13ac007e529c763b9eee57cfe45b75d3e471cb0a770ae53bbd0026fe20c3792d"
     },
     {
       "path": "core/src/aura_core/runtime/backend.py",
