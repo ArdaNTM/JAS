@@ -4,19 +4,12 @@ $Core = Join-Path $Root "core"; $Ui = Join-Path $Root "aura-ui"; $Logs = Join-Pa
 New-Item -ItemType Directory -Path $Logs -Force | Out-Null
 . (Join-Path $PSScriptRoot "aura-env.ps1")
 . (Join-Path $PSScriptRoot "aura-app-window.ps1")
+. (Join-Path $PSScriptRoot "aura-processes.ps1")
 function Find-Python {
  foreach ($p in @((Join-Path $Core ".venv\Scripts\python.exe"),(Join-Path $Root ".venv\Scripts\python.exe"),(Join-Path $Core "venv\Scripts\python.exe"),(Join-Path $Root "venv\Scripts\python.exe"))) {
   if (Test-Path $p) { return $p }
  }
  return $null
-}
-function Free-Port([int]$Start) {
- for ($p=$Start; $p -le 65535; $p++) {
-  $l=$null
-  try { $l=[Net.Sockets.TcpListener]::new([Net.IPAddress]::Loopback,$p); $l.Start(); return $p }
-  catch { } finally { if ($l) { $l.Stop() } }
- }
- throw "No free loopback port."
 }
 function Wait-Http([string]$Url,[int]$Seconds,[switch]$Ready) {
  $until=(Get-Date).AddSeconds($Seconds)
@@ -30,24 +23,42 @@ function Wait-Http([string]$Url,[int]$Seconds,[switch]$Ready) {
  }
  return $false
 }
+$coreProc=$null; $uiProc=$null; $failed=$false
 try {
  if (-not (Test-Path $Core) -or -not (Test-Path $Ui)) { throw "core/ or aura-ui/ missing." }
  Import-AuraEnvFile -Path (Join-Path $Core ".env.local")
  $Python=Find-Python
  if (-not $Python) { throw "Python 3.13 venv missing in core\.venv or root .venv." }
  $npm=Get-Command npm.cmd -ErrorAction SilentlyContinue
- if (-not $npm) { throw "npm.cmd not found." }
+ $node=Get-Command node.exe -ErrorAction SilentlyContinue
+ if (-not $npm -or -not $node) { throw "Node.js and npm.cmd are required." }
  $env:AURA_STORAGE_MODE="remote"; $env:AURA_CORE_HOST="127.0.0.1"
  Assert-AuraRemoteSettings
  if (-not $env:AURA_RUNTIME) { $env:AURA_RUNTIME="ollama" }
  if (-not $env:AURA_MODEL) { $env:AURA_MODEL="qwen3:latest" }
  if (-not $env:AURA_BACKEND_ENDPOINT) { $env:AURA_BACKEND_ENDPOINT="http://127.0.0.1:11434" }
  if (-not $env:AURA_STT_MODEL) { $env:AURA_STT_MODEL="small" }
+ # Bearer credentials are server-side only; Vite's loopback proxy injects
+ # them into Core requests without exposing them in browser JavaScript.
+ if (-not $env:AURA_API_BEARER_TOKEN) {
+  $secret=New-Object byte[] 48
+  $rng=[Security.Cryptography.RandomNumberGenerator]::Create()
+  try { $rng.GetBytes($secret); $env:AURA_API_BEARER_TOKEN=[Convert]::ToBase64String($secret) }
+  finally { $rng.Dispose(); [Array]::Clear($secret,0,$secret.Length) }
+ }
+ if ($env:AURA_API_BEARER_TOKEN.Length -lt 32) { throw "AURA_API_BEARER_TOKEN must be at least 32 characters." }
+ if (-not $env:AURA_API_PRINCIPAL_ID) { $env:AURA_API_PRINCIPAL_ID="local_owner" }
  $bytes=New-Object byte[] 32; $rng=[Security.Cryptography.RandomNumberGenerator]::Create()
  try { $rng.GetBytes($bytes); $env:AURA_EVENT_STREAM_TOKEN=[Convert]::ToBase64String($bytes) }
  finally { $rng.Dispose(); [Array]::Clear($bytes,0,$bytes.Length) }
- $cp=Free-Port 8000; $up=Free-Port 5173
- $env:AURA_CORE_PORT="$cp"; $env:AURA_CORS_ORIGINS="http://127.0.0.1:$up,http://localhost:$up"; $env:PYTHONPATH=Join-Path $Core "src"
+ # Never shift to new ports or proxy against a different running AURA.
+ Stop-AuraStaleProcesses -Root $Root
+ Start-Sleep -Milliseconds 500
+ $cp=8000; $up=5173
+ Assert-AuraPortAvailable -Port $cp
+ Assert-AuraPortAvailable -Port $up
+ $env:AURA_CORE_PORT="$cp"; $env:AURA_UI_PORT="$up"
+ $env:AURA_CORS_ORIGINS="http://127.0.0.1:$up"; $env:PYTHONPATH=Join-Path $Core "src"
  $v=& $Python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')"
  if ($LASTEXITCODE -ne 0 -or $v.Trim() -ne "3.13") { throw "Python 3.13 required; found $v." }
  & $Python -c "import aura_core.main"
@@ -65,11 +76,26 @@ try {
  $coreProc=Start-Process $Python -ArgumentList "-m aura_core" -WorkingDirectory $Core -PassThru -WindowStyle Hidden -RedirectStandardOutput $co -RedirectStandardError $ce
  if (-not (Wait-Http "http://127.0.0.1:$cp/api/health/live" 60)) { throw "Core liveness failed. Inspect $ce" }
  if (-not (Wait-Http "http://127.0.0.1:$cp/api/health/ready" 120 -Ready)) { throw "Remote DB/object storage readiness failed. No fallback used. Inspect Core logs." }
- $uiProc=Start-Process $npm.Source -ArgumentList @("run","dev","--","--host","127.0.0.1","--port","$up","--strictPort") -WorkingDirectory $Ui -PassThru -WindowStyle Hidden -RedirectStandardOutput $uo -RedirectStandardError $ue
+ $viteScript=Join-Path $Ui "node_modules/vite/bin/vite.js"
+ if (-not (Test-Path -LiteralPath $viteScript)) { throw "Vite executable not found; run npm ci in aura-ui." }
+ $uiProc=Start-Process $node.Source -ArgumentList @($viteScript,"--host","127.0.0.1","--port","$up","--strictPort") -WorkingDirectory $Ui -PassThru -WindowStyle Hidden -RedirectStandardOutput $uo -RedirectStandardError $ue
  if (-not (Wait-Http "http://127.0.0.1:$up/" 60)) { throw "UI readiness failed. Inspect $ue" }
  Write-Host "AURA ready: Core http://127.0.0.1:$cp  UI http://127.0.0.1:$up" -ForegroundColor Green
  Start-AuraAppWindow -Url "http://127.0.0.1:$up/"
+ Write-Host "AURA supervisor active. Close the application and press Enter to stop Core and UI."
+ Read-Host "Press Enter to stop AURA" | Out-Null
 } catch {
+ $failed=$true
  Write-Host "AURA startup failed: $($_.Exception.Message)" -ForegroundColor Red
- Write-Host "Logs: $Logs"; Read-Host "Press Enter to close"; exit 1
+ Write-Host "Logs: $Logs"
+} finally {
+ foreach ($proc in @($uiProc,$coreProc)) {
+  if ($null -ne $proc) {
+   Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+  }
+ }
+ # Cleanup any same-repository child stdio/MCP processes left behind.
+ Stop-AuraStaleProcesses -Root $Root
+ Write-Host "AURA Core/UI supervisor stopped."
 }
+if ($failed) { exit 1 }
