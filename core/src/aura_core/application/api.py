@@ -1816,7 +1816,9 @@ def create_api(
         if response.result is None:
             raise HTTPException(status_code=403, detail=response.reason)
         result = response.result
-        payload = getattr(result, "structuredContent", None)
+        payload = getattr(result, "structured_content", None)
+        if payload is None:
+            payload = getattr(result, "structuredContent", None)
         if not isinstance(payload, dict):
             payload = result if isinstance(result, dict) else None
         if not isinstance(payload, dict) or not all(
