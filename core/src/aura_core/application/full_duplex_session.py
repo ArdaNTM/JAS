@@ -105,7 +105,9 @@ class EventBusAudioPlayer:
         self._events = event_bus
 
     async def play(self, audio: Any, *, session_id: str) -> None:
-        payload = getattr(audio, "structuredContent", None)
+        payload = getattr(audio, "structured_content", None)
+        if payload is None:
+            payload = getattr(audio, "structuredContent", None)
         if not isinstance(payload, Mapping):
             payload = audio if isinstance(audio, Mapping) else None
         if not isinstance(payload, Mapping) or not isinstance(payload.get("audio_base64"), str):

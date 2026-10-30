@@ -68,4 +68,12 @@ jobs:
         working-directory: aura-ui
         shell: pwsh
         run: node tests/aura-proxy.test.mjs
+      - name: Compile UI TypeScript and build Vite UI
+        working-directory: aura-ui
+        shell: pwsh
+        run: npm run build
+      - name: Check optional Turkish TTS setup script syntax
+        shell: pwsh
+        run: |
+          [void][scriptblock]::Create((Get-Content scripts/setup-turkish-tts.ps1 -Raw))
 

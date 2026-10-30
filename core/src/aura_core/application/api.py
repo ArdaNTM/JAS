@@ -1816,7 +1816,20 @@ def create_api(
         if response.result is None:
             raise HTTPException(status_code=403, detail=response.reason)
         result = response.result
-        return SpeechSynthesisResponse(mime_type=result["mime_type"], audio_base64=result["audio_base64"])
+        payload = getattr(result, "structured_content", None)
+        if payload is None:
+            payload = getattr(result, "structuredContent", None)
+        if not isinstance(payload, dict):
+            payload = result if isinstance(result, dict) else None
+        if not isinstance(payload, dict) or not all(
+            isinstance(payload.get(key), str) for key in ("mime_type", "audio_base64")
+        ):
+            raise HTTPException(status_code=502, detail="TTS provider returned no structured audio")
+        if len(payload["audio_base64"]) > 16_000_000:
+            raise HTTPException(status_code=502, detail="TTS provider audio exceeds delivery limit")
+        return SpeechSynthesisResponse(
+            mime_type=payload["mime_type"], audio_base64=payload["audio_base64"]
+        )
 
     @app.post(
         "/v1/inference",

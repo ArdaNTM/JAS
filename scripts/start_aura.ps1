@@ -39,6 +39,17 @@ try {
  if (-not $env:AURA_BACKEND_ENDPOINT) { $env:AURA_BACKEND_ENDPOINT="http://127.0.0.1:11434" }
  if (-not $env:AURA_BACKEND_TIMEOUT) { $env:AURA_BACKEND_TIMEOUT="300" }
  if (-not $env:AURA_STT_MODEL) { $env:AURA_STT_MODEL="small" }
+ # Interactive Qwen3 profile: finite generation and no optional thinking.
+ # Explicit user configuration always takes precedence.
+ if (-not $env:AURA_OLLAMA_FAST_RESPONSE) { $env:AURA_OLLAMA_FAST_RESPONSE="1" }
+ if (-not $env:AURA_OLLAMA_FAST_MAX_TOKENS) { $env:AURA_OLLAMA_FAST_MAX_TOKENS="384" }
+ if ($env:AURA_TTS_PROVIDER -eq "piper") {
+  if (-not $env:AURA_PIPER_MODEL_PATH -or -not (Test-Path -LiteralPath $env:AURA_PIPER_MODEL_PATH)) {
+   throw "Piper selected but Turkish voice model is missing. Run scripts/setup-turkish-tts.ps1 after reviewing the voice license."
+  }
+  & $Python -c "import piper"
+  if ($LASTEXITCODE -ne 0) { throw "Piper selected but piper-tts runtime is missing. Run scripts/setup-turkish-tts.ps1." }
+ }
  # Bearer credentials are server-side only; Vite's loopback proxy injects
  # them into Core requests without exposing them in browser JavaScript.
  if (-not $env:AURA_API_BEARER_TOKEN) {
