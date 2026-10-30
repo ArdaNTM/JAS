@@ -920,3 +920,22 @@ def test_gateway_rejects_replay_after_approval_was_consumed(tmp_path) -> None:
         provider.connection.call_tool.assert_awaited_once()
         assert store.get(record.approval_id).status is ApprovalStatus.CONSUMED
 
+
+
+def test_gateway_classifies_mcp_v2_snake_case_tool_error() -> None:
+    """A real MCP SDK 2 CallToolResult uses is_error, not isError."""
+    from mcp.types import CallToolResult, TextContent
+
+    gateway, permission_engine, provider = make_gateway()
+    permission_engine.add_policy(make_policy(AuthorizationDecision.ALLOW))
+    provider.connection.call_tool.return_value = CallToolResult(
+        content=[TextContent(type="text", text="provider failed")],
+        isError=True,
+    )
+
+    response = asyncio.run(gateway.invoke(make_request()))
+    assert response.decision is AuthorizationDecision.ALLOW
+    assert response.reason.startswith("MCP tool execution failed")
+    assert response.result == {
+        "status": "failed", "error": "MCP tool execution failed"
+    }
