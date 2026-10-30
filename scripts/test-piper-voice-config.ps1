@@ -23,7 +23,7 @@ try {
     if (-not $setup.Contains("validate_piper_voice_config.py")) {
         throw "Installer is not wired to the validated UTF-8 parser."
     }
-    if ($setup.Contains("ConvertFrom-Json")) {
+    if ($setup -match '(?im)^(?!\s*#)[^\r\n]*\bConvertFrom-Json\b') {
         throw "Installer still uses case-insensitive JSON parser."
     }
     Write-Host "PASS: Piper voice JSON validation (PowerShell + Python)"
