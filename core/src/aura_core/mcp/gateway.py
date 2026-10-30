@@ -16,6 +16,8 @@ from aura_core.kernel.permissions import (
 )
 from aura_core.mcp.mcp_provider import MCPProvider
 from aura_core.mcp.provider import ProviderRegistry
+from aura_core.kernel.events import EventBus, KernelEvent
+from aura_core.telemetry.runtime_profiler import RuntimeProfiler
 from aura_core.enterprise.runtime_controls import CircuitBreaker, HashChainAuditLedger
 from aura_core.enterprise.approval_store import (
     ApprovalConflict,
@@ -136,6 +138,8 @@ class MCPGateway:
         audit_ledger: HashChainAuditLedger | None = None,
         approval_store: ApprovalStoreProtocol | None = None,
         approval_fingerprint_key: bytes | None = None,
+        event_bus: EventBus | None = None,
+        profiler: RuntimeProfiler | None = None,
     ) -> None:
         if approval_store is not None:
             if not isinstance(approval_fingerprint_key, bytes) or len(approval_fingerprint_key) < 32:
@@ -152,6 +156,8 @@ class MCPGateway:
         self._audit_ledger = audit_ledger
         self._approval_store = approval_store
         self._approval_fingerprint_key = approval_fingerprint_key
+        self._event_bus = event_bus
+        self._profiler = profiler or RuntimeProfiler(publisher=self._publish_telemetry)
 
     def _audit(self, request: MCPGatewayRequest, *, outcome: str, reason_code: str) -> None:
         if self._audit_ledger is None:
@@ -230,7 +236,22 @@ class MCPGateway:
             approval_id=approval_id,
         )
 
-    async def invoke(
+    def _publish_telemetry(self, measurement) -> None:
+        if self._event_bus is None:
+            return
+        self._event_bus.publish(KernelEvent(
+            event_type="Telemetry.MCPGatewayExecution",
+            source_component="aura.mcp.gateway",
+            payload=measurement.to_dict(),
+        ))
+
+    async def invoke(self, request: MCPGatewayRequest) -> MCPGatewayResponse:
+        # Measure the complete gateway boundary, including denied/deferred calls.
+        # No arguments, prompts, tool results, or secrets enter telemetry.
+        with self._profiler.measure("mcp_gateway", "invoke"):
+            return await self._invoke_authorized(request)
+
+    async def _invoke_authorized(
         self,
         request: MCPGatewayRequest,
     ) -> MCPGatewayResponse:
