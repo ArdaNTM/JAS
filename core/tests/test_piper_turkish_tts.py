@@ -48,10 +48,10 @@ def test_turkish_voice_is_cached_and_audio_is_structured(monkeypatch, tmp_path):
     request = SimpleNamespace(name="synthesize", arguments={"text": "Merhaba AURA"})
     one = asyncio.run(script.handle_call_tool(None, request))
     two = asyncio.run(script.handle_call_tool(None, request))
-    assert not one.isError
-    assert one.structuredContent["mime_type"] == "audio/wav"
-    assert one.structuredContent["provider"] == "piper"
-    assert one.structuredContent["audio_base64"] == two.structuredContent["audio_base64"]
+    assert not one.is_error
+    assert one.structured_content["mime_type"] == "audio/wav"
+    assert one.structured_content["provider"] == "piper"
+    assert one.structured_content["audio_base64"] == two.structured_content["audio_base64"]
     assert counts == {"loads": 1, "synthesis": 2}
 
 
@@ -67,8 +67,8 @@ def test_english_voice_is_rejected_even_with_valid_files(monkeypatch, tmp_path):
     reply = asyncio.run(script.handle_call_tool(
         None, SimpleNamespace(name="synthesize", arguments={"text": "Merhaba"})
     ))
-    assert reply.isError
-    assert reply.structuredContent is None
+    assert reply.is_error
+    assert reply.structured_content is None
     assert "english.onnx" not in reply.content[0].text
 
 
