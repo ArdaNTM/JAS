@@ -37,6 +37,7 @@ try {
  if (-not $env:AURA_RUNTIME) { $env:AURA_RUNTIME="ollama" }
  if (-not $env:AURA_MODEL) { $env:AURA_MODEL="qwen3:latest" }
  if (-not $env:AURA_BACKEND_ENDPOINT) { $env:AURA_BACKEND_ENDPOINT="http://127.0.0.1:11434" }
+ if (-not $env:AURA_BACKEND_TIMEOUT) { $env:AURA_BACKEND_TIMEOUT="300" }
  if (-not $env:AURA_STT_MODEL) { $env:AURA_STT_MODEL="small" }
  # Bearer credentials are server-side only; Vite's loopback proxy injects
  # them into Core requests without exposing them in browser JavaScript.
@@ -63,6 +64,9 @@ try {
  if ($LASTEXITCODE -ne 0 -or $v.Trim() -ne "3.13") { throw "Python 3.13 required; found $v." }
  & $Python -c "import aura_core.main"
  if ($LASTEXITCODE -ne 0) { throw "Core import check failed." }
+ Write-Host "Checking local inference backend and warming the configured Ollama model..."
+ & $Python (Join-Path $Core "scripts/preflight_ollama.py")
+ if ($LASTEXITCODE -ne 0) { throw "Local inference backend preflight failed; Core was not started." }
  Write-Host "Preparing local faster-whisper STT model (first run may download the model)..."
  & $Python (Join-Path $Core "scripts\prepare_stt.py")
  if ($LASTEXITCODE -ne 0) { throw "Local STT model preparation failed. Inspect the diagnostic above; Core was not started." }

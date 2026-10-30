@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-10-30T22:26:19.445Z",
-  "git_commit": "b285295173f9f6a855b3cd7e2963de46982a9dce",
+  "generated_at": "2026-10-30T22:37:46.312Z",
+  "git_commit": "52695e24d806469634688ea0b650ef8c6b737cf8",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:b374303945b3dcfcd64a40974dc402c030a4d3e0f5a40c9d8283d21672e9b974",
+  "release_digest": "sha256:147d24d18722f710c76df90ea55dee41ec25097aef5df10cc8454dc0e1a95f52",
   "file_count": 228,
   "files": [
     {
@@ -866,7 +866,7 @@
     },
     {
       "path": "core/src/aura_core/runtime/transport.py",
-      "sha256": "42af0f1ac4b1b3ce8d905786553bef5a8fd8b37d61997c29fc2402a14517b2a8"
+      "sha256": "358abe5e28c139742b96f67ebe8d5913e6a084abb9ea53eef867800469fecca7"
     },
     {
       "path": "core/src/aura_core/security/__init__.py",
