@@ -156,3 +156,32 @@ async def register_research_mcp(
         )
 
     return provider
+
+def install_local_research_policies(permission_engine, config: ResearchMCPConfig) -> None:
+    """Allow local_owner's public-web research through PermissionEngine only.
+
+    Called after live MCP provider registration succeeds. Keep the grant
+    principal-, operation-, and scope-specific: no blanket search permission.
+    """
+    from aura_core.kernel.permissions import (
+        AuthorizationDecision,
+        AuthorizationLevel,
+        PermissionPolicy,
+    )
+
+    for capability_id, operation_id in (
+        (config.capability_id, config.search_operation_id),
+        (config.fetch_capability_id, config.fetch_operation_id),
+    ):
+        permission_engine.add_policy(
+            PermissionPolicy(
+                policy_id=f"local-owner:{capability_id}:public-web",
+                policy_version="1.0.1",
+                principal_id="local_owner",
+                capability_id=capability_id,
+                operation_id=operation_id,
+                resource_scope="public-web",
+                authorization_level=AuthorizationLevel.EXECUTE,
+                decision=AuthorizationDecision.ALLOW,
+            )
+        )

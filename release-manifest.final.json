@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-10-30T20:43:44.323Z",
-  "git_commit": "d079b20357750e208c8db2b61ac166ad8da992fd",
+  "generated_at": "2026-10-30T22:26:19.445Z",
+  "git_commit": "b285295173f9f6a855b3cd7e2963de46982a9dce",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:87ce6e7f808106ad6ac551dc0e4865f0750f46923d35cdec8a37439427e3c2b3",
+  "release_digest": "sha256:b374303945b3dcfcd64a40974dc402c030a4d3e0f5a40c9d8283d21672e9b974",
   "file_count": 228,
   "files": [
     {
@@ -618,7 +618,7 @@
     },
     {
       "path": "core/src/aura_core/main.py",
-      "sha256": "173c838feb0f43b67b5809e2e23ea1c97417778aaf925034caa10bd7c855dcc2"
+      "sha256": "1a9c0c380fa083892e6e9007dedd92a61df81d15e94503c998d8397a59d0967e"
     },
     {
       "path": "core/src/aura_core/mcp/__init__.py",
@@ -826,7 +826,7 @@
     },
     {
       "path": "core/src/aura_core/research/provider_bootstrap.py",
-      "sha256": "952216f76484d9f64011a36ca1a8fd0be03f4c8c5bbb0eb5cd07637699e6760c"
+      "sha256": "b29ec4ce38cec4f0231d324915d9116071334b63a9968467aa57902d7bc3577e"
     },
     {
       "path": "core/src/aura_core/runtime/__init__.py",

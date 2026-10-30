@@ -68,6 +68,7 @@ from aura_core.filesystem.config import LocalFilesystemMCPConfig
 from aura_core.filesystem.provider_bootstrap import register_local_filesystem_mcp
 from aura_core.research.provider_bootstrap import (
     register_research_mcp,
+    install_local_research_policies,
 )
 from aura_core.tts.config import KokoroMCPConfig
 from aura_core.tts.provider_bootstrap import register_kokoro_mcp
@@ -677,39 +678,11 @@ def build_app() -> FastAPI:
                         exc_info=True,
                     )
 
-            kernel.permission_engine.add_policy(
-                PermissionPolicy(
-                    policy_id=(
-                        "local-user:"
-                        "internet.search:"
-                        "local_default"
-                    ),
-                    policy_version="1.0.0",
-                    principal_id="local_owner",
-                    capability_id="internet.search",
-                    operation_id="internet.search",
-                    resource_scope="local_default",
-                    authorization_level=(
-                        AuthorizationLevel.EXECUTE
-                    ),
-                    decision=(
-                        AuthorizationDecision.ALLOW
-                    ),
-                )
-            )
-            # Public web retrieval is read-only but still requires an explicit,
-            # principal- and scope-bound grant before MCP dispatch.
-            kernel.permission_engine.add_policy(
-                PermissionPolicy(
-                    policy_id="local-owner:internet.fetch:local_default",
-                    policy_version="1.0.0",
-                    principal_id="local_owner",
-                    capability_id="internet.fetch",
-                    operation_id="internet.fetch",
-                    resource_scope="local_default",
-                    authorization_level=AuthorizationLevel.EXECUTE,
-                    decision=AuthorizationDecision.ALLOW,
-                )
+            # The deterministic planner emits public-web; grants must match
+            # that scope exactly, never broaden to arbitrary local resources.
+            install_local_research_policies(
+                kernel.permission_engine,
+                research_config,
             )
             kernel.permission_engine.add_policy(
                 PermissionPolicy(
