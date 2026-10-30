@@ -30,6 +30,10 @@ from aura_core.config.kernel import KernelConfig
 from aura_core.config.storage import StorageMode, storage_mode_from_environment, validate_storage_mode
 from aura_core.enterprise.policy_bundle import PolicyBundle
 from aura_core.enterprise.approval_store import SQLiteApprovalStore
+from aura_core.enterprise.runtime_controls import HashChainAuditLedger
+from aura_core.mcp.graph_memory_provider import GraphMemoryMCPProvider
+from aura_core.mcp.screen_control_provider import ScreenControlMCPProvider
+from aura_core.application.swarm_orchestration import SwarmOrchestrator
 from aura_core.enterprise.postgresql_approval_store import PostgreSQLApprovalStore
 from aura_core.enterprise.postgresql_workflow_store import PostgreSQLWorkflowStore
 from aura_core.application.postgresql_task_state_machine import PostgreSQLTaskStateMachine
@@ -297,12 +301,45 @@ def build_app() -> FastAPI:
         risk_level="high", required_permissions=frozenset({"sandbox.codeact.execute"}),
     ))
 
+    gateway_audit_ledger = HashChainAuditLedger()
+    # Registration declares availability, never grants authorization.
+    for provider_id, service_name, instance, definitions in (
+        ("aura.graph-memory", "graph_memory_mcp", GraphMemoryMCPProvider(), (
+            ("memory.graph.query", "graph_memory_query", "low", CapabilityCategory.MEMORY),
+            ("memory.graph.insert", "graph_memory_insert", "medium", CapabilityCategory.MEMORY),
+        )),
+        ("aura.screen-control", "screen_control_mcp", ScreenControlMCPProvider(), (
+            ("ScreenControl", "screen_control", "high", CapabilityCategory.AUTOMATION),
+        )),
+    ):
+        service = ServiceDefinition(
+            name=service_name, version="1.0.0", provider="aura",
+            category=ServiceCategory.MCP,
+            capabilities=frozenset(row[0] for row in definitions),
+            tags={"governed", "mcp"},
+        )
+        kernel.service_registry.register(service, instance)
+        kernel.provider_registry.register(ProviderDefinition(
+            provider_id=provider_id, name=service_name, version="1.0.0",
+            service_id=service.service_id,
+        ), instance)
+        for cap_id, tool, risk, category in definitions:
+            kernel.capability_registry.register(CapabilityDefinition(
+                capability_id=cap_id, name=tool, version="1.0.0",
+                description="Gateway-governed MCP capability",
+                provider_id=provider_id, provider_type=ProviderType.MCP,
+                category=category, tool_name=tool, risk_level=risk,
+                required_permissions=frozenset({cap_id}),
+            ))
+
     gateway = MCPGateway(
         capability_registry=kernel.capability_registry,
         provider_registry=kernel.provider_registry,
         permission_engine=kernel.permission_engine,
         approval_store=approval_store,
         approval_fingerprint_key=approval_fingerprint_key,
+        event_bus=kernel.event_bus,
+        audit_ledger=gateway_audit_ledger,
     )
 
     task_service = AgentTaskService(
@@ -328,6 +365,8 @@ def build_app() -> FastAPI:
     app.state.http_bearer_token = http_bearer_token
     app.state.http_principal_id = http_principal_id
     app.state.approval_store = approval_store
+    app.state.gateway_audit_ledger = gateway_audit_ledger
+    app.state.swarm_orchestrator = SwarmOrchestrator(gateway=gateway, event_bus=kernel.event_bus)
     app.state.storage_mode = storage_mode
     app.state.task_memory = task_memory
     app.state.checkpoint_artifacts = checkpoint_artifacts

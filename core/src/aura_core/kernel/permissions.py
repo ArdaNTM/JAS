@@ -159,6 +159,7 @@ class PermissionEngine:
         # which is invoked by MCPGateway before any provider dispatch. The bundle is
         # an additional gate: it may deny or require approval, but cannot override
         # the existing PermissionPolicy authorization requirement.
+        bundle_approval_required = False
         if self._policy_bundle is not None:
             bundle_decision = self._policy_bundle.evaluate(
                 PolicyRequest(
@@ -179,11 +180,10 @@ class PermissionEngine:
                     f"{bundle_context} denied request: {bundle_decision.reason_code}",
                 )
             if bundle_decision.effect is PolicyEffect.REQUIRE_APPROVAL:
-                return self._record(
-                    request,
-                    AuthorizationDecision.REQUIRE_APPROVAL,
-                    f"{bundle_context} requires approval: {bundle_decision.reason_code}",
-                )
+                # Enterprise approval is an additional requirement, not a grant.
+                # Continue through local policies so explicit deny, defer, or
+                # missing local authorization still fail closed.
+                bundle_approval_required = True
 
         matching = self._matching_policies(request)
         if not matching:
@@ -254,8 +254,10 @@ class PermissionEngine:
         if allow is not None:
             return self._record(
                 request,
-                AuthorizationDecision.ALLOW,
-                "Explicit allow policy matched",
+                AuthorizationDecision.REQUIRE_APPROVAL
+                if bundle_approval_required else AuthorizationDecision.ALLOW,
+                "Enterprise policy requires approval: approval_required"
+                if bundle_approval_required else "Explicit allow policy matched",
                 allow,
             )
 
