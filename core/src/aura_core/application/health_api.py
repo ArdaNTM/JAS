@@ -64,6 +64,29 @@ async def health(request: Request) -> JSONResponse:
         ),
     }
 
+    # Report real lifecycle states rather than omitting the components and
+    # leaving the UI at UNKNOWN. Do not claim learning is running when its
+    # scheduler has not been configured.
+    event_runtime = getattr(request.app.state, "event_bus_runtime", None)
+    kernel_bus = getattr(kernel, "event_bus", None) if kernel is not None else None
+    if event_runtime is None or kernel_bus is None:
+        components["event_bus"] = {"status": "not_configured"}
+    else:
+        snapshot = event_runtime.status()
+        components["event_bus"] = {
+            "status": "running" if snapshot.get("running") else (
+                "disabled" if not snapshot.get("enabled") else "stopped"
+            ),
+        }
+
+    scheduler = getattr(request.app.state, "learning_scheduler", None)
+    components["learning"] = {
+        "status": (
+            "not_configured" if scheduler is None else
+            "running" if scheduler.running else "stopped"
+        )
+    }
+
     task_service = getattr(
         request.app.state,
         "task_service",
