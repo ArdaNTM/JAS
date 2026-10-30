@@ -18,6 +18,7 @@ from aura_core.mcp.mcp_provider import MCPProvider
 from aura_core.mcp.provider import ProviderRegistry
 from aura_core.kernel.events import EventBus, KernelEvent
 from aura_core.telemetry.runtime_profiler import RuntimeProfiler
+from aura_core.mcp.dispatch_context import DispatchGrant, enter_dispatch, leave_dispatch
 from aura_core.enterprise.runtime_controls import CircuitBreaker, HashChainAuditLedger
 from aura_core.enterprise.approval_store import (
     ApprovalConflict,
@@ -245,6 +246,11 @@ class MCPGateway:
             payload=measurement.to_dict(),
         ))
 
+    def _publish_tool_failure(self, request, provider_id: str, failure_type: str) -> None:
+        if self._event_bus is None:
+            return
+        self._event_bus.publish(KernelEvent(event_type="ToolExecutionFailed", source_component="aura.mcp.gateway", payload={"request_id":request.request_id,"principal_id":request.principal_id,"task_id":request.task_id,"capability_id":request.capability_id,"provider_id":provider_id,"tool_name":request.tool_name,"failure_type":failure_type,"error_summary":"Provider dispatch failed"}, correlation_id=request.task_id or request.request_id))
+
     async def invoke(self, request: MCPGatewayRequest) -> MCPGatewayResponse:
         # Measure the complete gateway boundary, including denied/deferred calls.
         # No arguments, prompts, tool results, or secrets enter telemetry.
@@ -367,7 +373,7 @@ class MCPGateway:
             provider = self._provider_registry.resolve(
                 capability.definition.provider_id
             )
-            if not isinstance(provider, MCPProvider):
+            if not callable(getattr(provider, "list_tools", None)) or not callable(getattr(provider, "call_tool", None)):
                 raise TypeError("Resolved provider is not an MCPProvider")
         except Exception:
             self._audit(
@@ -387,10 +393,19 @@ class MCPGateway:
                 raise ValueError("Tool is not registered by the capability provider")
             arguments = request.arguments if request.arguments is not None else {}
             _validate_json_schema(arguments, tool.input_schema)
-            if breaker is None:
-                result = await provider.call_tool(request.tool_name, arguments)
-            else:
-                result = await breaker.call(lambda: provider.call_tool(request.tool_name, arguments))
+            grant = DispatchGrant(principal_id=request.principal_id, capability_id=request.capability_id, tool_name=request.tool_name, approval_consumed=(authorization.decision is AuthorizationDecision.REQUIRE_APPROVAL), risk_level=RiskLevel(capability.definition.risk_level).value)
+            token = enter_dispatch(grant)
+            try:
+                if breaker is None:
+                    result = await provider.call_tool(request.tool_name, arguments)
+                else:
+                    result = await breaker.call(lambda: provider.call_tool(request.tool_name, arguments))
+            finally:
+                leave_dispatch(token)
+            if getattr(result, "isError", False) is True or (isinstance(result, dict) and result.get("isError") is True):
+                self._publish_tool_failure(request, capability.definition.provider_id, "MCPToolError")
+                self._audit(request, outcome="error", reason_code="provider_tool_error")
+                return MCPGatewayResponse(decision=AuthorizationDecision.ALLOW, result={"status":"failed","error":"MCP tool execution failed"}, provider_id=capability.definition.provider_id, tool_name=request.tool_name, reason="MCP tool execution failed; reflection event published")
         except ValueError:
             self._audit(request, outcome="denied", reason_code="tool_binding_or_schema_invalid")
             return MCPGatewayResponse(
@@ -398,14 +413,9 @@ class MCPGateway:
                 provider_id=capability.definition.provider_id, tool_name=request.tool_name,
                 reason="Tool is not bound to this capability or its arguments failed schema validation",
             )
-        except Exception:
-            # A transport error can happen after a provider performed the side
-            # effect. Record UNKNOWN rather than implying the tool did not run.
-            self._audit(
-                request,
-                outcome="unknown",
-                reason_code="provider_dispatch_outcome_unknown",
-            )
+        except Exception as exc:
+            self._audit(request, outcome="unknown", reason_code="provider_dispatch_outcome_unknown")
+            self._publish_tool_failure(request, capability.definition.provider_id, type(exc).__name__)
             raise
 
         self._audit(request, outcome="allowed", reason_code="provider_call_completed")
