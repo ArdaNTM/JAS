@@ -9,6 +9,10 @@ on:
       - "scripts/aura-env.ps1"
       - "scripts/test-aura-env.ps1"
       - "scripts/test-aura-app-window.ps1"
+      - "scripts/aura-processes.ps1"
+      - "scripts/test-aura-processes.ps1"
+      - "aura-ui/vite.config.ts"
+      - "aura-ui/tests/aura-proxy.test.mjs"
       - ".github/workflows/aura-windows-launcher.yml"
   push:
     branches:
@@ -21,6 +25,10 @@ on:
       - "scripts/aura-env.ps1"
       - "scripts/test-aura-env.ps1"
       - "scripts/test-aura-app-window.ps1"
+      - "scripts/aura-processes.ps1"
+      - "scripts/test-aura-processes.ps1"
+      - "aura-ui/vite.config.ts"
+      - "aura-ui/tests/aura-proxy.test.mjs"
       - ".github/workflows/aura-windows-launcher.yml"
   workflow_dispatch:
 
@@ -46,3 +54,18 @@ jobs:
       - name: Chromium app-mode arguments (PowerShell 7)
         shell: pwsh
         run: ./scripts/test-aura-app-window.ps1
+      - name: Owned process detection and fixed ports (PowerShell 5.1)
+        shell: cmd
+        run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\test-aura-processes.ps1
+      - name: Owned process detection and fixed ports (PowerShell 7)
+        shell: pwsh
+        run: ./scripts/test-aura-processes.ps1
+      - name: Install UI dependencies
+        working-directory: aura-ui
+        shell: pwsh
+        run: npm ci --no-audit --no-fund
+      - name: Authenticated loopback Vite proxy smoke test
+        working-directory: aura-ui
+        shell: pwsh
+        run: node tests/aura-proxy.test.mjs
+
