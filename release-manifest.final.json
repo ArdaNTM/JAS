@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-10-30T23:08:12.240Z",
+  "generated_at": "2026-10-30T23:14:04.616Z",
   "git_commit": "ca35295390670f168ea9643f38cf5725cbd02350",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:b52285949b4a048938e0322e4d5147c0ef5f301c8fbde87c804c88a4391353ef",
+  "release_digest": "sha256:dbcfcfcf2f7a1026ab6fc1e6a0211d37636678333b4337d2e0d7bd3dc71b9755",
   "file_count": 228,
   "files": [
     {
@@ -150,7 +150,7 @@
     },
     {
       "path": "core/src/aura_core/application/api.py",
-      "sha256": "ee5843665be1d2b207471b70cf81eb93b4285be2ca02c6bcfb7778ad64a3476f"
+      "sha256": "21339aeba62f7a2f58ea1f8556f6d41fd761bf2919c960d4b78dc135e55388b5"
     },
     {
       "path": "core/src/aura_core/application/approval_api.py",
@@ -234,7 +234,7 @@
     },
     {
       "path": "core/src/aura_core/application/full_duplex_session.py",
-      "sha256": "f76b7209bba65aa6b2177d9d8ddf78bd8cc0d91c5636afa6f98f96a400eed80e"
+      "sha256": "84f0876d87770b6767266b9b6e6e0c13ac0c10dabacfa9cdc2da1edbec84d4e4"
     },
     {
       "path": "core/src/aura_core/application/governed_autonomous_loop.py",
@@ -638,7 +638,7 @@
     },
     {
       "path": "core/src/aura_core/mcp/gateway.py",
-      "sha256": "e09af57caf4238c8efad6f54137e042523e104fc0c2b743c256baec93cde706c"
+      "sha256": "86941b0947517858a42d87992e8409e209236cab80106350fead1fd2f7bba235"
     },
     {
       "path": "core/src/aura_core/mcp/graph_memory_provider.py",
