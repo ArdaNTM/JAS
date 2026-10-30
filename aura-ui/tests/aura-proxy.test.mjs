@@ -49,8 +49,19 @@ try {
     body: "{}",
   });
   assert.equal(forbidden.status, 403, "Reject cross-origin proxy use");
-  const host = await fetch(base + "/api/speech/transcribe", { headers: { Host: "evil.invalid" } });
-  assert.equal(host.status, 403, "Reject DNS-rebinding host");
+  // Undici fetch normalizes Host; exercise a raw HTTP request instead.
+  const badHost = await new Promise((resolve, reject) => {
+    const req = http.request({
+      hostname: "127.0.0.1", port: uiPort, method: "GET",
+      path: "/api/speech/transcribe", headers: { Host: "evil.invalid" },
+    }, (res) => {
+      res.resume();
+      res.on("end", () => resolve(res.statusCode));
+    });
+    req.on("error", reject);
+    req.end();
+  });
+  assert.equal(badHost, 403, "Reject DNS-rebinding host");
   assert.equal(upstreamAuthorized, 2, "Only the two approved requests reach Core");
   console.log("PASS: AURA authenticated loopback proxy");
 } finally {
