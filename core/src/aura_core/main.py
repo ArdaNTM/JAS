@@ -50,6 +50,10 @@ from aura_core.kernel.capabilities import CapabilityCategory, CapabilityDefiniti
 from aura_core.kernel.health import HealthReport
 from aura_core.kernel.services import ServiceCategory, ServiceDefinition, ServiceState
 from aura_core.mcp.gateway import MCPGateway
+from aura_core.mcp.provider import ProviderDefinition
+from aura_core.mcp.codeact_provider import CodeActSandboxMCPProvider
+from aura_core.memory.tiered_memory_mcp import TieredMemoryMCPProvider
+from aura_core.application.reflection_service import ReflectionService
 from aura_core.skills.agent_skills_mcp import AgentSkillsMCPRegistry
 from aura_core.mcp.mcp_provider import MCPProvider
 from aura_core.mcp.tool_registry import MCPToolRegistry
@@ -241,6 +245,58 @@ def build_app() -> FastAPI:
         workflow_store = SQLiteWorkflowStore(workflow_database_path)
         task_memory = TaskMemoryCoordinator.from_environment()
 
+    # Register governed MCP adapters through the Kernel registries.
+    memory_service = ServiceDefinition(
+        name="tiered_memory_mcp", version="1.0.0", provider="aura",
+        category=ServiceCategory.MCP,
+        capabilities={"memory.core.append", "memory.core.read", "memory.archival.append", "memory.archival.search"},
+        tags={"memory", "mcp", "governed"},
+    )
+    memory_provider_id = "aura.tiered-memory"
+    memory_provider = TieredMemoryMCPProvider(task_memory.store)
+    kernel.service_registry.register(memory_service, memory_provider)
+    kernel.provider_registry.register(
+        ProviderDefinition(provider_id=memory_provider_id, name="Tiered Memory MCP",
+            version="1.0.0", service_id=memory_service.service_id,
+            description="Principal-scoped core and archival memory"),
+        memory_provider,
+    )
+    for cap_id, tool_name, risk in (
+        ("memory.core.append", "core_memory_append", "medium"),
+        ("memory.core.read", "core_memory_read", "low"),
+        ("memory.archival.append", "archival_memory_append", "medium"),
+        ("memory.archival.search", "archival_memory_search", "low"),
+    ):
+        kernel.capability_registry.register(CapabilityDefinition(
+            capability_id=cap_id, name=tool_name, version="1.0.0",
+            description="Governed tiered-memory MCP operation",
+            provider_id=memory_provider_id, provider_type=ProviderType.MCP,
+            category=CapabilityCategory.MEMORY, tool_name=tool_name, risk_level=risk,
+            required_permissions=frozenset({cap_id}),
+        ))
+
+    codeact_service = ServiceDefinition(
+        name="codeact_sandbox_mcp", version="1.0.0", provider="aura",
+        category=ServiceCategory.MCP, capabilities={"sandbox.codeact.execute"},
+        tags={"sandbox", "docker", "mcp", "high-risk"},
+    )
+    codeact_provider_id = "aura.codeact-sandbox"
+    codeact_provider = CodeActSandboxMCPProvider()
+    kernel.service_registry.register(codeact_service, codeact_provider)
+    kernel.provider_registry.register(
+        ProviderDefinition(provider_id=codeact_provider_id, name="CodeAct Docker Sandbox",
+            version="1.0.0", service_id=codeact_service.service_id,
+            description="Digest-pinned isolated Docker execution"),
+        codeact_provider,
+    )
+    kernel.capability_registry.register(CapabilityDefinition(
+        capability_id="sandbox.codeact.execute", name="CodeAct Sandbox Execute",
+        version="1.0.0", description="Execute untrusted code in isolated Docker",
+        provider_id=codeact_provider_id, provider_type=ProviderType.MCP,
+        category=CapabilityCategory.CODING, tool_name="codeact_execute",
+        risk_level="high", required_permissions=frozenset({"sandbox.codeact.execute"}),
+    ))
+
     gateway = MCPGateway(
         capability_registry=kernel.capability_registry,
         provider_registry=kernel.provider_registry,
@@ -290,6 +346,22 @@ def build_app() -> FastAPI:
     app.state.task_state_machine = task_state_machine
     app.state.workflow_store = workflow_store
     app.state.task_service = task_service
+
+    def _reflection_planner(failure: dict) -> dict:
+        return {"action": "replan", "reason": "tool_execution_failed",
+                "failed_tool": failure.get("tool_name"),
+                "requires_new_gateway_authorization": True, "automatic_execution": False}
+
+    reflection_service = ReflectionService(kernel.event_bus, task_state_machine, _reflection_planner)
+    app.state.reflection_service = reflection_service
+    app.state.last_reflection_plan = None
+
+    def _capture_reflection_plan(event: KernelEvent) -> None:
+        app.state.last_reflection_plan = dict(event.payload)
+
+    app.state.reflection_plan_unsubscribe = kernel.event_bus.subscribe(
+        "ReflectionPlanReady", _capture_reflection_plan
+    )
 
     async def deliver_proactive_notification(*, principal_id: str, message: str) -> None:
         kernel.event_bus.publish(KernelEvent(
@@ -409,6 +481,8 @@ def build_app() -> FastAPI:
             try:
                 yield
             finally:
+                reflection_service.close()
+                app.state.reflection_plan_unsubscribe()
                 for store in reversed(startup_stores):
                     try:
                         await close_store(store)
@@ -659,6 +733,9 @@ def build_app() -> FastAPI:
             logger.info(
                 "AURA LIFESPAN SHUTDOWN BEGIN"
             )
+
+            reflection_service.close()
+            app.state.reflection_plan_unsubscribe()
 
             if event_coordinator is not None:
                 try:

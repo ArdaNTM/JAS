@@ -23,6 +23,7 @@ class TaskState(StrEnum):
     PENDING = "pending"
     READY = "ready"
     RUNNING = "running"
+    COMPENSATING = "compensating"
     SUCCEEDED = "succeeded"
     FAILED = "failed"
     CANCELLED = "cancelled"
@@ -40,7 +41,8 @@ TERMINAL_STATES = {
 _ALLOWED_TRANSITIONS = {
     TaskState.PENDING: {TaskState.READY, TaskState.CANCELLED, TaskState.TIMED_OUT, TaskState.BLOCKED},
     TaskState.READY: {TaskState.RUNNING, TaskState.CANCELLED, TaskState.TIMED_OUT, TaskState.BLOCKED},
-    TaskState.RUNNING: {TaskState.SUCCEEDED, TaskState.FAILED, TaskState.CANCELLED, TaskState.TIMED_OUT},
+    TaskState.RUNNING: {TaskState.SUCCEEDED, TaskState.FAILED, TaskState.CANCELLED, TaskState.TIMED_OUT, TaskState.COMPENSATING},
+    TaskState.COMPENSATING: {TaskState.READY, TaskState.FAILED, TaskState.CANCELLED, TaskState.TIMED_OUT},
     TaskState.SUCCEEDED: set(),
     TaskState.FAILED: set(),
     TaskState.CANCELLED: set(),

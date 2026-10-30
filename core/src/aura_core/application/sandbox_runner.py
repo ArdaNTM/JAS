@@ -49,7 +49,7 @@ class DockerPythonRunner:
     ) -> None:
         self.policy = policy or SandboxPolicy()
         self.authorizer = authorizer
-        self.image = image or os.getenv("AURA_PYTHON_SANDBOX_IMAGE", "")
+        self.image = image or os.getenv("AURA_PYTHON_SANDBOX_IMAGE", "python:3.11-slim@sha256:78b39ef14d8e2b4d71f8dc304f1328c37df95fe0ef99477c2ae6bd3d03784553")
         self.docker_executable = docker_executable or shutil.which("docker")
 
     def run(self, job: SandboxJob) -> SandboxResult:
