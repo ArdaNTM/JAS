@@ -12,6 +12,7 @@ import time
 from typing import Callable
 
 from aura_core.kernel.events import EventBus, KernelEvent
+from aura_core.telemetry.runtime_profiler import RuntimeProfiler, RuntimeMeasurement
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +44,11 @@ class EventBusRuntime:
         self._idle_signal_emitted = False
         self._dispatch_errors = 0
         self._dispatched = 0
+        self._last_measurement: dict[str, object] | None = None
+        self._profiler = RuntimeProfiler(publisher=self._record_measurement)
+
+    def _record_measurement(self, measurement: RuntimeMeasurement) -> None:
+        self._last_measurement = measurement.to_dict()
 
     def start(self) -> None:
         """Start at most one dispatcher task on the current running event loop."""
@@ -79,12 +85,14 @@ class EventBusRuntime:
             "poll_interval_seconds": self.poll_interval_seconds,
             "mode": "event_bus_quiet_period",
             "tool_execution_performed": False,
+            "last_dispatch_measurement": self._last_measurement,
         }
 
     async def _run(self) -> None:
         while not self._stopping:
             try:
-                delivered = await self.event_bus.dispatch_once()
+                with self._profiler.measure("event_bus", "dispatch_once"):
+                    delivered = await self.event_bus.dispatch_once()
                 now = self._monotonic()
                 if delivered:
                     self._dispatched += 1

@@ -50,6 +50,7 @@ from aura_core.kernel.capabilities import CapabilityCategory, CapabilityDefiniti
 from aura_core.kernel.health import HealthReport
 from aura_core.kernel.services import ServiceCategory, ServiceDefinition, ServiceState
 from aura_core.mcp.gateway import MCPGateway
+from aura_core.skills.agent_skills_mcp import AgentSkillsMCPRegistry
 from aura_core.mcp.mcp_provider import MCPProvider
 from aura_core.mcp.tool_registry import MCPToolRegistry
 from aura_core.research.config import ResearchMCPConfig
@@ -275,6 +276,8 @@ def build_app() -> FastAPI:
     app.state.task_memory = task_memory
     app.state.checkpoint_artifacts = checkpoint_artifacts
     app.state.remote_object_storage = remote_objects
+    # Imported skills are declarative proposals only; invocation still requires Gateway authorization.
+    app.state.agent_skills_mcp_registry = AgentSkillsMCPRegistry()
 
     event_runtime = EventBusRuntime(
         kernel.event_bus,
