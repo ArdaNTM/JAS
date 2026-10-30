@@ -1,0 +1,38 @@
+name: AURA Windows launcher validation
+
+on:
+  pull_request:
+    paths:
+      - "scripts/Start-AURA.bat"
+      - "scripts/start_aura.ps1"
+      - "scripts/aura-env.ps1"
+      - "scripts/test-aura-env.ps1"
+      - ".github/workflows/aura-windows-launcher.yml"
+  push:
+    branches:
+      - main
+      - "fix/**"
+    paths:
+      - "scripts/Start-AURA.bat"
+      - "scripts/start_aura.ps1"
+      - "scripts/aura-env.ps1"
+      - "scripts/test-aura-env.ps1"
+      - ".github/workflows/aura-windows-launcher.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  powershell-env-parser:
+    name: Windows PowerShell 5.1 and PowerShell 7
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Windows PowerShell 5.1 parser regression
+        shell: cmd
+        run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\test-aura-env.ps1
+      - name: PowerShell 7 parser regression
+        shell: pwsh
+        run: ./scripts/test-aura-env.ps1

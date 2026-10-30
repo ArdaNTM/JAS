@@ -2,15 +2,7 @@ $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
 $Core = Join-Path $Root "core"; $Ui = Join-Path $Root "aura-ui"; $Logs = Join-Path $Root "logs"
 New-Item -ItemType Directory -Path $Logs -Force | Out-Null
-function Import-Env([string]$Path) {
- if (-not (Test-Path $Path)) { return }
- foreach ($line in Get-Content $Path) {
-  if ($line -match '^\s*(#|$)') { continue }
-  if ($line -match '^\s*(AURA_[A-Z0-9_]+)\s*=\s*(.*?)\s*$') {
-   [Environment]::SetEnvironmentVariable($Matches[1],$Matches[2].Trim('"').Trim("'"),"Process")
-  }
- }
-}
+. (Join-Path $PSScriptRoot "aura-env.ps1")
 function Find-Python {
  foreach ($p in @((Join-Path $Core ".venv\Scripts\python.exe"),(Join-Path $Root ".venv\Scripts\python.exe"),(Join-Path $Core "venv\Scripts\python.exe"),(Join-Path $Root "venv\Scripts\python.exe"))) {
   if (Test-Path $p) { return $p }
@@ -39,18 +31,13 @@ function Wait-Http([string]$Url,[int]$Seconds,[switch]$Ready) {
 }
 try {
  if (-not (Test-Path $Core) -or -not (Test-Path $Ui)) { throw "core/ or aura-ui/ missing." }
- Import-Env (Join-Path $Core ".env.local")
+ Import-AuraEnvFile -Path (Join-Path $Core ".env.local")
  $Python=Find-Python
  if (-not $Python) { throw "Python 3.13 venv missing in core\.venv or root .venv." }
  $npm=Get-Command npm.cmd -ErrorAction SilentlyContinue
  if (-not $npm) { throw "npm.cmd not found." }
  $env:AURA_STORAGE_MODE="remote"; $env:AURA_CORE_HOST="127.0.0.1"
- if ([string]::IsNullOrWhiteSpace($env:AURA_DATABASE_URL) -or $env:AURA_DATABASE_URL -notmatch '^postgresql(\+asyncpg)?://' -or
-  [string]::IsNullOrWhiteSpace($env:AURA_OBJECT_STORAGE_ENDPOINT) -or [string]::IsNullOrWhiteSpace($env:AURA_OBJECT_STORAGE_BUCKET) -or
-  ([string]::IsNullOrWhiteSpace($env:AURA_OBJECT_STORAGE_ACCESS_KEY) -and [string]::IsNullOrWhiteSpace($env:AURA_OBJECT_STORAGE_ACCESS_KEY_ID)) -or
-  ([string]::IsNullOrWhiteSpace($env:AURA_OBJECT_STORAGE_SECRET_KEY) -and [string]::IsNullOrWhiteSpace($env:AURA_OBJECT_STORAGE_SECRET_ACCESS_KEY))) {
-  throw "Remote persistence settings missing. Configure core\.env.local. Local fallback is disabled."
- }
+ Assert-AuraRemoteSettings
  if (-not $env:AURA_RUNTIME) { $env:AURA_RUNTIME="ollama" }
  if (-not $env:AURA_MODEL) { $env:AURA_MODEL="qwen3:latest" }
  if (-not $env:AURA_BACKEND_ENDPOINT) { $env:AURA_BACKEND_ENDPOINT="http://127.0.0.1:11434" }
