@@ -30,6 +30,12 @@ from aura_core.config.kernel import KernelConfig
 from aura_core.config.storage import StorageMode, storage_mode_from_environment, validate_storage_mode
 from aura_core.enterprise.policy_bundle import PolicyBundle
 from aura_core.enterprise.approval_store import SQLiteApprovalStore
+from aura_core.enterprise.runtime_controls import HashChainAuditLedger
+from aura_core.mcp.graph_memory_provider import GraphMemoryMCPProvider
+from aura_core.memory.graph_store import SQLiteGraphStore, PostgreSQLGraphStore
+from aura_core.application.windows_screen_driver import WindowsDesktopInputDriver, DesktopVLMAdapter
+from aura_core.mcp.screen_control_provider import ScreenControlMCPProvider
+from aura_core.application.swarm_orchestration import SwarmOrchestrator
 from aura_core.enterprise.postgresql_approval_store import PostgreSQLApprovalStore
 from aura_core.enterprise.postgresql_workflow_store import PostgreSQLWorkflowStore
 from aura_core.application.postgresql_task_state_machine import PostgreSQLTaskStateMachine
@@ -245,6 +251,49 @@ def build_app() -> FastAPI:
         workflow_store = SQLiteWorkflowStore(workflow_database_path)
         task_memory = TaskMemoryCoordinator.from_environment()
 
+    # Local mode uses durable SQLite, remote mode uses PostgreSQL only.
+    # Remote graph initialization participates in the existing startup rollback.
+    if storage_mode is StorageMode.REMOTE:
+        graph_store = PostgreSQLGraphStore(database_url)
+        startup_stores.append(graph_store)
+    else:
+        graph_path = os.getenv(
+            "AURA_GRAPH_DB_PATH",
+            os.path.join(os.getenv("LOCALAPPDATA", os.path.expanduser("~")),
+                         "AURA", "graph-memory.sqlite3"),
+        )
+        graph_store = SQLiteGraphStore(graph_path)
+
+    # Desktop control is disabled unless explicitly configured with an
+    # interactive ApprovalStore. Enabling it on unsupported platforms aborts.
+    screen_control_enabled = os.getenv(
+        "AURA_SCREEN_CONTROL_ENABLED", "0"
+    ).strip().casefold() in {"1", "true", "yes", "on"}
+    screen_control_provider = ScreenControlMCPProvider()
+    if screen_control_enabled:
+        if approval_store is None:
+            raise RuntimeError("ScreenControl requires AURA_APPROVAL_FINGERPRINT_KEY and ApprovalStore")
+        screen_control_provider = ScreenControlMCPProvider(
+            vision=DesktopVLMAdapter(
+                DesktopScreenCapture(),
+                OllamaVisionProvider(
+                    base_url=os.getenv("AURA_OLLAMA_BASE_URL", "http://127.0.0.1:11434"),
+                    model=os.getenv("AURA_VISION_MODEL", "qwen3-vl"),
+                    timeout_seconds=float(os.getenv("AURA_VISION_TIMEOUT_SECONDS", "30")),
+                ),
+            ),
+            input_driver=WindowsDesktopInputDriver(),
+        )
+        kernel.permission_engine.add_policy(PermissionPolicy(
+            policy_id="local-owner:screen-control:interactive",
+            policy_version="1.0.0",
+            principal_id=http_principal_id,
+            capability_id="ScreenControl", operation_id="ScreenControl",
+            resource_scope="local_default",
+            authorization_level=AuthorizationLevel.USER_APPROVAL_REQUIRED,
+            decision=AuthorizationDecision.REQUIRE_APPROVAL,
+        ))
+
     # Register governed MCP adapters through the Kernel registries.
     memory_service = ServiceDefinition(
         name="tiered_memory_mcp", version="1.0.0", provider="aura",
@@ -297,12 +346,45 @@ def build_app() -> FastAPI:
         risk_level="high", required_permissions=frozenset({"sandbox.codeact.execute"}),
     ))
 
+    gateway_audit_ledger = HashChainAuditLedger()
+    # Registration declares availability, never grants authorization.
+    for provider_id, service_name, instance, definitions in (
+        ("aura.graph-memory", "graph_memory_mcp", GraphMemoryMCPProvider(graph_store), (
+            ("memory.graph.query", "graph_memory_query", "low", CapabilityCategory.MEMORY),
+            ("memory.graph.insert", "graph_memory_insert", "medium", CapabilityCategory.MEMORY),
+        )),
+        ("aura.screen-control", "screen_control_mcp", screen_control_provider, (
+            ("ScreenControl", "screen_control", "high", CapabilityCategory.AUTOMATION),
+        )),
+    ):
+        service = ServiceDefinition(
+            name=service_name, version="1.0.0", provider="aura",
+            category=ServiceCategory.MCP,
+            capabilities=frozenset(row[0] for row in definitions),
+            tags={"governed", "mcp"},
+        )
+        kernel.service_registry.register(service, instance)
+        kernel.provider_registry.register(ProviderDefinition(
+            provider_id=provider_id, name=service_name, version="1.0.0",
+            service_id=service.service_id,
+        ), instance)
+        for cap_id, tool, risk, category in definitions:
+            kernel.capability_registry.register(CapabilityDefinition(
+                capability_id=cap_id, name=tool, version="1.0.0",
+                description="Gateway-governed MCP capability",
+                provider_id=provider_id, provider_type=ProviderType.MCP,
+                category=category, tool_name=tool, risk_level=risk,
+                required_permissions=frozenset({cap_id}),
+            ))
+
     gateway = MCPGateway(
         capability_registry=kernel.capability_registry,
         provider_registry=kernel.provider_registry,
         permission_engine=kernel.permission_engine,
         approval_store=approval_store,
         approval_fingerprint_key=approval_fingerprint_key,
+        event_bus=kernel.event_bus,
+        audit_ledger=gateway_audit_ledger,
     )
 
     task_service = AgentTaskService(
@@ -328,6 +410,10 @@ def build_app() -> FastAPI:
     app.state.http_bearer_token = http_bearer_token
     app.state.http_principal_id = http_principal_id
     app.state.approval_store = approval_store
+    app.state.gateway_audit_ledger = gateway_audit_ledger
+    app.state.graph_store = graph_store
+    app.state.screen_control_enabled = screen_control_enabled
+    app.state.swarm_orchestrator = SwarmOrchestrator(gateway=gateway, event_bus=kernel.event_bus)
     app.state.storage_mode = storage_mode
     app.state.task_memory = task_memory
     app.state.checkpoint_artifacts = checkpoint_artifacts

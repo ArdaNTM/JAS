@@ -384,39 +384,70 @@ class MCPGateway:
             raise
 
         breaker = self._circuit_breakers.get(capability.definition.provider_id)
-        try:
-            if capability.definition.tool_name and request.tool_name != capability.definition.tool_name:
-                raise ValueError("Tool does not match the registered capability")
-            discovered = await provider.list_tools()
-            tool = next((item for item in discovered if item.name == request.tool_name), None)
-            if tool is None:
-                raise ValueError("Tool is not registered by the capability provider")
-            arguments = request.arguments if request.arguments is not None else {}
-            _validate_json_schema(arguments, tool.input_schema)
-            grant = DispatchGrant(principal_id=request.principal_id, capability_id=request.capability_id, tool_name=request.tool_name, approval_consumed=(authorization.decision is AuthorizationDecision.REQUIRE_APPROVAL), risk_level=RiskLevel(capability.definition.risk_level).value)
-            token = enter_dispatch(grant)
-            try:
-                if breaker is None:
-                    result = await provider.call_tool(request.tool_name, arguments)
-                else:
-                    result = await breaker.call(lambda: provider.call_tool(request.tool_name, arguments))
-            finally:
-                leave_dispatch(token)
-            if getattr(result, "isError", False) is True or (isinstance(result, dict) and result.get("isError") is True):
-                self._publish_tool_failure(request, capability.definition.provider_id, "MCPToolError")
-                self._audit(request, outcome="error", reason_code="provider_tool_error")
-                return MCPGatewayResponse(decision=AuthorizationDecision.ALLOW, result={"status":"failed","error":"MCP tool execution failed"}, provider_id=capability.definition.provider_id, tool_name=request.tool_name, reason="MCP tool execution failed; reflection event published")
-        except ValueError:
+        if capability.definition.tool_name and request.tool_name != capability.definition.tool_name:
             self._audit(request, outcome="denied", reason_code="tool_binding_or_schema_invalid")
             return MCPGatewayResponse(
                 decision=AuthorizationDecision.DENY, result=None,
                 provider_id=capability.definition.provider_id, tool_name=request.tool_name,
                 reason="Tool is not bound to this capability or its arguments failed schema validation",
             )
+        # Provider discovery is itself a provider operation and may raise ValueError.
+        # Never mistake such an exception for a client-side schema rejection.
+        try:
+            discovered = await provider.list_tools()
         except Exception as exc:
             self._audit(request, outcome="unknown", reason_code="provider_dispatch_outcome_unknown")
             self._publish_tool_failure(request, capability.definition.provider_id, type(exc).__name__)
             raise
+        tool = next((item for item in discovered if item.name == request.tool_name), None)
+        if tool is None:
+            self._audit(request, outcome="denied", reason_code="tool_binding_or_schema_invalid")
+            return MCPGatewayResponse(
+                decision=AuthorizationDecision.DENY, result=None,
+                provider_id=capability.definition.provider_id, tool_name=request.tool_name,
+                reason="Tool is not bound to this capability or its arguments failed schema validation",
+            )
+        arguments = request.arguments if request.arguments is not None else {}
+        try:
+            _validate_json_schema(arguments, tool.input_schema)
+        except (ValueError, TypeError):
+            self._audit(request, outcome="denied", reason_code="tool_binding_or_schema_invalid")
+            return MCPGatewayResponse(
+                decision=AuthorizationDecision.DENY, result=None,
+                provider_id=capability.definition.provider_id, tool_name=request.tool_name,
+                reason="Tool is not bound to this capability or its arguments failed schema validation",
+            )
+
+        grant = DispatchGrant(
+            principal_id=request.principal_id, capability_id=request.capability_id,
+            tool_name=request.tool_name,
+            approval_consumed=(authorization.decision is AuthorizationDecision.REQUIRE_APPROVAL),
+            risk_level=RiskLevel(capability.definition.risk_level).value,
+        )
+        token = enter_dispatch(grant)
+        try:
+            if breaker is None:
+                result = await provider.call_tool(request.tool_name, arguments)
+            else:
+                result = await breaker.call(lambda: provider.call_tool(request.tool_name, arguments))
+        except Exception as exc:
+            self._audit(request, outcome="unknown", reason_code="provider_dispatch_outcome_unknown")
+            self._publish_tool_failure(request, capability.definition.provider_id, type(exc).__name__)
+            raise
+        finally:
+            leave_dispatch(token)
+        if getattr(result, "isError", False) is True or (
+            isinstance(result, dict) and result.get("isError") is True
+        ):
+            self._publish_tool_failure(request, capability.definition.provider_id, "MCPToolError")
+            self._audit(request, outcome="error", reason_code="provider_tool_error")
+            return MCPGatewayResponse(
+                decision=AuthorizationDecision.ALLOW,
+                result={"status": "failed", "error": "MCP tool execution failed"},
+                provider_id=capability.definition.provider_id,
+                tool_name=request.tool_name,
+                reason="MCP tool execution failed; reflection event published",
+            )
 
         self._audit(request, outcome="allowed", reason_code="provider_call_completed")
         return MCPGatewayResponse(

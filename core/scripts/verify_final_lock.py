@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 
 
+from generate_final_lock import files_to_hash
+
 ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = ROOT / "release-manifest.final.json"
 
@@ -42,6 +44,17 @@ def main() -> int:
 
     if not isinstance(files, list) or not files:
         print("FAIL: manifest has no file identities")
+        return 1
+
+    # A digest of only a stale subset is not a valid release lock.
+    expected_paths = {
+        path.relative_to(ROOT).as_posix() for path in files_to_hash()
+    }
+    locked_paths = [item.get("path") for item in files if isinstance(item, dict)]
+    if (set(locked_paths) != expected_paths
+            or len(locked_paths) != len(expected_paths)
+            or manifest.get("file_count") != len(expected_paths)):
+        print("FAIL: release lock inventory is incomplete or contains stale entries")
         return 1
 
     entries: list[tuple[str, str]] = []
