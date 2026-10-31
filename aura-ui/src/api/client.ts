@@ -286,11 +286,14 @@ export async function streamAssistantResponse(
         break;
       }
     }
-    if (!completed) throw new Error("Model yanıtı tamamlanmadan akış kapandı.");
-    if (completed.finish_reason === "length") {
+    // The NDJSON callback mutates this variable; assert the union here
+    // so TypeScript retains the event-driven narrowing.
+    const finalEvent = completed as { model: string; finish_reason: string } | null;
+    if (!finalEvent) throw new Error("Model yanıtı tamamlanmadan akış kapandı.");
+    if (finalEvent.finish_reason === "length") {
       throw new Error("Model yanıtı token sınırında kesildi. AURA_MAX_TOKENS değerini artırın.");
     }
-    return completed;
+    return finalEvent;
   } finally {
     reader.releaseLock();
   }
