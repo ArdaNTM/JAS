@@ -34,6 +34,37 @@ class HUDPanelRequest(BaseModel):
     kind: str = Field(default="object", pattern="^(object|research|notice)$")
 
 
+class HUDMediaRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    query: str = Field(min_length=2, max_length=100)
+
+
+@router.post("/media/search")
+async def search_hud_media(
+    body: HUDMediaRequest,
+    request: Request,
+    principal_id: str = Depends(authenticated_principal),
+) -> dict[str, object]:
+    require_local_http_request(request)
+    gateway = getattr(request.app.state, "mcp_gateway", None)
+    if gateway is None:
+        raise HTTPException(status_code=503, detail="Media gateway unavailable")
+    call = MCPGatewayRequest(
+        request_id=str(uuid4()), principal_id=principal_id,
+        capability_id="HUDMediaSearch", operation_id="HUDMediaSearch",
+        resource_scope="commons_public_query", risk_level=RiskLevel.LOW,
+        tool_name="hud_media_search", arguments={"query": body.query},
+    )
+    try:
+        result = await gateway.invoke(call)
+    except Exception as exc:
+        logger.warning("HUD media provider failed: %s", type(exc).__name__)
+        raise HTTPException(status_code=502, detail="Commons image search unavailable") from exc
+    if result.decision is not AuthorizationDecision.ALLOW or not isinstance(result.result, dict):
+        raise HTTPException(status_code=403, detail="HUD media search is not authorized")
+    return result.result
+
+
 class ScreenReadRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     prompt: str = Field(min_length=1, max_length=400)
