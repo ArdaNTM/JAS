@@ -198,3 +198,24 @@ def test_vision_regions_are_model_estimates_and_invalid_boxes_discarded():
     }]
     fenced, empty = _decode_visual_regions('```json\n{"description":"Test","objects":[]}\n```')
     assert fenced == "Test" and empty == []
+
+def test_qwen_array_pixel_boxes_are_parsed_without_leaking_raw_json():
+    from aura_core.mcp.screen_read_provider import _decode_visual_regions
+    raw = '[{"description":"AURA ana sayfası","objects":[{"label":"AURA","box":[0,0,956,1064]}]}]'
+    description, regions = _decode_visual_regions(raw, (956, 1064))
+    assert description == "AURA ana sayfası"
+    assert len(regions) == 1
+    assert regions[0]["x"] == 0 and regions[0]["y"] == 0
+    assert regions[0]["width"] == 1 and regions[0]["height"] == 1
+    assert regions[0]["verified"] is False
+    assert "objects" not in description
+
+
+def test_qwen_invalid_boxes_do_not_escape_image():
+    from aura_core.mcp.screen_read_provider import _decode_visual_regions
+    raw = '{"description":"Araçlar","objects":[{"name":"car","bbox":[100,150,650,450]},{"label":"fake","box":[0,0,9000,9000]}]}'
+    text, regions = _decode_visual_regions(raw, (1200, 800))
+    assert text == "Araçlar"
+    assert len(regions) == 1
+    assert regions[0]["width"] == (650 - 100) / 1200
+    assert regions[0]["height"] == (450 - 150) / 800
