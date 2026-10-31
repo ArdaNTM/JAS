@@ -5,8 +5,8 @@
   "generated_at": "2026-10-31T00:45:29.771Z",
   "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
-  "file_count": 233,
+  "release_digest": "sha256:3913057779d466a186a83b2233370abfb6f11cdd247d465b8204ca04e5948f73",
+  "file_count": 234,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -158,7 +158,7 @@
     },
     {
       "path": "core/src/aura_core/application/api.py",
-      "sha256": "31ae99089df672cfb00c87b757d61cffec58a00453aef11391326d237efbe5e3"
+      "sha256": "57a528e043ae441d09a44e01ffb28a72b49359d5b438585fc1ab2f744f4748c0"
     },
     {
       "path": "core/src/aura_core/application/approval_api.py",
@@ -206,7 +206,7 @@
     },
     {
       "path": "core/src/aura_core/application/context_synthesizer.py",
-      "sha256": "216819109af92575f5053251a039dc4192d2adb79cb7720f97f85b185174b19e"
+      "sha256": "ca710f11ced94ef2be7f97128e5c640753e2849a9b276654e75d5f2328f8bb47"
     },
     {
       "path": "core/src/aura_core/application/cross_capability_reasoning.py",
@@ -351,6 +351,10 @@
     {
       "path": "core/src/aura_core/application/speech_api.py",
       "sha256": "6dda891be92af2820f0c482bc2df43a189cb68fb1d32a055cdd1f271b8a584dc"
+    },
+    {
+      "path": "core/src/aura_core/application/streaming_speech.py",
+      "sha256": "5419c664696c65f854b7a61169580d3eff8732afbf29d2d36da4a86680be00e2"
     },
     {
       "path": "core/src/aura_core/application/swarm_orchestration.py",
