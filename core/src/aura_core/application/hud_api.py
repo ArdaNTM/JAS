@@ -9,7 +9,10 @@ from __future__ import annotations
 import asyncio
 import ctypes
 import inspect
+import logging
+import secrets
 import sys
+import time
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -22,6 +25,8 @@ from aura_core.mcp.gateway import MCPGatewayRequest
 from aura_core.security.http_auth import authenticated_principal
 from aura_core.security.local_only import require_local_http_request
 
+logger = logging.getLogger("aura_core.screenread")
+
 router = APIRouter(prefix="/api/hud", tags=["local-hud"])
 
 
@@ -31,10 +36,42 @@ class HUDPanelRequest(BaseModel):
     kind: str = Field(default="object", pattern="^(object|research|notice)$")
 
 
+class HUDMediaRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    query: str = Field(min_length=2, max_length=100)
+
+
+@router.post("/media/search")
+async def search_hud_media(
+    body: HUDMediaRequest,
+    request: Request,
+    principal_id: str = Depends(authenticated_principal),
+) -> dict[str, object]:
+    require_local_http_request(request)
+    gateway = getattr(request.app.state, "mcp_gateway", None)
+    if gateway is None:
+        raise HTTPException(status_code=503, detail="Media gateway unavailable")
+    call = MCPGatewayRequest(
+        request_id=str(uuid4()), principal_id=principal_id,
+        capability_id="HUDMediaSearch", operation_id="HUDMediaSearch",
+        resource_scope="commons_public_query", risk_level=RiskLevel.LOW,
+        tool_name="hud_media_search", arguments={"query": body.query},
+    )
+    try:
+        result = await gateway.invoke(call)
+    except Exception as exc:
+        logger.warning("HUD media provider failed: %s", type(exc).__name__)
+        raise HTTPException(status_code=502, detail="Commons image search unavailable") from exc
+    if result.decision is not AuthorizationDecision.ALLOW or not isinstance(result.result, dict):
+        raise HTTPException(status_code=403, detail="HUD media search is not authorized")
+    return result.result
+
+
 class ScreenReadRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     prompt: str = Field(min_length=1, max_length=400)
     confirmed: bool = False
+    trusted_session_token: str | None = Field(default=None, min_length=20, max_length=128)
 
 
 def windows_operator_approval(prompt: str) -> bool:
@@ -51,6 +88,114 @@ def windows_operator_approval(prompt: str) -> bool:
         0x0004 | 0x0030 | 0x0100 | 0x00040000,
     )
     return result == 6
+
+
+class TrustedScreenReadSessions:
+    """Ephemeral principal-scoped delegation with bounded capture budget.
+
+    Only a native operator approval may mint a session. Tokens stay in
+    process memory, not in PostgreSQL, EventBus, logs or model prompts.
+    Every later screenshot still consumes a fresh Gateway ApprovalStore entry.
+    """
+    ttl_seconds = 90
+    max_captures = 3
+
+    def __init__(self) -> None:
+        self._sessions: dict[str, tuple[str, float, int]] = {}
+        self._lock = asyncio.Lock()
+
+    async def create(self, principal: str) -> str:
+        async with self._lock:
+            self._sessions = {key: value for key, value in self._sessions.items()
+                              if value[1] > time.monotonic() and value[0] != principal}
+            token = secrets.token_urlsafe(36)
+            self._sessions[token] = (principal, time.monotonic() + self.ttl_seconds,
+                                      self.max_captures)
+            return token
+
+    async def consume(self, token: str, principal: str) -> bool:
+        async with self._lock:
+            value = self._sessions.get(token)
+            if value is None:
+                return False
+            owner, until, remaining = value
+            if owner != principal or until <= time.monotonic() or remaining <= 0:
+                self._sessions.pop(token, None)
+                return False
+            if remaining == 1:
+                del self._sessions[token]
+            else:
+                self._sessions[token] = (owner, until, remaining - 1)
+            return True
+
+    async def revoke(self, token: str, principal: str) -> None:
+        async with self._lock:
+            if self._sessions.get(token, ("", 0, 0))[0] == principal:
+                self._sessions.pop(token, None)
+
+
+class TrustedSessionStart(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    confirmed: bool = False
+
+
+class TrustedSessionRevoke(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    token: str = Field(min_length=20, max_length=128)
+
+
+def windows_operator_trusted_session_approval(_prompt: str) -> bool:
+    if sys.platform != "win32":
+        return False
+    # A SINGLE bounded authorisation, no automatic renewals, No default.
+    result = ctypes.windll.user32.MessageBoxW(
+        None,
+        "AURA Trusted Screen Session: Authorize at most THREE local "
+        "screenshots during the next 90 seconds?\n\n"
+        "Each command still goes through the MCP Gateway. The session "
+        "expires automatically and can be revoked from HUD.\n\n"
+        "Only arm this on a trusted desktop.",
+        "AURA — Arm Trusted Screen Session",
+        0x0004 | 0x0030 | 0x0100 | 0x00040000,
+    )
+    return result == 6
+
+
+@router.post("/session/start")
+async def start_trusted_session(
+    body: TrustedSessionStart,
+    request: Request,
+    principal_id: str = Depends(authenticated_principal),
+) -> dict[str, object]:
+    require_local_http_request(request)
+    if not body.confirmed:
+        raise HTTPException(status_code=409, detail="Trusted session requires explicit action")
+    if not getattr(request.app.state, "screen_read_enabled", False):
+        raise HTTPException(status_code=503, detail="ScreenRead is disabled")
+    sessions = getattr(request.app.state, "hud_trusted_sessions", None)
+    if sessions is None or getattr(request.app.state, "approval_store", None) is None:
+        raise HTTPException(status_code=503, detail="Trusted sessions are unavailable")
+    prompt_fn = getattr(request.app.state, "hud_session_operator_approval",
+                        windows_operator_trusted_session_approval)
+    accepted = await asyncio.to_thread(prompt_fn, "maximum 3 captures / 90 seconds")
+    if not accepted:
+        raise HTTPException(status_code=403, detail="Trusted session not approved by operator")
+    token = await sessions.create(principal_id)
+    return {"token": token, "expires_in": sessions.ttl_seconds,
+            "captures_remaining": sessions.max_captures}
+
+
+@router.post("/session/revoke")
+async def revoke_trusted_session(
+    body: TrustedSessionRevoke,
+    request: Request,
+    principal_id: str = Depends(authenticated_principal),
+) -> dict[str, str]:
+    require_local_http_request(request)
+    sessions = getattr(request.app.state, "hud_trusted_sessions", None)
+    if sessions is not None:
+        await sessions.revoke(body.token, principal_id)
+    return {"status": "revoked"}
 
 
 @router.post("/panel")
@@ -104,11 +249,18 @@ async def read_screen(
     if first.decision is not AuthorizationDecision.REQUIRE_APPROVAL or not first.approval_id:
         raise HTTPException(status_code=403, detail="ScreenRead authorization policy denied capture")
 
-    # A visible Windows native dialog is the human approval boundary.
-    # Never create/approve requests in unattended sessions.
+    # Short-lived delegated operator approval is always minted by one native
+    # Yes/No action, never by voice, model output, or UI-confirmed=true alone.
+    sessions = getattr(request.app.state, "hud_trusted_sessions", None)
+    trusted = body.trusted_session_token is not None
     prompt_fn = getattr(request.app.state, "screen_read_operator_approval", windows_operator_approval)
     try:
-        accepted = await asyncio.to_thread(prompt_fn, body.prompt)
+        if trusted:
+            accepted = bool(sessions and await sessions.consume(body.trusted_session_token, principal_id))
+            if not accepted:
+                raise HTTPException(status_code=403, detail="Trusted ScreenRead session expired or exhausted")
+        else:
+            accepted = await asyncio.to_thread(prompt_fn, body.prompt)
         record = store.get(first.approval_id)
         if inspect.isawaitable(record):
             record = await record
@@ -118,7 +270,8 @@ async def read_screen(
         decision = store.decide(
             first.approval_id,
             expected_version=record.version,
-            approver_id="human:windows-interactive-dialog",
+            approver_id=("human:preapproved-trusted-session" if trusted else
+                         "human:windows-interactive-dialog"),
             decision=outcome,
         )
         if inspect.isawaitable(decision):
@@ -142,7 +295,20 @@ async def read_screen(
             event_type="HUDVisionScanEnded", source_component="aura.screenread",
             payload={"state": "failed"},
         ))
-        raise HTTPException(status_code=502, detail="Local ScreenRead provider failed") from exc
+        # Fail closed. Log only the exception *type*, never screenshot bytes,
+        # prompts, model responses, credentials or underlying remote URLs.
+        logger.warning("ScreenRead dispatch failed: %s", type(exc).__name__)
+        name = type(exc).__name__
+        code = (
+            "CAPTURE_DEPENDENCY_MISSING" if isinstance(exc, ImportError) or "Pillow" in str(exc)
+            else "VISION_TIMEOUT" if "Timeout" in name
+            else "VISION_ENDPOINT_FAILURE" if "HTTPStatusError" in name or "ConnectError" in name
+            else "SCREENREAD_PROVIDER_FAILURE"
+        )
+        raise HTTPException(
+            status_code=502,
+            detail={"code": code, "message": "Local ScreenRead failed after authorization"},
+        ) from exc
     if final.decision is not AuthorizationDecision.ALLOW or not isinstance(final.result, dict):
         bus.publish(KernelEvent(
             event_type="HUDVisionScanEnded", source_component="aura.screenread",
@@ -157,5 +323,6 @@ async def read_screen(
     return {
         "description": final.result.get("description", ""),
         "bounding_boxes_verified": False,
+        "regions": final.result.get("regions", []),
         "authority": "untrusted_local_screen_perception",
     }

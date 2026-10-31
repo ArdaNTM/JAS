@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { OrderedAudioPlayback } from "./orderedAudioPlayback";
 
 type UIEvent = {
   id?: string;
@@ -68,6 +69,11 @@ export function useFullDuplexAura(
   const sessionIdRef = useRef<string | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
+  const pcmModeRef = useRef(false);
+  const pcmNodeRef = useRef<AudioWorkletNode | null>(null);
+  const pcmGainRef = useRef<GainNode | null>(null);
+  const pcmQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const pcmPendingRef = useRef(0);
   const chunksRef = useRef<BlobPart[]>([]);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
@@ -78,6 +84,7 @@ export function useFullDuplexAura(
   const processingRef = useRef(false);
   const speakingRef = useRef(false);
   const playerRef = useRef<HTMLAudioElement | null>(null);
+  const orderedPlaybackRef = useRef<OrderedAudioPlayback | null>(null);
   const onTranscriptRef = useRef(onTranscript);
   const onSpeechStateRef = useRef(onSpeechState);
 
@@ -85,6 +92,7 @@ export function useFullDuplexAura(
   onSpeechStateRef.current = onSpeechState;
 
   const stopPlayer = useCallback(() => {
+    orderedPlaybackRef.current?.cancel();
     const player = playerRef.current;
     if (player) {
       player.pause();
@@ -110,6 +118,9 @@ export function useFullDuplexAura(
   }, []);
 
   const interrupt = useCallback(async () => {
+    // Abort the ongoing Ollama response *and* its queued TTS sentences.
+    // This is synchronous and precedes the async server-side cancellation.
+    window.dispatchEvent(new Event("aura:voice-barge-in"));
     const id = sessionIdRef.current;
     stopPlayer(); // Stop the browser audio synchronously, before awaiting the API.
     if (!id) return;
@@ -146,32 +157,21 @@ export function useFullDuplexAura(
       if (event.event === "SpeechAudioReady") {
         const encoded = data.audio_base64;
         if (typeof encoded !== "string") return;
-        stopPlayer();
         const mimeType = typeof data.mime_type === "string" ? data.mime_type : "audio/wav";
-        const player = new Audio(URL.createObjectURL(new Blob([decodeBase64(encoded)], { type: mimeType })));
-        playerRef.current = player;
-        speakingRef.current = true;
-        setSpeaking(true);
-        onSpeechStateRef.current?.("speaking");
-        player.onended = () => {
-          if (playerRef.current === player) {
-            URL.revokeObjectURL(player.src);
-            playerRef.current = null;
-            speakingRef.current = false;
-            setSpeaking(false);
-            onSpeechStateRef.current?.("listening");
-          }
-        };
-        player.onerror = () => {
-          if (playerRef.current === player) {
-            playerRef.current = null;
-            speakingRef.current = false;
-            setSpeaking(false);
-            setMessage("TTS SESİ OYNATILAMADI");
-            onSpeechStateRef.current?.("error");
-          }
-        };
-        void player.play().catch((error: unknown) => {
+        const playback = orderedPlaybackRef.current ?? new OrderedAudioPlayback();
+        orderedPlaybackRef.current = playback;
+        const receivedAt = performance.now();
+        void playback.enqueue(new Blob([decodeBase64(encoded)], { type: mimeType }), () => {
+          speakingRef.current = true;
+          setSpeaking(true);
+          onSpeechStateRef.current?.("speaking");
+          const id = sessionIdRef.current;
+          if (id) void postJson("/api/speech/sessions/latency", { session_id: id, confirmed: true, stage: "browser_first_audio", milliseconds: performance.now() - receivedAt }).catch(() => undefined);
+        }).then(() => {
+          speakingRef.current = false;
+          setSpeaking(false);
+          onSpeechStateRef.current?.("listening");
+        }).catch((error: unknown) => {
           setMessage(error instanceof Error ? `SES OYNATMA İZNİ: ${error.message}` : "SES OYNATMA ENGELLENDİ");
           onSpeechStateRef.current?.("error");
         });
@@ -192,6 +192,7 @@ export function useFullDuplexAura(
       source.close();
       setEventConnected(false);
       stopPlayer();
+      void orderedPlaybackRef.current?.close();
     };
   }, [stopPlayer]);
 
@@ -207,12 +208,73 @@ export function useFullDuplexAura(
       const id = crypto.randomUUID();
       createdSessionId = id;
       await postJson("/api/speech/sessions", { session_id: id, confirmed: true });
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const context = new AudioContext();
+      const health = await fetch(`${API_BASE}/api/speech/health`, {
+        credentials: "same-origin",
+      }).then(r => {
+        if (!r.ok) throw new Error("Speech health unavailable");
+        return r.json() as Promise<{ sherpa_onnx: { enabled: boolean; available: boolean; reason: string } }>;
+      });
+      if (health.sherpa_onnx.enabled && !health.sherpa_onnx.available) {
+        throw new Error("Nirvana provider is not ready: " + health.sherpa_onnx.reason);
+      }
+      pcmModeRef.current = health.sherpa_onnx.available;
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 },
+      });
+      // Explicitly require 16 kHz in PCM mode; never mislabel device PCM as 16k.
+      const context = pcmModeRef.current ? new AudioContext({ sampleRate: 16000 }) : new AudioContext();
+      if (pcmModeRef.current && context.sampleRate !== 16000) {
+        throw new Error("16 kHz capture is not supported by the active audio device");
+      }
       const source = context.createMediaStreamSource(stream);
       const analyser = context.createAnalyser();
       analyser.fftSize = 1024;
       source.connect(analyser);
+      if (pcmModeRef.current) {
+        if (!context.audioWorklet) {
+          throw new Error("AudioWorklet is required for streaming 100ms PCM");
+        }
+        await context.audioWorklet.addModule("/aura-pcm-worklet.js");
+        const node = new AudioWorkletNode(context, "aura-pcm-processor");
+        const silent = context.createGain();
+        silent.gain.value = 0;
+        source.connect(node);
+        node.connect(silent);
+        silent.connect(context.destination);
+        pcmNodeRef.current = node;
+        pcmGainRef.current = silent;
+        node.port.onmessage = (event: MessageEvent<ArrayBuffer>) => {
+          if (!sessionIdRef.current || !(event.data instanceof ArrayBuffer)) return;
+          if (pcmPendingRef.current >= 12) {
+            setMessage("MIC STREAM BACKPRESSURE — SESSION STOP REQUIRED");
+            void interrupt();
+            return;
+          }
+          const bytes = new Uint8Array(event.data);
+          let binary = "";
+          for (let offset = 0; offset < bytes.length; offset += 4096) {
+            binary += String.fromCharCode(...bytes.subarray(offset, offset + 4096));
+          }
+          const encoded = btoa(binary);
+          pcmPendingRef.current++;
+          pcmQueueRef.current = pcmQueueRef.current.then(async () => {
+            const currentId = sessionIdRef.current;
+            if (!currentId) return;
+            const result = await postJson<{
+              wake_detected: boolean; transcript: string; listening: boolean;
+            }>("/api/speech/sessions/pcm", {
+              session_id: currentId, pcm_base64: encoded, end: false,
+            });
+            if (result.wake_detected) {
+              setMessage("AURA WAKE DETECTED — LISTENING FOR ENGLISH COMMAND");
+            }
+          }).catch(error => {
+            setMessage(error instanceof Error ? error.message : "PCM STREAM ERROR");
+          }).finally(() => {
+            pcmPendingRef.current = Math.max(0, pcmPendingRef.current - 1);
+          });
+        };
+      }
 
       sessionIdRef.current = id;
       setSessionId(id);
@@ -239,6 +301,12 @@ export function useFullDuplexAura(
         if (rms >= threshold) {
           if (speechStartedAtRef.current === null && !processingRef.current) {
             speechStartedAtRef.current = now;
+            if (pcmModeRef.current) {
+              if (speakingRef.current && !bargeInSentRef.current) {
+                bargeInSentRef.current = true;
+                void interrupt();
+              }
+            } else {
             chunksRef.current = [];
             bargeInSentRef.current = false;
             try {
@@ -288,10 +356,11 @@ export function useFullDuplexAura(
                   speechStartedAtRef.current = null;
                 }
               };
-              recorder.start();
+              recorder.start(100);
             } catch (error) {
               speechStartedAtRef.current = null;
               setMessage(error instanceof Error ? error.message : "SES KAYDI BAŞLATILAMADI");
+            }
             }
             if (speakingRef.current && !bargeInSentRef.current) {
               bargeInSentRef.current = true;
@@ -304,8 +373,27 @@ export function useFullDuplexAura(
           now - lastVoiceAtRef.current >= 850 &&
           now - speechStartedAtRef.current >= 250
         ) {
-          if (recorderRef.current?.state === "recording") recorderRef.current.stop();
-          else speechStartedAtRef.current = null;
+          if (pcmModeRef.current) {
+            const endingId = sessionIdRef.current;
+            pcmQueueRef.current = pcmQueueRef.current.then(async () => {
+              if (!endingId || endingId !== sessionIdRef.current) return;
+              const result = await postJson<{ transcript: string }>("/api/speech/sessions/pcm", {
+                session_id: endingId, pcm_base64: "", end: true,
+              });
+              const text = result.transcript.trim();
+              if (text) {
+                setTranscript(text);
+                onTranscriptRef.current(text);
+                setMessage("AURA / ENGLISH COMMAND READY");
+              }
+            }).catch(error => {
+              setMessage(error instanceof Error ? error.message : "ASR FINALIZE ERROR");
+            });
+            speechStartedAtRef.current = null;
+            bargeInSentRef.current = false;
+          } else if (recorderRef.current?.state === "recording") {
+            recorderRef.current.stop();
+          } else speechStartedAtRef.current = null;
         }
         frameRef.current = requestAnimationFrame(tick);
       };
@@ -323,6 +411,12 @@ export function useFullDuplexAura(
   }, [interrupt]);
 
   const stop = useCallback(async () => {
+    pcmNodeRef.current?.port.close();
+    pcmNodeRef.current?.disconnect();
+    pcmGainRef.current?.disconnect();
+    pcmNodeRef.current = null;
+    pcmGainRef.current = null;
+    pcmModeRef.current = false;
     if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
     frameRef.current = null;
     if (recorderRef.current?.state === "recording") {

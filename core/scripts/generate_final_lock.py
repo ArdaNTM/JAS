@@ -62,11 +62,20 @@ def files_to_hash() -> list[Path]:
         ROOT / ".github" / "workflows" / "aura-windows-owner-security.yml",
         ROOT / "core" / "scripts" / "generate_final_lock.py",
         ROOT / "core" / "scripts" / "verify_final_lock.py",
+        # Integrate opt-in voice artifacts and the privileged Electron shell.
+        ROOT / "core" / "scripts" / "install_nirvana_voice_models.py",
+        ROOT / "core" / "scripts" / "kokoro_tts_mcp.py",
+        ROOT / "aura-ui" / "public" / "aura-pcm-worklet.js",
+        ROOT / "aura-ui" / "electron-main.cjs",
+        ROOT / "aura-ui" / "electron-preload.cjs",
         ROOT / "core" / "pyproject.toml",
         ROOT / "core" / "uv.lock",
         ROOT / "aura-ui" / "src",
         ROOT / "aura-ui" / "package.json",
         ROOT / "aura-ui" / "package-lock.json",
+        ROOT / "aura-ui" / "vite.config.ts",
+        ROOT / "core" / "frontend" / "package.json",
+        ROOT / "core" / "frontend" / "package-lock.json",
     )
 
     result: list[Path] = []
