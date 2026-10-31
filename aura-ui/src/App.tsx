@@ -2,6 +2,7 @@ import ArcReactor3D from "./components/ArcReactor3D";
 import DynamicHologram3D from "./components/DynamicHologram3D";
 import CapabilityWorkbench from "./components/CapabilityWorkbench";
 import EvolutionReviewPanel from "./components/EvolutionReviewPanel";
+import StageCControlPanel from "./components/StageCControlPanel";
 import { useCallback, useEffect, useState } from "react";
 import type { FormEvent } from "react";
 
@@ -764,6 +765,7 @@ export default function App() {
 
       <CapabilityWorkbench />
       <EvolutionReviewPanel />
+      <StageCControlPanel />
       <AuraJarvisBridge
         directive={assistantDirective}
         researchOutput={researchOutput}
