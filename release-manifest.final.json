@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-10-31T00:06:53.882Z",
+  "generated_at": "2026-10-31T00:09:17.627Z",
   "git_commit": "0d07169c3f07dfe97863cab489e2cb93bec896c4",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:fec18ccd9e5485d1c8a3754dc2f80d3efacb86d9436a3687b0b2f5e69390a98b",
+  "release_digest": "sha256:5077297ff6c1b72c67e80c86cc588c6e7fdd7405d5120857a0b05810baf1aa70",
   "file_count": 229,
   "files": [
     {
@@ -858,7 +858,7 @@
     },
     {
       "path": "core/src/aura_core/runtime/ollama.py",
-      "sha256": "22656c5a3ed9f1f3414e32b6caea4b3696d6306fb6fb434ed6322004ecf5d374"
+      "sha256": "7c13c6bceb7b941094861157d7633cdf5d7a3fb80231dc38c4cbbd82424eca99"
     },
     {
       "path": "core/src/aura_core/runtime/protocol.py",
