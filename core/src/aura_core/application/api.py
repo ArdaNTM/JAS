@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import tempfile
+from pathlib import Path
 import threading
 import time
 from time import perf_counter
@@ -34,6 +35,8 @@ from aura_core.application.async_work import AsyncWorkCoordinator
 from aura_core.application.context_synthesizer import ContextSynthesizer
 from aura_core.application.context_aware_stt import build_stt_prompt
 from aura_core.application.background_thinking import IdleMemoryReflectionDaemon
+from aura_core.evolution.autonomous_analyzer import AutonomousAnalyzer
+from aura_core.evolution.evolution_planner import EvolutionPlanner
 from aura_core.application.persona_policy import PersonaPolicy
 from aura_core.application.reflexion import ExperimentBudget, ProceduralSkillLibrary, ReflexionExperimentLoop
 from aura_core.application.reflexion_inference import ModelBackedDraftRevision, ModelRevisionConfig
@@ -557,6 +560,9 @@ def create_api(
         reflection_enabled = os.getenv("AURA_BACKGROUND_THINKING_ENABLED", "0").strip().lower() in {"1", "true", "yes"}
         if reflection is not None and reflection_enabled:
             reflection.start()
+        evolution = getattr(application.state, "evolution_review", None)
+        if evolution is not None:
+            evolution.start()
         unsubscribe_prefetch = None
         prefetch_enabled = os.getenv("AURA_PREFETCH_ENABLED", "0").strip().lower() in {"1", "true", "yes"}
         kernel = getattr(application.state, "kernel", None)
@@ -582,6 +588,8 @@ def create_api(
                 unsubscribe_prefetch()
             if reflection is not None:
                 await reflection.stop()
+            if evolution is not None:
+                await evolution.stop()
             if daemon is not None:
                 await daemon.stop()
 
@@ -701,6 +709,21 @@ def create_api(
         )
         if reflection_enabled
         else None
+    )
+
+    # Dedicated opt-in flag: background-memory reflection does not implicitly
+    # authorize source inspection, network discovery, code generation or deployment.
+    # No discovery/drafting adapters are installed by default.
+    evolution_enabled = os.getenv("AURA_EVOLUTION_REVIEW_ENABLED", "0").strip().casefold() in {"1", "true", "yes"}
+    app.state.evolution_review = (
+        EvolutionPlanner(
+            AutonomousAnalyzer(Path(os.getenv("AURA_JAS_ROOT") or Path(__file__).resolve().parents[4])),
+            idle_seconds=int(os.getenv("AURA_EVOLUTION_IDLE_SECONDS", "300")),
+            interval_seconds=int(os.getenv("AURA_EVOLUTION_INTERVAL_SECONDS", "900")),
+            max_cycles=int(os.getenv("AURA_EVOLUTION_MAX_CYCLES", "100")),
+            last_activity=lambda: app.state.last_user_activity,
+        )
+        if evolution_enabled else None
     )
 
     @app.middleware("http")
@@ -1674,6 +1697,40 @@ def create_api(
             "independent_verifier": "exact expected_stdout and return_code == 0",
             "tool_execution_performed": False,
         }
+
+    @app.get("/api/evolution/status")
+    def evolution_status(
+        http_request: Request,
+        principal_id: str = Depends(authenticated_principal),
+    ) -> dict[str, object]:
+        require_local_client(http_request)
+        worker = app.state.evolution_review
+        return worker.status() if worker is not None else {
+            "enabled": False, "mode": "disabled",
+            "reason": "Explicit AURA_EVOLUTION_REVIEW_ENABLED=1 is required.",
+        }
+
+    @app.get("/api/evolution/proposals")
+    def evolution_proposals(
+        http_request: Request,
+        limit: int = 20,
+        principal_id: str = Depends(authenticated_principal),
+    ) -> dict[str, object]:
+        require_local_client(http_request)
+        worker = app.state.evolution_review
+        return {"mode": "review_only",
+                "items": worker.list_proposals(limit=limit) if worker else []}
+
+    @app.get("/api/evolution/goals")
+    def evolution_goal_tree(
+        http_request: Request,
+        principal_id: str = Depends(authenticated_principal),
+    ) -> dict[str, object]:
+        require_local_client(http_request)
+        worker = app.state.evolution_review
+        if worker is None:
+            return {"mode": "disabled", "groups": [], "authorization_granted": False}
+        return worker.goal_tree()
 
     @app.get("/api/background-thinking/status")
     def background_thinking_status(
