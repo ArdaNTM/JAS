@@ -5,7 +5,7 @@
   "generated_at": "2026-10-31T00:45:29.771Z",
   "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:097dcc819ef74bb4d4fc8b5d206a997b77fb36d677f9bbad4354ac220e5a889a",
+  "release_digest": "sha256:fa943d55c5aa4c199d99f0772b93140f4a42341d54c03932ca813e407c001889",
   "file_count": 234,
   "files": [
     {
@@ -682,7 +682,7 @@
     },
     {
       "path": "core/src/aura_core/mcp/screen_read_provider.py",
-      "sha256": "b7e188d29283fb3e0110403bb1fe4be47e730db69127415b5271619d91cc9c72"
+      "sha256": "38cfbaf2382a1da5ed583f6557fc4b60c11f94d7bb42f2015bc4f9292a0646f7"
     },
     {
       "path": "core/src/aura_core/mcp/tool_registry.py",
