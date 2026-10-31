@@ -279,3 +279,10 @@ def test_media_source_whitelist_and_strict_license_metadata():
     assert _trusted_image("https://evil.example/track.png", "upload.wikimedia.org") is None
     assert _trusted_image("http://upload.wikimedia.org/track.png", "upload.wikimedia.org") is None
     assert _plain({"value": "<b>Artist</b> &amp; Creator"}) == "Artist & Creator"
+
+def test_jpeg_sof_dimensions_are_read_without_image_decoder():
+    from aura_core.mcp.screen_read_provider import _jpeg_dimensions
+    # SOI + baseline SOF0 with a 956 x 1064 image + EOI.
+    sample = bytes.fromhex("ffd8ffc0001108042803bc03011100021101031101ffd9")
+    assert _jpeg_dimensions(sample) == (956, 1064)
+    assert _jpeg_dimensions(b"invalid") is None

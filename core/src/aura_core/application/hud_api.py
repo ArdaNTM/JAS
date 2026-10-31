@@ -151,9 +151,9 @@ def windows_operator_trusted_session_approval(_prompt: str) -> bool:
     result = ctypes.windll.user32.MessageBoxW(
         None,
         "AURA Trusted Screen Session: Authorize at most THREE local "
-        "screenshots during the next 90 seconds?\\n\\n"
+        "screenshots during the next 90 seconds?\n\n"
         "Each command still goes through the MCP Gateway. The session "
-        "expires automatically and can be revoked from HUD.\\n\\n"
+        "expires automatically and can be revoked from HUD.\n\n"
         "Only arm this on a trusted desktop.",
         "AURA — Arm Trusted Screen Session",
         0x0004 | 0x0030 | 0x0100 | 0x00040000,

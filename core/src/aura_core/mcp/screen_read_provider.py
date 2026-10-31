@@ -16,7 +16,7 @@ from aura_core.mcp.mcp_provider import MCPTool
 
 def _jpeg_dimensions(frame: bytes) -> tuple[int, int] | None:
     """Read JPEG SOF dimensions without decoding or persisting the frame."""
-    if not frame.startswith(b"\\xff\\xd8"):
+    if not frame.startswith(b"\xff\xd8"):
         return None
     index = 2
     while index + 4 < len(frame):
@@ -50,7 +50,7 @@ def _decode_visual_regions(text: str, image_size: tuple[int, int] | None = None)
     """
     candidate = text.strip()
     if candidate.startswith("```"):
-        candidate = re.sub(r"^```(?:json)?\\s*|\\s*```$", "", candidate, flags=re.I).strip()
+        candidate = re.sub(r"^```(?:json)?\s*|\s*```$", "", candidate, flags=re.I).strip()
     try:
         data = json.loads(candidate)
     except (ValueError, TypeError):
