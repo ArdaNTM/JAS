@@ -648,7 +648,9 @@ def create_api(
     app.state.live_events = live_events or LiveEventBroker()
     app.state.proactive_suggestions = ProactiveSuggestionStore()
     app.state.async_work = AsyncWorkCoordinator(capacity=int(os.getenv("AURA_MAX_CONCURRENT_INFERENCE", "4")))
-    app.state.context_synthesizer = ContextSynthesizer()
+    app.state.context_synthesizer = ContextSynthesizer(
+        memory_selection=os.getenv("AURA_CONTEXT_MEMORY_SELECTION", "chronological").strip().casefold()
+    )
     app.state.predictive_simulator = PredictiveSimulator()
     app.state.system_telemetry = SystemTelemetry(
         cpu_warning=float(os.getenv("AURA_CPU_WARNING_PERCENT", "85")),
