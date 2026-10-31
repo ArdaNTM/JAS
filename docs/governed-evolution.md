@@ -138,3 +138,55 @@ There is intentionally no `importlib` of generated source, no copy into
 release-lock regeneration: source changes remain ordinary reviewed Git
 commits. The existing `GovernedSkillRegistry` is the only declarative
 owner-approved version switch for **already registered** MCP providers.
+
+
+## Primal Anchor v2 — independent sandbox attestation (prototype)
+
+The Core verifier at evolution/sandbox_attestor.py verifies Ed25519 signed,
+canonical domain-separated v1 evidence. No private signing key is present in
+the Core or sandbox. Signed claims bind:
+
+- Candidate source SHA-256 and complete test-suite SHA-256.
+- Immutable OCI container image digest (sha256), never a mutable image tag.
+- SHA-256 of the isolated-runner security policy and complete reviewed MCP
+  SkillBinding digest (capability, version, scope, operation and risk).
+- Trusted runner identity, unique run ID, observed exit code, success status,
+  issue/expiry timestamps (maximum 15 minutes), no-network and readonly
+  rootfs observations.
+
+Verifier pins the allowed Ed25519 public keys, runner ID, OCI image, test
+suite and policy hash. Invalid signatures, tampering, wrong context, expired
+results and failed isolation are rejected. AttestationReceiptRegistry admits
+a signed run once, rejects duplicate run IDs and returns a receipt ID. On
+lookup it rechecks validity and returns false after expiry. A trusted
+AttestationReceiptRegistry.verify_binding callback may be injected as
+signed_attestation_verifier into GovernedSkillRegistry; this adds a second,
+signed cryptographic gate to the existing legacy sandbox-validation callback
+during validate, activate AND rollback. Actual tool invocation remains
+separately authorized by MCP Gateway and PermissionEngine.
+
+The signer at core/scripts/evolution_attestor_sign.py is a SEPARATE,
+operator-controlled CLI, not an MCP capability. It reads a trusted observation
+and an Ed25519 PEM private key from outside the JAS checkout. Only the
+separately provisioned operator attestor process may access the private key.
+The signing CLI DOES NOT launch Docker or directly observe container exit,
+network, mount state or test execution. Before treating an attestation as
+production evidence, an independent trusted runner/observer must supply
+observations directly and verify those facts through the container runtime.
+A signed forged observation is still false. Smoke tests are provisional,
+not independent signed attestations.
+
+Replay limitation: duplicate (attestor key, runner job ID) registration is
+blocked within one runtime. Its current bounded in-memory replay ledger does
+NOT survive restart. A production attestor requires a durable owner-protected
+ledger with an atomic unique-run constraint. Expiry and the separate one-shot
+human owner approval remain mandatory. Runtime tests use ephemeral keys only.
+
+Windows isolated acceptance:
+1. In D:\\AURA\\JAS-evolution-test\\core run: uv sync --frozen --group dev
+2. Run: uv run --frozen pytest -q tests/test_sandbox_attestor.py tests/test_governed_evolution.py tests/test_governed_evolution_owner.py
+3. Run: uv run --frozen python scripts/verify_final_lock.py
+
+Nothing is promoted into the trusted Core, no generated modules are imported,
+and neither owner approval UI nor independent runner service are claimed
+production-ready yet.

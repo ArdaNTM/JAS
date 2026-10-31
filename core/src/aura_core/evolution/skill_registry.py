@@ -57,6 +57,7 @@ class SkillBinding:
 
 ReviewVerifier = Callable[[str, str], bool]
 OwnerReceiptConsumer = Callable[[str, str, str, str], bool]
+SignedAttestationVerifier = Callable[["SkillBinding", str], bool]
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,6 +75,7 @@ class GovernedSkillRegistry:
         validation_verifier: ReviewVerifier,
         owner_receipt_consumer: OwnerReceiptConsumer,
         max_staged: int = 100,
+        signed_attestation_verifier: SignedAttestationVerifier | None = None,
     ) -> None:
         if not callable(validation_verifier) or not callable(owner_receipt_consumer):
             raise ValueError("Independent verifier callbacks are required")
@@ -83,6 +85,12 @@ class GovernedSkillRegistry:
         self._providers = providers
         self._validation = validation_verifier
         self._owner = owner_receipt_consumer
+        # Production must inject AttestationReceiptRegistry.verify_binding.
+        # Existing plain validator remains for compatibility with existing
+        # GovSkill tests, but does not substitute for signed verification.
+        if signed_attestation_verifier is not None and not callable(signed_attestation_verifier):
+            raise ValueError("Invalid signed attestation verifier")
+        self._signed = signed_attestation_verifier
         self._max_staged = max_staged
         self._staged: dict[str, SkillBinding] = {}
         self._verified: dict[str, str] = {}
@@ -124,6 +132,8 @@ class GovernedSkillRegistry:
                 raise PermissionError("A sandbox evidence receipt is required")
             if not self._validation(binding.source_sha256, sandbox_receipt):
                 raise PermissionError("Sandbox validation cannot be independently verified")
+            if self._signed is not None and not self._signed(binding, sandbox_receipt):
+                raise PermissionError("Signed attestation missing, mismatched or untrusted")
             self._verified[name] = sandbox_receipt
             return True
 
@@ -138,6 +148,8 @@ class GovernedSkillRegistry:
             self._registered(binding)
             if not self._validation(binding.source_sha256, receipt):
                 raise PermissionError("Sandbox evidence no longer valid")
+            if self._signed is not None and not self._signed(binding, receipt):
+                raise PermissionError("Signed attestation has expired or changed")
             if not self._owner(principal_id, "activate", binding.review_digest, owner_receipt):
                 raise PermissionError("Owner receipt rejected")
             previous = self._active.get(name)
@@ -156,6 +168,8 @@ class GovernedSkillRegistry:
             self._registered(previous.binding)
             if not self._validation(previous.binding.source_sha256, previous.validation_receipt):
                 raise PermissionError("Prior validation is no longer trusted")
+            if self._signed is not None and not self._signed(previous.binding, previous.validation_receipt):
+                raise PermissionError("Prior signed attestation is no longer trusted")
             if not self._owner(principal_id, "rollback", previous.binding.review_digest, owner_receipt):
                 raise PermissionError("Rollback owner receipt rejected")
             history.pop()

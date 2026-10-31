@@ -5,8 +5,8 @@
   "generated_at": "2026-10-31T00:45:29.771Z",
   "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:f0a5af78835241354a5c06114e58e401d64a8cb142c0260bcad740222af08ea2",
-  "file_count": 241,
+  "release_digest": "sha256:27a4fe3bc2d285d07f7fbc64ec8ded42c0cd3537090928cd5888f586eb246291",
+  "file_count": 245,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -122,7 +122,19 @@
     },
     {
       "path": "core/pyproject.toml",
-      "sha256": "e9659b037281acb116259ac9edd1c394ac318a3b32e5c2c6a4e91a1271abe567"
+      "sha256": "6eba387cf47212d41830f3617e7e5dcf89572854324265fd7eb450b6f32e36f5"
+    },
+    {
+      "path": "core/scripts/evolution_attestor_sign.py",
+      "sha256": "de2f86a2e43a3800e5f2655d4b6ba6b0825bf99fcadd6541239e054a52a02e82"
+    },
+    {
+      "path": "core/scripts/generate_final_lock.py",
+      "sha256": "2fca033d1060a7ebb3159add0e068eae791ff6444d7528a8a08685383d95153c"
+    },
+    {
+      "path": "core/scripts/verify_final_lock.py",
+      "sha256": "81f79793cdb21dede26930d6b871cff92a786910d4671acf8236de8251bb1f69"
     },
     {
       "path": "core/src/aura_core/__init__.py",
@@ -497,12 +509,16 @@
       "sha256": "df655c3a98ae2414f7ece2fa70ff6a2e277e23f7f22346b8a6add89663e79690"
     },
     {
+      "path": "core/src/aura_core/evolution/sandbox_attestor.py",
+      "sha256": "be2f543c11d3bc656100729befd10e0a8ba6cb020a241ccd27a027efed9b23c9"
+    },
+    {
       "path": "core/src/aura_core/evolution/sandbox_review.py",
       "sha256": "979ee14388ed4b5ccc0ceeb0fab39a3765aa092662d9ca31e6fc4e90a69a0e87"
     },
     {
       "path": "core/src/aura_core/evolution/skill_registry.py",
-      "sha256": "743670a74e5f320ec89d409003ea28ed0640ae6fef20a28a8f1f5049e182a819"
+      "sha256": "39c3a87d91a21cd9a2c5871bfb20feda584ff4e5c445d1be37b49093f2f6f003"
     },
     {
       "path": "core/src/aura_core/filesystem/__init__.py",
@@ -970,7 +986,7 @@
     },
     {
       "path": "core/uv.lock",
-      "sha256": "38f0f099dc16ab34d196663b7d2ff96faf5990ace4cb80cbdd7337adc17f4d59"
+      "sha256": "8e09f361405d617bcb6d9e2b58d868a76e67cb296cd6b01f9be21dddd1e46af6"
     }
   ],
   "governance": "JAS-Framework"
