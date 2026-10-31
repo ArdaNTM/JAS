@@ -233,6 +233,30 @@ class FullDuplexSessionManager:
             self._emit("SpeechTranscript", {"characters": len(self._transcript)})
         return self._transcript
 
+    async def ingest_pcm(self, payload: bytes, *, end: bool = False) -> dict[str, object]:
+        """Decode independent 100ms PCM frames in the configured sherpa provider.
+
+        This path does not promote the microphone to tool authority or replay
+        wake-word audio into ASR. Interrupted TTS is managed separately.
+        """
+        sid = self._require_session()
+        if not hasattr(self._recognizer, "consume_pcm"):
+            raise RuntimeError("Streaming PCM provider is unavailable")
+        started = clock.perf_counter()
+        result = await self._recognizer.consume_pcm(payload, session_id=sid, end=end)
+        if end:
+            self._latency_metrics.record("stt_complete", (clock.perf_counter() - started) * 1000)
+        if result.get("wake_detected"):
+            self._emit("SpeechWakeDetected", {"provider": "sherpa-onnx"})
+        transcript = str(result.get("transcript") or "").strip()[:8000]
+        if transcript and end:
+            async with self._lock:
+                self._transcript = transcript
+                self._emit("SpeechTranscript", {"characters": len(transcript)})
+        return {"wake_detected": bool(result.get("wake_detected")),
+                "transcript": transcript if end else "",
+                "listening": bool(result.get("listening")), "complete": end}
+
     async def speak(self, text: str) -> None:
         session_id = self._require_session()
         async with self._lock:
@@ -291,7 +315,10 @@ class FullDuplexSessionManager:
                 self._emit("SpeechPlayerStopFailed", {})
 
     async def close(self) -> None:
+        sid = self._session_id
         await self.interrupt(reason="session_closed", keep_listening=False)
+        if sid is not None and hasattr(self._recognizer, "close_session"):
+            await self._recognizer.close_session(sid)
         async with self._lock:
             self._state = "idle"
             self._session_id = None

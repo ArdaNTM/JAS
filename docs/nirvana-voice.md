@@ -62,3 +62,38 @@ For a real local smoke test, start Core with its existing launcher, visit the
 local UI, explicitly start the full-duplex session, then verify health before
 and after one wake-word utterance. CI uses mocks and does not prove microphone,
 model, GPU, or end-to-end latency behavior.
+
+## Revision 2: real PCM chunks and distinct profiles
+
+Separate English KWS (gigaspeech-3.3M) and English streaming ASR
+(zipformer-en-2023-06-26) are mandatory when Nirvana is enabled. The
+AudioWorklet streams 1600 Float32 samples at 16kHz every 100ms to
+`/api/speech/sessions/pcm`. KWS wake samples never replay to ASR. Audio
+has local-only HTTP authentication and explicit microphone permission.
+
+Opt-in installation: `core/scripts/install_nirvana_voice_models.py`.
+Kokoro ONNX fp16 + voice assets use upstream-published SHA-256. The two
+sherpa archives do NOT publish hashes in their GitHub release API; their
+first download uses pinned URLs, byte sizes, safe extraction and records a
+first-use SHA-256 receipt (TOFU, not independent integrity). Confirm model
+licenses and archive hashes through an independent channel before production.
+
+In the isolated worktree, run:
+
+```powershell
+Set-Location D:\AURA\JAS-voice-check\core
+uv sync --frozen --group dev
+uv pip install --python .\.venv\Scripts\python.exe sherpa-onnx kokoro-onnx sentencepiece
+.\.venv\Scripts\python.exe .\scripts\install_nirvana_voice_models.py --accept-model-licenses --destination D:\AURA\voice-models --env-file .\.env.local
+uv run --no-sync --frozen pytest -q tests/test_sherpa_onnx_provider.py tests/test_nirvana_voice_pcm.py tests/test_full_duplex_session.py
+uv run --no-sync --frozen python scripts/verify_final_lock.py
+```
+
+Start the standalone test worktree with its own launcher only after tests
+pass, local remote-storage prerequisites are available, and Electron
+dependencies are installed. Check `/api/speech/health` for separate KWS/ASR
+English, Kokoro `en-us`, and model availability. Say "AURA" followed by a
+short English command; this is not yet validated on the owner's microphone.
+
+The Work 913ms figure was one *warm* local Ollama time-to-first-token,
+not complete wake/ASR/TTS playback latency or a guaranteed target.

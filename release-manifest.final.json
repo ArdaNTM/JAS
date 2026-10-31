@@ -5,8 +5,8 @@
   "generated_at": "2026-10-31T14:43:46.581360+00:00",
   "git_commit": "46269e9b5b9bfe11ad7a2b1be0cd4c8cf4f3e188",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:1caa6bd9c554d863082e8a1f6eaceb194494eb734adf2131b32dfc67a3649334",
-  "file_count": 249,
+  "release_digest": "sha256:17cf0cd2f2f75a44e9a83994bb012b3f7f9b05e90aafcf157cc715afc4964bf9",
+  "file_count": 243,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -15,6 +15,10 @@
     {
       "path": "aura-ui/package.json",
       "sha256": "e601faf2792ff04aea9427459e226b8ddd3f7b2ceac7cf6403f25eb38863dd97"
+    },
+    {
+      "path": "aura-ui/public/aura-pcm-worklet.js",
+      "sha256": "e214eb93c9e7e94fb8f2f2db458c8a0e300e799e2c811fdea3ea64ed3e19d88b"
     },
     {
       "path": "aura-ui/src/api/client.ts",
@@ -26,23 +30,11 @@
     },
     {
       "path": "aura-ui/src/App.css",
-      "sha256": "66ba5e1be220bd57e68d17254ba7e6b28ced5586762bea31f9f06f7f5935d3e3"
+      "sha256": "e165c53762fb97a022fadeb6720d9ae2ef6f19ed4e123797ee048e7be7608ac9"
     },
     {
       "path": "aura-ui/src/App.tsx",
       "sha256": "afb2504609c7f7575b940c5cabc3cd5ef8f2ffe5ec0812afa8502b03e24bbb83"
-    },
-    {
-      "path": "aura-ui/src/App.tsx.bak-20261015-021338",
-      "sha256": "1685b62babc0142dd98bd30a492e44eee20bf993c6f525f222e067bad8d30de2"
-    },
-    {
-      "path": "aura-ui/src/App.tsx.bak-reactor-20261015-021619",
-      "sha256": "1685b62babc0142dd98bd30a492e44eee20bf993c6f525f222e067bad8d30de2"
-    },
-    {
-      "path": "aura-ui/src/App.tsx.bak-whitespace-20261020-212836",
-      "sha256": "026a3cf6019ce245f86c4a377ea5a98530193fde7a2f5b8098789a1884ebfa96"
     },
     {
       "path": "aura-ui/src/assets/hero.png",
@@ -54,19 +46,15 @@
     },
     {
       "path": "aura-ui/src/assets/vite.svg",
-      "sha256": "2f1f6c6f90a0ef7422cbb4cfafcd8ad329c507a18afdc34cc21fa72179b9c54a"
+      "sha256": "5be21acd42eb7b896e517f4e0f0f11eb5c5d9e54fbbcebe9453f033008fcca6f"
     },
     {
       "path": "aura-ui/src/AuraJarvisBridge.tsx",
-      "sha256": "676c785663bb6e7d624d17f94d4d51f908a5037e03215a96702b3e7efe7b3871"
+      "sha256": "d188bea11b86a06b78bb505a2b505dfafd32ac5655e56b65afcb7b00629ecd4b"
     },
     {
       "path": "aura-ui/src/components/ApprovalPanel.tsx",
       "sha256": "3ed574e3509e34b938457a4b416cc9bbcbdb838b82497d2b826fa2ddf470f44f"
-    },
-    {
-      "path": "aura-ui/src/components/ApprovalPanel.tsx.bak-20261015-020432",
-      "sha256": "f4dbe9afa45896ec77b753b3078496085017bf0086652c451452a7d9c701e83a"
     },
     {
       "path": "aura-ui/src/components/ArcReactor3D.tsx",
@@ -138,15 +126,31 @@
     },
     {
       "path": "aura-ui/src/voice/useFullDuplexAura.ts",
-      "sha256": "46a39fe2bd562bab79bc8b52fa3a5033cb87fd519c81fe8bb1693baadb3c8da7"
+      "sha256": "80d2d70a00dd60f0a4ba8e52f32cee3abdb5b0c4783a97f83fbc0c916a5c13c2"
     },
     {
       "path": "core/pyproject.toml",
       "sha256": "e9659b037281acb116259ac9edd1c394ac318a3b32e5c2c6a4e91a1271abe567"
     },
     {
+      "path": "core/scripts/generate_final_lock.py",
+      "sha256": "8466de8085e752f2cf25c61c24de90de12c8d07c958fd52d659b9c47d73c6f44"
+    },
+    {
+      "path": "core/scripts/install_nirvana_voice_models.py",
+      "sha256": "8a01731501583846a3bc782bd8e69370f6a8778af2b4d428625dea413d2bf216"
+    },
+    {
+      "path": "core/scripts/kokoro_tts_mcp.py",
+      "sha256": "fad3a723f6e7560fb38d8609bf343a4f09138948a982be1e4cee68c234152abf"
+    },
+    {
+      "path": "core/scripts/verify_final_lock.py",
+      "sha256": "b4e278a5129ec3e7443dce27d60cbc9d7ddd6660a553f6db7358347b00cf4dee"
+    },
+    {
       "path": "core/src/aura_core/__init__.py",
-      "sha256": "41362a5ea4931c546433d4c48290c5707bf02dbbea1c3aafa9f43d1225e47003"
+      "sha256": "91447944015cec709e8aa7655f7e9d64e1e4508e7023a57fe3746911c0fc6fed"
     },
     {
       "path": "core/src/aura_core/__main__.py",
@@ -154,11 +158,11 @@
     },
     {
       "path": "core/src/aura_core/agent/__init__.py",
-      "sha256": "d7f7a4b8f2c99ba1c310d91384101b3436fe46919a16a64597206a0670f15a93"
+      "sha256": "cf28168aa1cc843a6c8e52cd422b984623ec0f22438f42757e789b95f92fd773"
     },
     {
       "path": "core/src/aura_core/agent/integration.py",
-      "sha256": "983cf9e89f03d4d62e9c78254ee8a2f586d572f04d448fa18e4799f43883e991"
+      "sha256": "160dd5f6a5eda27f89947a7939928105310c96eb9135694119792e4c9ae53915"
     },
     {
       "path": "core/src/aura_core/agent/runtime.py",
@@ -210,7 +214,7 @@
     },
     {
       "path": "core/src/aura_core/application/bootstrap.py",
-      "sha256": "30731e11df093deaccb675d1d72fa7b66ccca4ce5f0aa5427fefd337aa3aece0"
+      "sha256": "7a1f2792ab02d2b2f5cf7add57174080ea97331ee8b513e9a60269fcb1e44c4a"
     },
     {
       "path": "core/src/aura_core/application/capability_discovery.py",
@@ -219,10 +223,6 @@
     {
       "path": "core/src/aura_core/application/composition.py",
       "sha256": "370cb5e1b08a3c1b6f665fced30bc39e7846831e18ff1a04cc9b4113366e6e6d"
-    },
-    {
-      "path": "core/src/aura_core/application/composition.py.bak-provider-diagnostics-20261015-172335",
-      "sha256": "9fd548e60fb923faa4bfe3968ebaec4c28bd5038dc24143abe12945c10205b96"
     },
     {
       "path": "core/src/aura_core/application/context_aware_stt.py",
@@ -262,11 +262,11 @@
     },
     {
       "path": "core/src/aura_core/application/events.py",
-      "sha256": "6ab974d56b3e83b1d922e7f96bd8de3ef801c1d4c6d1c90a27a5f6ecd00a6129"
+      "sha256": "eba5bf5960efc85103a889119af13b0695ded659c015ce5d9bd7ccf3f0370929"
     },
     {
       "path": "core/src/aura_core/application/full_duplex_session.py",
-      "sha256": "a8dba68500752919a2fdb775ffb6e96938e0e7ef194401437a86aa539db23600"
+      "sha256": "67d0fd39a38b1649c5db8e64b8b79f29612e75e8706c20013ea147a0ffdb5239"
     },
     {
       "path": "core/src/aura_core/application/governed_autonomous_loop.py",
@@ -275,10 +275,6 @@
     {
       "path": "core/src/aura_core/application/health_api.py",
       "sha256": "ec0c505314953bc3a451137e859c4a4a9808e6e2ab34388b3310cd20cc3232e5"
-    },
-    {
-      "path": "core/src/aura_core/application/health_api.py.bak-health-20261015-152138",
-      "sha256": "acb83d5685558bea9d517d782f0bd0401c942ed90154169d878d9757b9d1db64"
     },
     {
       "path": "core/src/aura_core/application/hud_api.py",
@@ -342,7 +338,7 @@
     },
     {
       "path": "core/src/aura_core/application/readiness.py",
-      "sha256": "0ed44d8622eab4f31f249388fbaa38b139ed4080b9da3829bec964e9e473116e"
+      "sha256": "dab972caa5e8a667dad4b2c7728aea4530d95aae9600e948c6bace26db688d90"
     },
     {
       "path": "core/src/aura_core/application/reasoning_planner.py",
@@ -378,7 +374,7 @@
     },
     {
       "path": "core/src/aura_core/application/speech_api.py",
-      "sha256": "e10900bf6fc22306f8a4d87c0472e943e18a0f3ff5b1cc535b2c110a71839efd"
+      "sha256": "f410c50d8333389021facc6c46e1889af9e825ba4587866cecc4b245f6e241c3"
     },
     {
       "path": "core/src/aura_core/application/streaming_speech.py",
@@ -426,11 +422,11 @@
     },
     {
       "path": "core/src/aura_core/autonomous_daemon.py",
-      "sha256": "37b4f752bf3971a0ade97275ff37546e4c0844fd02ec4680ee33cb9165e74ef3"
+      "sha256": "bf3fc9099eba74e60db1909ca97a4e64525c8337b0d146bf2b8d40138aeeedef"
     },
     {
       "path": "core/src/aura_core/autonomous_runtime.py",
-      "sha256": "68340fe0c417b9bc7d43f503e0c8d8b892a88393f1e65f65d84171695da55876"
+      "sha256": "a13a79807c23052ac9e9784637099b55a18dd28b8dc12561079d21f31fad2f1c"
     },
     {
       "path": "core/src/aura_core/config/__init__.py",
@@ -438,19 +434,19 @@
     },
     {
       "path": "core/src/aura_core/config/backend.py",
-      "sha256": "c674ef460baa2881b0c05e2d9d0482671cfc59039a4bdd7f91ca593c08191c33"
+      "sha256": "c0e239e9a34bb1aa556e85b71722eaca2f0b6bf0aeb6037cfa4b8dd457fe5537"
     },
     {
       "path": "core/src/aura_core/config/kernel.py",
-      "sha256": "31ee93008efe54b79297a68c2de2097907960038c604e04802c8da56571a23f6"
+      "sha256": "1aaf9aa9353860388c1a7ab186968d0bd575e79e655110f320a93bc39d786f98"
     },
     {
       "path": "core/src/aura_core/config/logging.py",
-      "sha256": "b89b001eb656b993f15a68fb20da3a16b910acc2d30855c77265351629f50190"
+      "sha256": "6dee550b00ffe4db2cfba02973a489045a34a6eb4302d006018eeee20cf42cdc"
     },
     {
       "path": "core/src/aura_core/config/runtime.py",
-      "sha256": "15f521758018cf6d9efe1d6f36de99f4ccf2960b5d7bebbcfc53c236b44f5a0e"
+      "sha256": "c5b4ea52f4d63159e7aa1ac7ddff555a28b340680012f44444c261a1ffa90a67"
     },
     {
       "path": "core/src/aura_core/config/storage.py",
@@ -462,7 +458,7 @@
     },
     {
       "path": "core/src/aura_core/contracts/messages.py",
-      "sha256": "44b0970c20d2f962d9fbf6224c76cd17d59426e1628bd3b454ca6c110cccc120"
+      "sha256": "26328eec6a37fa0d8f4e3728f219a6398e93a341a5f78f26b51fa350516da006"
     },
     {
       "path": "core/src/aura_core/contracts/ui.py",
@@ -470,11 +466,11 @@
     },
     {
       "path": "core/src/aura_core/discovery/__init__.py",
-      "sha256": "b093b0550ad0e439047f3894bff78583cceb73011ba1b288e7df36cc214d0b1c"
+      "sha256": "4f6d9bf4302d60181fd019a53d0440ad6cce09e3df3750cb0979932ac849a08a"
     },
     {
       "path": "core/src/aura_core/discovery/service.py",
-      "sha256": "1675db1cc7a05ffe3c68a5e359e0fee1b587b0e4dafa18da7f46f83376dd4004"
+      "sha256": "34836d22ba8b0b20cd58e445d72d222b2245b4ef48869317ab89298a004c8c50"
     },
     {
       "path": "core/src/aura_core/enterprise/__init__.py",
@@ -522,7 +518,7 @@
     },
     {
       "path": "core/src/aura_core/kernel/__init__.py",
-      "sha256": "c549bdccd385122a4dde177d6bc4849a81af7982d1712050a83152956c6a3467"
+      "sha256": "b44297b7f62a15de717cac053fa242b3b669194099b944b2d2395d1b529bb4e8"
     },
     {
       "path": "core/src/aura_core/kernel/capabilities.py",
@@ -530,15 +526,15 @@
     },
     {
       "path": "core/src/aura_core/kernel/diagnostics.py",
-      "sha256": "0a7e6cbab6722c49393717acaa06213415febd1648a5752615c699ed2f256e20"
+      "sha256": "3567c4d96f42cf3001d327a739ff3275b230ffc7e625b97868346937ce27000e"
     },
     {
       "path": "core/src/aura_core/kernel/events.py",
-      "sha256": "990ea35748417c6106af7df8cb3fbb14ac5e7869226603fb60e3ec4cdbb683ec"
+      "sha256": "0af703d302e6219d9c4803753b45fd07bcc1008c4f4e39c458f1cc3bdda4c402"
     },
     {
       "path": "core/src/aura_core/kernel/health.py",
-      "sha256": "49d67bdfac6fba6bc167367ba1858fe4284a38d28e863619f86b896fc2d83a44"
+      "sha256": "b32ac3c4f9e57fa2040a7a343eca87f8a356a5ef8156590cfc11e3e3497a3464"
     },
     {
       "path": "core/src/aura_core/kernel/permissions.py",
@@ -550,127 +546,119 @@
     },
     {
       "path": "core/src/aura_core/kernel/services.py",
-      "sha256": "e15b3317f67914ddf05d52f2e31510b6e0631cd5b27369c9989a5c848c9442e5"
+      "sha256": "0bd68f5adbda4e3637689fc7c3d6520695ba62a7d875281ecce356902423e696"
     },
     {
       "path": "core/src/aura_core/knowledge/__init__.py",
-      "sha256": "46eefdd8e02887c3ce7021f55eda62052cc6096262fdf692dcc20192413ca64c"
+      "sha256": "a187e6599cfdd2609e2a76bcb829c5f997568f0a935a3da6baabe2b8623f91ac"
     },
     {
       "path": "core/src/aura_core/knowledge/bootstrap.py",
-      "sha256": "2b292151c8a9a97b5e0cf073f205caed50ed308a42489849fe9c6f45e0f29130"
+      "sha256": "b1975688a8413a2bb13a39f06b169f031c4cd2ec6a2145268fbc8e8ba66088c9"
     },
     {
       "path": "core/src/aura_core/knowledge/environment.py",
-      "sha256": "cd57856da8b20aab5f6cc5bc13da39c0145e1b9e4a767ffe3eb190c53f59f6e3"
+      "sha256": "22e30f280306f46feaa0aefb4fb35b8ad653c8da788ae2bf29d64d8166c5ca60"
     },
     {
       "path": "core/src/aura_core/knowledge/graph.py",
-      "sha256": "24966888a841a1e705fee3ff86454c7e7adafb7cb9fa0e92e3d827e9b41a6210"
+      "sha256": "3a76cc3d1fbced965ad5cf79c7c51c2a617dab63fee69faa51900f96391190fc"
     },
     {
       "path": "core/src/aura_core/knowledge/layout.py",
-      "sha256": "810c4b44721d937334eb6c167ef2f470e77260134ad2606babf01b4e3110bcd3"
+      "sha256": "774819a7823240f6b9778d8f3d818bbc70d6a2405508f20a658c45d65482e74f"
     },
     {
       "path": "core/src/aura_core/knowledge/models.py",
-      "sha256": "522ef290592dd0da969e54f34b3a143610588233bafa08803c0a57ee4cc19de4"
+      "sha256": "1ee8b8d54022ee0c8f45dbbb3ae618563da0368458d26dd8c03fc3e9c2ec4630"
     },
     {
       "path": "core/src/aura_core/knowledge/repository.py",
-      "sha256": "db85498ba2ac036fc1a984b57c60fa13268de403db406ddd776e7357608aec68"
+      "sha256": "439262806135132f7c74e4c7508b9c85cbc4e1ad6681b2d6b5b414c2b10df92a"
     },
     {
       "path": "core/src/aura_core/knowledge/service.py",
-      "sha256": "e88485896b5ef03043c1966220e733eda1a9276d10aa064368ac559c8c0479c0"
+      "sha256": "af63cb0829739e941c59f7abea12cd7cf38c053af6ac15351b9e5f234719d48a"
     },
     {
       "path": "core/src/aura_core/knowledge/store.py",
-      "sha256": "0f76416f6cc87e83a6e293d04db5e8b802734d00a184d02e5df0297dc2b6aea7"
+      "sha256": "f575b69e9e3120067bdd077a017e23337a563890afb55fbe2f05384a9a09e52c"
     },
     {
       "path": "core/src/aura_core/learning/__init__.py",
-      "sha256": "a58926445cbd29c89a71c657c17ebe7aabc63662945b4a109c62261488a1e161"
+      "sha256": "6fc7a0fedc34867cc37ef14c5ab47af60c90d26528f90b40049d04a0f8105c08"
     },
     {
       "path": "core/src/aura_core/learning/admission.py",
-      "sha256": "0b11c820229e3278a4229446b21c307b63f0e90f7b0975f88af5ae053214912f"
+      "sha256": "7d3eb99e23a2f6d40a6ed1ef3f0700b129d07db8001a987a044421b418731034"
     },
     {
       "path": "core/src/aura_core/learning/bootstrap.py",
-      "sha256": "1b69585c049317a88379c9d6351fb74050d8160161ecd9ffbf95225fceb41526"
+      "sha256": "95d650bce0966e6322ddc0e58ba66402d6897fe3da6debde1e4c75af9e023b46"
     },
     {
       "path": "core/src/aura_core/learning/contracts.py",
-      "sha256": "0c40da692cef5b14368eddd0b92836c04c81c4bca2a272a5404dbfa13a47d67c"
+      "sha256": "376b365d9d57a5f57047952ec6ddb560d6faa6e8102fccd79954736367711f6d"
     },
     {
       "path": "core/src/aura_core/learning/critic.py",
-      "sha256": "84e15879e1c26e17fb35b84adfa6e261772bbe61e14a2d2aab679866d3700a8f"
+      "sha256": "5ca890770af77d83922a36f8cf39476e56729b452365d267f7efb4af673f0adc"
     },
     {
       "path": "core/src/aura_core/learning/curriculum.py",
-      "sha256": "96d13c6c322ac17fdd5664dc83e32887e0fc40b6c3e2415e8bb5e2c454e0d9da"
+      "sha256": "d842e11768e029869b7219514df48c4af926ad920650ff2cbe7c2a41a335f11f"
     },
     {
       "path": "core/src/aura_core/learning/engine.py",
-      "sha256": "9efc62832a65a5358c6cf30175389379f072e93bd303f67fae6fffabfd9c8c1b"
+      "sha256": "1bd68a82a017f3f7af1c94246403eb5dc82e6bb4034a70492057e362c1fb4ba8"
     },
     {
       "path": "core/src/aura_core/learning/episodic.py",
-      "sha256": "c55e5b2be71243a21ee5a63211885352ecc2a24b560751934a29813fde10db78"
+      "sha256": "7012de29270b5739682c115a11b28dfc16977d666e201eff2172ef02d3890153"
     },
     {
       "path": "core/src/aura_core/learning/models.py",
-      "sha256": "69f784daefc18322bbdbb0ab9209ff78d87bc3143f672852c40fc6a35e2e26f6"
+      "sha256": "097dc92a8a119c5bd71ee6196b17ac91fe1b736f03789a58c84cb3449c44b7e8"
     },
     {
       "path": "core/src/aura_core/learning/planner.py",
-      "sha256": "7dce3c33d71f3306a3f2ffea6ca271078b9c083fc7ddc230e4cc45306f684a40"
+      "sha256": "c4d6d1169a3220e32eab558301b7e573484e9791670cd8fe39d727eb0b28f4a2"
     },
     {
       "path": "core/src/aura_core/learning/refiner.py",
-      "sha256": "17d92bc27a53a096a1b291df4c0de58558366328f4e6c9171a13e71397be66ce"
+      "sha256": "17b2d4b07013cb25fb66fcef5c053159a02a2fabbd72c717add722c189c631a0"
     },
     {
       "path": "core/src/aura_core/learning/reflection.py",
-      "sha256": "4767551a7d90944016ced8cf8015f25942a0c0fa201aa84869cb3039eb24b386"
+      "sha256": "f337d734f63655be894330cf1cdf6a255f36983c676c428512e2044402558d10"
     },
     {
       "path": "core/src/aura_core/learning/scheduler.py",
-      "sha256": "b64640b6b479c93f4d8419745cf79c4e2c293f7b65a53c7da0713d70657ebe0b"
+      "sha256": "6f13b17c88e506878c8f446d5f8846fb1ebb6d572edcac737ab8e494e0ec9143"
     },
     {
       "path": "core/src/aura_core/learning/self_improvement.py",
-      "sha256": "d94cf0317a7ee2da2d2772696c5d04f25fa4c4c011a4139bdee36c25c9beb4f0"
+      "sha256": "5ca43724b957a0121261c656311a121811974202ca0902391c17750daad28f1e"
     },
     {
       "path": "core/src/aura_core/learning/skill_library.py",
-      "sha256": "853b94ece7e9debb356d003fe54e17da24456637da23d40d1645288496231136"
+      "sha256": "35ee6a83df2b690b0d0e32622d83fe7a99ffd2070916c06e1a0439bd769ce6c9"
     },
     {
       "path": "core/src/aura_core/learning/skill_runtime.py",
-      "sha256": "6037b5744f8f81e1f08cc03e368ab427061cef19fc47ff7fed11f2599ab94b50"
+      "sha256": "8eb3495b04861303bc5295041163fdfe5c085c5cc1e17dc754b32f9fa7d1e5c1"
     },
     {
       "path": "core/src/aura_core/learning/skill_validation.py",
-      "sha256": "5781614ec2ef9668b5528cfb6131619971cf748f1d9976d33da424129eba59fa"
+      "sha256": "69f91269ccc60063617bcc4ead78194ae6697cd5d3fba3ae8797ebe7ad2ee6c2"
     },
     {
       "path": "core/src/aura_core/learning/tool_learning.py",
-      "sha256": "af43549eecc05fd135cf47dd20297f8356838cfb6eaea3eb03666d4f71036eb0"
+      "sha256": "d0ed36e568beb3604922a5f12e64163a714cb53f5473ce2a3af0ae696a1d1225"
     },
     {
       "path": "core/src/aura_core/main.py",
       "sha256": "a78f0a47873dab2e7d16bd6a607c0840953498e5e55c03d8265494e06e539478"
-    },
-    {
-      "path": "core/src/aura_core/main.py.bak-before-public-web-policy",
-      "sha256": "98a3987631be8aa2186a680db0380431b46768aa30ebc027eac674dea5053b30"
-    },
-    {
-      "path": "core/src/aura_core/main.py.bak-mcp-health-20261015-154918",
-      "sha256": "7c837910bde47271be383b69ff67b06b72ee040a38fe515a89b2d918ef2c401a"
     },
     {
       "path": "core/src/aura_core/mcp/__init__.py",
@@ -706,11 +694,11 @@
     },
     {
       "path": "core/src/aura_core/mcp/orchestration.py",
-      "sha256": "2ad2ffefe0da0b6ba40d99c8e3a80a84f64a2f5ad8d03ab043168fd769871daa"
+      "sha256": "1a7bbbfdf227d76f75b05e9de54d83e77bd897e5a6872aca030a2af8e8a9f11a"
     },
     {
       "path": "core/src/aura_core/mcp/provider.py",
-      "sha256": "10a2b1a744862d2af1dabe369f97a48627389f7324f9f3e07a6428d449388c07"
+      "sha256": "f2ff6b97e355a1ba0a068c3d5e7b3c9f9df138de92d8147abad937f483138ea1"
     },
     {
       "path": "core/src/aura_core/mcp/screen_control_provider.py",
@@ -722,11 +710,11 @@
     },
     {
       "path": "core/src/aura_core/mcp/tool_registry.py",
-      "sha256": "d2df105c61eb29f7f99f30b5486f67f5064ed06a4b923d363ff8dd3f08f88596"
+      "sha256": "44908521d3394960ca4a01eaaed04885c5245e9be4cf4a9555911f0bb599a642"
     },
     {
       "path": "core/src/aura_core/memory/__init__.py",
-      "sha256": "7490236998ed0592677fda958d04fb8947f839c786b045aec61c901754258d0a"
+      "sha256": "2b10b73ac3d51e590b8c8014b166405c194071592bf6d1cdf1e08d5dd178e8e4"
     },
     {
       "path": "core/src/aura_core/memory/chat_memory.py",
@@ -734,7 +722,7 @@
     },
     {
       "path": "core/src/aura_core/memory/embeddings.py",
-      "sha256": "ba960b63bd65247fd1de9d7a5c5163a4390c1bfd1e6a2a5f0c7352a327a3925c"
+      "sha256": "82dc93cba5af57c0fd461e9e5a3c04dc94032bb8dcf722e7c584ca53698cf619"
     },
     {
       "path": "core/src/aura_core/memory/graph_store.py",
@@ -754,7 +742,7 @@
     },
     {
       "path": "core/src/aura_core/memory/models.py",
-      "sha256": "3a38b55ef0e9c5431a28cf1efbf98c2ae0fdebc06dd377fa6843cf93a1fb1759"
+      "sha256": "42fd3eb99e59a4504c8a1af95190867a8461e73b1ac79225f72f9d512c385dfe"
     },
     {
       "path": "core/src/aura_core/memory/postgresql_hierarchical_memory.py",
@@ -762,11 +750,11 @@
     },
     {
       "path": "core/src/aura_core/memory/semantic_store.py",
-      "sha256": "8ec445abc3f99dcd8caad803b245154cf7e1b1d258fe59b644b2f79a79be346e"
+      "sha256": "1f0c5760ba06c2e1babc23527571101fa0862e49c5664573416357f91c5d8673"
     },
     {
       "path": "core/src/aura_core/memory/store.py",
-      "sha256": "4b81dfc32766a559ef2b970f7ce1fe0924dbdd48f8582d1f7e6a3f339e65fca3"
+      "sha256": "bfcda4c570dfa1398c0a82cfb0f2722236047c868b0d26cf39f773a847ce3843"
     },
     {
       "path": "core/src/aura_core/memory/tiered_memory_mcp.py",
@@ -774,7 +762,7 @@
     },
     {
       "path": "core/src/aura_core/models/__init__.py",
-      "sha256": "b09d58bdc22bfe72dc890698d83092dce0493ebe062c9073c49d242e9e75cb3e"
+      "sha256": "86fd00fc26c87adf696352e1cb602028c7e4847f91a3c3c1d553c820b133a231"
     },
     {
       "path": "core/src/aura_core/models/multi_router.py",
@@ -782,7 +770,7 @@
     },
     {
       "path": "core/src/aura_core/models/ollama.py",
-      "sha256": "6f5f44794822600334007268b63cd236e3f036314ac640ee80d20015a9ea3db5"
+      "sha256": "a5223c329cab0fee2688ca49041a015b177092f3b05f31312ac0adcf33d0eeea"
     },
     {
       "path": "core/src/aura_core/models/openai_compatible.py",
@@ -790,7 +778,7 @@
     },
     {
       "path": "core/src/aura_core/models/routing.py",
-      "sha256": "80b15f97ebca7b144d55a277a853de210a03414934fe0f100ab9fff07857d1c2"
+      "sha256": "1593a7f9087a0b120039ccea0afbccd7fe77eabdf17df6f3e476169887214736"
     },
     {
       "path": "core/src/aura_core/models/setup_llm.py",
@@ -798,19 +786,19 @@
     },
     {
       "path": "core/src/aura_core/observability/__init__.py",
-      "sha256": "a7aec4435614879af21b1a472d87e045d1153337bc9470d346cc0ee30f9828e5"
+      "sha256": "ea2e19eb51194dc18864b9cc3f05d079dc8844a682ca81019f0b0fc440d5696d"
     },
     {
       "path": "core/src/aura_core/observability/audit.py",
-      "sha256": "4842cf43e173c268023f0dabb1a12b1c442f9642adba6d901309c91bc5c5177b"
+      "sha256": "f52a3186faac62ba6f45bb6e17c3b1295723fcd24640b5a62cad9c9ff8921d9e"
     },
     {
       "path": "core/src/aura_core/observability/logging.py",
-      "sha256": "f12ea1cf5358c9f7d4447448a5989731fc78e545711d95eb5b5eb4ed128698bd"
+      "sha256": "62253439abbe0ebd516d22234aab93e025783492cdd93e0b27ac1e360d24f979"
     },
     {
       "path": "core/src/aura_core/observability/metrics.py",
-      "sha256": "f36482176f0b369b0fa377433c9634b565eb91f180657ab0db6010fbc7c5fa3c"
+      "sha256": "b186630a9483efcf955ffd3173363ddc26bde3a56bd3dee15a608270296e5966"
     },
     {
       "path": "core/src/aura_core/observability/pipeline_trace.py",
@@ -818,7 +806,7 @@
     },
     {
       "path": "core/src/aura_core/persistence/__init__.py",
-      "sha256": "6f7558b13400989123c52762d300151658edb8d6284f23b995d24f9bf30a10e8"
+      "sha256": "b39a6a6501945d7017c12c2eec3880c88c1787f21bdf086e49929c911031d932"
     },
     {
       "path": "core/src/aura_core/persistence/postgres.py",
@@ -842,15 +830,15 @@
     },
     {
       "path": "core/src/aura_core/plugins/__init__.py",
-      "sha256": "9a28acaa8dda84d27fa9f8b42cd3e813492f35eb72bab7067cef73af82d89b63"
+      "sha256": "5cce6bfbf8a8a4f84d7762fbb0872b28260223d010c78f04b149631c588cfcb1"
     },
     {
       "path": "core/src/aura_core/plugins/registry.py",
-      "sha256": "359618d75881330e17462a27c28361b168f312233d6788cbcee13621189785f6"
+      "sha256": "7b0865b366b102efaafde387e43c198cfc175bed29c7ebf1910cd0533fd8e6c0"
     },
     {
       "path": "core/src/aura_core/providers/__init__.py",
-      "sha256": "8ae7214c779c106df3b201b9e52cda28ce643f5f5e19b08e11748280fd728256"
+      "sha256": "2d45af3d2c6f8a5f8b366ff65acaf068e6407952da6251dc09f872460bbbd373"
     },
     {
       "path": "core/src/aura_core/providers/catalog.py",
@@ -858,7 +846,7 @@
     },
     {
       "path": "core/src/aura_core/providers/contracts.py",
-      "sha256": "5a89f3534a4cccc0402fc6828fce245c986678c5bf5b4b3e47b63a4c66f0c656"
+      "sha256": "f86614f5701c138e350570b10d2d5c7fe1045a09bd8e857ae8743b187c3bc865"
     },
     {
       "path": "core/src/aura_core/providers/local_vision.py",
@@ -866,11 +854,11 @@
     },
     {
       "path": "core/src/aura_core/release/manifest.py",
-      "sha256": "e13b33fa10a788391f12b33aadec7b55b0593a9b5899b787404e703ddd3af11d"
+      "sha256": "5fc41b2ffe1312fd8b03b6c4a41bea1b8b35d27d11eb8ebe0b15d58b3248a1ba"
     },
     {
       "path": "core/src/aura_core/research/__init__.py",
-      "sha256": "658095c282e7c7ae87250e332f8ee0e65c2e192e28d1031b378207e314d7a737"
+      "sha256": "6039fd945f1b37727336c7bb8b6aadcf9cca2e45503b3839ecdf97c7de3ecbf1"
     },
     {
       "path": "core/src/aura_core/research/config.py",
@@ -878,15 +866,11 @@
     },
     {
       "path": "core/src/aura_core/research/mcp_source.py",
-      "sha256": "d974463d2e183177f1dfbc6de6de10735e901336e51ab1f220696fde000cbe43"
+      "sha256": "131fb5fdaf97a866b235714bee83667b053bfc1ea0590e51b73fbcf7be33022b"
     },
     {
       "path": "core/src/aura_core/research/provider_bootstrap.py",
       "sha256": "b29ec4ce38cec4f0231d324915d9116071334b63a9968467aa57902d7bc3577e"
-    },
-    {
-      "path": "core/src/aura_core/research/provider_bootstrap.py.bak-env-20261019-191416",
-      "sha256": "e7f72662f5e07b97103fb9426d5a5be468e483f2f7d50e98c20dc4cd33fdffc7"
     },
     {
       "path": "core/src/aura_core/runtime/__init__.py",
@@ -897,28 +881,24 @@
       "sha256": "08949e0c14e385415d930bee775342048883fd88886d0729344ad540d6f4e358"
     },
     {
-      "path": "core/src/aura_core/runtime/adapter.py.bak-20261015-000549",
-      "sha256": "c8eeaaf233b2f12d3d42a2fec84de0df3222719a764814be819355ab5185e157"
-    },
-    {
       "path": "core/src/aura_core/runtime/backend.py",
-      "sha256": "b3dd5cd123cbd0b9e1475853939b937b437888a30ec6b9f6cab41d5be21a38ac"
+      "sha256": "52dd72e0b050b0bf492ac6a4a69ec33e5f06740cebb340196311fb80b6b5bea0"
     },
     {
       "path": "core/src/aura_core/runtime/errors.py",
-      "sha256": "1e2ba162d59fbb573354e86fa2c9c571273b72ce6102e1b2c153e648b32e57d6"
+      "sha256": "6155f0565ffe490f4efe59961f1981267d60fe7f4051b4bb88e98678b7af7de0"
     },
     {
       "path": "core/src/aura_core/runtime/factory.py",
-      "sha256": "fb4ff5447a4eebe5f201ec3acdc6ac4786ac7820a2a2cc5bb03c8017907e84da"
+      "sha256": "a6d9ce74c609a8dc0b423685d50520a3b9b62c312cf6849cc9affd331e44d2ea"
     },
     {
       "path": "core/src/aura_core/runtime/mock.py",
-      "sha256": "da3e886e0e69a42de4da189444ad2049426fc78743290afc281611fa67048972"
+      "sha256": "aa0d52fd04b3cb1190dd3e76b402fd7589363d6c7f938330c343640400f1e760"
     },
     {
       "path": "core/src/aura_core/runtime/mock_transport.py",
-      "sha256": "3da0760fd853458a61b2166588d632c21c97fc29503658675abfb5737c4acffc"
+      "sha256": "3da4e35fb03a1f490668293bba9743f3e9f6522fb6e86065aacee7c2b9ce38c9"
     },
     {
       "path": "core/src/aura_core/runtime/ollama.py",
@@ -926,7 +906,7 @@
     },
     {
       "path": "core/src/aura_core/runtime/protocol.py",
-      "sha256": "2d80144fa36ade4342b9b9d17802b7ee82166895b55cf482a05a71e4f1b2953f"
+      "sha256": "9d85adc20668b6ad3d86fa09e4240d131d6b6a034d98e056aba004ff7fddff49"
     },
     {
       "path": "core/src/aura_core/runtime/transport.py",
@@ -934,11 +914,11 @@
     },
     {
       "path": "core/src/aura_core/security/__init__.py",
-      "sha256": "8b11ca3da6a6c77ad4385ee5e46cc0bd46bb788bd76ad0a7c45fe8338af294ed"
+      "sha256": "3c23fa4f320075190750ff048180ca453ec9086eb35ba64119c0819d7d0fca95"
     },
     {
       "path": "core/src/aura_core/security/auth.py",
-      "sha256": "e8bba59cdeb6a9f6ca3837dbf4a4524bc5e1bedf7b47e2010f48d6de03c9e906"
+      "sha256": "d0fd842a6b59b99d938375d5722539fe0dd62c233f70e183e6b2f5f175226632"
     },
     {
       "path": "core/src/aura_core/security/http_auth.py",
@@ -946,7 +926,7 @@
     },
     {
       "path": "core/src/aura_core/security/limits.py",
-      "sha256": "e7d21aefb280ffb0590e16f4e38e79f2274038639a731020432749240de11c30"
+      "sha256": "25580fb7909a4e253ba3fbc4f4af80ad9ef3b7f95d63abb790200a87a7290a12"
     },
     {
       "path": "core/src/aura_core/security/local_only.py",
@@ -981,10 +961,6 @@
       "sha256": "9b18e3826863c58ada13623e7b8b22f5966d16f6dfda30b16dd9d8b01c0a686e"
     },
     {
-      "path": "core/src/aura_core/tts/provider_bootstrap.py.bak-env-20261019-191416",
-      "sha256": "0329b31a84db1e7ed40e149d8d506cd88ea53e60000813f65ad1d44547dc0ec8"
-    },
-    {
       "path": "core/src/aura_core/tts/text.py",
       "sha256": "810181da3cf0be2004b91028b218a310e43c34535cdf93f38f268adf04ca6f90"
     },
@@ -998,7 +974,7 @@
     },
     {
       "path": "core/src/aura_core/voice/sherpa_onnx.py",
-      "sha256": "2fa05e7128c9e37f07cb20f14949ecb7e1d1e53d590bdec20cc033a6ff0e5d3b"
+      "sha256": "f31a33e4f9923ff6e4e5c4d1565cf550efec3e5142401fe30135f305a1c7742c"
     },
     {
       "path": "core/uv.lock",

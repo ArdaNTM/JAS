@@ -69,6 +69,15 @@ export default function AuraJarvisBridge({
     let pending = "";
     let playlist = Promise.resolve();
     let everQueued = false;
+    const bargeIn = () => {
+      window.removeEventListener("aura:voice-barge-in", bargeIn);
+      cancelled = true;
+      abort.abort();
+      player?.pause();
+      if (player) { player.src = ""; player = null; }
+      // Every queued promise checks cancelled before synthesizing.
+    };
+    window.addEventListener("aura:voice-barge-in", bargeIn);
 
     const playChunk = async (speech: string): Promise<void> => {
       if (cancelled || !speech) return;
