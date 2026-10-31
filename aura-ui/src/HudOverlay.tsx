@@ -1,180 +1,187 @@
-import { useEffect, useState } from "react";
-import "./hud.css";
+import { useEffect, useRef, useState } from "react";
 import { useAuraVoice } from "./voice/useAuraVoice";
+import { useContinuousAuraVoice } from "./voice/useContinuousAuraVoice";
+import "./hud.css";
 
-type HudEvent = {
-  event?: string;
-  data?: Record<string, unknown>;
+type HudEvent = { event?: string; data?: Record<string, unknown> };
+type Region = {
+  label: string; x: number; y: number; width: number; height: number;
+  verified: false; source: "model_estimate";
 };
-
+type Panel = { id: string; title: string; kind: string; x: number; y: number; copy: string };
 type HUDDesktop = {
   hudSetInteractive?: (enabled: boolean) => Promise<boolean>;
   onHudInteractive?: (listener: (value: boolean) => void) => () => void;
 };
 declare global {
   interface Window { auraDesktop?: HUDDesktop & {
-    minimize?: () => Promise<void>; maximize?: () => Promise<void>;
-    close?: () => Promise<void>;
+    minimize?: () => Promise<void>; maximize?: () => Promise<void>; close?: () => Promise<void>;
   }; }
 }
-
+const slots = [[0.07, 0.19], [0.70, 0.13], [0.38, 0.52], [0.07, 0.60], [0.67, 0.61], [0.38, 0.14]];
+const nextId = () => crypto.randomUUID();
+const bounded = (value: number, low: number, high: number) =>
+  Math.max(low, Math.min(high, value));
 async function postHUD<T>(path: string, body: unknown): Promise<T> {
   const response = await fetch(path, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "same-origin",
-    body: JSON.stringify(body),
+    method: "POST", headers: { "Content-Type": "application/json" },
+    credentials: "same-origin", body: JSON.stringify(body),
   });
   if (!response.ok) {
-    throw new Error(
-      response.status === 403 ? "Yetki reddedildi / Windows onayı verilmedi." :
-      response.status === 503 ? "ScreenRead kapalı: model veya ApprovalStore yapılandırmasını kontrol edin." :
-      `ScreenRead HTTP ${response.status}`,
-    );
+    const payload = await response.json().catch(() => ({})) as { detail?: string | { code?: string } };
+    const code = typeof payload.detail === "object" ? payload.detail.code : payload.detail;
+    throw new Error(response.status === 403 ? "Windows onayı reddedildi veya yetki yok." :
+      response.status === 503 ? "ScreenRead devre dışı veya ApprovalStore kullanılamıyor." :
+      "ScreenRead HTTP " + response.status + (code ? " — " + code : ""));
   }
   return response.json() as Promise<T>;
 }
 
 export default function HudOverlay() {
   const [interactive, setInteractive] = useState(false);
-  const [title, setTitle] = useState("AURA / HUD STANDBY");
-  const [kind, setKind] = useState("object");
-  const [question, setQuestion] = useState("Ekranda ne görüyorsun?");
-  const [description, setDescription] = useState("");
+  const [connected, setConnected] = useState(false);
+  const [panels, setPanels] = useState<Panel[]>([]);
+  const [regions, setRegions] = useState<Region[]>([]);
+  const [question, setQuestion] = useState("Ekranda hangi nesneler var?");
+  const [topic, setTopic] = useState("Porsche 911");
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState("");
-  const [connected, setConnected] = useState(false);
-  const voice = useAuraVoice((transcript) => {
-    const text = transcript.trim().slice(0, 100);
-    if (!text) return;
-    setTitle(text);
-    // Only presentation, never a tool or a screen capture.
-    if (/göster/i.test(text)) {
-      void postHUD("/api/hud/panel", { title: text, kind: "object" })
-        .catch(() => setError("HUD paneli yayınlanamadı."));
-    } else {
-      setQuestion(transcript.slice(0, 400));
-    }
-  });
+  const drag = useRef<{ id: string; x: number; y: number; px: number; py: number } | null>(null);
 
+  const addPanel = (title: string, kind = "object", copy = "", at?: [number, number]) => {
+    setPanels(previous => {
+      const slot = slots[previous.length % slots.length];
+      const [x, y] = at ?? slot;
+      return [...previous, {
+        id: nextId(), title: title.slice(0, 100), kind,
+        x: bounded(x, 0.015, 0.78), y: bounded(y, 0.04, 0.77), copy: copy.slice(0, 4000),
+      }].slice(-9);
+    });
+  };
+  const publishObject = (title: string) =>
+    postHUD<{ status: string }>("/api/hud/panel", { title: title.slice(0, 100), kind: "object" })
+      .catch(e => setError(e instanceof Error ? e.message : "Panel gösterilemedi."));
+
+  const onTranscript = (transcript: string, requireWakeWord: boolean) => {
+    let command = transcript.trim();
+    if (requireWakeWord) {
+      const match = /(?:^|\s)aura[\s,:;.!?-]*(.*)$/i.exec(command);
+      if (!match) return;
+      command = match[1].trim();
+    }
+    if (!command) return;
+    if (/göster|show/i.test(command)) {
+      setTopic(command.slice(0, 100));
+      void publishObject(command);
+    } else {
+      // No voice command is authorized to read the screen.
+      setQuestion(command.slice(0, 400));
+      setError("Soru hazır. ScreenRead için düğmeye basıp Windows onayı verin.");
+    }
+  };
+  const voice = useAuraVoice(text => onTranscript(text, false));
+  const wake = useContinuousAuraVoice(text => onTranscript(text, true));
 
   useEffect(() => {
-    const unsub = window.auraDesktop?.onHudInteractive?.(setInteractive);
+    const unsubscribe = window.auraDesktop?.onHudInteractive?.(setInteractive);
     const source = new EventSource("/api/events/stream", { withCredentials: true });
     source.onopen = () => setConnected(true);
     source.onerror = () => setConnected(false);
-    source.onmessage = (message) => {
+    source.onmessage = message => {
       try {
-        const item = JSON.parse(message.data) as HudEvent;
-        if (item.event === "HUDPanelShown") {
-          const label = item.data?.title;
-          const type = item.data?.kind;
-          if (typeof label === "string") setTitle(label.slice(0, 100));
-          if (typeof type === "string") setKind(type);
-          setDescription("");
+        const event = JSON.parse(message.data) as HudEvent;
+        if (event.event === "HUDPanelShown" && typeof event.data?.title === "string") {
+          addPanel(event.data.title, typeof event.data.kind === "string" ? event.data.kind : "object");
         }
-        if (item.event === "HUDVisionScanStarted") setScanning(true);
-        if (item.event === "HUDVisionScanEnded") setScanning(false);
-      } catch {
-        // Reject malformed event data without accepting commands from it.
-      }
+        if (event.event === "HUDVisionScanStarted") setScanning(true);
+        if (event.event === "HUDVisionScanEnded") setScanning(false);
+      } catch { /* Discard malformed, untrusted event data. */ }
     };
-    return () => { source.close(); unsub?.(); };
+    return () => { source.close(); unsubscribe?.(); };
   }, []);
 
   const readScreen = async () => {
-    setError("");
-    setDescription("");
-    setScanning(true);
+    setError(""); setRegions([]); setScanning(true);
     try {
-      const result = await postHUD<{ description: string; bounding_boxes_verified: boolean }>(
-        "/api/hud/screen/read",
-        { prompt: question, confirmed: true },
-      );
-      setTitle("SCREENREAD / LOCAL VLM");
-      setKind("vision");
-      setDescription(result.description.slice(0, 4000));
-    } catch (exception) {
-      setError(exception instanceof Error ? exception.message : "Ekran okunamadı.");
-    } finally {
-      setScanning(false);
-    }
+      const result = await postHUD<{
+        description: string; bounding_boxes_verified: false; regions?: Region[];
+      }>("/api/hud/screen/read", { prompt: question, confirmed: true });
+      const detected = Array.isArray(result.regions) ? result.regions.filter(region =>
+        region && region.source === "model_estimate" &&
+        [region.x, region.y, region.width, region.height].every(n =>
+          typeof n === "number" && Number.isFinite(n) && n >= 0 && n <= 1)
+        && region.x + region.width <= 1.001 && region.y + region.height <= 1.001
+      ).slice(0, 6) : [];
+      setRegions(detected);
+      if (detected.length) {
+        detected.forEach(region => addPanel(region.label, "vision / estimated",
+          result.description, [region.x + region.width + 0.025, region.y]));
+      } else {
+        addPanel("SCREENREAD / LOCAL VLM", "vision", result.description);
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Ekran okunamadı.");
+    } finally { setScanning(false); }
   };
 
-  const displayObject = async () => {
-    setError("");
-    try {
-      await postHUD("/api/hud/panel", { title: title.trim() || "AURA", kind: "object" });
-    } catch (exception) {
-      setError(exception instanceof Error ? exception.message : "Panel açılamadı.");
-    }
+  const startDrag = (event: React.PointerEvent<HTMLElement>, panel: Panel) => {
+    if (!interactive) return;
+    drag.current = { id: panel.id, x: panel.x, y: panel.y, px: event.clientX, py: event.clientY };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+  const moveDrag = (event: React.PointerEvent<HTMLElement>) => {
+    if (!interactive || !drag.current) return;
+    const d = drag.current;
+    const dx = (event.clientX - d.px) / window.innerWidth;
+    const dy = (event.clientY - d.py) / window.innerHeight;
+    setPanels(previous => previous.map(panel => panel.id === d.id ?
+      { ...panel, x: bounded(d.x + dx, 0, 0.78), y: bounded(d.y + dy, 0, 0.77) } : panel));
   };
 
-  return (
-    <div className={"hud-root" + (scanning ? " is-scanning" : "")}>
-      <section className="hud-panel" aria-label="AURA global head up display">
-        <header className="hud-top">
-          <span className="hud-brand">A.U.R.A. <small>GLOBAL DISPLAY</small></span>
-          <span className={"hud-status" + (connected ? " online" : "")}>
-            {connected ? "● CORE LINK" : "○ CORE OFFLINE"}
-          </span>
-        </header>
-
-        <div className="hud-visual">
-          <div className="hud-reticle" aria-hidden="true">
-            <span className="ring ring-a" /><span className="ring ring-b" />
-            <span className="cross cross-h" /><span className="cross cross-v" />
-            <div className="hud-schematic">
-              <svg viewBox="0 0 260 106" role="img" aria-label="Temsili araç hologramı">
-                <path d="M18 77 L37 63 L65 54 L82 29 Q111 15 164 23 L192 53 L226 60 L245 78 L241 89 L22 89Z" />
-                <path d="M79 54 L94 32 Q120 26 161 32 L180 55 Z M27 71 L67 72 M190 72 L240 72" />
-                <circle cx="66" cy="89" r="15" /><circle cx="196" cy="89" r="15" />
-                <path d="M88 59 L178 59 M110 23 L110 54 M41 66 L49 78 M220 67 L213 78" />
-              </svg>
-            </div>
-            <div className="hud-focus one" /><div className="hud-focus two" />
-          </div>
-          {scanning && <div className="hud-scanline" aria-label="Ekran analizi sürüyor" />}
-          <div className="hud-telemetry">
-            <span>OBJECT / {kind.toUpperCase()}</span>
-            <span>{scanning ? "ANALYZING..." : "DISPLAY ACTIVE"}</span>
-          </div>
-        </div>
-
-        <div className="hud-body">
-          <div className="hud-title">{title}</div>
-          <div className="hud-copy">
-            {description || "Şematik görüntü temsildir; gerçek fotoğraf veya doğrulanmış CAD modeli değildir."}
-          </div>
-          {error && <div className="hud-error" role="alert">{error}</div>}
-        </div>
-
-        {interactive && (
-          <div className="hud-controls">
-            <label>HUD İÇERİĞİ
-              <input value={title} maxLength={100} onChange={e => setTitle(e.target.value)} />
-            </label>
-            <button onClick={() => void displayObject()}>GÖSTER</button>
-            <label>EKRAN SORUSU
-              <input value={question} maxLength={400} onChange={e => setQuestion(e.target.value)} />
-            </label>
-            <button onClick={() => voice.state === "recording" ? voice.stop() : voice.start()}>
-              {voice.state === "recording" ? "KAYDI DURDUR" : "BAS-KONUŞ"}
-            </button>
-            <button disabled={scanning} onClick={() => void readScreen()}>
-              {scanning ? "TARANIYOR" : "EKRANI ONAYLA + OKU"}
-            </button>
-            <button className="hud-close" onClick={() => void window.auraDesktop?.hudSetInteractive?.(false)}>
-              GİZLE KONTROLLERİ
-            </button>
-          </div>
-        )}
-
-        <footer className="hud-footer">
-          <span>LOCAL ONLY / PERMISSION-GOVERNED</span>
-          <span>{interactive ? "INTERACTIVE" : "CTRL+ALT+H → CONTROLS"}</span>
-        </footer>
-      </section>
+  return <div className={"hud-root hud-canvas" + (scanning ? " is-scanning" : "")}>
+    <div className="hud-identity" aria-label="AURA spatial display">
+      <b>A.U.R.A.</b><small>SPATIAL INTERFACE / {connected ? "CORE LINK" : "OFFLINE"}</small>
     </div>
-  );
+    <div className="hud-orbit" aria-hidden="true"><i /><i /><i /></div>
+    {scanning && <div className="hud-sweep" aria-label="Ekran analizi sürüyor" />}
+    {regions.map((region, index) => <div key={index} className="hud-region"
+      style={{ left: (region.x * 100) + "%", top: (region.y * 100) + "%",
+        width: (region.width * 100) + "%", height: (region.height * 100) + "%" }}
+      aria-label={region.label + " (model estimate)"}>
+      <span className="hud-region-tag">{region.label} / MODEL TAHMİNİ</span>
+      <div className="hud-region-reticle" />
+    </div>)}
+    {panels.map(panel => <article key={panel.id} className="hud-float"
+      style={{ left: (panel.x * 100) + "%", top: (panel.y * 100) + "%" }}>
+      <header onPointerDown={event => startDrag(event, panel)}
+        onPointerMove={moveDrag} onPointerUp={() => { drag.current = null; }}
+        className={interactive ? "can-drag" : ""}>
+        <span>✧ {panel.kind.toUpperCase()}</span>
+        {interactive && <button aria-label={"Kapat " + panel.title} onPointerDown={e => e.stopPropagation()}
+          onClick={() => setPanels(previous => previous.filter(item => item.id !== panel.id))}>×</button>}
+      </header>
+      <div className="hud-float-title">{panel.title}</div>
+      {panel.copy ? <p>{panel.copy}</p> : <div className="hud-bars"><span /><span /><span /></div>}
+      <footer>{panel.kind.startsWith("vision") ? "VLM ESTIMATE / NOT VERIFIED" : "PRESENTATION ONLY"}</footer>
+    </article>)}
+    <div className="hud-hint">CTRL + ALT + H · {interactive ? "CONTROLS ACTIVE" : "CLICK THROUGH"}</div>
+    {interactive && <section className="hud-command" aria-label="AURA HUD controls">
+      <header><strong>AURA / CONTROL DECK</strong><button onClick={() =>
+        void window.auraDesktop?.hudSetInteractive?.(false)}>CLOSE</button></header>
+      <label>HOLOGRAM <input maxLength={100} value={topic} onChange={e => setTopic(e.target.value)} /></label>
+      <button onClick={() => void publishObject(topic.trim() || "AURA")}>YENİ HOLOGRAM</button>
+      <label>SCREENREAD QUESTION <input maxLength={400} value={question}
+        onChange={e => setQuestion(e.target.value)} /></label>
+      <button disabled={scanning} onClick={() => void readScreen()}>
+        {scanning ? "SCANNING..." : "EKRANI ONAYLA + OKU"}</button>
+      <button onClick={() => voice.state === "recording" ? voice.stop() : voice.start()}>
+        {voice.state === "recording" ? "KAYDI DURDUR" : "BAS-KONUŞ"}</button>
+      <button aria-pressed={wake.active} onClick={() => wake.active ? wake.stop() : void wake.start()}>
+        {wake.active ? "AURA DİNLEMEYİ KAPAT" : "AURA SESLE UYANDIR / OPT-IN"}</button>
+      <small>{wake.active ? "MIC ON · YEREL STT · AURA KELİMESİ BEKLENİYOR" :
+        "MIC OFF · Ses etkinleştirme isteğe bağlıdır."}</small>
+      <small>Sesle ScreenRead başlatılmaz. Her ekran görüntüsü için Windows onayı gerekir.</small>
+      {error && <div role="alert" className="hud-error">{error}</div>}
+    </section>}
+  </div>;
 }

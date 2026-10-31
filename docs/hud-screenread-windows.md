@@ -38,8 +38,9 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\enable-aura-hu
 The installer adds an uncommitted base64 ApprovalStore fingerprint key if
 missing, never prints it, and does not overwrite an existing key. Existing
 PostgreSQL, MinIO, Ollama and speech settings remain unchanged. The vision
-capture adapter requires Pillow's `PIL.ImageGrab` on an interactive Windows
-desktop; ensure Pillow is available in the Core Python environment. Vision
+capture adapter prefers Pillow's `PIL.ImageGrab` where available. On interactive Windows
+without Pillow, it uses a bounded, in-memory PowerShell/.NET screenshot
+fallback; neither path persists captured frames. Vision
 uses the loopback Ollama endpoint and local `qwen2.5vl:3b` model; remote
 endpoints are forbidden. No model download happens without explicit operator
 request. HUD remains useful even with ScreenRead disabled.
@@ -88,3 +89,44 @@ those checks on the target Windows machine.
 
 Documentation: <https://www.electronjs.org/docs/latest/api/browser-window>
 and <https://ollama.com/library/qwen2.5vl>.
+
+## Spatial HUD v2: runtime limits and safety
+
+The HUD now spans the **primary Windows work area** with independent, bounded
+hologram cards. A show request is a presentation event, not autonomous tool
+execution. Up to nine cards may coexist; Ctrl+Alt+H enables dragging and
+dismissal. When interaction is disabled, the overlay remains click-through.
+
+ScreenRead (still one Windows-approved screenshot via MCP Gateway) requests
+structured model-estimated normalized regions from Qwen2.5-VL. These are
+**not verified detections**. Invalid/out-of-range boxes are discarded; the
+ordinary text description remains available. Source imagery is never sent to
+the renderer and object labels remain untrusted data. The overlay is aligned
+to the primary display, not to other monitors or arbitrary 3D physical space.
+
+The HUD control deck provides an optional continuous microphone mode. The
+existing locally hosted faster-whisper STT receives voiced chunks while this
+mode is enabled and recognizes the word "AURA" in the transcript. This is a
+**transcript wake phrase**, not a dedicated offline keyword model: only
+transcripts containing AURA trigger presentation commands. It must be opted
+into every session and can be switched off to release the microphone. Neither
+wake mode nor voice input can consent to ScreenRead or ScreenControl.
+
+### ScreenRead 502 diagnosis
+
+A 502 indicates an exception *after* one-time approval was consumed. New
+responses include a non-sensitive `detail.code`, for example
+`CAPTURE_DEPENDENCY_MISSING` (Pillow), `VISION_TIMEOUT` (local model warm-up),
+`VISION_ENDPOINT_FAILURE`, or `SCREENREAD_PROVIDER_FAILURE`. No screenshot,
+prompt, or raw VLM response is logged. Check `logs/aura-core.stderr.log`
+and the diagnostic code; the actual cause requires a Windows repro.
+
+If the error is `CAPTURE_DEPENDENCY_MISSING`, install Pillow into the exact
+Python 3.13 environment reported by the AURA supervisor, for example
+`core\.venv\Scripts\python.exe -m pip install Pillow`. Do not silently
+download Python dependencies during startup. For slow local VLM warm-up,
+`AURA_VISION_TIMEOUT_SECONDS` now defaults to 150 (allowed 1..180).
+
+Reference principles: Microsoft Mixed Reality billboarding/tag-along and the
+2026 Daniel Stallworth article "Iron Man Jarvis Capabilities" (capability
+awareness and context-sensitive display, not screen-capture bypass).

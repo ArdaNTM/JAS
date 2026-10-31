@@ -24,3 +24,13 @@ assert.match(start, /AURA_HUD_ENABLED/);
 assert.match(start, /AURA_HUD_MODE/);
 assert.match(start, /taskkill\.exe\s+\/F\s+\/T\s+\/PID/);
 console.log("PASS: governed Electron HUD shell / click-through invariants");
+
+const hud = readFileSync(new URL("../src/HudOverlay.tsx", import.meta.url), "utf8");
+const css = readFileSync(new URL("../src/hud.css", import.meta.url), "utf8");
+assert.ok(main.includes("width: display.width") && main.includes("height: display.height"),
+  "HUD must span the display for spatial cards");
+for (const fragment of ["useContinuousAuraVoice", "hud-canvas", "model_estimate", "confirmed: true", "hud-region"]) {
+  assert.ok(hud.includes(fragment), "Spatial HUD contract missing: " + fragment);
+}
+assert.ok(css.includes("100vw") && css.includes("100vh"), "Spatial canvas must use full viewport");
+console.log("PASS: spatial panel and consented wake-word presentation invariants");

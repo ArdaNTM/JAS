@@ -313,7 +313,7 @@ def build_app() -> FastAPI:
             describer=LocalOllamaVisionProvider(
                 model=os.getenv("AURA_VISION_MODEL", "qwen2.5vl:3b"),
                 base_url=os.getenv("AURA_OLLAMA_BASE_URL", "http://127.0.0.1:11434"),
-                timeout=float(os.getenv("AURA_VISION_TIMEOUT_SECONDS", "60")),
+                timeout=float(os.getenv("AURA_VISION_TIMEOUT_SECONDS", "150")),
             ),
         )
         kernel.permission_engine.add_policy(PermissionPolicy(

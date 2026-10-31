@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import ctypes
 import inspect
+import logging
 import sys
 from uuid import uuid4
 
@@ -21,6 +22,8 @@ from aura_core.kernel.permissions import AuthorizationDecision, RiskLevel
 from aura_core.mcp.gateway import MCPGatewayRequest
 from aura_core.security.http_auth import authenticated_principal
 from aura_core.security.local_only import require_local_http_request
+
+logger = logging.getLogger("aura_core.screenread")
 
 router = APIRouter(prefix="/api/hud", tags=["local-hud"])
 
@@ -142,7 +145,20 @@ async def read_screen(
             event_type="HUDVisionScanEnded", source_component="aura.screenread",
             payload={"state": "failed"},
         ))
-        raise HTTPException(status_code=502, detail="Local ScreenRead provider failed") from exc
+        # Fail closed. Log only the exception *type*, never screenshot bytes,
+        # prompts, model responses, credentials or underlying remote URLs.
+        logger.warning("ScreenRead dispatch failed: %s", type(exc).__name__)
+        name = type(exc).__name__
+        code = (
+            "CAPTURE_DEPENDENCY_MISSING" if isinstance(exc, ImportError) or "Pillow" in str(exc)
+            else "VISION_TIMEOUT" if "Timeout" in name
+            else "VISION_ENDPOINT_FAILURE" if "HTTPStatusError" in name or "ConnectError" in name
+            else "SCREENREAD_PROVIDER_FAILURE"
+        )
+        raise HTTPException(
+            status_code=502,
+            detail={"code": code, "message": "Local ScreenRead failed after authorization"},
+        ) from exc
     if final.decision is not AuthorizationDecision.ALLOW or not isinstance(final.result, dict):
         bus.publish(KernelEvent(
             event_type="HUDVisionScanEnded", source_component="aura.screenread",
@@ -157,5 +173,6 @@ async def read_screen(
     return {
         "description": final.result.get("description", ""),
         "bounding_boxes_verified": False,
+        "regions": final.result.get("regions", []),
         "authority": "untrusted_local_screen_perception",
     }

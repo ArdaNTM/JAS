@@ -118,12 +118,14 @@ function createWindow() {
 
 function createHudWindow() {
   if (hudWindow && !hudWindow.isDestroyed()) return;
+  // One transparent compositor covering the primary work area; individual
+  // holograms are positioned by the renderer, not separate privileged windows.
   const display = screen.getPrimaryDisplay().workArea;
   hudWindow = new BrowserWindow({
-    width: 540,
-    height: 470,
-    x: Math.max(display.x, display.x + display.width - 560),
-    y: display.y + 26,
+    width: display.width,
+    height: display.height,
+    x: display.x,
+    y: display.y,
     frame: false,
     transparent: true,
     backgroundColor: "#00000000",

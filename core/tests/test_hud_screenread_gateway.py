@@ -180,3 +180,21 @@ def test_hud_presentation_does_not_trigger_screen_capture(tmp_path):
         finally:
             store.close()
     asyncio.run(run())
+
+
+def test_vision_regions_are_model_estimates_and_invalid_boxes_discarded():
+    from aura_core.mcp.screen_read_provider import _decode_visual_regions
+    description, regions = _decode_visual_regions(
+        '{"description":"İki araç var.","objects":['
+        '{"label":"Araç A","box":[0.1,0.2,0.4,0.6]},'
+        '{"label":"Uydurma","box":[0.2,-0.1,0.3,0.4]},'
+        '{"label":"Yanlış","box":[0.7,0.7,0.3,0.9]}]}'
+    )
+    assert description == "İki araç var."
+    assert regions == [{
+        "label": "Araç A", "x": 0.1, "y": 0.2,
+        "width": 0.30000000000000004, "height": 0.39999999999999997,
+        "verified": False, "source": "model_estimate",
+    }]
+    fenced, empty = _decode_visual_regions('```json\n{"description":"Test","objects":[]}\n```')
+    assert fenced == "Test" and empty == []

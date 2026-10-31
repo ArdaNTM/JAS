@@ -5,7 +5,7 @@
   "generated_at": "2026-10-31T00:45:29.771Z",
   "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
+  "release_digest": "sha256:5de4ae1e2d87053c83ddd7e3831d528dd3db32d45295bd2b184a3a2476c14919",
   "file_count": 233,
   "files": [
     {
@@ -82,11 +82,11 @@
     },
     {
       "path": "aura-ui/src/hud.css",
-      "sha256": "6e67cd1ac804597f116044bcc1e314a543ddb85cf87b079a95b205c850853855"
+      "sha256": "9f995cf9638a75e87192f879f6c39eb479d66564db1489a387f2113e1e584067"
     },
     {
       "path": "aura-ui/src/HudOverlay.tsx",
-      "sha256": "32cd681fd14834b9381d0d3e919b184032c028f9b4e84e82dda30460d71a3b0e"
+      "sha256": "606f58f7fe44e62d5c3adef6502ffd718a228df24bd1a886b1d5a4f6cf8eea9c"
     },
     {
       "path": "aura-ui/src/index.css",
@@ -254,7 +254,7 @@
     },
     {
       "path": "core/src/aura_core/application/hud_api.py",
-      "sha256": "36f37052df95ac7433f0a0c75d66d8acb3e7091d5a5b24fc2fa8a63edafce1cb"
+      "sha256": "3d406ac81302e8cf934b41a0fa8f2d7d8389f5d122a444c6f0408ab8cc3553a5"
     },
     {
       "path": "core/src/aura_core/application/jarvis_api.py",
@@ -382,7 +382,7 @@
     },
     {
       "path": "core/src/aura_core/application/vision_adapters.py",
-      "sha256": "e1686ae4947bf7977d6126750a5da45a8563d524019d4a121281bd0feef270de"
+      "sha256": "6a0ef6209f7fd4827743d3e0c4aa3ee6b1d3322400f7b386d744d4f8db2f8345"
     },
     {
       "path": "core/src/aura_core/application/windows_screen_driver.py",
@@ -630,7 +630,7 @@
     },
     {
       "path": "core/src/aura_core/main.py",
-      "sha256": "994cb2dfe1723239a3032001ef75345c8f4a4dd73ddafe098d1cd2e512828fd6"
+      "sha256": "1bf3d15d4ced2f97019230e9fb3ef05af87eb9591fcac3c76973cea2a771274c"
     },
     {
       "path": "core/src/aura_core/mcp/__init__.py",
@@ -678,7 +678,7 @@
     },
     {
       "path": "core/src/aura_core/mcp/screen_read_provider.py",
-      "sha256": "c41eb1f79ac178e80ff67f56598fd9c78225952210f38778cff9a4bad6802a63"
+      "sha256": "d710d1495587eec5e445062b43576959ea827f9e741d341bc1af7442882e7502"
     },
     {
       "path": "core/src/aura_core/mcp/tool_registry.py",
