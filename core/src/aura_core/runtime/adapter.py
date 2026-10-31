@@ -46,7 +46,7 @@ class AdapterBackend(InferenceBackend):
             if request.max_tokens is None:
                 # Bounded independently from untrusted model/user input.
                 options["num_predict"] = max(
-                    64, min(1024, int(os.getenv("AURA_OLLAMA_FAST_MAX_TOKENS", "384")))
+                    128, min(2048, int(os.getenv("AURA_OLLAMA_FAST_MAX_TOKENS", "1024")))
                 )
             payload["think"] = False
             payload["keep_alive"] = "10m"
@@ -111,3 +111,40 @@ class AdapterBackend(InferenceBackend):
             request,
             response,
         )
+
+    def infer_stream(self, request: InferenceRequest):
+        """Optional incremental model response; no capability/tool execution."""
+        stream_method = getattr(self._transport, "post_stream_json", None)
+        if not callable(stream_method):
+            # Preserve provider-agnostic compatibility for injected test runtimes.
+            completed = self.infer(request)
+            yield {"delta": completed.content}
+            yield {"done": True, "finish_reason": completed.finish_reason}
+            return
+
+        payload = self._build_payload(request)
+        payload["stream"] = True
+        finished = False
+        for event in stream_method(
+            endpoint=f"{self._config.endpoint}/api/chat",
+            payload=payload,
+            timeout=self._config.timeout,
+        ):
+            if event.get("error"):
+                raise BackendInvalidResponseError("Inference stream returned an error")
+            message = event.get("message")
+            if isinstance(message, dict):
+                fragment = message.get("content", "")
+                if not isinstance(fragment, str):
+                    raise BackendInvalidResponseError("Inference stream contains invalid content")
+                if fragment:
+                    yield {"delta": fragment}
+            if event.get("done") is True:
+                finished = True
+                yield {
+                    "done": True,
+                    "finish_reason": event.get("done_reason", "stop"),
+                }
+                break
+        if not finished:
+            raise BackendInvalidResponseError("Inference stream ended before completion")
