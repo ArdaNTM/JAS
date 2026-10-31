@@ -554,3 +554,16 @@ parent *before* invoking this ACL writer. The test fixture uses the writer
 only to initialize its own temporary leaf; no production trust check is
 disabled. Run real Windows ACL CI and physical Windows Hello acceptance
 before treating this protection as production validated.
+
+
+### Windows PowerShell 7-to-5.1 module boundary
+
+The native Windows CI runner exposed that an embedded `powershell.exe` (5.1)
+spawned from a `pwsh` (7) parent can inherit `PSModulePath` pointing at the
+incompatible PowerShell 7 modules. The fail-closed ACL guard then correctly
+refuses initialization because `Microsoft.PowerShell.Security` (`Get-Acl`) cannot
+be loaded. The dedicated `_powershell` child process now explicitly pins
+`PSModulePath` to the trusted Windows PowerShell 5.1 installation's system
+`Modules` directory. This alters only executable module discovery; it does
+not bypass or weaken the NTFS DACL/owner checks. The Windows owner-security
+workflow verifies the result under actual Windows pytest fixtures.

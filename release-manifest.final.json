@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-10-31T20:55:32.814Z",
-  "git_commit": "7038f2ef71163a25a5c91a3a9ec63582e8a855a7",
+  "generated_at": "2026-10-31T21:02:51.844Z",
+  "git_commit": "4ab0b7f4411795bc571d3884ab9f42b149abc70e",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:217f4eb91bbcb68a951a812cbfa5bcf50c0b144d1e50e2abe0be2d0221f39799",
+  "release_digest": "sha256:f058c62710b9b5c7903e2b9ce0d3f071fcef836af3ed46010da68b020dcb519a",
   "file_count": 265,
   "files": [
     {
@@ -598,7 +598,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/windows_owner_storage.py",
-      "sha256": "d7228cd4bef37a7271c44f5cf0f02bc7c3679bc9c762c6f2229fc864c3aa53df"
+      "sha256": "6ce977bf43b9c21736852baba24456c117ef53776aae4a6c05e612ec09829beb"
     },
     {
       "path": "core/src/aura_core/filesystem/__init__.py",

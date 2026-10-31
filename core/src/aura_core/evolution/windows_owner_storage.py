@@ -23,6 +23,14 @@ def _powershell(script: str, *, path: Path) -> None:
         raise PermissionError("The trusted Windows PowerShell runtime is unavailable")
     env = dict(os.environ)
     env["AURA_OWNER_ACL_PATH"] = str(path)
+    # GitHub Actions pwsh, and desktop PowerShell 7, can inject a PSModulePath
+    # containing incompatible PowerShell 7 modules into powershell.exe 5.1.
+    # That prevents Microsoft.PowerShell.Security (Get-Acl / Set-Acl) loading.
+    # Use only the system-owned Windows PowerShell 5.1 module directory.
+    module_root = executable.parent / "Modules"
+    if not module_root.is_dir():
+        raise PermissionError("Trusted Windows PowerShell security modules unavailable")
+    env["PSModulePath"] = str(module_root)
     process = subprocess.run(
         [str(executable), "-NoProfile", "-NonInteractive", "-Command", script],
         env=env, capture_output=True, text=True, timeout=15, check=False,
