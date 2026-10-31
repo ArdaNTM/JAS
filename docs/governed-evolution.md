@@ -374,3 +374,70 @@ uv sync --frozen --group dev
 uv run --frozen pytest -q tests/test_governed_owner_receipt.py tests/test_owner_control_plane_http.py tests/test_evolution_owner_challenge.py tests/test_sandbox_attestor.py
 uv run --frozen python scripts/verify_final_lock.py
 \`\`\`
+
+
+## Primal Anchor v2.4 — Owner enrollment and guarded metadata activation
+
+A standalone, operator-bootstrapped WebAuthn enrollment service lives in
+\`evolution/owner_enrollment.py\`, \`owner_enrollment_http.py\` and
+\`scripts/enroll_local_owner.py\`. It uses **Yubico fido2 2.2.1** (pinned in
+\`uv.lock\`) for \`Fido2Server.register_begin/register_complete\`, with exact
+\`localhost:8766\` origin, \`localhost\` RP ID, 32-byte challenge, platform
+authenticator request and required UP+UV. Client page uses
+\`navigator.credentials.create()\`. Only a strong 256-bit, operator-provisioned
+bootstrap token outside the JAS checkout allows the one-time ceremony.
+The server never exposes an enrollment endpoint on the regular AURA Core.
+
+Enrollment runs on a dedicated **owner OS security principal**, not in AURA's
+agent process. The output is a new, exclusive owner public-credential policy
+file; it never overwrites previously registered credentials. The service must
+be stopped before starting the normal owner review process on the same port.
+On Windows, a separate owner user and NTFS ACLs must be configured before use.
+A localhost 256-bit token is not a replacement for a protected initial
+operator bootstrap; compromise of that token permits adversarial enrollment.
+
+Operator preparation (replace paths and JAS policy digest with your ACTUAL
+values, do not place token or private signing keys in the source tree):
+
+\`\`\`powershell
+# In a protected owner PowerShell session, not an agent terminal:
+$bytes = [byte[]]::new(32)
+[System.Security.Cryptography.RandomNumberGenerator]::Fill($bytes)
+$bootstrap = [Convert]::ToHexString($bytes).ToLowerInvariant()
+# Provision $bootstrap into your ACL-protected owner secret file.
+# Run in the isolated evolution worktree with that file:
+uv run --frozen python scripts/enroll_local_owner.py \`
+  --bootstrap-token-file "C:\OwnerVault\enroll-once.txt" \`
+  --owner-config-output "C:\OwnerVault\aura-public-credential.json" \`
+  --policy-digest "<ACTUAL-JAS-POLICY-SHA256>"
+\`\`\`
+
+Then open **http://localhost:8766** in Edge/Chrome, enter the protected
+bootstrap token and complete Windows Hello user verification. The physical
+Windows Hello acceptance MUST be performed by the Local Owner; Linux CI
+synthetic WebAuthn tests are NOT proof of Windows Hello hardware success.
+After enrollment, stop the bootstrap service and use the previously provided
+\`start_owner_control_plane.py\` launcher.
+
+\`evolution/activation_api.py\` supplies an opt-in standalone HTTP API for
+**version-switch metadata only**. It refuses composition without BOTH
+\`DurableOwnerReceiptConsumer\` (pinned Ed25519 owner receipt, PermissionEngine,
+durable replay protection) and a \`GovernedSkillRegistry\` wired with a
+signed independent sandbox verifier. Exact localhost-only origin/host JSON
+requirements apply. It is NOT automatically mounted by AURA Core or launched
+by the owner page. No arbitrary generated Python code may be imported, and
+the existing MCP Gateway still authorizes every real tool execution.
+
+This milestone is infrastructure, not production activation. It still needs
+independent runner integration, Windows Hello hardware acceptance, durable
+owner-protected skill metadata composition, registry persistence/rollback
+concurrency tests, explicit approval-to-activation transport policy and
+Windows NTFS ACL verification. Avoid running it as a general localhost API
+under the same OS identity as the agent.
+
+Focused tests:
+\`\`\`powershell
+uv sync --frozen --group dev
+uv run --frozen pytest -q tests/test_owner_enrollment.py tests/test_governed_activation_api.py tests/test_governed_owner_receipt.py
+uv run --frozen python scripts/verify_final_lock.py
+\`\`\`
