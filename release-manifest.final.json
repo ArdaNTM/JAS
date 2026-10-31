@@ -2,15 +2,15 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "integration-review",
-  "generated_at": "2026-10-31T21:06:44.053Z",
-  "git_commit": "0f02be25810756eef5c0d6a894eb3f9646dc7a4c",
+  "generated_at": "2026-10-31T22:00:00Z",
+  "git_commit": "e6f02c8a7d712da7fd55c2659e618538beeb700a",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:82de7705a8a279f87240632ae4e0526bfcced7580b99ca48c472fa9f652fc7ea",
-  "file_count": 277,
+  "release_digest": "sha256:7f4b46a7e981fb6f4a97365892fd688280ffcd026866f3b0305cb0eadb95a5f5",
+  "file_count": 280,
   "files": [
     {
       "path": ".gitattributes",
-      "sha256": "c57882692cef5d0a3bed6e4f19978b5340ebaf0a26ff3885f1e242a484a20e81"
+      "sha256": "5ea37efe8f52ed1f432d2a216f196453a4ab0b4d5e3de25d3acde2582b8bd8a4"
     },
     {
       "path": ".github/workflows/aura-windows-launcher.yml",
@@ -30,11 +30,11 @@
     },
     {
       "path": "aura-ui/package-lock.json",
-      "sha256": "d96901d3e57f0384d1cbf1c5ae61f23740a985a88d25b31d99bf8cf7689549ee"
+      "sha256": "a7914bdeb0588a4fba88049ea89bc230a64137ec0b4c2bc5d0213ac9bcbe229f"
     },
     {
       "path": "aura-ui/package.json",
-      "sha256": "e601faf2792ff04aea9427459e226b8ddd3f7b2ceac7cf6403f25eb38863dd97"
+      "sha256": "8ae25d3ec45382d09ab862c16a849b0716de2bbef8eac2c970cf16092d34944d"
     },
     {
       "path": "aura-ui/public/aura-pcm-worklet.js",
@@ -153,6 +153,18 @@
       "sha256": "80d2d70a00dd60f0a4ba8e52f32cee3abdb5b0c4783a97f83fbc0c916a5c13c2"
     },
     {
+      "path": "aura-ui/vite.config.ts",
+      "sha256": "5ac19494d115c1282739f722ae8dc0856a1efc55e83a4ce90af16ef24896876c"
+    },
+    {
+      "path": "core/frontend/package-lock.json",
+      "sha256": "ad082aa66653209c385d7b8a0ff2ccdf9335e1a8eca86b79ae4001c16a9f810f"
+    },
+    {
+      "path": "core/frontend/package.json",
+      "sha256": "2abddcf4ceb7cd4d5e0c89150f719048f4bfeb1ceeecdd4f9b324973404bbe78"
+    },
+    {
       "path": "core/pyproject.toml",
       "sha256": "a0b240a42862f79f2b804948ccdc1cade3b9c86a452768cb7868c595d1ef3b88"
     },
@@ -166,7 +178,7 @@
     },
     {
       "path": "core/scripts/generate_final_lock.py",
-      "sha256": "77d3a4f9718e5b15dc90301388955cbea2085a0cfd628ea7411fadacfb3087ad"
+      "sha256": "e9eca64fdb479af7f4003e8cf6814e5dafb84a2c82088e77e5d2e42c28cec6bf"
     },
     {
       "path": "core/scripts/install_nirvana_voice_models.py",

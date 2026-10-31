@@ -73,6 +73,9 @@ def files_to_hash() -> list[Path]:
         ROOT / "aura-ui" / "src",
         ROOT / "aura-ui" / "package.json",
         ROOT / "aura-ui" / "package-lock.json",
+        ROOT / "aura-ui" / "vite.config.ts",
+        ROOT / "core" / "frontend" / "package.json",
+        ROOT / "core" / "frontend" / "package-lock.json",
     )
 
     result: list[Path] = []
