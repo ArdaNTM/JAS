@@ -286,3 +286,11 @@ def test_jpeg_sof_dimensions_are_read_without_image_decoder():
     sample = bytes.fromhex("ffd8ffc0001108042803bc03011100021101031101ffd9")
     assert _jpeg_dimensions(sample) == (956, 1064)
     assert _jpeg_dimensions(b"invalid") is None
+
+
+def test_malformed_json_never_renders_as_raw_hud_data():
+    from aura_core.mcp.screen_read_provider import _decode_visual_regions
+    description, regions = _decode_visual_regions('[{"description":"AURA","objects":[}')
+    assert regions == []
+    assert "objects" not in description
+    assert "geçersiz" in description

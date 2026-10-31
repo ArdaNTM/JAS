@@ -54,11 +54,22 @@ def _decode_visual_regions(text: str, image_size: tuple[int, int] | None = None)
     try:
         data = json.loads(candidate)
     except (ValueError, TypeError):
+        # Never paint raw JSON fragments into a holographic information card.
+        if candidate.lstrip().startswith(("{", "[", "```")):
+            return "Modelin yapılandırılmış yanıtı geçersiz; yeniden deneyin.", []
         return text[:4000], []
-    if isinstance(data, list) and len(data) == 1:
-        data = data[0]
+    if isinstance(data, list):
+        chunks = [item for item in data[:6] if isinstance(item, dict)]
+        if not chunks:
+            return "Model nesne bilgisi sağlayamadı.", []
+        data = {
+            "description": " ".join(str(item.get("description", ""))[:800]
+                                    for item in chunks).strip(),
+            "objects": [obj for item in chunks
+                        for obj in (item.get("objects") if isinstance(item.get("objects"), list) else [])][:8],
+        }
     if not isinstance(data, dict):
-        return text[:4000], []
+        return "Model nesne bilgisi sağlayamadı.", []
     description = data.get("description")
     if not isinstance(description, str):
         description = ""
