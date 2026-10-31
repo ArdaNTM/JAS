@@ -32,9 +32,6 @@ def owner_private_dir(tmp_path: Path) -> Path:
             # same throwaway directory and reveal which native Windows step
             # failed, without printing any secret or private key.
             import subprocess
-            from pathlib import Path
-            import os
-
             ps = Path(os.environ.get("SystemRoot", r"C:\\Windows")) / "System32" / "WindowsPowerShell" / "v1.0" / "powershell.exe"
             script = _HARDEN.replace(
                 "catch { exit 14 }",
