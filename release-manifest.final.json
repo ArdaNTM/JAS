@@ -5,7 +5,7 @@
   "generated_at": "2026-10-31T14:43:46.581360+00:00",
   "git_commit": "46269e9b5b9bfe11ad7a2b1be0cd4c8cf4f3e188",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:17cf0cd2f2f75a44e9a83994bb012b3f7f9b05e90aafcf157cc715afc4964bf9",
+  "release_digest": "sha256:3822ff592a6a549062bc96824b2f37d3a77b2600b78dfd2fdb04290801105716",
   "file_count": 243,
   "files": [
     {
@@ -34,7 +34,7 @@
     },
     {
       "path": "aura-ui/src/App.tsx",
-      "sha256": "afb2504609c7f7575b940c5cabc3cd5ef8f2ffe5ec0812afa8502b03e24bbb83"
+      "sha256": "835c872f45a2cb7d057c23664cada554ac906fbd0d2382c47dd1ed68a7c6c674"
     },
     {
       "path": "aura-ui/src/assets/hero.png",
@@ -242,7 +242,7 @@
     },
     {
       "path": "core/src/aura_core/application/directive_planner.py",
-      "sha256": "c1cfdcec1ffe07fa8164cd28ee341784213219fdf5376f81fb770ac37a66dc76"
+      "sha256": "e0e36fe4e10b27cc714354534aa58990ada8bc2dce1a2c2ae80b220854431946"
     },
     {
       "path": "core/src/aura_core/application/episodic_memory.py",

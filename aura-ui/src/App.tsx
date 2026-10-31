@@ -332,6 +332,21 @@ export default function App() {
     try {
       const generated = await generateTaskPlan(text);
 
+      if (generated.resource_scope === "local-assistant" &&
+          generated.steps.length === 0) {
+        // A conversation is not an agent task: no task creation, no MCP
+        // permissions, no automatic computer/browser action.
+        setPlan([]);
+        setTaskId(null);
+        setResearchOutput(null);
+        setAssistantDirective(text.replace(/^aura(?:[\s,:;.!?-]+|$)/i, "").trim() || text);
+        setAssistantRequestId((current) => current + 1);
+        setSystemState("idle");
+        setTaskState("YANIT ÜRETİLİYOR");
+        pushTelemetry("YEREL ASİSTAN: STREAMING YANIT BAŞLATILDI");
+        return;
+      }
+
       const visualizationStep = generated.steps.find(
         (step) => step.capability_id === "3d.visualize"
       );
