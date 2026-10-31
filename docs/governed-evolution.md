@@ -324,3 +324,53 @@ uv run --frozen pytest -q tests/test_owner_control_plane_http.py `
   tests/test_evolution_owner_passkey_and_replay.py
 uv run --frozen python scripts/verify_final_lock.py
 ```
+
+
+## Primal Anchor v2.3 — signed owner decision handoff (incremental)
+
+\`evolution/owner_receipt.py\` defines a domain-separated, canonical Ed25519
+approval receipt. ONLY the owner-protected \`OwnerReceiptIssuer\` instance may
+sign; Core receives its pinned **public** key and uses
+\`DurableOwnerReceiptConsumer\` to validate scope, operation, policy digest,
+binding digest, signed approval ID/version, and expiry. An atomic SQLite unique
+constraint on the approval ID and nonce denies duplicate consumption across
+process restarts. PermissionEngine authorization is required in addition to
+cryptographic validity. Receipt lifetime is at most 90 seconds and never
+exceeds the originating approval's own expiry.
+
+The independent \`owner_control_plane.py\` may be configured with a receipt
+issuer; **only an actually approved WebAuthn decision** can return a signed
+receipt, and the page requires an explicit user gesture before copying it.
+No receipt is sent to AURA HUD automatically. There is still NO HTTP route
+that executes the receipt or directly calls \`GovernedSkillRegistry.activate\`.
+Injection into the existing registry is through its preexisting
+\`owner_receipt_consumer\` callback. The registry's \`validate\` and \`activate\`
+methods continue to check separately signed independent sandbox evidence;
+MCPGateway and PermissionEngine still gate all actual tool invocations.
+
+Optional trusted owner launcher flags:
+\`--owner-receipt-key <protected-Ed25519-private-key-PEM>\`
+\`--owner-receipt-key-id <pinned-key-id>\`.
+Both are required together; omission produces review-only decisions. The
+private key must be provisioned outside AURA sources, under a separate
+OS owner identity, and never made available to the Core agent/sandbox.
+Public key distribution to Core requires an independently pinned trusted
+configuration and must not accept data from model output, HUD content or
+unverified requests. Existing legacy database receipt authority remains for
+backward compatibility and MUST NOT be used as production cross-process
+proof without the signed owner callback.
+
+The operator still must enroll a genuine WebAuthn credential securely
+(Windows Hello enrollment is NOT complete), protect and provision the
+approval/receipt SQLite databases with appropriate Windows NTFS ACLs, and
+provide an independent attested runner. In particular, this release does
+**not** automatically activate a generated MCP provider and does not merge
+Spatial HUD, Nirvana Voice and Evolution branches.
+
+Local focused tests:
+\`\`\`powershell
+Set-Location D:\AURA\JAS-evolution-test\core
+uv sync --frozen --group dev
+uv run --frozen pytest -q tests/test_governed_owner_receipt.py tests/test_owner_control_plane_http.py tests/test_evolution_owner_challenge.py tests/test_sandbox_attestor.py
+uv run --frozen python scripts/verify_final_lock.py
+\`\`\`

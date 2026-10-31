@@ -67,6 +67,15 @@ async function decide(record, decision, button) {
       decision,
     });
     status("Recorded " + result.status + " · no tool activated");
+    // Security-sensitive receipt is NEVER dispatched to AURA UI or remote
+    // endpoints. Explicit user gesture only; short lived and one-use.
+    if (result.signed_owner_receipt) {
+      const confirmed = window.confirm("Owner approved. Copy the one-use signed receipt to the clipboard? It expires in about 90 seconds.");
+      if (confirmed) {
+        await navigator.clipboard.writeText(result.signed_owner_receipt);
+        status("Signed receipt copied locally · no tool activated");
+      }
+    }
     await load();
   } catch (error) {
     status(error instanceof Error ? error.message : "Owner passkey verification failed");

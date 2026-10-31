@@ -18,6 +18,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from aura_core.enterprise.approval_store import ApprovalStatus, SQLiteApprovalStore
 from aura_core.evolution.owner_challenge import TrustedOwnerPasskeyDecider
 from aura_core.evolution.owner_passkey import WebAuthnOwnerAssertion
+from aura_core.evolution.owner_receipt import OwnerReceiptIssuer
 
 OWNER_ORIGIN = "http://localhost:8766"
 
@@ -39,6 +40,7 @@ class DecisionBody(BaseModel):
 
 def create_owner_control_plane(
     *, approvals: SQLiteApprovalStore, decider: TrustedOwnerPasskeyDecider,
+    receipt_issuer: OwnerReceiptIssuer | None = None,
     origin: str = OWNER_ORIGIN,
 ) -> FastAPI:
     if origin != OWNER_ORIGIN:
@@ -144,9 +146,16 @@ def create_owner_control_plane(
             )
         except (PermissionError, ValueError, KeyError, RuntimeError) as exc:
             raise HTTPException(status_code=409, detail="Owner assertion rejected or approval changed") from exc
+        # The independent owner service issues an unforgeable, short-lived
+        # handoff only after a server-verified passkey decision. The client
+        # transports it explicitly; this endpoint NEVER executes an MCP tool.
+        receipt = None
+        if updated.status is ApprovalStatus.APPROVED and receipt_issuer is not None:
+            receipt = receipt_issuer.issue(updated)
         return {
             "approval_id": updated.approval_id, "status": updated.status.value,
             "version": updated.version,
+            "signed_owner_receipt": receipt,
             "activation_performed": False, "tool_executed": False,
         }
 
