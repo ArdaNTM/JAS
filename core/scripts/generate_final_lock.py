@@ -58,6 +58,7 @@ def files_to_hash() -> list[Path]:
         ROOT / "core" / "scripts" / "enroll_local_owner.py",
         ROOT / "core" / "scripts" / "provision_windows_owner.ps1",
         ROOT / ".github" / "workflows" / "aura-windows-launcher.yml",
+        ROOT / ".github" / "workflows" / "aura-windows-owner-security.yml",
         ROOT / "core" / "scripts" / "generate_final_lock.py",
         ROOT / "core" / "scripts" / "verify_final_lock.py",
         ROOT / "core" / "pyproject.toml",

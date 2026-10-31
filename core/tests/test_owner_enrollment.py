@@ -19,10 +19,10 @@ def b64(raw):
 
 
 @pytest.fixture
-def setup(tmp_path):
+def setup(owner_private_dir):
     token = secrets.token_hex(32)
     policy = hashlib.sha256(b"pinned-JAS-policy").hexdigest()
-    out = tmp_path / "credential.json"
+    out = owner_private_dir / "credential.json"
     ceremony = ProtectedEnrollment(
         bootstrap_secret=token, config_output=out, policy_digest=policy,
     )

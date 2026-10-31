@@ -33,7 +33,7 @@ def sha(raw: bytes) -> str:
 
 
 @pytest.fixture
-def governed(tmp_path):
+def governed(owner_private_dir):
     services = ServiceRegistry()
     mcp = ServiceDefinition(name="mcp", version="1", provider="review",
                             category=ServiceCategory.MCP)
@@ -62,9 +62,11 @@ def governed(tmp_path):
     public = key.public_key().public_bytes(
         serialization.Encoding.Raw, serialization.PublicFormat.Raw,
     )
-    ledger = tmp_path / "owner-replay.sqlite"
+    ledger = owner_private_dir / "owner-replay.sqlite"
     sqlite3.connect(ledger).close()
     ledger.chmod(0o600)
+    from aura_core.evolution.windows_owner_storage import harden_private_acl
+    harden_private_acl(ledger)
     owner = DurableOwnerReceiptConsumer(
         trusted_public_keys={"owner-operator": public},
         policy_digest=policy, permissions=permission, ledger_path=ledger,

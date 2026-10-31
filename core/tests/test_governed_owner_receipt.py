@@ -20,7 +20,7 @@ def sha(s: bytes) -> str:
 
 
 @pytest.fixture
-def scenario(tmp_path):
+def scenario(owner_private_dir):
     digest, policy = sha(b"full-binding"), sha(b"policy")
     key = Ed25519PrivateKey.generate()
     public = key.public_key().public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw)
@@ -33,9 +33,11 @@ def scenario(tmp_path):
         tool_name="owner_review", risk_level="critical",
     ))
     permissions = PermissionEngine(capabilities)
-    db = tmp_path / "receipts.sqlite"
+    db = owner_private_dir / "receipts.sqlite"
     sqlite3.connect(db).close()
     db.chmod(0o600)
+    from aura_core.evolution.windows_owner_storage import harden_private_acl
+    harden_private_acl(db)
     with SQLiteApprovalStore(":memory:") as store:
         request = store.create(
             principal_id="local_owner", capability_id="GovernedSkillActivation",

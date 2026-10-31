@@ -508,3 +508,32 @@ Owner-only regression commands: `uv run --frozen pytest -q
 tests/test_owner_enrollment.py tests/test_owner_activation.py
 tests/test_governed_owner_receipt.py tests/test_governed_activation_api.py`
 and `uv run --frozen python scripts/verify_final_lock.py`.
+
+
+## Windows owner ACL regression isolation (v2.4.2)
+
+Windows `pytest` temp directories usually inherit NTFS ACEs. The actual Local
+Owner state guard intentionally rejects those inherited DACLs; `chmod(0600)`
+does NOT make a Windows ACL private. **Do not disable, monkeypatch, or skip the
+production `require_private_acl` guard to make tests pass.**
+
+`core/tests/conftest.py` defines `owner_private_dir`, which creates only one
+test-owned `tmp_path/isolated-owner-state` directory. Under Windows it uses
+the actual explicit-ACL provisioning script and validates the resulting owner-
+only directory; it never modifies `%TEMP%`, the user profile, or pytest's
+shared parent. `test_owner_enrollment.py` uses this protected parent for the
+one-time public credential; receipt and activation fixtures additionally use
+`harden_private_acl` on newly created SQLite ledgers. The same production ACL
+guard remains enforced in all constructors. Test-only fixture setup does NOT
+grant production activation or authenticate an actual Windows Hello device.
+
+`test_windows_owner_acl.py` exercises real Windows security descriptors:
+private directory/file acceptance, an unexpected `Everyone` read ACE being
+denied, a nonprivate parent blocking child hardening, and a freshly inherited
+file requiring explicit DACL protection. These tests run in the independent
+`AURA Windows Owner Security` GitHub Action on a Windows host, even while
+frontend `npm audit` independently blocks production merge. Core Linux tests
+continue to run as before. All new executable workflow content is hashed by
+the canonical final release-lock inventory. Real physical Windows Hello
+enrollment and the outstanding npm audit advisories remain independent
+production acceptance blockers.
