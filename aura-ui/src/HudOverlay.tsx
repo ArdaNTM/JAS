@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import "./hud.css";
+import { useAuraVoice } from "./voice/useAuraVoice";
 
 type HudEvent = {
   event?: string;
@@ -43,6 +44,11 @@ export default function HudOverlay() {
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState("");
   const [connected, setConnected] = useState(false);
+  const voice = useAuraVoice((transcript) => {
+    const text = transcript.trim().slice(0, 100);
+    if (text) setTitle(text);
+  });
+
 
   useEffect(() => {
     const unsub = window.auraDesktop?.onHudInteractive?.(setInteractive);
@@ -144,6 +150,9 @@ export default function HudOverlay() {
             <label>EKRAN SORUSU
               <input value={question} maxLength={400} onChange={e => setQuestion(e.target.value)} />
             </label>
+            <button onClick={() => voice.state === "recording" ? voice.stop() : voice.start()}>
+              {voice.state === "recording" ? "KAYDI DURDUR" : "BAS-KONUŞ"}
+            </button>
             <button disabled={scanning} onClick={() => void readScreen()}>
               {scanning ? "TARANIYOR" : "EKRANI ONAYLA + OKU"}
             </button>
