@@ -16,6 +16,10 @@ on:
       - "core/scripts/validate_piper_voice_config.py"
       - "core/tests/test_piper_voice_config_validation.py"
       - "aura-ui/vite.config.ts"
+      - "aura-ui/src/**"
+      - "core/src/aura_core/runtime/**"
+      - "core/src/aura_core/application/api.py"
+      - "core/src/aura_core/tts/**"
       - "aura-ui/tests/aura-proxy.test.mjs"
       - ".github/workflows/aura-windows-launcher.yml"
   push:
@@ -36,6 +40,10 @@ on:
       - "core/scripts/validate_piper_voice_config.py"
       - "core/tests/test_piper_voice_config_validation.py"
       - "aura-ui/vite.config.ts"
+      - "aura-ui/src/**"
+      - "core/src/aura_core/runtime/**"
+      - "core/src/aura_core/application/api.py"
+      - "core/src/aura_core/tts/**"
       - "aura-ui/tests/aura-proxy.test.mjs"
       - ".github/workflows/aura-windows-launcher.yml"
   workflow_dispatch:

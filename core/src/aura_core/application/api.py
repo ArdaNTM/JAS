@@ -16,7 +16,7 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 from aura_core.agent.runtime import Plan, PlanStep, Task
@@ -1222,15 +1222,11 @@ def create_api(
             "simulation": app.state.predictive_simulator.simulate(plan.steps),
         }
 
-    @app.post(
-        "/api/assistant/respond",
-        response_model=AssistantRespondResponse,
-    )
-    async def assistant_respond(
+    async def _prepare_assistant_inference(
         request: AssistantRespondRequest,
         http_request: Request,
-        principal_id: str = Depends(authenticated_principal),
-    ) -> AssistantRespondResponse:
+        principal_id: str,
+    ) -> tuple[InferenceRequest, bool, str]:
         app.state.last_user_activity = time.monotonic()
 
         import json
@@ -1338,6 +1334,21 @@ def create_api(
             model=config.model,
             temperature=config.temperature,
             max_tokens=config.max_tokens,
+        )
+
+        return inference_request, memory_enabled, request_id
+
+    @app.post(
+        "/api/assistant/respond",
+        response_model=AssistantRespondResponse,
+    )
+    async def assistant_respond(
+        request: AssistantRespondRequest,
+        http_request: Request,
+        principal_id: str = Depends(authenticated_principal),
+    ) -> AssistantRespondResponse:
+        inference_request, memory_enabled, request_id = (
+            await _prepare_assistant_inference(request, http_request, principal_id)
         )
 
         inference_trace = PipelineTrace(request_id)
@@ -1690,6 +1701,70 @@ def create_api(
             "items": reflection.list_proposals(limit=bounded_limit) if reflection is not None else [],
             "mode": "reviewable_suggestions_only" if reflection is not None else "disabled",
         }
+
+    @app.post("/api/assistant/respond/stream")
+    async def assistant_respond_stream(
+        request: AssistantRespondRequest,
+        http_request: Request,
+        principal_id: str = Depends(authenticated_principal),
+    ) -> StreamingResponse:
+        """Authenticated incremental NDJSON; never exposes thought traces or tools."""
+        prepared, _, request_id = await _prepare_assistant_inference(
+            request, http_request, principal_id
+        )
+        gate = getattr(app.state, "assistant_stream_gate", None)
+        if gate is None:
+            gate = asyncio.Semaphore(2)
+            app.state.assistant_stream_gate = gate
+
+        def next_event(iterator):
+            return next(iterator, None)
+
+        async def response_stream():
+            iterator = None
+            total = 0
+            completed = False
+            try:
+                async with gate:
+                    iterator = application.infer_stream(prepared)
+                    while True:
+                        item = await asyncio.to_thread(next_event, iterator)
+                        if item is None:
+                            break
+                        fragment = item.get("delta", "")
+                        if isinstance(fragment, str) and fragment:
+                            total += len(fragment)
+                            if total > 24000:
+                                raise ValueError("Inference response exceeded stream budget")
+                            yield json.dumps({"delta": fragment}, ensure_ascii=False) + "\n"
+                        if item.get("done") is True:
+                            completed = True
+                            yield json.dumps({
+                                "done": True,
+                                "finish_reason": item.get("finish_reason", "stop"),
+                                "model": prepared.model,
+                            }) + "\n"
+                            break
+                    if not completed:
+                        raise ValueError("Inference stream did not complete")
+            except (asyncio.CancelledError, GeneratorExit):
+                raise
+            except Exception:
+                logger.exception(
+                    "Assistant inference stream failed", extra={"request_id": request_id}
+                )
+                # No stack traces, paths, prompts, or provider secrets in UI.
+                yield '{"error":"inference_stream_failed"}\n'
+            finally:
+                if iterator is not None:
+                    await asyncio.to_thread(iterator.close)
+
+        return StreamingResponse(
+            response_stream(),
+            media_type="application/x-ndjson",
+            headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no",
+                     "X-Content-Type-Options": "nosniff"},
+        )
 
     @app.post("/api/speech/transcribe", response_model=SpeechTranscriptionResponse)
     async def transcribe_speech(

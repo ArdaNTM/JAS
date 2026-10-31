@@ -737,6 +737,7 @@ export default function App() {
         requestId={assistantRequestId}
         onStatus={handleVoiceStatus}
         speakThroughSession={fullDuplex.speak}
+        sessionActive={fullDuplex.active}
       />
     </>
 );

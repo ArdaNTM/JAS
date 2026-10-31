@@ -54,4 +54,4 @@ def test_interactive_budget_is_bounded(monkeypatch):
     AdapterBackend(BackendConfig(), transport).infer(InferenceRequest(
         model="qwen3:latest", messages=[{"role": "user", "content": "test"}]
     ))
-    assert transport.payload["options"]["num_predict"] == 1024
+    assert transport.payload["options"]["num_predict"] == 2048

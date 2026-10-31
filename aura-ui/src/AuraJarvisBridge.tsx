@@ -1,29 +1,42 @@
 import { useEffect } from "react";
 
-import { AuraApiError, respondAsAssistant, synthesizeLocalSpeech } from "./api/client";
+import { AuraApiError, streamAssistantResponse, synthesizeLocalSpeech } from "./api/client";
 
-function normalizeSpeechText(text: string): string {
+/** Speech text is presentation-only; untrusted research/tool evidence is untouched. */
+export function normalizeSpeechText(text: string): string {
   return text
-    .replace(
-      /(?<!!)\[([^\]]+)\]\(\s*(?:https?:\/\/|www\.)[^)]*\)/gi,
-      "$1",
-    )
-    .replace(
-      /(?:https?:\/\/|www\.)[^\s<>{}\[\]"']+/gi,
-      " ",
-    )
-    .replace(
-      /\b(?:[a-z0-9-]+\.)+(?:com|org|net|io|ai|dev|edu|gov|tr|de|uk)(?:\/[^\s<>{}\[\]"']*)?/gi,
-      " ",
-    )
     .replace(/```[\s\S]*?```/g, " ")
-    .replace(/`([^`]*)`/g, "$1")
-    .replace(/<[^>]+>/g, " ")
+    .replace(/!?\[([^\]]+)\]\(\s*(?:https?:\/\/|www\.)[^)]*\)/gi, "$1")
+    .replace(/(?:https?:\/\/|www\.)[^\s<>{}\[\]"']+/gi, " ")
     .replace(/^\s{0,3}#{1,6}\s+/gm, "")
-    .replace(/^\s*[-*+]\s+/gm, "")
+    .replace(/^\s*(?:[-*+]|\d+[.)])\s+/gm, "")
+    .replace(/^\s*>\s*/gm, "")
+    .replace(/\*\*([^*]+)\*\*|__([^_]+)__/g, (_match, a: string, b: string) => a || b)
+    .replace(/(?<!\w)\*([^*\n]+)\*(?!\w)|(?<!\w)_([^_\n]+)_(?!\w)/g, (_match, a: string, b: string) => a || b)
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\[\^?\d+\]|\[kaynak\s*\d+\]/gi, " ")
+    .replace(/[*#`~_]+/g, " ")
     .replace(/\s+([,.;:!?])/g, "$1")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+/** Split only on sentence/whitespace boundaries; never silently drop the tail. */
+export function speechChunks(raw: string, max = 700): string[] {
+  const text = normalizeSpeechText(raw);
+  const result: string[] = [];
+  let rest = text;
+  while (rest.length > max) {
+    const sentence = Math.max(rest.lastIndexOf(". ", max), rest.lastIndexOf("! ", max), rest.lastIndexOf("? ", max));
+    const boundary = sentence >= Math.floor(max / 3) ? sentence + 1 : rest.lastIndexOf(" ", max);
+    const length = boundary > 0 ? boundary : max;
+    const chunk = rest.slice(0, length).trim();
+    if (chunk) result.push(chunk);
+    rest = rest.slice(length).trimStart();
+  }
+  if (rest.trim()) result.push(rest.trim());
+  return result;
 }
 
 type AuraJarvisBridgeProps = {
@@ -35,6 +48,7 @@ type AuraJarvisBridgeProps = {
     errorMessage?: string,
   ) => void;
   speakThroughSession?: (text: string) => Promise<boolean>;
+  sessionActive?: boolean;
 };
 
 export default function AuraJarvisBridge({
@@ -43,65 +57,79 @@ export default function AuraJarvisBridge({
   requestId = 0,
   onStatus,
   speakThroughSession,
+  sessionActive = false,
 }: AuraJarvisBridgeProps) {
   useEffect(() => {
-    if (
-      requestId <= 0 ||
-      !directive?.trim()
-    ) {
-      return;
-    }
+    if (requestId <= 0 || !directive?.trim()) return;
 
+    const abort = new AbortController();
     let cancelled = false;
+    let player: HTMLAudioElement | null = null;
+    let spoken = "";
+    let pending = "";
+    let playlist = Promise.resolve();
+    let everQueued = false;
+
+    const playChunk = async (speech: string): Promise<void> => {
+      if (cancelled || !speech) return;
+      const audio = await synthesizeLocalSpeech(speech);
+      if (cancelled) return;
+      const element = new Audio(`data:${audio.mime_type};base64,${audio.audio_base64}`);
+      player = element;
+      await new Promise<void>((resolve, reject) => {
+        element.onended = () => resolve();
+        element.onerror = () => reject(new Error("TTS ses verisi oynatılamadı"));
+        element.play().then(() => { if (!cancelled) onStatus?.("speaking"); }).catch(reject);
+      });
+      if (player === element) player = null;
+    };
+
+    const queue = (raw: string): void => {
+      for (const segment of speechChunks(raw)) {
+        everQueued = true;
+        playlist = playlist.then(() => playChunk(segment));
+        // The final await handles failures. No silent detached promises.
+      }
+    };
 
     const run = async () => {
       onStatus?.("processing");
-
       try {
-        const response =
-          await respondAsAssistant(
-            directive.trim(),
-            researchOutput,
-          );
+        // Run a genuine Ollama NDJSON stream. In non-full-duplex mode
+        // begin sentence playback while remaining tokens are generated.
+        await streamAssistantResponse(directive.trim(), researchOutput, (delta) => {
+          if (cancelled) return;
+          spoken += delta;
+          if (!sessionActive) {
+            pending += delta;
+            if (pending.length >= 180) {
+              const cut = Math.max(pending.lastIndexOf(". "), pending.lastIndexOf("! "),
+                pending.lastIndexOf("? "), pending.lastIndexOf("\n"));
+              if (cut > 0) {
+                const complete = pending.slice(0, cut + 1);
+                pending = pending.slice(cut + 1);
+                queue(complete);
+              }
+            }
+          }
+        }, abort.signal);
 
-        if (
-          cancelled ||
-          !response.assistant_reply?.trim()
-        ) {
-          return;
+        if (cancelled) return;
+        if (sessionActive && speakThroughSession && spoken.length <= 3900) {
+          const handled = await speakThroughSession(normalizeSpeechText(spoken));
+          if (handled) return; // SSE player owns interrupted playback.
         }
-
-        const speechText = normalizeSpeechText(
-          response.assistant_reply,
-        );
-
-        if (!speechText) {
+        if (sessionActive) pending = spoken;
+        if (pending.trim()) queue(pending);
+        if (!everQueued) {
           onStatus?.("ready");
           return;
         }
-
-        if (speakThroughSession) {
-          const handledByGateway = await speakThroughSession(speechText);
-          if (cancelled) return;
-          if (handledByGateway) {
-            // The SSE audio event owns speaking/ended state and interrupt handling.
-            return;
-          }
-        }
-
-        const audio = await synthesizeLocalSpeech(speechText);
-        if (cancelled) return;
-        const player = new Audio(`data:${audio.mime_type};base64,${audio.audio_base64}`);
-        player.onplay = () => onStatus?.("speaking");
-        player.onended = () => onStatus?.("ready");
-        player.onerror = () => onStatus?.("error");
-        await player.play();
+        await playlist;
+        if (!cancelled) onStatus?.("ready");
       } catch (error) {
         if (!cancelled) {
-          console.error(
-            "AURA JARVIS köprü hatası:",
-            error,
-          );
+          console.error("AURA JARVIS köprü hatası:", error);
           const message = error instanceof AuraApiError
             ? `${error.message}${error.requestId ? ` (istek kimliği: ${error.requestId})` : ""}`
             : error instanceof Error ? error.message : "Sesli yanıt başarısız oldu.";
@@ -109,19 +137,14 @@ export default function AuraJarvisBridge({
         }
       }
     };
-
     void run();
-
     return () => {
       cancelled = true;
+      abort.abort();
+      player?.pause();
+      if (player) { player.src = ""; player = null; }
     };
-  }, [
-    directive,
-    researchOutput,
-    requestId,
-    onStatus,
-    speakThroughSession,
-  ]);
+  }, [directive, researchOutput, requestId, onStatus, speakThroughSession, sessionActive]);
 
   return null;
 }

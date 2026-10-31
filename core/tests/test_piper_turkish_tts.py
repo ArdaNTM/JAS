@@ -36,7 +36,9 @@ def test_turkish_voice_is_cached_and_audio_is_structured(monkeypatch, tmp_path):
             assert config_path == str(config)
             return cls()
 
-        def synthesize_wav(self, text, wav_file):
+        def synthesize_wav(self, text, wav_file, syn_config=None):
+            assert syn_config is not None
+            assert 0.7 <= syn_config.length_scale <= 1.6
             counts["synthesis"] += 1
             assert text == "Merhaba AURA"
             wav_file.setnchannels(1)
@@ -44,7 +46,13 @@ def test_turkish_voice_is_cached_and_audio_is_structured(monkeypatch, tmp_path):
             wav_file.setframerate(22050)
             wav_file.writeframes(b"\0\0" * 16)
 
-    monkeypatch.setitem(sys.modules, "piper", SimpleNamespace(PiperVoice=FakePiperVoice))
+    class FakeSynthesisConfig:
+        def __init__(self, **kwargs):
+            self.__dict__.update(kwargs)
+
+    monkeypatch.setitem(sys.modules, "piper", SimpleNamespace(
+        PiperVoice=FakePiperVoice, SynthesisConfig=FakeSynthesisConfig,
+    ))
     request = SimpleNamespace(name="synthesize", arguments={"text": "Merhaba AURA"})
     one = asyncio.run(script.handle_call_tool(None, request))
     two = asyncio.run(script.handle_call_tool(None, request))

@@ -42,7 +42,7 @@ try {
  # Interactive Qwen3 profile: finite generation and no optional thinking.
  # Explicit user configuration always takes precedence.
  if (-not $env:AURA_OLLAMA_FAST_RESPONSE) { $env:AURA_OLLAMA_FAST_RESPONSE="1" }
- if (-not $env:AURA_OLLAMA_FAST_MAX_TOKENS) { $env:AURA_OLLAMA_FAST_MAX_TOKENS="384" }
+ if (-not $env:AURA_OLLAMA_FAST_MAX_TOKENS) { $env:AURA_OLLAMA_FAST_MAX_TOKENS="1024" }
  if ($env:AURA_TTS_PROVIDER -eq "piper") {
   if (-not $env:AURA_PIPER_MODEL_PATH -or -not (Test-Path -LiteralPath $env:AURA_PIPER_MODEL_PATH)) {
    throw "Piper selected but Turkish voice model is missing. Run scripts/setup-turkish-tts.ps1 after reviewing the voice license."

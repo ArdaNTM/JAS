@@ -15,6 +15,8 @@ import wave
 from pathlib import Path
 from typing import Any
 
+from aura_core.tts.text import clean_for_speech
+
 import mcp.server.stdio
 import mcp.types as types
 from mcp.server import Server, ServerRequestContext
@@ -46,13 +48,15 @@ def _voice_paths() -> tuple[Path, Path]:
 
 def synthesize(text: str) -> dict[str, Any]:
     global _cached_voice, _cached_identity
-    text = text.strip()
-    if not text or len(text) > 4000:
+    if not text.strip() or len(text) > 4000:
         raise ValueError("Speech text must have 1..4000 characters")
+    text = clean_for_speech(text)
+    if not text:
+        raise ValueError("Speech text has no speakable content")
     model, config = _voice_paths()
     identity = (str(model.resolve()), str(config.resolve()))
     try:
-        from piper import PiperVoice
+        from piper import PiperVoice, SynthesisConfig
     except ImportError as exc:
         raise RuntimeError("Piper selected but piper-tts is not installed in the Core Python environment.") from exc
     with _voice_lock:
@@ -60,8 +64,21 @@ def synthesize(text: str) -> dict[str, Any]:
             _cached_voice = PiperVoice.load(str(model), config_path=str(config))
             _cached_identity = identity
         buffer = io.BytesIO()
+        def bounded(name: str, default: str, low: float, high: float) -> float:
+            value = float(os.getenv(name, default))
+            if not low <= value <= high:
+                raise ValueError("Invalid local Piper voice synthesis setting")
+            return value
+
+        # Pace and natural variation are configurable, with safe finite limits.
+        # Model/voice quality remains voice-dependent.
+        syn_config = SynthesisConfig(
+            length_scale=bounded("AURA_PIPER_LENGTH_SCALE", "0.96", 0.7, 1.6),
+            noise_scale=bounded("AURA_PIPER_NOISE_SCALE", "0.72", 0.2, 1.2),
+            noise_w_scale=bounded("AURA_PIPER_NOISE_W_SCALE", "0.85", 0.2, 1.2),
+        )
         with wave.open(buffer, "wb") as wav_file:
-            _cached_voice.synthesize_wav(text, wav_file)
+            _cached_voice.synthesize_wav(text, wav_file, syn_config=syn_config)
     encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
     if len(encoded) > 16_000_000:
         raise RuntimeError("Piper synthesized audio exceeds delivery limit")

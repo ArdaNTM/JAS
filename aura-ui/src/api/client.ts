@@ -233,6 +233,72 @@ export function respondAsAssistant(
   );
 }
 
+/** Incremental local inference; the existing authenticated loopback proxy injects bearer auth. */
+export async function streamAssistantResponse(
+  message: string,
+  researchOutput: unknown,
+  onDelta: (text: string) => void,
+  signal?: AbortSignal,
+): Promise<{ model: string; finish_reason: string }> {
+  const response = await fetch(`${API_BASE}/api/assistant/respond/stream`, {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { Accept: "application/x-ndjson", "Content-Type": "application/json" },
+    body: JSON.stringify({ message, research_output: researchOutput ?? null }),
+    signal,
+  });
+  if (!response.ok || !response.body) {
+    throw new Error(`Local assistant streaming unavailable (HTTP ${response.status})`);
+  }
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffered = "";
+  let completed: { model: string; finish_reason: string } | null = null;
+  let total = 0;
+  const consume = (line: string) => {
+    if (!line.trim()) return;
+    const event = JSON.parse(line) as {
+      delta?: string; done?: boolean; finish_reason?: string; model?: string; error?: string;
+    };
+    if (event.error) throw new Error("Yerel model yanıt akışı kesildi.");
+    if (typeof event.delta === "string") {
+      total += event.delta.length;
+      if (total > 24000) throw new Error("Yanıt izin verilen uzunluğu aştı.");
+      onDelta(event.delta);
+    }
+    if (event.done) {
+      completed = { model: event.model ?? "", finish_reason: event.finish_reason ?? "stop" };
+    }
+  };
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      buffered += decoder.decode(value, { stream: !done });
+      if (buffered.length > 70000) throw new Error("Model akışı geçersiz boyutta.");
+      let newline = buffered.indexOf("\n");
+      while (newline !== -1) {
+        consume(buffered.slice(0, newline));
+        buffered = buffered.slice(newline + 1);
+        newline = buffered.indexOf("\n");
+      }
+      if (done) {
+        if (buffered.trim()) consume(buffered);
+        break;
+      }
+    }
+    // The NDJSON callback mutates this variable; assert the union here
+    // so TypeScript retains the event-driven narrowing.
+    const finalEvent = completed as { model: string; finish_reason: string } | null;
+    if (!finalEvent) throw new Error("Model yanıtı tamamlanmadan akış kapandı.");
+    if (finalEvent.finish_reason === "length") {
+      throw new Error("Model yanıtı token sınırında kesildi. AURA_MAX_TOKENS değerini artırın.");
+    }
+    return finalEvent;
+  } finally {
+    reader.releaseLock();
+  }
+}
+
 export function synthesizeLocalSpeech(text: string): Promise<{
   mime_type: string;
   audio_base64: string;
