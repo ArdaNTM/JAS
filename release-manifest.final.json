@@ -5,7 +5,7 @@
   "generated_at": "2026-10-31T00:45:29.771Z",
   "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:6bd06f8aabbb44124bf1f024a806b3cfc1aca8f9fedfd7bcff7475bfc91a3bfd",
+  "release_digest": "sha256:097dcc819ef74bb4d4fc8b5d206a997b77fb36d677f9bbad4354ac220e5a889a",
   "file_count": 234,
   "files": [
     {
@@ -254,7 +254,7 @@
     },
     {
       "path": "core/src/aura_core/application/hud_api.py",
-      "sha256": "42c42533c8dafc3b88bda2258856a74e5b996b80ef90035d7355939a8e3054e1"
+      "sha256": "1e3cacd0bd52e67f04c8d445f3c1d0e5d63a5dc968e2ffa64998e2aa73ef0c51"
     },
     {
       "path": "core/src/aura_core/application/jarvis_api.py",
@@ -682,7 +682,7 @@
     },
     {
       "path": "core/src/aura_core/mcp/screen_read_provider.py",
-      "sha256": "2f886861457c6457207d2e585ff9314d238fae0696fd282d0c7d903ee761e6c2"
+      "sha256": "b7e188d29283fb3e0110403bb1fe4be47e730db69127415b5271619d91cc9c72"
     },
     {
       "path": "core/src/aura_core/mcp/tool_registry.py",
