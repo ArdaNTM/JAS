@@ -37,3 +37,9 @@ for (const fragment of ["useContinuousAuraVoice", "hud-canvas", "model_estimate"
 }
 assert.ok(css.includes("100vw") && css.includes("100vh"), "Spatial canvas must use full viewport");
 console.log("PASS: spatial panel and consented wake-word presentation invariants");
+
+for (const fragment of ["hudGetScene", "hudPublishPanel", "hudUpdatePanel", "hudDragStart", "hudSetRegions"]) {
+  assert.ok(preload.includes(fragment), "HUD IPC API missing " + fragment);
+}
+assert.ok(hud.includes("WIKIMEDIA COMMONS") && hud.includes("hud-media"), "Real licensed media surface missing");
+assert.ok(hud.includes("trusted_session_token"), "Trusted ScreenRead token must be scoped to explicit capture calls");

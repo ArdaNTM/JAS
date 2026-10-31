@@ -46,3 +46,19 @@ html:has(.hud-root),body:has(.hud-root),body:has(.hud-root) #root {
 @keyframes aura-outline{to{filter:brightness(1.8)}}
 @keyframes aura-arrive{from{opacity:0;transform:translateY(22px) scale(.95)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){.hud-orbit i,.hud-region,.hud-region-reticle,.hud-sweep,.hud-bars span,.hud-float{animation:none}}
+
+/* Sourced-media panel: a real Commons thumbnail, with visible attribution. */
+.hud-media{position:relative;padding:0 13px 10px}
+.hud-media img{display:block;width:100%;height:155px;object-fit:contain;
+ background:linear-gradient(135deg,#061727,#0b2933);border:1px solid #23b5ce55;
+ filter:drop-shadow(0 0 15px #06cdeb2a)}
+.hud-media-meta{font-size:9px;line-height:1.4;color:#b4eaf0;padding-top:7px;
+ white-space:normal;overflow-wrap:anywhere;max-height:38px;overflow:hidden}
+.hud-media-source{font-size:8px;margin-top:4px;color:#5f9eaf;letter-spacing:.09em}
+.hud-schematic{position:relative;min-height:115px;padding:2px 14px 8px;
+ background:radial-gradient(ellipse at center,#02bde015,transparent 70%)}
+.hud-schematic svg{width:100%;height:105px;fill:none;stroke:#48dff5;stroke-width:1.6;
+ filter:drop-shadow(0 0 7px #00d1ee65);animation:aura-drift 5s ease-in-out infinite alternate}
+.hud-schematic span{display:block;font-size:7px;letter-spacing:.09em;color:#64aabb}
+@keyframes aura-drift{to{transform:translateY(-3px);filter:drop-shadow(0 0 13px #00dbffab)}}
+@media(prefers-reduced-motion:reduce){.hud-schematic svg{animation:none}}
