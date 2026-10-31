@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-10-31T00:09:17.627Z",
-  "git_commit": "0d07169c3f07dfe97863cab489e2cb93bec896c4",
+  "generated_at": "2026-10-31T00:38:41.218Z",
+  "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:5077297ff6c1b72c67e80c86cc588c6e7fdd7405d5120857a0b05810baf1aa70",
-  "file_count": 229,
+  "release_digest": "sha256:17961d9bacba970ba9a490f6c2a954cad6d5d197eea3a0e9d89e845afd8f245a",
+  "file_count": 233,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -30,7 +30,7 @@
     },
     {
       "path": "aura-ui/src/App.tsx",
-      "sha256": "a91f8d6971a69755bfa26fd35b4d15a6da15ec675a50161e688a4110118aa950"
+      "sha256": "afb2504609c7f7575b940c5cabc3cd5ef8f2ffe5ec0812afa8502b03e24bbb83"
     },
     {
       "path": "aura-ui/src/assets/hero.png",
@@ -81,6 +81,14 @@
       "sha256": "deee0a420b4542d8835867bcc9fefa7633ec0520739fd58ccc805bc5f5f9446a"
     },
     {
+      "path": "aura-ui/src/hud.css",
+      "sha256": "6e67cd1ac804597f116044bcc1e314a543ddb85cf87b079a95b205c850853855"
+    },
+    {
+      "path": "aura-ui/src/HudOverlay.tsx",
+      "sha256": "0b1958cfcdb45709a55276379d5e493f8c37c428fc974f671d508896adf40b76"
+    },
+    {
       "path": "aura-ui/src/index.css",
       "sha256": "3a76bdb0070996a4ca22e51207fe266a4402cde4c0c91ae58fe78057b1c44ad5"
     },
@@ -90,7 +98,7 @@
     },
     {
       "path": "aura-ui/src/main.tsx",
-      "sha256": "162c39125a6d7bac4d08851f7d2552f8aed8ba11f62c7c6f7bc5460e28155a8f"
+      "sha256": "7e76df173f50dc12f31c78cff6df9170926dc7625cfc0fb817a158e21d5ca3de"
     },
     {
       "path": "aura-ui/src/services/api.ts",
@@ -190,7 +198,7 @@
     },
     {
       "path": "core/src/aura_core/application/composition.py",
-      "sha256": "29bfcb793a021c28f610307cd034cf2e0c2dce76a98dfa3cce6b5bde7c287516"
+      "sha256": "370cb5e1b08a3c1b6f665fced30bc39e7846831e18ff1a04cc9b4113366e6e6d"
     },
     {
       "path": "core/src/aura_core/application/context_aware_stt.py",
@@ -243,6 +251,10 @@
     {
       "path": "core/src/aura_core/application/health_api.py",
       "sha256": "ec0c505314953bc3a451137e859c4a4a9808e6e2ab34388b3310cd20cc3232e5"
+    },
+    {
+      "path": "core/src/aura_core/application/hud_api.py",
+      "sha256": "1b87b32b22e1ab37a83801d2f0812bbc3e7105bfd2e6d4cf29025fa7a20ce9e5"
     },
     {
       "path": "core/src/aura_core/application/jarvis_api.py",
@@ -366,7 +378,7 @@
     },
     {
       "path": "core/src/aura_core/application/ui_event_stream_api.py",
-      "sha256": "31898504c152e588604b383def6023a9248164f2a6a25be85e290b57ed2bcbe0"
+      "sha256": "3dea0768585df9df603de393ba6b28e8a5b3c9b6a270ccb6ed90bd19bb02f0c9"
     },
     {
       "path": "core/src/aura_core/application/vision_adapters.py",
@@ -618,7 +630,7 @@
     },
     {
       "path": "core/src/aura_core/main.py",
-      "sha256": "1a9c0c380fa083892e6e9007dedd92a61df81d15e94503c998d8397a59d0967e"
+      "sha256": "994cb2dfe1723239a3032001ef75345c8f4a4dd73ddafe098d1cd2e512828fd6"
     },
     {
       "path": "core/src/aura_core/mcp/__init__.py",
@@ -663,6 +675,10 @@
     {
       "path": "core/src/aura_core/mcp/screen_control_provider.py",
       "sha256": "e643ff8143f739dd30d668675c45d1f634ad5f05c1dd7fe0b22dc31b86a0971d"
+    },
+    {
+      "path": "core/src/aura_core/mcp/screen_read_provider.py",
+      "sha256": "c41eb1f79ac178e80ff67f56598fd9c78225952210f38778cff9a4bad6802a63"
     },
     {
       "path": "core/src/aura_core/mcp/tool_registry.py",
