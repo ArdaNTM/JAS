@@ -1721,6 +1721,17 @@ def create_api(
         return {"mode": "review_only",
                 "items": worker.list_proposals(limit=limit) if worker else []}
 
+    @app.get("/api/evolution/goals")
+    def evolution_goal_tree(
+        http_request: Request,
+        principal_id: str = Depends(authenticated_principal),
+    ) -> dict[str, object]:
+        require_local_client(http_request)
+        worker = app.state.evolution_review
+        if worker is None:
+            return {"mode": "disabled", "groups": [], "authorization_granted": False}
+        return worker.goal_tree()
+
     @app.get("/api/background-thinking/status")
     def background_thinking_status(
         http_request: Request,

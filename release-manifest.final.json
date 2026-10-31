@@ -5,8 +5,8 @@
   "generated_at": "2026-10-31T00:45:29.771Z",
   "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:30621bb4f3942a651708d2a53f6f02dfd41eb695b622c59526f0d34a5cd53508",
-  "file_count": 239,
+  "release_digest": "sha256:f0a5af78835241354a5c06114e58e401d64a8cb142c0260bcad740222af08ea2",
+  "file_count": 241,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -158,7 +158,7 @@
     },
     {
       "path": "core/src/aura_core/application/api.py",
-      "sha256": "05cf61131ec93ae82468a76776aa3cfe3c858dd5479ea64bc9a8e50420bbde69"
+      "sha256": "218c6641d8251a0ecc1c25f04cc975a3b1c0b494378488099fd2c1a027c5793e"
     },
     {
       "path": "core/src/aura_core/application/approval_api.py",
@@ -482,7 +482,15 @@
     },
     {
       "path": "core/src/aura_core/evolution/evolution_planner.py",
-      "sha256": "534079805c43fddac941301bbbe7bc9eb8fe4d5741d296d4f46a1a13accaf5ca"
+      "sha256": "29669e266c9c0f71a5ceaeceb7e722c7290a1e068d793748a6d729f1882302fd"
+    },
+    {
+      "path": "core/src/aura_core/evolution/goal_tree.py",
+      "sha256": "55d58e58f28f568a724897f5ac18328899c60919588d3967ca11ffbaf919a30e"
+    },
+    {
+      "path": "core/src/aura_core/evolution/mutation_engine.py",
+      "sha256": "fe5c0caca6011df568f3980d1d91ab554e067df75a94e409404695eb570ec802"
     },
     {
       "path": "core/src/aura_core/evolution/owner_authority.py",

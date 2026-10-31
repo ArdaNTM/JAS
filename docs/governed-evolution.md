@@ -114,3 +114,27 @@ trusted sandbox attestation bound to the exact artifact SHA-256.
 In packaged deployments the opt-in source root should be explicitly supplied
 as `AURA_JAS_ROOT`; it must point to a valid JAS checkout. No missing-source
 fallback is allowed. The scanner stops after repeated persistent failures.
+
+
+## Review-only Goal Tree and quarantined mutation drafts
+
+`evolution/goal_tree.py` groups at most 100 source-backed findings into
+stable goals such as `runtime_reliability`. It does not send code/logs to
+a model, decide privileges or turn broad instructions into deployment consent.
+The authenticated, loopback-only `GET /api/evolution/goals` endpoint
+returns this bounded, non-executable view when review is enabled.
+
+`evolution/mutation_engine.py` is a **quarantined review queue**, not a
+self-modifying agent. It accepts at most 20 bounded candidate drafts
+as untrusted in-memory data, statically checks proposal shape, enforces
+a 3-revision budget and records source SHA-256 without writing Python
+to the live checkout or skill DB. Optional smoke tests **require a fresh
+Local Owner approval** and execute only via `GovernedSandboxReview` →
+MCP Gateway → isolated Docker CodeAct provider. A smoke test never creates
+independent attestation, permission policies or a hot reload.
+
+There is intentionally no `importlib` of generated source, no copy into
+`core/src/aura_core/mcp/dynamic_tools`, no network scraper and no automatic
+release-lock regeneration: source changes remain ordinary reviewed Git
+commits. The existing `GovernedSkillRegistry` is the only declarative
+owner-approved version switch for **already registered** MCP providers.

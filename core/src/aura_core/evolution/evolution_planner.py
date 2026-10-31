@@ -17,6 +17,7 @@ from typing import Protocol
 
 from aura_core.application.self_tool_synthesis import CandidateToolValidator, ToolCandidate
 from aura_core.evolution.autonomous_analyzer import AutonomousAnalyzer, GoalProposal
+from aura_core.evolution.goal_tree import GoalTreeBuilder
 
 logger = logging.getLogger(__name__)
 
@@ -82,6 +83,7 @@ class EvolutionPlanner:
         self._cycles = 0
         self._errors = 0
         self._backlog: dict[str, EvolutionSuggestion] = {}
+        self._findings: dict[str, GoalProposal] = {}
         self._validator = CandidateToolValidator()
 
     def start(self) -> None:
@@ -147,6 +149,7 @@ class EvolutionPlanner:
                 static_validation=validation,
             )
             self._backlog[proposal.proposal_id] = item
+            self._findings[proposal.proposal_id] = proposal
             new_items.append(item)
         self._cycles += 1
         return tuple(new_items)
@@ -154,6 +157,10 @@ class EvolutionPlanner:
     def list_proposals(self, *, limit: int = 20) -> list[dict]:
         bounded = max(1, min(int(limit), 50))
         return [item.to_dict() for item in list(self._backlog.values())[-bounded:]]
+
+    def goal_tree(self) -> dict:
+        """Return a deterministic read-only goal tree; never grants permissions."""
+        return GoalTreeBuilder().build(tuple(self._findings.values())).to_dict()
 
     def status(self) -> dict:
         return {
