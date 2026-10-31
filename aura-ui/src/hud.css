@@ -1,58 +1,64 @@
-/* The page is entirely transparent: only the floating HUD draws pixels. */
-html:has(.hud-root), body:has(.hud-root), body:has(.hud-root) #root {
-  margin: 0;
-  padding: 0;
-  background: transparent !important;
-  min-height: 0;
-  color: #bbfaff;
+/* AURA Spatial HUD: transparent full-work-area compositor. All geometry is
+   descriptive; no scanning/boxes are passed off as verified detection. */
+html:has(.hud-root),body:has(.hud-root),body:has(.hud-root) #root {
+  margin:0;padding:0;min-height:0;background:transparent!important;overflow:hidden;
 }
-.hud-root { width: 540px; height: 470px; position: relative; background: transparent; overflow: hidden; }
-.hud-panel {
-  margin: 10px;
-  width: calc(100% - 20px);
-  max-height: calc(100% - 20px);
-  overflow: hidden;
-  position: relative;
-  border: 1px solid rgba(41,208,246,.45);
-  border-radius: 18px;
-  background: linear-gradient(120deg,rgba(3,15,32,.82),rgba(0,20,37,.65));
-  box-shadow: inset 0 0 32px #06d9ff12, 0 0 30px #02a5ea24;
-  backdrop-filter: blur(8px);
-}
-.hud-panel:before { content:""; pointer-events:none; position:absolute; inset:0; background:repeating-linear-gradient(0deg,transparent 0px,transparent 4px,#71eeff07 5px); }
-.hud-top, .hud-footer { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; font: 10px Consolas,monospace; letter-spacing:.13em; }
-.hud-brand { font-size:15px; font-weight:700; color:#67eaff; }
-.hud-brand small { font-size:8px; margin-left:8px; color:#7d9ca8; }
-.hud-status { color:#a9b4ba; font-size:9px; }
-.hud-status.online { color:#41e5df; }
-.hud-visual { position:relative; height:210px; overflow:hidden; background:radial-gradient(ellipse,#0da4c41b,transparent 64%); }
-.hud-reticle { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
-.hud-reticle .ring { position:absolute; width:170px; height:170px; border:1px solid #03d9ff; border-radius:50%; box-shadow:0 0 22px #00cafe21,inset 0 0 20px #00a5ee17; }
-.hud-reticle .ring-b { width:205px; height:205px; border-style:dashed; border-color:#1da4d4a0; animation:auraspin 35s linear infinite; }
-.hud-reticle .ring-a { border-right-color:transparent; border-bottom-color:#0ee6fd45; transform:rotate(-32deg); }
-.hud-reticle .cross { position:absolute; background:#47dfff43; }
-.hud-reticle .cross-h { width:260px;height:1px; }
-.hud-reticle .cross-v { width:1px;height:193px; }
-.hud-schematic { position:relative; width:225px; filter:drop-shadow(0 0 8px #1cdcf950); }
-.hud-schematic svg { width:100%; fill:none; stroke:#21d8ff; stroke-width:1.7; opacity:.88; }
-.hud-focus { position:absolute; width:22px;height:22px;border:2px solid #57dfff; opacity:.8; }
-.hud-focus.one { top:23px;left:92px;border-right:0;border-bottom:0; }
-.hud-focus.two { bottom:25px;right:90px;border-left:0;border-top:0; }
-.hud-telemetry { position:absolute;left:14px;right:14px;bottom:8px;display:flex;justify-content:space-between; font:9px Consolas,monospace;color:#4ddcef;letter-spacing:.13em; }
-.hud-scanline { position:absolute; left:10%;right:10%;height:2px;top:0; background:#53f5fb;box-shadow:0 0 22px 8px #06d8ff80;animation:aurascan 1.7s ease-in-out infinite alternate; }
-.is-scanning .hud-reticle { animation:aurapulse 1.2s ease-in-out infinite alternate; }
-.hud-body { position:relative; padding:10px 17px 11px; min-height:66px;max-height:115px;overflow-y:auto; }
-.hud-title { font-weight:700;color:#cbfaff;font-size:13px;margin-bottom:6px; }
-.hud-copy { font:10px/1.45 Consolas,monospace;color:#9bc5ce;white-space:pre-line; }
-.hud-error {color:#ff808b;margin-top:5px;font-size:10px;}
-.hud-footer { padding-top:8px;border-top:1px solid #16678355;color:#57bbcf;font-size:8px; }
-.hud-controls { position:absolute;inset:42px 10px 27px;z-index:10;display:flex;flex-wrap:wrap;align-content:center;gap:8px;padding:15px;background:#04111cf5;border:1px solid #35dafa;border-radius:12px;box-shadow:0 0 25px #00bce844; }
-.hud-controls label { flex:1 1 100%;font:10px/1.5 Consolas,monospace;color:#70deee; }
-.hud-controls input {display:block;width:100%;height:28px;padding:5px 8px;background:#051826;border:1px solid #357588;color:#e3ffff;border-radius:5px;margin-top:3px;outline:none; }
-.hud-controls button { padding:8px 10px;border:1px solid #2a8ca2;border-radius:5px;background:#07304a;color:#b7f7fe;font:10px Consolas,monospace; }
-.hud-controls button:disabled {opacity:.5;}
-.hud-controls .hud-close {margin-left:auto;}
-@keyframes auraspin {to{transform:rotate(360deg)}}
-@keyframes aurascan {to{top:96%}}
-@keyframes aurapulse {to{filter:brightness(1.4)}}
-@media(prefers-reduced-motion:reduce){.hud-reticle .ring-b,.hud-scanline,.is-scanning .hud-reticle{animation:none}}
+.hud-root{position:relative;width:100vw;height:100vh;overflow:hidden;color:#bcfaff;font-family:Consolas,"Segoe UI",monospace;pointer-events:none}
+.hud-root:before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 53% 43%,#00d9ff09,transparent 36%);pointer-events:none}
+.hud-identity{position:absolute;top:22px;left:26px;display:flex;gap:17px;align-items:center;text-shadow:0 0 17px #16d3ffbb}
+.hud-identity b{font-size:17px;letter-spacing:.3em}
+.hud-identity small{font-size:9px;letter-spacing:.15em;color:#67b1bf}
+.hud-orbit{position:absolute;left:50%;top:45%;width:280px;height:280px;transform:translate(-50%,-50%);opacity:.34;pointer-events:none}
+.hud-orbit i{position:absolute;inset:0;border:1px solid #17c8f867;border-radius:50%;border-right-color:transparent;animation:aura-orbit 24s linear infinite}
+.hud-orbit i:nth-child(2){inset:37px;border-style:dashed;animation-direction:reverse;animation-duration:32s}
+.hud-orbit i:nth-child(3){inset:78px;border-color:#17c8f839;animation-duration:16s}
+.hud-float{position:absolute;z-index:3;width:clamp(210px,20vw,328px);min-height:128px;border:1px solid #4cdeff7f;border-radius:5px;background:linear-gradient(125deg,#031322c9,#0617249e 74%,#081c2aa8);backdrop-filter:blur(9px);box-shadow:inset 0 0 27px #00b9f017,0 0 20px #00b9f02b;animation:aura-arrive .38s ease-out both;overflow:hidden}
+.hud-float:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0,transparent 5px,#71edff08 6px);pointer-events:none}
+.hud-float header{position:relative;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #248fa96b;padding:9px 12px;font-size:9px;letter-spacing:.15em;color:#4acee4;touch-action:none}
+.hud-float header.can-drag{cursor:grab;pointer-events:auto}
+.hud-float header button{pointer-events:auto;color:#bffaff;background:transparent;border:0;font-size:18px;cursor:pointer}
+.hud-float-title{position:relative;font-size:14px;font-weight:700;color:#dbffff;padding:13px 14px 7px;overflow-wrap:anywhere}
+.hud-float p{position:relative;max-height:116px;overflow:auto;white-space:pre-wrap;padding:2px 14px 10px;margin:0;font:10px/1.55 Consolas,monospace;color:#a3d5dc;pointer-events:auto}
+.hud-float footer{position:relative;border-top:1px solid #248fa947;padding:8px 12px;color:#68a9b6;font-size:8px;letter-spacing:.11em}
+.hud-bars{height:35px;display:flex;gap:5px;align-items:center;padding-left:14px}
+.hud-bars span{height:2px;width:35px;background:#0cc9e6;box-shadow:0 0 10px #07cce9;animation:aura-breathe 1.9s ease-in-out infinite alternate}
+.hud-bars span:nth-child(2){width:65px;animation-delay:.3s}.hud-bars span:nth-child(3){width:20px;animation-delay:.6s}
+.hud-region{position:absolute;z-index:2;border:1px dashed #53f6ffc7;box-shadow:0 0 20px #00f5ff31,inset 0 0 20px #00d7ff16;animation:aura-outline .9s ease-in-out infinite alternate}
+.hud-region:before,.hud-region:after{content:"";position:absolute;width:18px;height:18px;border-color:#9afaff}
+.hud-region:before{top:-2px;left:-2px;border-top:3px solid;border-left:3px solid}
+.hud-region:after{right:-2px;bottom:-2px;border-right:3px solid;border-bottom:3px solid}
+.hud-region-tag{position:absolute;top:-21px;left:0;white-space:nowrap;color:#8af8ff;font-size:9px;text-shadow:0 0 12px #00ebff}
+.hud-region-reticle{position:absolute;left:50%;top:50%;width:27px;height:27px;transform:translate(-50%,-50%);border:1px solid #7ef7fc;border-radius:50%;animation:aura-orbit 3s linear infinite}
+.hud-region-reticle:after{content:"";position:absolute;left:50%;top:-9px;width:1px;height:45px;background:#7ef7fc70}
+.hud-sweep{position:absolute;z-index:1;left:0;right:0;top:0;height:2px;background:#59f8ff95;box-shadow:0 0 35px 9px #02bfff4a;animation:aura-sweep 2.3s linear infinite alternate}
+.hud-hint{position:absolute;bottom:19px;left:27px;color:#4299aa;font-size:9px;letter-spacing:.13em}
+.hud-command{position:absolute;z-index:20;right:25px;bottom:32px;width:min(350px,90vw);display:flex;flex-direction:column;gap:9px;padding:17px;background:#031423f2;backdrop-filter:blur(14px);border:1px solid #41dfff;box-shadow:0 0 35px #00cbf933;border-radius:8px;pointer-events:auto}
+.hud-command header{display:flex;align-items:center;justify-content:space-between;color:#87effb;font-size:11px;letter-spacing:.12em}
+.hud-command label{font-size:9px;color:#5bcadd;letter-spacing:.1em}
+.hud-command input{box-sizing:border-box;display:block;width:100%;margin-top:5px;padding:9px;background:#091e30;border:1px solid #2a8097;color:#e1fcff;outline:none;border-radius:4px}
+.hud-command button{cursor:pointer;border:1px solid #267c92;padding:9px;color:#dcffff;background:#0a3448;border-radius:4px;font:10px Consolas,monospace}
+.hud-command button:disabled{opacity:.45;cursor:not-allowed}
+.hud-command small{font-size:9px;line-height:1.4;color:#82adbb}
+.hud-error{padding:9px;color:#ffb3bd;background:#3c15264d;font-size:10px;overflow-wrap:anywhere}
+@keyframes aura-orbit{to{transform:rotate(360deg)}}
+@keyframes aura-sweep{to{top:100%}}
+@keyframes aura-breathe{to{opacity:.3;transform:scaleX(.65)}}
+@keyframes aura-outline{to{filter:brightness(1.8)}}
+@keyframes aura-arrive{from{opacity:0;transform:translateY(22px) scale(.95)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.hud-orbit i,.hud-region,.hud-region-reticle,.hud-sweep,.hud-bars span,.hud-float{animation:none}}
+
+/* Sourced-media panel: a real Commons thumbnail, with visible attribution. */
+.hud-media{position:relative;padding:0 13px 10px}
+.hud-media img{display:block;width:100%;height:155px;object-fit:contain;
+ background:linear-gradient(135deg,#061727,#0b2933);border:1px solid #23b5ce55;
+ filter:drop-shadow(0 0 15px #06cdeb2a)}
+.hud-media-meta{font-size:9px;line-height:1.4;color:#b4eaf0;padding-top:7px;
+ white-space:normal;overflow-wrap:anywhere;max-height:38px;overflow:hidden}
+.hud-media-source{font-size:8px;margin-top:4px;color:#5f9eaf;letter-spacing:.09em}
+.hud-schematic{position:relative;min-height:115px;padding:2px 14px 8px;
+ background:radial-gradient(ellipse at center,#02bde015,transparent 70%)}
+.hud-schematic svg{width:100%;height:105px;fill:none;stroke:#48dff5;stroke-width:1.6;
+ filter:drop-shadow(0 0 7px #00d1ee65);animation:aura-drift 5s ease-in-out infinite alternate}
+.hud-schematic span{display:block;font-size:7px;letter-spacing:.09em;color:#64aabb}
+@keyframes aura-drift{to{transform:translateY(-3px);filter:drop-shadow(0 0 13px #00dbffab)}}
+@media(prefers-reduced-motion:reduce){.hud-schematic svg{animation:none}}

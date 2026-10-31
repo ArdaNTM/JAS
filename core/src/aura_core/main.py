@@ -36,6 +36,7 @@ from aura_core.memory.graph_store import SQLiteGraphStore, PostgreSQLGraphStore
 from aura_core.application.windows_screen_driver import WindowsDesktopInputDriver, DesktopVLMAdapter
 from aura_core.mcp.screen_control_provider import ScreenControlMCPProvider
 from aura_core.mcp.screen_read_provider import ScreenReadMCPProvider
+from aura_core.mcp.hud_media_provider import WikimediaMediaMCPProvider
 from aura_core.providers.local_vision import LocalOllamaVisionProvider
 from aura_core.application.swarm_orchestration import SwarmOrchestrator
 from aura_core.enterprise.postgresql_approval_store import PostgreSQLApprovalStore
@@ -313,7 +314,7 @@ def build_app() -> FastAPI:
             describer=LocalOllamaVisionProvider(
                 model=os.getenv("AURA_VISION_MODEL", "qwen2.5vl:3b"),
                 base_url=os.getenv("AURA_OLLAMA_BASE_URL", "http://127.0.0.1:11434"),
-                timeout=float(os.getenv("AURA_VISION_TIMEOUT_SECONDS", "60")),
+                timeout=float(os.getenv("AURA_VISION_TIMEOUT_SECONDS", "150")),
             ),
         )
         kernel.permission_engine.add_policy(PermissionPolicy(
@@ -325,6 +326,18 @@ def build_app() -> FastAPI:
             authorization_level=AuthorizationLevel.USER_APPROVAL_REQUIRED,
             decision=AuthorizationDecision.REQUIRE_APPROVAL,
         ))
+
+    # Only the authenticated local owner may submit an explicit media query.
+    # It is an outbound search and does not use screenshot-derived text.
+    kernel.permission_engine.add_policy(PermissionPolicy(
+        policy_id="local-owner:hud-media:search",
+        policy_version="1.0.0",
+        principal_id=http_principal_id,
+        capability_id="HUDMediaSearch", operation_id="HUDMediaSearch",
+        resource_scope="commons_public_query",
+        authorization_level=AuthorizationLevel.READ,
+        decision=AuthorizationDecision.ALLOW,
+    ))
 
     # Register governed MCP adapters through the Kernel registries.
     memory_service = ServiceDefinition(
@@ -384,6 +397,9 @@ def build_app() -> FastAPI:
         ("aura.graph-memory", "graph_memory_mcp", GraphMemoryMCPProvider(graph_store), (
             ("memory.graph.query", "graph_memory_query", "low", CapabilityCategory.MEMORY),
             ("memory.graph.insert", "graph_memory_insert", "medium", CapabilityCategory.MEMORY),
+        )),
+        ("aura.hud-media", "hud_media_mcp", WikimediaMediaMCPProvider(), (
+            ("HUDMediaSearch", "hud_media_search", "low", CapabilityCategory.VISUALIZATION),
         )),
         ("aura.screen-read", "screen_read_mcp", screen_read_provider, (
             ("ScreenRead", "screen_read", "high", CapabilityCategory.VISION),
