@@ -21,13 +21,8 @@ from aura_core.runtime.transport import HttpJsonTransport
 
 
 def speech_cleaner():
-    folder = Path(__file__).resolve().parents[1] / "scripts"
-    spec = importlib.util.spec_from_file_location("aura_test_tts_text", folder / "tts_text.py")
-    assert spec and spec.loader
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module.clean_for_speech
-
+    from aura_core.tts.text import clean_for_speech
+    return clean_for_speech
 
 def test_speech_cleaner_strips_markdown_links_and_urls_without_losing_turkish():
     clean = speech_cleaner()
