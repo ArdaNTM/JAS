@@ -537,3 +537,20 @@ continue to run as before. All new executable workflow content is hashed by
 the canonical final release-lock inventory. Real physical Windows Hello
 enrollment and the outstanding npm audit advisories remain independent
 production acceptance blockers.
+
+
+### Windows ACL provisioning compatibility adjustment
+
+The first native Windows run exposed a separate flaw in the ACL writer:
+constructing and applying a fresh blank `DirectorySecurity`/`FileSecurity`
+descriptor failed before the protected fixture could be validated.
+`windows_owner_storage._HARDEN` and the operator-only
+`provision_windows_owner.ps1` now use Windows native `icacls` to
+`/reset` a newly owned path, remove inherited ACEs with `/inheritance:r`,
+and grant only the current owner SID, LOCAL SYSTEM, and local Administrators
+by SID. The existing `require_private_acl` checker still validates the
+result. Production `harden_private_acl` continues refusing an unprotected
+parent *before* invoking this ACL writer. The test fixture uses the writer
+only to initialize its own temporary leaf; no production trust check is
+disabled. Run real Windows ACL CI and physical Windows Hello acceptance
+before treating this protection as production validated.

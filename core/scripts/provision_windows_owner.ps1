@@ -18,26 +18,40 @@ function Protect-Acl([string]$Path) {
     if (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
         throw 'Reparse points are forbidden in owner state'
     }
-    if ($item.PSIsContainer) {
-        $acl = [Security.AccessControl.DirectorySecurity]::new()
-        $inherit = [Security.AccessControl.InheritanceFlags]'ContainerInherit, ObjectInherit'
-    } else {
-        $acl = [Security.AccessControl.FileSecurity]::new()
-        $inherit = [Security.AccessControl.InheritanceFlags]::None
+    $previous = Get-Acl -LiteralPath $Path
+    $ownerSid = $previous.GetOwner([Security.Principal.SecurityIdentifier]).Value
+    if ($ownerSid -ne $ident.User.Value -and $ownerSid -ne 'S-1-5-32-544') {
+        throw 'Owner state cannot be reprovisioned for an unknown Windows identity'
     }
-    $acl.SetOwner($ident.User)
-    $acl.SetAccessRuleProtection($true, $false)
+
+    # icacls builds a portable explicit DACL without replacing the entire
+    # Windows security descriptor with a blank DirectorySecurity/FileSecurity.
+    $icacls = Join-Path $env:SystemRoot 'System32\icacls.exe'
+    if (-not (Test-Path -LiteralPath $icacls)) {
+        throw 'Native NTFS access control tool unavailable'
+    }
+    & $icacls $Path /reset | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw 'ACL reset failed' }
+    & $icacls $Path /inheritance:r | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw 'Disabling ACL inheritance failed' }
+    $rights = if ($item.PSIsContainer) { '(OI)(CI)F' } else { 'F' }
     foreach ($sid in @($ident.User.Value, 'S-1-5-18', 'S-1-5-32-544')) {
-        $rule = [Security.AccessControl.FileSystemAccessRule]::new(
-            [Security.Principal.SecurityIdentifier]::new($sid),
-            [Security.AccessControl.FileSystemRights]::FullControl,
-            $inherit,
-            [Security.AccessControl.PropagationFlags]::None,
-            [Security.AccessControl.AccessControlType]::Allow
-        )
-        $acl.AddAccessRule($rule)
+        $access = '*' + $sid + ':' + $rights
+        & $icacls $Path /grant:r $access | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw 'Owner ACL grant failed' }
     }
-    Set-Acl -LiteralPath $Path -AclObject $acl
+    $verified = Get-Acl -LiteralPath $Path
+    if (-not $verified.AreAccessRulesProtected) {
+        throw 'Owner ACL inheritance protection missing'
+    }
+    foreach ($ace in $verified.Access) {
+        $sid = $ace.IdentityReference.Translate(
+            [Security.Principal.SecurityIdentifier]).Value
+        if ($sid -notin @($ident.User.Value, 'S-1-5-18', 'S-1-5-32-544') -or
+            $ace.IsInherited) {
+            throw 'Unexpected principal or inherited ACE in owner state'
+        }
+    }
 }
 New-Item -ItemType Directory -Path $TrustRoot | Out-Null
 Protect-Acl $TrustRoot

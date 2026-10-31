@@ -58,26 +58,27 @@ try {
     $p = $env:AURA_OWNER_ACL_PATH
     $entry = Get-Item -LiteralPath $p -Force
     if (($entry.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) { exit 10 }
-    $id = [Security.Principal.WindowsIdentity]::GetCurrent().User
-    if ($entry.PSIsContainer) {
-        $acl = New-Object System.Security.AccessControl.DirectorySecurity
-        $inherit = [Security.AccessControl.InheritanceFlags]'ContainerInherit, ObjectInherit'
-    } else {
-        $acl = New-Object System.Security.AccessControl.FileSecurity
-        $inherit = [Security.AccessControl.InheritanceFlags]::None
+    $me = [Security.Principal.WindowsIdentity]::GetCurrent().User
+    $acl = Get-Acl -LiteralPath $p
+    $owner = $acl.GetOwner([Security.Principal.SecurityIdentifier]).Value
+    if ($owner -ne $me.Value -and $owner -ne 'S-1-5-32-544') { exit 11 }
+
+    # Build an explicit DACL using Windows icacls rather than constructing a
+    # blank DirectorySecurity/FileSecurity object (Set-Acl of an empty security
+    # descriptor fails on some Windows installations). The production caller
+    # already required the PARENT DACL to be private before reaching here.
+    $tool = Join-Path $env:SystemRoot 'System32\icacls.exe'
+    if (-not (Test-Path -LiteralPath $tool)) { exit 14 }
+    & $tool $p /reset | Out-Null
+    if ($LASTEXITCODE -ne 0) { exit 14 }
+    & $tool $p /inheritance:r | Out-Null
+    if ($LASTEXITCODE -ne 0) { exit 14 }
+    $permissions = if ($entry.PSIsContainer) { '(OI)(CI)F' } else { 'F' }
+    foreach ($sid in @($me.Value, 'S-1-5-18', 'S-1-5-32-544')) {
+        $ace = '*' + $sid + ':' + $permissions
+        & $tool $p /grant:r $ace | Out-Null
+        if ($LASTEXITCODE -ne 0) { exit 14 }
     }
-    $acl.SetOwner($id)
-    $acl.SetAccessRuleProtection($true, $false)
-    foreach ($sid in @($id.Value, 'S-1-5-18', 'S-1-5-32-544')) {
-        $rule = [System.Security.AccessControl.FileSystemAccessRule]::new(
-            ([Security.Principal.SecurityIdentifier]::new($sid)),
-            [Security.AccessControl.FileSystemRights]::FullControl,
-            $inherit,
-            [Security.AccessControl.PropagationFlags]::None,
-            [Security.AccessControl.AccessControlType]::Allow)
-        $acl.AddAccessRule($rule)
-    }
-    Set-Acl -LiteralPath $p -AclObject $acl
 } catch { exit 14 }
 """
 
