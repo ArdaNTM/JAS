@@ -38,7 +38,7 @@ class StreamingSpeechStats:
 class SentenceAccumulator:
     """Bounded punctuation-aware assembler; no token-by-token TTS requests."""
 
-    def __init__(self, *, min_chars: int = 28, max_chars: int = 260) -> None:
+    def __init__(self, *, min_chars: int = 16, max_chars: int = 260) -> None:
         if not 1 <= min_chars <= max_chars <= 1024:
             raise ValueError("Invalid sentence thresholds")
         self.min_chars = min_chars

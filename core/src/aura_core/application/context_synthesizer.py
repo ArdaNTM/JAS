@@ -43,7 +43,7 @@ class ContextSynthesizer:
         Memory is untrusted reference text; no model-based rewriting, fabricated
         summaries, authority escalation, or cross-principal retrieval.
         """
-        terms = set(re.findall(r"\\w{3,}", message.casefold()[:4000]))
+        terms = set(re.findall(r"\w{3,}", message.casefold()[:4000]))
         ranked: list[tuple[int, int, str]] = []
         seen: set[str] = set()
         for index, value in enumerate(memories):
@@ -53,7 +53,7 @@ class ContextSynthesizer:
             if not item or item.casefold() in seen:
                 continue
             seen.add(item.casefold())
-            words = set(re.findall(r"\\w{3,}", item.casefold()))
+            words = set(re.findall(r"\w{3,}", item.casefold()))
             ranked.append((len(words & terms), index, item))
         ranked.sort(key=lambda row: (-row[0], row[1]))
         return [item for _, _, item in ranked]
