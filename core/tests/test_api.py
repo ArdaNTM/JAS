@@ -497,3 +497,20 @@ def test_capability_proposals_allow_valid_bearer_authentication() -> None:
 
     assert response.status_code == 200
     assert response.json() == {"proposals": []}
+
+
+def test_tasks_plan_conversation_returns_empty_non_executable_plan():
+    client = make_client(make_success_transport())
+    response = client.post("/api/tasks/plan", json={
+        "directive": "AURA tell me a short joke.",
+    })
+    assert response.status_code == 200, response.text
+    assert response.json() == {"resource_scope": "local-assistant", "steps": []}
+
+
+def test_tasks_plan_unsupported_action_remains_422():
+    client = make_client(make_success_transport())
+    response = client.post("/api/tasks/plan", json={
+        "directive": "AURA delete the backups",
+    })
+    assert response.status_code == 422

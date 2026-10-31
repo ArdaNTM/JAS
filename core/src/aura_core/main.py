@@ -25,6 +25,7 @@ from aura_core.application.full_duplex_session import (
     EventBusAudioPlayer, FasterWhisperRecognizer, FullDuplexSessionManager,
     GatewaySpeechSynthesizer, ProactiveNotifier, ControlledVisionService,
 )
+from aura_core.voice.sherpa_onnx import SherpaOnnxRecognizer
 from aura_core.application.vision_adapters import DesktopScreenCapture, OllamaVisionProvider
 from aura_core.config.kernel import KernelConfig
 from aura_core.config.storage import StorageMode, storage_mode_from_environment, validate_storage_mode
@@ -36,6 +37,7 @@ from aura_core.memory.graph_store import SQLiteGraphStore, PostgreSQLGraphStore
 from aura_core.application.windows_screen_driver import WindowsDesktopInputDriver, DesktopVLMAdapter
 from aura_core.mcp.screen_control_provider import ScreenControlMCPProvider
 from aura_core.mcp.screen_read_provider import ScreenReadMCPProvider
+from aura_core.mcp.hud_media_provider import WikimediaMediaMCPProvider
 from aura_core.providers.local_vision import LocalOllamaVisionProvider
 from aura_core.application.swarm_orchestration import SwarmOrchestrator
 from aura_core.enterprise.postgresql_approval_store import PostgreSQLApprovalStore
@@ -74,6 +76,7 @@ from aura_core.research.provider_bootstrap import (
 )
 from aura_core.tts.config import KokoroMCPConfig
 from aura_core.tts.provider_bootstrap import register_kokoro_mcp
+from aura_core.voice.sherpa_onnx import SherpaOnnxConfig
 
 
 logger = logging.getLogger(
@@ -313,7 +316,7 @@ def build_app() -> FastAPI:
             describer=LocalOllamaVisionProvider(
                 model=os.getenv("AURA_VISION_MODEL", "qwen2.5vl:3b"),
                 base_url=os.getenv("AURA_OLLAMA_BASE_URL", "http://127.0.0.1:11434"),
-                timeout=float(os.getenv("AURA_VISION_TIMEOUT_SECONDS", "60")),
+                timeout=float(os.getenv("AURA_VISION_TIMEOUT_SECONDS", "150")),
             ),
         )
         kernel.permission_engine.add_policy(PermissionPolicy(
@@ -325,6 +328,17 @@ def build_app() -> FastAPI:
             authorization_level=AuthorizationLevel.USER_APPROVAL_REQUIRED,
             decision=AuthorizationDecision.REQUIRE_APPROVAL,
         ))
+
+    # Explicit local-owner search is read-only and cannot use screen-derived prompts.
+    kernel.permission_engine.add_policy(PermissionPolicy(
+        policy_id="local-owner:hud-media:search",
+        policy_version="1.0.0",
+        principal_id=http_principal_id,
+        capability_id="HUDMediaSearch", operation_id="HUDMediaSearch",
+        resource_scope="commons_public_query",
+        authorization_level=AuthorizationLevel.READ,
+        decision=AuthorizationDecision.ALLOW,
+    ))
 
     # Register governed MCP adapters through the Kernel registries.
     memory_service = ServiceDefinition(
@@ -384,6 +398,9 @@ def build_app() -> FastAPI:
         ("aura.graph-memory", "graph_memory_mcp", GraphMemoryMCPProvider(graph_store), (
             ("memory.graph.query", "graph_memory_query", "low", CapabilityCategory.MEMORY),
             ("memory.graph.insert", "graph_memory_insert", "medium", CapabilityCategory.MEMORY),
+        )),
+        ("aura.hud-media", "hud_media_mcp", WikimediaMediaMCPProvider(), (
+            ("HUDMediaSearch", "hud_media_search", "low", CapabilityCategory.VISUALIZATION),
         )),
         ("aura.screen-read", "screen_read_mcp", screen_read_provider, (
             ("ScreenRead", "screen_read", "high", CapabilityCategory.VISION),
@@ -456,6 +473,8 @@ def build_app() -> FastAPI:
     app.state.remote_object_storage = remote_objects
     # Imported skills are declarative proposals only; invocation still requires Gateway authorization.
     app.state.agent_skills_mcp_registry = AgentSkillsMCPRegistry()
+    # Diagnostic only: no automatic microphone, model downloads or external calls.
+    app.state.sherpa_onnx_config = SherpaOnnxConfig.from_env()
 
     event_runtime = EventBusRuntime(
         kernel.event_bus,
@@ -662,12 +681,17 @@ def build_app() -> FastAPI:
                 tool_name=kokoro_config.tool_name,
                 resource_scope=os.getenv("AURA_SPEECH_RESOURCE_SCOPE", "local_default"),
             )
-            app.state.speech_session_manager = FullDuplexSessionManager(
-                recognizer=FasterWhisperRecognizer(
+            sherpa_health = app.state.sherpa_onnx_config.health()
+            recognizer = (
+                SherpaOnnxRecognizer(app.state.sherpa_onnx_config)
+                if sherpa_health["available"] else FasterWhisperRecognizer(
                     model_size=os.getenv("AURA_STT_MODEL", "small"),
                     device=os.getenv("AURA_STT_DEVICE", "cpu"),
                     compute_type=os.getenv("AURA_STT_COMPUTE_TYPE", "int8"),
-                ),
+                )
+            )
+            app.state.speech_session_manager = FullDuplexSessionManager(
+                recognizer=recognizer,
                 synthesizer=app.state.speech_synthesizer,
                 player=EventBusAudioPlayer(kernel.event_bus),
                 event_bus=kernel.event_bus,
