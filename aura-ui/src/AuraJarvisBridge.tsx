@@ -85,9 +85,15 @@ export default function AuraJarvisBridge({
     };
 
     const queue = (raw: string): void => {
-      for (const segment of speechChunks(raw)) {
+      for (const segment of speechChunks(raw, 420)) {
         everQueued = true;
-        playlist = playlist.then(() => playChunk(segment));
+        playlist = playlist.then(async () => {
+          if (sessionActive && speakThroughSession) {
+            await speakThroughSession(segment);
+          } else {
+            await playChunk(segment);
+          }
+        });
         // The final await handles failures. No silent detached promises.
       }
     };
@@ -100,9 +106,8 @@ export default function AuraJarvisBridge({
         await streamAssistantResponse(directive.trim(), researchOutput, (delta) => {
           if (cancelled) return;
           spoken += delta;
-          if (!sessionActive) {
-            pending += delta;
-            if (pending.length >= 180) {
+          pending += delta;
+          if (pending.length >= 80) {
               const cut = Math.max(pending.lastIndexOf(". "), pending.lastIndexOf("! "),
                 pending.lastIndexOf("? "), pending.lastIndexOf("\n"));
               if (cut > 0) {
@@ -110,16 +115,10 @@ export default function AuraJarvisBridge({
                 pending = pending.slice(cut + 1);
                 queue(complete);
               }
-            }
           }
         }, abort.signal);
 
         if (cancelled) return;
-        if (sessionActive && speakThroughSession && spoken.length <= 3900) {
-          const handled = await speakThroughSession(normalizeSpeechText(spoken));
-          if (handled) return; // SSE player owns interrupted playback.
-        }
-        if (sessionActive) pending = spoken;
         if (pending.trim()) queue(pending);
         if (!everQueued) {
           onStatus?.("ready");

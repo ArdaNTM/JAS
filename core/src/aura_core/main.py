@@ -25,6 +25,7 @@ from aura_core.application.full_duplex_session import (
     EventBusAudioPlayer, FasterWhisperRecognizer, FullDuplexSessionManager,
     GatewaySpeechSynthesizer, ProactiveNotifier, ControlledVisionService,
 )
+from aura_core.voice.sherpa_onnx import SherpaOnnxRecognizer
 from aura_core.application.vision_adapters import DesktopScreenCapture, OllamaVisionProvider
 from aura_core.config.kernel import KernelConfig
 from aura_core.config.storage import StorageMode, storage_mode_from_environment, validate_storage_mode
@@ -74,6 +75,7 @@ from aura_core.research.provider_bootstrap import (
 )
 from aura_core.tts.config import KokoroMCPConfig
 from aura_core.tts.provider_bootstrap import register_kokoro_mcp
+from aura_core.voice.sherpa_onnx import SherpaOnnxConfig
 
 
 logger = logging.getLogger(
@@ -456,6 +458,9 @@ def build_app() -> FastAPI:
     app.state.remote_object_storage = remote_objects
     # Imported skills are declarative proposals only; invocation still requires Gateway authorization.
     app.state.agent_skills_mcp_registry = AgentSkillsMCPRegistry()
+    # This is a diagnostic/configuration object only.  Provider activation is
+    # opt-in and cannot implicitly download models or open the microphone.
+    app.state.sherpa_onnx_config = SherpaOnnxConfig.from_env()
 
     event_runtime = EventBusRuntime(
         kernel.event_bus,
@@ -662,12 +667,17 @@ def build_app() -> FastAPI:
                 tool_name=kokoro_config.tool_name,
                 resource_scope=os.getenv("AURA_SPEECH_RESOURCE_SCOPE", "local_default"),
             )
-            app.state.speech_session_manager = FullDuplexSessionManager(
-                recognizer=FasterWhisperRecognizer(
+            sherpa_health = app.state.sherpa_onnx_config.health()
+            recognizer = (
+                SherpaOnnxRecognizer(app.state.sherpa_onnx_config)
+                if sherpa_health["available"] else FasterWhisperRecognizer(
                     model_size=os.getenv("AURA_STT_MODEL", "small"),
                     device=os.getenv("AURA_STT_DEVICE", "cpu"),
                     compute_type=os.getenv("AURA_STT_COMPUTE_TYPE", "int8"),
-                ),
+                )
+            )
+            app.state.speech_session_manager = FullDuplexSessionManager(
+                recognizer=recognizer,
                 synthesizer=app.state.speech_synthesizer,
                 player=EventBusAudioPlayer(kernel.event_bus),
                 event_bus=kernel.event_bus,

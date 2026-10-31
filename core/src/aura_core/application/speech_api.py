@@ -40,6 +40,11 @@ class SpeakRequest(SessionRequest):
     text: str = Field(min_length=1, max_length=8000)
 
 
+class LatencySampleRequest(SessionRequest):
+    stage: str = Field(pattern="^(llm_first_token|browser_first_audio|end_to_end)$")
+    milliseconds: float = Field(ge=0, le=600_000)
+
+
 @router.post("/sessions")
 async def start_session(
     body: SessionRequest,
@@ -107,6 +112,29 @@ async def interrupt(
         raise HTTPException(status_code=404, detail="Speech session not found")
     await manager.interrupt(reason="api_interrupt", keep_listening=True)
     return {"session_id": body.session_id, "state": manager.snapshot().state}
+
+
+@router.get("/health")
+async def voice_health(request: Request) -> dict[str, object]:
+    _require_local(request)
+    config = getattr(request.app.state, "sherpa_onnx_config", None)
+    sherpa = config.health() if config is not None else {"available": False, "reason": "not_composed"}
+    manager = getattr(request.app.state, "speech_session_manager", None)
+    return {"full_duplex_available": manager is not None, "sherpa_onnx": sherpa,
+            "latency": manager.latency_snapshot() if manager is not None else {}}
+
+
+@router.post("/sessions/latency")
+async def record_latency(
+    body: LatencySampleRequest, request: Request,
+    principal_id: str = Depends(authenticated_principal),
+) -> dict[str, object]:
+    _require_local(request)
+    manager = _manager(request)
+    if manager.snapshot().session_id != body.session_id:
+        raise HTTPException(status_code=404, detail="Speech session not found")
+    manager.record_client_latency(body.stage, body.milliseconds)
+    return {"accepted": True, "latency": manager.latency_snapshot()}
 
 
 @router.delete("/sessions/{session_id}")

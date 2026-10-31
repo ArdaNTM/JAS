@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { OrderedAudioPlayback } from "./orderedAudioPlayback";
 
 type UIEvent = {
   id?: string;
@@ -78,6 +79,7 @@ export function useFullDuplexAura(
   const processingRef = useRef(false);
   const speakingRef = useRef(false);
   const playerRef = useRef<HTMLAudioElement | null>(null);
+  const orderedPlaybackRef = useRef<OrderedAudioPlayback | null>(null);
   const onTranscriptRef = useRef(onTranscript);
   const onSpeechStateRef = useRef(onSpeechState);
 
@@ -85,6 +87,7 @@ export function useFullDuplexAura(
   onSpeechStateRef.current = onSpeechState;
 
   const stopPlayer = useCallback(() => {
+    orderedPlaybackRef.current?.cancel();
     const player = playerRef.current;
     if (player) {
       player.pause();
@@ -146,32 +149,21 @@ export function useFullDuplexAura(
       if (event.event === "SpeechAudioReady") {
         const encoded = data.audio_base64;
         if (typeof encoded !== "string") return;
-        stopPlayer();
         const mimeType = typeof data.mime_type === "string" ? data.mime_type : "audio/wav";
-        const player = new Audio(URL.createObjectURL(new Blob([decodeBase64(encoded)], { type: mimeType })));
-        playerRef.current = player;
-        speakingRef.current = true;
-        setSpeaking(true);
-        onSpeechStateRef.current?.("speaking");
-        player.onended = () => {
-          if (playerRef.current === player) {
-            URL.revokeObjectURL(player.src);
-            playerRef.current = null;
-            speakingRef.current = false;
-            setSpeaking(false);
-            onSpeechStateRef.current?.("listening");
-          }
-        };
-        player.onerror = () => {
-          if (playerRef.current === player) {
-            playerRef.current = null;
-            speakingRef.current = false;
-            setSpeaking(false);
-            setMessage("TTS SESİ OYNATILAMADI");
-            onSpeechStateRef.current?.("error");
-          }
-        };
-        void player.play().catch((error: unknown) => {
+        const playback = orderedPlaybackRef.current ?? new OrderedAudioPlayback();
+        orderedPlaybackRef.current = playback;
+        const receivedAt = performance.now();
+        void playback.enqueue(new Blob([decodeBase64(encoded)], { type: mimeType }), () => {
+          speakingRef.current = true;
+          setSpeaking(true);
+          onSpeechStateRef.current?.("speaking");
+          const id = sessionIdRef.current;
+          if (id) void postJson("/api/speech/sessions/latency", { session_id: id, confirmed: true, stage: "browser_first_audio", milliseconds: performance.now() - receivedAt }).catch(() => undefined);
+        }).then(() => {
+          speakingRef.current = false;
+          setSpeaking(false);
+          onSpeechStateRef.current?.("listening");
+        }).catch((error: unknown) => {
           setMessage(error instanceof Error ? `SES OYNATMA İZNİ: ${error.message}` : "SES OYNATMA ENGELLENDİ");
           onSpeechStateRef.current?.("error");
         });
@@ -192,6 +184,7 @@ export function useFullDuplexAura(
       source.close();
       setEventConnected(false);
       stopPlayer();
+      void orderedPlaybackRef.current?.close();
     };
   }, [stopPlayer]);
 
