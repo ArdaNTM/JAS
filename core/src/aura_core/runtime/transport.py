@@ -1,4 +1,5 @@
 from time import sleep
+import json
 from typing import Any, Protocol, runtime_checkable
 
 import httpx
@@ -79,3 +80,36 @@ class HttpJsonTransport:
                     "Inference backend is unavailable"
                 ) from exc
         raise AssertionError("Inference transport retry loop exhausted")
+
+    def post_stream_json(
+        self,
+        endpoint: str,
+        payload: dict[str, Any],
+        timeout: float,
+    ):
+        """Yield bounded NDJSON from Ollama without buffering the full answer.
+
+        Streaming is not retried after the first byte; a replay may duplicate
+        GPU inference. This method is transport-only, never tool dispatch.
+        """
+        total_bytes = 0
+        try:
+            with httpx.Client(timeout=httpx.Timeout(timeout, connect=min(timeout, 10.0))) as client:
+                with client.stream("POST", endpoint, json=payload) as response:
+                    response.raise_for_status()
+                    for line in response.iter_lines():
+                        if not line.strip():
+                            continue
+                        size = len(line.encode("utf-8"))
+                        total_bytes += size
+                        if size > 65536 or total_bytes > 1048576:
+                            raise ValueError("Inference stream exceeded response budget")
+                        event = json.loads(line)
+                        if not isinstance(event, dict):
+                            raise ValueError("Inference stream emitted a non-object event")
+                        yield event
+                        if event.get("done") is True:
+                            return
+                    raise ValueError("Inference stream closed without terminal completion")
+        except httpx.RequestError as exc:
+            raise BackendUnavailableError("Inference streaming backend is unavailable") from exc
