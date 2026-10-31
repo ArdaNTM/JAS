@@ -567,3 +567,16 @@ be loaded. The dedicated `_powershell` child process now explicitly pins
 `Modules` directory. This alters only executable module discovery; it does
 not bypass or weaken the NTFS DACL/owner checks. The Windows owner-security
 workflow verifies the result under actual Windows pytest fixtures.
+
+
+### Cross-platform release-lock byte identity
+
+The native Windows owner-security runner passed 27 tests before revealing a
+distinct Git checkout issue: Windows had converted tracked YAML newlines to
+CRLF, while the SHA-256 manifest was generated from the Git source's LF
+bytes. The release checker intentionally hashes **raw bytes** and must not
+ignore this difference. A root `.gitattributes` now pins LF for all text
+release-lock inputs (while retaining binary detection) and is itself listed
+in `generate_final_lock.py`'s SHA-256 inventory. Do not waive digest
+mismatches or regenerate a local lock as a workaround; re-fetch the governed
+commit and verify the correct Git checkout attributes instead.

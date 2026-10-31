@@ -51,6 +51,7 @@ def included(path: Path) -> bool:
 
 def files_to_hash() -> list[Path]:
     roots = (
+        ROOT / ".gitattributes",
         ROOT / "core" / "src",
         # Protect attestor signer and release-lock scripts as executable assets.
         ROOT / "core" / "scripts" / "evolution_attestor_sign.py",

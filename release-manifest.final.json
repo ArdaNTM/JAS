@@ -2,12 +2,16 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-10-31T21:02:51.844Z",
-  "git_commit": "4ab0b7f4411795bc571d3884ab9f42b149abc70e",
+  "generated_at": "2026-10-31T21:06:44.053Z",
+  "git_commit": "d6eaeb4466fb19ed12a0d00233d4ca6d98fbc900",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:f058c62710b9b5c7903e2b9ce0d3f071fcef836af3ed46010da68b020dcb519a",
-  "file_count": 265,
+  "release_digest": "sha256:59c9e186d067632ebe7c93a172c340c6467a7962658584609d86867e9c9a7164",
+  "file_count": 266,
   "files": [
+    {
+      "path": ".gitattributes",
+      "sha256": "a65b408cf0e4dbd7541fdec31443c6712157d3cf051cca231476459d2960f0ad"
+    },
     {
       "path": ".github/workflows/aura-windows-launcher.yml",
       "sha256": "87c8420f9f9f91388cb25a720ecb42186f758162d84d556f5585136f9ffd6e32"
@@ -146,7 +150,7 @@
     },
     {
       "path": "core/scripts/generate_final_lock.py",
-      "sha256": "8633d024cda7a4fb49bb4046181adc1c270c9440fc09a616839642530f806d32"
+      "sha256": "ec92269b9c32db3111bd1a47d0bbc37e353067ef869d03ef2a91ee6ea66f631b"
     },
     {
       "path": "core/scripts/provision_windows_owner.ps1",
