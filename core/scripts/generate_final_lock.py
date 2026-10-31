@@ -62,6 +62,10 @@ def files_to_hash() -> list[Path]:
         ROOT / ".github" / "workflows" / "aura-windows-owner-security.yml",
         ROOT / "core" / "scripts" / "generate_final_lock.py",
         ROOT / "core" / "scripts" / "verify_final_lock.py",
+        # Stage C acceptance scripts and the governance test workflow are release-critical.
+        ROOT / "core" / "scripts" / "osworld_v2_lab.py",
+        ROOT / "core" / "scripts" / "hardware_stage_c_acceptance.py",
+        ROOT / ".github" / "workflows" / "aura-stage-c-assurance.yml",
         # Integrate opt-in voice artifacts and the privileged Electron shell.
         ROOT / "core" / "scripts" / "install_nirvana_voice_models.py",
         ROOT / "core" / "scripts" / "kokoro_tts_mcp.py",

@@ -21,6 +21,10 @@ from aura_core.application.tasks import AgentTaskService
 from aura_core.application.task_memory import TaskMemoryCoordinator
 from aura_core.application.task_state_machine import TaskStateMachine
 from aura_core.application.autonomy_composition import compose_governed_autonomy
+from aura_core.application.autonomous_adapters import AllowedOperation, CapabilityDrivenPlanner
+from aura_core.application.ollama_completion import OllamaJSONCompletionProvider
+from aura_core.application.stage_c_runtime import StageCLedger, StageCController
+from aura_core.mcp.stage_c_browser import OriginGuard, PlaywrightSessions, BrowserControlMCPProvider
 from aura_core.application.full_duplex_session import (
     EventBusAudioPlayer, FasterWhisperRecognizer, FullDuplexSessionManager,
     GatewaySpeechSynthesizer, ProactiveNotifier, ControlledVisionService,
@@ -53,6 +57,7 @@ from aura_core.kernel.permissions import (
     AuthorizationDecision,
     AuthorizationLevel,
     PermissionPolicy,
+    RiskLevel,
 )
 from aura_core.kernel.runtime import AuraKernel
 from aura_core.kernel.events import KernelEvent
@@ -270,6 +275,32 @@ def build_app() -> FastAPI:
         )
         graph_store = SQLiteGraphStore(graph_path)
 
+    # Stage C opt-in is independent of generic autonomy and never authorizes tools.
+    stage_c_enabled = os.getenv("AURA_STAGE_C_ENABLED", "0").strip() == "1"
+    stage_c_browser_enabled = os.getenv("AURA_STAGE_C_BROWSER_ENABLED", "0").strip() == "1"
+    if stage_c_browser_enabled and not stage_c_enabled:
+        raise RuntimeError("BrowserControl requires AURA_STAGE_C_ENABLED=1")
+    if stage_c_enabled and approval_store is None:
+        raise RuntimeError("Stage C requires the existing fingerprint-bound ApprovalStore")
+    browser_sessions = None
+    browser_provider = None
+    if stage_c_browser_enabled:
+        if os.getenv("AURA_STAGE_C_EGRESS_ISOLATED", "0").strip() != "1":
+            raise RuntimeError("BrowserControl requires explicitly isolated network egress")
+        raw_origins = os.getenv("AURA_STAGE_C_BROWSER_ORIGINS", "")
+        guard = OriginGuard(tuple(v.strip() for v in raw_origins.split(",") if v.strip()))
+        browser_sessions = PlaywrightSessions(guard)
+        browser_provider = BrowserControlMCPProvider(browser_sessions)
+        kernel.permission_engine.add_policy(PermissionPolicy(
+            policy_id="local-owner:stage-c:browser",
+            policy_version="1.0.0",
+            principal_id=http_principal_id,
+            capability_id="BrowserControl", operation_id="BrowserControl",
+            resource_scope="local_default",
+            authorization_level=AuthorizationLevel.USER_APPROVAL_REQUIRED,
+            decision=AuthorizationDecision.REQUIRE_APPROVAL,
+        ))
+
     # Desktop control is disabled unless explicitly configured with an
     # interactive ApprovalStore. Enabling it on unsupported platforms aborts.
     screen_control_enabled = os.getenv(
@@ -408,7 +439,9 @@ def build_app() -> FastAPI:
         ("aura.screen-control", "screen_control_mcp", screen_control_provider, (
             ("ScreenControl", "screen_control", "high", CapabilityCategory.AUTOMATION),
         )),
-    ):
+    ) + ((("aura.stage-c.browser-control", "browser_control_mcp", browser_provider, (
+        ("BrowserControl", "browser_action", "high", CapabilityCategory.AUTOMATION),
+    )),) if browser_provider is not None else ()):
         service = ServiceDefinition(
             name=service_name, version="1.0.0", provider="aura",
             category=ServiceCategory.MCP,
@@ -523,6 +556,40 @@ def build_app() -> FastAPI:
     autonomy = compose_governed_autonomy(kernel=kernel, task_service=task_service)
     app.state.governed_autonomous_loop = autonomy.loop if autonomy is not None else None
     app.state.autonomy_components = autonomy
+    app.state.stage_c_controller = None
+    if stage_c_enabled:
+        if not (screen_control_enabled or stage_c_browser_enabled):
+            raise RuntimeError("Stage C requires at least one explicitly enabled MCP adapter")
+        state_path = os.getenv("AURA_STAGE_C_DB_PATH", "").strip()
+        if not state_path or not os.path.isabs(state_path):
+            raise RuntimeError("AURA_STAGE_C_DB_PATH must be an explicit absolute private path")
+        operations = []
+        if screen_control_enabled:
+            operations.append(AllowedOperation(
+                capability_id="ScreenControl", operation_id="ScreenControl",
+                tool_name="screen_control", risk_level=RiskLevel.HIGH,
+                allowed_argument_keys=frozenset({"action", "x", "y", "text", "key"}),
+                max_attempts=1,
+            ))
+        if stage_c_browser_enabled:
+            operations.append(AllowedOperation(
+                capability_id="BrowserControl", operation_id="BrowserControl",
+                tool_name="browser_action", risk_level=RiskLevel.HIGH,
+                allowed_argument_keys=frozenset({"action", "url", "selector", "text"}),
+                max_attempts=1,
+            ))
+        planner = CapabilityDrivenPlanner(
+            completion_provider=OllamaJSONCompletionProvider(
+                base_url=os.getenv("AURA_OLLAMA_BASE_URL", "http://127.0.0.1:11434"),
+                model=os.getenv("AURA_INFERENCE_MODEL", "qwen3"),
+                timeout_seconds=30,
+            ),
+            operations=operations, max_steps=8, timeout_seconds=30,
+        )
+        app.state.stage_c_controller = StageCController(
+            ledger=StageCLedger(__import__("pathlib").Path(state_path)),
+            gateway=gateway, planner=planner, browser_sessions=browser_sessions,
+        )
 
     vision_enabled = os.getenv("AURA_SCREEN_VISION_ENABLED", "0").strip().casefold() in {"1", "true", "yes", "on"}
     if vision_enabled:

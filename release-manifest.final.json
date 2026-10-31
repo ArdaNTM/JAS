@@ -1,16 +1,20 @@
 {
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
-  "status": "integration-review",
-  "generated_at": "2026-10-31T22:00:00Z",
-  "git_commit": "e6f02c8a7d712da7fd55c2659e618538beeb700a",
+  "status": "stage-c-review",
+  "generated_at": "2026-10-31T23:10:00Z",
+  "git_commit": "6a88a5b131b0e064bc8840f1db6605facc791981",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:7f4b46a7e981fb6f4a97365892fd688280ffcd026866f3b0305cb0eadb95a5f5",
-  "file_count": 280,
+  "release_digest": "sha256:3244d4fb4d3c0bb0aca9f3478fcd4b1f784405b3fa202489b66d59e15f309245",
+  "file_count": 287,
   "files": [
     {
       "path": ".gitattributes",
       "sha256": "5ea37efe8f52ed1f432d2a216f196453a4ab0b4d5e3de25d3acde2582b8bd8a4"
+    },
+    {
+      "path": ".github/workflows/aura-stage-c-assurance.yml",
+      "sha256": "cefd6186c5d276efb44b18735874cb076210d2e8d5326a1c7c8d31e5c2f4179b"
     },
     {
       "path": ".github/workflows/aura-windows-launcher.yml",
@@ -54,7 +58,7 @@
     },
     {
       "path": "aura-ui/src/App.tsx",
-      "sha256": "fa5d1795ae2335b1fc02a135127c82f8be02ca5c56e9b6d9353919fb62b7829c"
+      "sha256": "6160a4a83cf03856e28b49e78da2030a2fac9c27725330032c88320b6c0829ad"
     },
     {
       "path": "aura-ui/src/assets/hero.png",
@@ -91,6 +95,10 @@
     {
       "path": "aura-ui/src/components/EvolutionReviewPanel.tsx",
       "sha256": "ba6ee1e16f93f41c2269af7097d9a766c7a638e5e01ed0fb2aaa5dc9d3db6872"
+    },
+    {
+      "path": "aura-ui/src/components/StageCControlPanel.tsx",
+      "sha256": "58aa7a73d17dd89253924161127e79377dc45e2254db841ecad26fd3b668d63a"
     },
     {
       "path": "aura-ui/src/components/TaskConsole.tsx",
@@ -178,7 +186,11 @@
     },
     {
       "path": "core/scripts/generate_final_lock.py",
-      "sha256": "e9eca64fdb479af7f4003e8cf6814e5dafb84a2c82088e77e5d2e42c28cec6bf"
+      "sha256": "d30dd54cc2862fa36648a3dae5cd69c1703117312f0b5b75e7bb2af3fd3f1019"
+    },
+    {
+      "path": "core/scripts/hardware_stage_c_acceptance.py",
+      "sha256": "886c512379a7415df7594daabbc67ea291151725e8944294c9c9507ac68c3eec"
     },
     {
       "path": "core/scripts/install_nirvana_voice_models.py",
@@ -187,6 +199,10 @@
     {
       "path": "core/scripts/kokoro_tts_mcp.py",
       "sha256": "fad3a723f6e7560fb38d8609bf343a4f09138948a982be1e4cee68c234152abf"
+    },
+    {
+      "path": "core/scripts/osworld_v2_lab.py",
+      "sha256": "7e44d7434b59d7d18bd7222c61c619ce4c10063c8b662b772e66fd2c2ec182aa"
     },
     {
       "path": "core/scripts/provision_windows_owner.ps1",
@@ -274,7 +290,7 @@
     },
     {
       "path": "core/src/aura_core/application/composition.py",
-      "sha256": "853ddfca3648d922aa9b6b79bc6e96e907fc6bd8f09648c1ec4559862ace1e94"
+      "sha256": "b1ae4e8bc1aaa735152b21d5411df2fd5a46a41419cefcaf82e64e0064b4988a"
     },
     {
       "path": "core/src/aura_core/application/context_aware_stt.py",
@@ -427,6 +443,14 @@
     {
       "path": "core/src/aura_core/application/speech_api.py",
       "sha256": "f410c50d8333389021facc6c46e1889af9e825ba4587866cecc4b245f6e241c3"
+    },
+    {
+      "path": "core/src/aura_core/application/stage_c_api.py",
+      "sha256": "07cc59e2e12c010a5b35c3bc4f3a716fa4dd858c8f6b81bd882e749951a4ce55"
+    },
+    {
+      "path": "core/src/aura_core/application/stage_c_runtime.py",
+      "sha256": "00dd32d0be01cb5a1daf97b455dc86b88e58ba162f8286db38260a830a6d065a"
     },
     {
       "path": "core/src/aura_core/application/streaming_speech.py",
@@ -802,7 +826,7 @@
     },
     {
       "path": "core/src/aura_core/main.py",
-      "sha256": "03267983a23bba76e75a801d1d4da01da996f325b26ae08eb4151a4ff45d9507"
+      "sha256": "1c1725536ab872b8ee3e672789241eed4e965df4b4308762a43fdeb3627c14d8"
     },
     {
       "path": "core/src/aura_core/mcp/__init__.py",
@@ -855,6 +879,10 @@
     {
       "path": "core/src/aura_core/mcp/screen_read_provider.py",
       "sha256": "38cfbaf2382a1da5ed583f6557fc4b60c11f94d7bb42f2015bc4f9292a0646f7"
+    },
+    {
+      "path": "core/src/aura_core/mcp/stage_c_browser.py",
+      "sha256": "ce86a7343dd4e651bd103b9013fa7e3bf09bbdf25dfb7fbf39ff20f15a12420b"
     },
     {
       "path": "core/src/aura_core/mcp/tool_registry.py",
