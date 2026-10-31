@@ -5,8 +5,8 @@
   "generated_at": "2026-10-31T00:45:29.771Z",
   "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
-  "file_count": 233,
+  "release_digest": "sha256:30621bb4f3942a651708d2a53f6f02dfd41eb695b622c59526f0d34a5cd53508",
+  "file_count": 239,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -158,7 +158,7 @@
     },
     {
       "path": "core/src/aura_core/application/api.py",
-      "sha256": "31ae99089df672cfb00c87b757d61cffec58a00453aef11391326d237efbe5e3"
+      "sha256": "05cf61131ec93ae82468a76776aa3cfe3c858dd5479ea64bc9a8e50420bbde69"
     },
     {
       "path": "core/src/aura_core/application/approval_api.py",
@@ -471,6 +471,30 @@
     {
       "path": "core/src/aura_core/enterprise/workflow_store.py",
       "sha256": "b25f414cfdd662eeeb7f320f0314a791d7dd5b00e6e08632e6eb3ae3a066ce34"
+    },
+    {
+      "path": "core/src/aura_core/evolution/__init__.py",
+      "sha256": "1be55934d325d1f0a52437842ea90bec09cc2b9ecfe42af5dfd88d1afebe4df3"
+    },
+    {
+      "path": "core/src/aura_core/evolution/autonomous_analyzer.py",
+      "sha256": "88b44effcdc93561581cdae249e0b8c1ff3e42fce318a2136354e5181ba44cf2"
+    },
+    {
+      "path": "core/src/aura_core/evolution/evolution_planner.py",
+      "sha256": "534079805c43fddac941301bbbe7bc9eb8fe4d5741d296d4f46a1a13accaf5ca"
+    },
+    {
+      "path": "core/src/aura_core/evolution/owner_authority.py",
+      "sha256": "df655c3a98ae2414f7ece2fa70ff6a2e277e23f7f22346b8a6add89663e79690"
+    },
+    {
+      "path": "core/src/aura_core/evolution/sandbox_review.py",
+      "sha256": "979ee14388ed4b5ccc0ceeb0fab39a3765aa092662d9ca31e6fc4e90a69a0e87"
+    },
+    {
+      "path": "core/src/aura_core/evolution/skill_registry.py",
+      "sha256": "743670a74e5f320ec89d409003ea28ed0640ae6fef20a28a8f1f5049e182a819"
     },
     {
       "path": "core/src/aura_core/filesystem/__init__.py",
