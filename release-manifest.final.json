@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-10-30T23:42:07.085Z",
-  "git_commit": "137f9db3579a375b484d74c61ab7998067857e49",
+  "generated_at": "2026-10-31T00:06:53.882Z",
+  "git_commit": "0d07169c3f07dfe97863cab489e2cb93bec896c4",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:34a76c944af7081153d10794a47d87d9cda3d08c778c907bd777d1a3246272ca",
-  "file_count": 228,
+  "release_digest": "sha256:fec18ccd9e5485d1c8a3754dc2f80d3efacb86d9436a3687b0b2f5e69390a98b",
+  "file_count": 229,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -18,7 +18,7 @@
     },
     {
       "path": "aura-ui/src/api/client.ts",
-      "sha256": "e8a847fc53ca9fc37d48f14fb289ad1e8759e2b9b8dfbc2d5b7f56a0da102ded"
+      "sha256": "af6adf1a4eaa7fa82554c33a12ec2ea04031c1fad965efc2c9a0c4f3c9cc05de"
     },
     {
       "path": "aura-ui/src/api/contracts.ts",
@@ -30,7 +30,7 @@
     },
     {
       "path": "aura-ui/src/App.tsx",
-      "sha256": "68e74fad0938cb8d3e0a61bc197ad5dc67b003c08c05f31e5fbff96c81e4db52"
+      "sha256": "a91f8d6971a69755bfa26fd35b4d15a6da15ec675a50161e688a4110118aa950"
     },
     {
       "path": "aura-ui/src/assets/hero.png",
@@ -46,7 +46,7 @@
     },
     {
       "path": "aura-ui/src/AuraJarvisBridge.tsx",
-      "sha256": "5153fdd3a51c670fdb5b9d57fcf16c839e4b10fe962ef4b07f988d7dcbe4cfd5"
+      "sha256": "91db993e3be0af5e2b54ef58e815463cf4e5b24f4b3246a04e98530a1b5c8c98"
     },
     {
       "path": "aura-ui/src/components/ApprovalPanel.tsx",
@@ -150,7 +150,7 @@
     },
     {
       "path": "core/src/aura_core/application/api.py",
-      "sha256": "e58a1e00c168f89bbcc74e67018ccd6a4a3633a75f0fd660ac5338d1753df1a4"
+      "sha256": "31ae99089df672cfb00c87b757d61cffec58a00453aef11391326d237efbe5e3"
     },
     {
       "path": "core/src/aura_core/application/approval_api.py",
@@ -334,7 +334,7 @@
     },
     {
       "path": "core/src/aura_core/application/service.py",
-      "sha256": "6668c5d21dd4cc68064db72e400691dd4c6faf7dd9f9e4b777eee69cdb9770ac"
+      "sha256": "ad5f2173820f2b4fc14e92acea7f0a4eb1ae8253398f4bfb22f3760f60f4d2fc"
     },
     {
       "path": "core/src/aura_core/application/speech_api.py",
@@ -834,7 +834,7 @@
     },
     {
       "path": "core/src/aura_core/runtime/adapter.py",
-      "sha256": "13ac007e529c763b9eee57cfe45b75d3e471cb0a770ae53bbd0026fe20c3792d"
+      "sha256": "08949e0c14e385415d930bee775342048883fd88886d0729344ad540d6f4e358"
     },
     {
       "path": "core/src/aura_core/runtime/backend.py",
@@ -866,7 +866,7 @@
     },
     {
       "path": "core/src/aura_core/runtime/transport.py",
-      "sha256": "358abe5e28c139742b96f67ebe8d5913e6a084abb9ea53eef867800469fecca7"
+      "sha256": "bf5cd0f9b4603c32b872cc2cd3b9c4caac5b8303204bb7515b4657cb19eef30f"
     },
     {
       "path": "core/src/aura_core/security/__init__.py",
@@ -915,6 +915,10 @@
     {
       "path": "core/src/aura_core/tts/provider_bootstrap.py",
       "sha256": "9b18e3826863c58ada13623e7b8b22f5966d16f6dfda30b16dd9d8b01c0a686e"
+    },
+    {
+      "path": "core/src/aura_core/tts/text.py",
+      "sha256": "810181da3cf0be2004b91028b218a310e43c34535cdf93f38f268adf04ca6f90"
     },
     {
       "path": "core/uv.lock",
