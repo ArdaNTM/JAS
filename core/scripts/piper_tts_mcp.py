@@ -15,7 +15,7 @@ import wave
 from pathlib import Path
 from typing import Any
 
-from tts_text import clean_for_speech
+from aura_core.tts.text import clean_for_speech
 
 import mcp.server.stdio
 import mcp.types as types
