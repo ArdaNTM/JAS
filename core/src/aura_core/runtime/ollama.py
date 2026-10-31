@@ -28,3 +28,6 @@ class OllamaInferenceRuntime:
         request: InferenceRequest,
     ) -> InferenceResponse:
         return self._backend.infer(request)
+    def infer_stream(self, request: InferenceRequest):
+        """Forward incremental chunks through the canonical Ollama runtime."""
+        yield from self._backend.infer_stream(request)
