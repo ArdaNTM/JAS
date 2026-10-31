@@ -42,6 +42,9 @@ class ProtectedEnrollment:
             or not path.parent.is_dir()
             or path.resolve().is_relative_to(Path(__file__).resolve().parents[4])):
             raise PermissionError("New owner credential output must be outside AURA checkout")
+        if os.name == "nt":
+            from aura_core.evolution.windows_owner_storage import require_private_acl
+            require_private_acl(path.parent)
         if type(ttl_seconds) is not int or not 30 <= ttl_seconds <= 120:
             raise ValueError("Enrollment TTL must be between 30 and 120 seconds")
 
@@ -86,7 +89,7 @@ class ProtectedEnrollment:
             self._state = state
             self._deadline = time.monotonic() + self._ttl
             # fido2 v2 WebAuthn JSON serialization: binary values -> base64url.
-            result = json.loads(options.to_json())
+            result = dict(options)
             return result
 
     def complete(self, token: str, response: dict) -> dict:
@@ -137,6 +140,13 @@ class ProtectedEnrollment:
                     json.dump(config, stream, sort_keys=True, separators=(",", ":"))
                     stream.flush()
                     os.fsync(stream.fileno())
+                if os.name == "nt":
+                    from aura_core.evolution.windows_owner_storage import harden_private_acl
+                    try:
+                        harden_private_acl(self._path)
+                    except Exception:
+                        self._path.unlink(missing_ok=True)
+                        raise PermissionError("Owner credential NTFS protection failed") from None
                 self._completed = True
             except (ValueError, TypeError, KeyError) as exc:
                 raise PermissionError("WebAuthn registration rejected") from exc

@@ -441,3 +441,70 @@ uv sync --frozen --group dev
 uv run --frozen pytest -q tests/test_owner_enrollment.py tests/test_governed_activation_api.py tests/test_governed_owner_receipt.py
 uv run --frozen python scripts/verify_final_lock.py
 \`\`\`
+
+
+## Primal Anchor v2.4.1 — enrollment compatibility, protected Windows owner state, and activation regression
+
+**Operator-only Windows provisioning:** `core/scripts/provision_windows_owner.ps1` creates a *new*
+owner-private state directory with inheritance disabled and explicit NTFS rights limited
+to the current Windows SID, LOCAL SYSTEM and BUILTIN\\Administrators. It refuses existing
+state; do not use it for rotation or recovery. The signing key is a fresh 32-byte Ed25519
+seed encrypted using *CurrentUser* DPAPI. No unencrypted PEM key is written.
+The one-shot bootstrap token is separate, short-lived and protected by the same ACL.
+
+Run Windows PowerShell 5.1 as the trusted Local Owner (preferably under a separate
+Windows login, not the AURA Core agent's login):
+
+```powershell
+Set-Location D:\AURA\JAS-evolution-test
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File core\scripts\provision_windows_owner.ps1
+# Use only after pinning the correct JAS policy digest:
+# uv run --frozen python core/scripts/enroll_local_owner.py ...
+```
+
+For enrollment, invoke `core/scripts/enroll_local_owner.py` from the core directory
+with `--bootstrap-token-file` pointing at protected
+`%LOCALAPPDATA%\\AURA\\OwnerTrust\\bootstrap-token.txt`,
+`--owner-config-output` pointing at a NEW
+`%LOCALAPPDATA%\\AURA\\OwnerTrust\\owner-config.json`, and
+`--policy-digest` set to the exact pinned JAS owner-policy SHA-256.
+Open only `http://localhost:8766/` and complete the genuine
+`navigator.credentials.create()` interaction with the local platform authenticator.
+The server verifies RP/origin/challenge, requires UP+UV, and hardens the resulting
+credential public-key file ACL before confirming success. Remove the bootstrap
+token after enrollment; do not include it in logs or screenshots.
+
+Start the separate owner review process with the protected owner config, approval
+and challenge DBs and `--owner-receipt-key` pointing to the `.dpapi` file (never
+a PEM private key on Windows), with an explicit pinned `--owner-receipt-key-id`.
+The owner receipt public key must be separately pinned in the activation consumer;
+the private key never crosses into AURA Core. The *Core-side* replay ledger
+requires its own pre-provisioned, owner-protected directory and ACL; do not
+share writable state across Windows service identities or with sandbox processes.
+
+**Runtime gates:** Windows owner storage paths must be absolute, outside the JAS
+checkout and protected by noninherited explicit NTFS ACLs. Unexpected identities,
+reparse points, inherited access, missing Windows PowerShell or DPAPI failure
+stop startup. Python tests alone cannot prove Windows ACL or hardware behavior.
+
+**FIDO2 compatibility:** python-fido2 2.2.1 exposes JSON-friendly mapping options;
+use `dict(options)`, not `options.to_json()`. The new
+`tests/test_owner_activation.py` proves the versioned HTTP bridge against a
+real signature issuer, signed receipt verifier, persistent replay ledger and
+governed registry with injected test attestation verifier. It does not attest
+real Docker execution or physical Windows Hello acceptance.
+
+**npm audit:** the Windows CI workflow now checks both `aura-ui` and
+`core/frontend` using `npm audit --audit-level=high` after installation/build.
+High or critical advisories block production readiness. The previously reported
+`2 critical + 5 high` count is *not* a freshly reproduced per-package audit;
+review the exact dependency/advisory IDs (direct vs transitive; production vs
+development), update supported dependencies and regenerate lockfiles with
+`npm install --package-lock-only`, never `npm audit fix --force` blindly.
+Until the audit reports zero high/critical issues and Windows device acceptance
+is complete, **PR #53 must remain Draft and must not be merged**.
+
+Owner-only regression commands: `uv run --frozen pytest -q
+tests/test_owner_enrollment.py tests/test_owner_activation.py
+tests/test_governed_owner_receipt.py tests/test_governed_activation_api.py`
+and `uv run --frozen python scripts/verify_final_lock.py`.

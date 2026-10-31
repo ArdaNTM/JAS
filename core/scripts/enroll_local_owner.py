@@ -28,6 +28,11 @@ def main():
     from os import name
     if name == "posix" and token.stat().st_mode & 0o077:
         parser.error("Owner bootstrap token file must have mode 0600")
+    from os import name
+    if name == "nt":
+        from aura_core.evolution.windows_owner_storage import require_private_acl
+        require_private_acl(token)
+        require_private_acl(token.parent)
     bootstrap = token.read_text(encoding="ascii").strip()
     ceremony = ProtectedEnrollment(
         bootstrap_secret=bootstrap,

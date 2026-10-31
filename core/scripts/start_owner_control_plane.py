@@ -31,6 +31,10 @@ def protected_path(value: str) -> Path:
         raise PermissionError("Owner storage cannot live in AURA checkout")
     if os.name == "posix" and path.stat().st_mode & 0o077:
         raise PermissionError("Owner storage must be owner-only (0600)")
+    if os.name == "nt":
+        from aura_core.evolution.windows_owner_storage import require_private_acl
+        require_private_acl(path.parent)
+        require_private_acl(path)
     return path
 
 
@@ -59,12 +63,19 @@ def build_app(*, owner_config: str, approval_db: str, challenge_db: str,
         if (owner_receipt_key is None) != (owner_receipt_key_id is None):
             raise ValueError("Receipt key and key ID must be configured together")
         if owner_receipt_key is not None:
-            private_data = protected_path(owner_receipt_key).read_bytes()
-            if len(private_data) > 8192:
-                raise ValueError("Owner signing key file too large")
-            signing_key = load_pem_private_key(private_data, password=None)
-            if not isinstance(signing_key, Ed25519PrivateKey):
-                raise ValueError("Owner approval issuer requires Ed25519 key")
+            protected = protected_path(owner_receipt_key)
+            if os.name == "nt":
+                if protected.suffix.lower() != ".dpapi":
+                    raise PermissionError("Windows owner signing keys must be user-scoped DPAPI blobs")
+                from aura_core.evolution.windows_owner_storage import load_owner_seed_dpapi
+                signing_key = load_owner_seed_dpapi(protected)
+            else:
+                private_data = protected.read_bytes()
+                if len(private_data) > 8192:
+                    raise ValueError("Owner signing key file too large")
+                signing_key = load_pem_private_key(private_data, password=None)
+                if not isinstance(signing_key, Ed25519PrivateKey):
+                    raise ValueError("Owner approval issuer requires Ed25519 key")
             issuer = OwnerReceiptIssuer(
                 key_id=owner_receipt_key_id,
                 private_key=signing_key,

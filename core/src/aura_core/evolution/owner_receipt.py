@@ -187,6 +187,10 @@ class DurableOwnerReceiptConsumer:
             raise PermissionError("Receipt ledger cannot be in AURA checkout")
         if os.name == "posix" and path.stat().st_mode & 0o077:
             raise PermissionError("Receipt ledger must have owner-only permissions")
+        if os.name == "nt":
+            from aura_core.evolution.windows_owner_storage import require_private_acl
+            require_private_acl(path.parent)
+            require_private_acl(path)
         self._db = sqlite3.connect(str(path), timeout=5, check_same_thread=False, isolation_level=None)
         self._db.execute("PRAGMA journal_mode=DELETE")
         self._db.execute("PRAGMA synchronous=FULL")
