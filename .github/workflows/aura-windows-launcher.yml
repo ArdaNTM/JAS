@@ -15,6 +15,10 @@ on:
       - "scripts/test-piper-voice-config.ps1"
       - "core/scripts/validate_piper_voice_config.py"
       - "core/tests/test_piper_voice_config_validation.py"
+      - "aura-ui/electron-main.cjs"
+      - "aura-ui/electron-preload.cjs"
+      - "scripts/enable-aura-hud.ps1"
+      - "aura-ui/tests/aura-hud-shell.test.mjs"
       - "aura-ui/vite.config.ts"
       - "aura-ui/src/**"
       - "core/src/aura_core/runtime/**"
@@ -39,6 +43,10 @@ on:
       - "scripts/test-piper-voice-config.ps1"
       - "core/scripts/validate_piper_voice_config.py"
       - "core/tests/test_piper_voice_config_validation.py"
+      - "aura-ui/electron-main.cjs"
+      - "aura-ui/electron-preload.cjs"
+      - "scripts/enable-aura-hud.ps1"
+      - "aura-ui/tests/aura-hud-shell.test.mjs"
       - "aura-ui/vite.config.ts"
       - "aura-ui/src/**"
       - "core/src/aura_core/runtime/**"
@@ -84,6 +92,17 @@ jobs:
         working-directory: aura-ui
         shell: pwsh
         run: node tests/aura-proxy.test.mjs
+      - name: Check Electron main and preload syntax
+        working-directory: aura-ui
+        shell: pwsh
+        run: |
+          node --check electron-main.cjs
+          node --check electron-preload.cjs
+          node tests/aura-hud-shell.test.mjs
+      - name: Check optional HUD setup script syntax
+        shell: pwsh
+        run: |
+          [void][scriptblock]::Create((Get-Content scripts/enable-aura-hud.ps1 -Raw))
       - name: Compile UI TypeScript and build Vite UI
         working-directory: aura-ui
         shell: pwsh
