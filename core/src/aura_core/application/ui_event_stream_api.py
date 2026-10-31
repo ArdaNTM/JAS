@@ -20,6 +20,9 @@ _UI_EVENT_ALLOWLIST = frozenset({
     "SpeechAudioReady",
     "SpeechAudioStop",
     "ProactiveNotificationReady",
+    "HUDPanelShown",
+    "HUDVisionScanStarted",
+    "HUDVisionScanEnded",
 })
 SSE_HEARTBEAT_SECONDS = 15.0
 
