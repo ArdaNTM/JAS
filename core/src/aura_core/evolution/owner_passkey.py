@@ -55,7 +55,7 @@ class OwnerPasskeyVerifier:
     def __init__(self, *, rp_id: str, origin: str, credential_id: str, public_key_pem: bytes) -> None:
         if not isinstance(rp_id, str) or rp_id != "localhost":
             raise ValueError("Local WebAuthn requires explicit localhost RP ID")
-        if not isinstance(origin, str) or origin not in {"http://localhost:5173", "https://localhost:5173"}:
+        if not isinstance(origin, str) or origin not in {"http://localhost:5173", "https://localhost:5173", "http://localhost:8766"}:
             raise ValueError("Explicit pinned localhost origin required")
         credential = _b64url(credential_id, max_chars=512)
         if not 16 <= len(credential) <= 256:

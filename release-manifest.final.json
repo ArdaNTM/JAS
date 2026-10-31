@@ -5,8 +5,8 @@
   "generated_at": "2026-10-31T00:45:29.771Z",
   "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:5ac083366b04b1a6d2f5394b705b172f9537ec3a9e472a7675a0e2b939c94c72",
-  "file_count": 248,
+  "release_digest": "sha256:02af53e34ee7c64daa9e55aa09325e19bf4a1594c6b71c92ed82e63e613eb926",
+  "file_count": 254,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -30,7 +30,7 @@
     },
     {
       "path": "aura-ui/src/App.tsx",
-      "sha256": "afb2504609c7f7575b940c5cabc3cd5ef8f2ffe5ec0812afa8502b03e24bbb83"
+      "sha256": "47a5901c2d6e78306cb4310ce9a144d14d2dc0fd9bd6b249ddc4ef5d2a148c7e"
     },
     {
       "path": "aura-ui/src/assets/hero.png",
@@ -63,6 +63,10 @@
     {
       "path": "aura-ui/src/components/DynamicHologram3D.tsx",
       "sha256": "c1c4ec0921918f6eff2d959be54246e5a91e2521052a30d24eaa91c6f182054e"
+    },
+    {
+      "path": "aura-ui/src/components/EvolutionReviewPanel.tsx",
+      "sha256": "ba6ee1e16f93f41c2269af7097d9a766c7a638e5e01ed0fb2aaa5dc9d3db6872"
     },
     {
       "path": "aura-ui/src/components/TaskConsole.tsx",
@@ -130,7 +134,11 @@
     },
     {
       "path": "core/scripts/generate_final_lock.py",
-      "sha256": "2fca033d1060a7ebb3159add0e068eae791ff6444d7528a8a08685383d95153c"
+      "sha256": "841c70deb81517bf7c06600af1408381cc118043caef8b9d135f9d26117ab245"
+    },
+    {
+      "path": "core/scripts/start_owner_control_plane.py",
+      "sha256": "1d0568d9342dee077b489a2cb00d93205a6fcc6ab74bca51d09fbca99061f31f"
     },
     {
       "path": "core/scripts/verify_final_lock.py",
@@ -517,8 +525,24 @@
       "sha256": "5e63e4e1ffb9e364ebd9e5cfdf1f3fb3f68460c20333fc9b40b97710af1a61e1"
     },
     {
+      "path": "core/src/aura_core/evolution/owner_control_plane.py",
+      "sha256": "15b53a6b0e33e42edd1ab89e853b58d45a81e32582a4835e86a5d2ec60c741e3"
+    },
+    {
       "path": "core/src/aura_core/evolution/owner_passkey.py",
-      "sha256": "e748946414d256d34a33902a8ba32260c8e0664613e308710baa5eff4c268de1"
+      "sha256": "0d3d282f7ff754a8ba1581e4bcf23b57e144d8c1bed37fe0a41423079f1ba05e"
+    },
+    {
+      "path": "core/src/aura_core/evolution/owner_review.css",
+      "sha256": "26a9ec85965455a835fd9882068130f6b1aaefb19336f1ba0400ff33804f6146"
+    },
+    {
+      "path": "core/src/aura_core/evolution/owner_review.html",
+      "sha256": "bd5cb59a659fe4a52c8c70ed7932df180bfddf26cf33ed27880a4be60a15d7a0"
+    },
+    {
+      "path": "core/src/aura_core/evolution/owner_review.js",
+      "sha256": "4f3acbe59a5a1c39b5f1b50fed63d73a0bf98254433306359ed7d90ed979ed06"
     },
     {
       "path": "core/src/aura_core/evolution/sandbox_attestor.py",

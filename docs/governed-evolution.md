@@ -240,3 +240,87 @@ uv sync --frozen --group dev
 uv run --frozen pytest -q tests/test_evolution_owner_passkey_and_replay.py tests/test_evolution_owner_challenge.py tests/test_sandbox_attestor.py tests/test_governed_evolution_owner.py
 uv run --frozen python scripts/verify_final_lock.py
 \`\`\`
+
+
+## Primal Anchor v2.2 — Trusted Owner Review UI (opt-in, fail-closed)
+
+`aura-ui/src/components/EvolutionReviewPanel.tsx` is a **read-only**
+dashboard for evidence-backed goal groups. Its amber external link opens a
+separate origin: **http://localhost:8766/**. The existing AURA Vite UI may
+continue using **http://127.0.0.1:5173/**: WebAuthn always runs only in the
+isolated owner page at localhost:8766, with RP ID `localhost` and that exact
+origin. No passkey credential or owner token is passed back to the AURA UI.
+
+`core/src/aura_core/evolution/owner_control_plane.py` is a standalone
+FastAPI **factory**, NOT a route mounted in the Core server. It exposes a
+pinned-host, pinned-origin, no-CORS, CSP-isolated HTML/JS review page. Each
+pending GovernedSkillActivation record displays its operation, capability,
+scope, fingerprint SHA-256, version and expiry. Buttons invoke
+`navigator.credentials.get({publicKey:{userVerification:"required"}})`.
+The client submits the real WebAuthn assertion to a separate service: server
+cryptographically verifies registered ES256 credential, RP ID, origin, UP+UV,
+unexpired one-shot challenge and signature counter. Successful proof produces
+an approval/denial with `human:local-owner` only through the protected
+`TrustedOwnerPasskeyDecider`.
+
+The service has **NO endpoint to register a new credential, create an
+approval, or activate a tool**. Those functions remain in an independent
+owner-provisioning/control-plane environment; ordinary AURA UI credentials
+and the Core's HTTP bearer token cannot grant owner authority. An agent
+cannot unlock a new credential by visiting this page.
+
+Operator-only entrypoint:
+`core/scripts/start_owner_control_plane.py`, e.g.:
+
+```powershell
+Set-Location D:\AURA\JAS-evolution-test\core
+uv run --frozen python scripts/start_owner_control_plane.py `
+  --owner-config "C:\OwnerVault\aura-public-credential.json" `
+  --approval-db "C:\OwnerVault\governed-approvals.sqlite3" `
+  --challenge-db "C:\OwnerVault\owner-challenges.sqlite3"
+```
+
+This command intentionally **fails closed unless all three files are
+pre-provisioned**, outside the AURA checkout, and accessible only to an
+independently protected owner control-plane identity. Do not create dummy
+credentials or point these paths into the Core `.env.local` or source tree.
+
+The config JSON must contain exactly:
+```json
+{
+  "rp_id": "localhost",
+  "origin": "http://localhost:8766",
+  "credential_id": "<base64url registered credential ID>",
+  "public_key_pem": "<PEM ES256 P-256 public key>",
+  "policy_digest": "<64 lowercase SHA-256 characters>"
+}
+```
+
+This file contains only PUBLIC credential data but is still trusted policy
+configuration. Credential enrollment / attestation parsing is not yet
+implemented; independently enroll the user's platform authenticator before
+launching the service. **Do not deploy this as production** until supported
+Windows Hello registration, NTFS ACL verification, a dedicated owner service
+OS identity, trusted artifact/approval queue population, independently
+observed sandbox attestor and cross-process owner receipt delivery exist.
+Core and owner approval service run under separate security principals; merely
+running two Python processes as the same Windows account provides no strong
+isolation.
+
+The separate owner screen records a one-time approval only; it DOES NOT
+perform `GovernedSkillRegistry.activate`, bypass PermissionEngine, or import
+candidate Python. Existing registry `activate/rollback` remains gated
+through `LocalOwnerReceiptAuthority` and MCP Gateway with fresh policy
+checks. Operator must review exactly the manifest digest displayed by the
+independent trusted control plane. This milestone is **end-to-end WebAuthn
+decision plumbing**, not production end-to-end skill deployment.
+
+Tests:
+```powershell
+Set-Location D:\AURA\JAS-evolution-test\core
+uv sync --frozen --group dev
+uv run --frozen pytest -q tests/test_owner_control_plane_http.py `
+  tests/test_evolution_owner_challenge.py `
+  tests/test_evolution_owner_passkey_and_replay.py
+uv run --frozen python scripts/verify_final_lock.py
+```
