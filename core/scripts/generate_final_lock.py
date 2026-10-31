@@ -52,6 +52,13 @@ def included(path: Path) -> bool:
 def files_to_hash() -> list[Path]:
     roots = (
         ROOT / "core" / "src",
+        # Runtime-critical scripts and public AudioWorklet are part of the
+        # governed source inventory, not unverified runtime sidecars.
+        ROOT / "core" / "scripts" / "generate_final_lock.py",
+        ROOT / "core" / "scripts" / "verify_final_lock.py",
+        ROOT / "core" / "scripts" / "install_nirvana_voice_models.py",
+        ROOT / "core" / "scripts" / "kokoro_tts_mcp.py",
+        ROOT / "aura-ui" / "public" / "aura-pcm-worklet.js",
         ROOT / "core" / "pyproject.toml",
         ROOT / "core" / "uv.lock",
         ROOT / "aura-ui" / "src",

@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-10-31T00:45:29.771Z",
-  "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
+  "generated_at": "2026-10-31T14:43:46.581360+00:00",
+  "git_commit": "46269e9b5b9bfe11ad7a2b1be0cd4c8cf4f3e188",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:3913057779d466a186a83b2233370abfb6f11cdd247d465b8204ca04e5948f73",
-  "file_count": 234,
+  "release_digest": "sha256:3822ff592a6a549062bc96824b2f37d3a77b2600b78dfd2fdb04290801105716",
+  "file_count": 243,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -15,6 +15,10 @@
     {
       "path": "aura-ui/package.json",
       "sha256": "e601faf2792ff04aea9427459e226b8ddd3f7b2ceac7cf6403f25eb38863dd97"
+    },
+    {
+      "path": "aura-ui/public/aura-pcm-worklet.js",
+      "sha256": "e214eb93c9e7e94fb8f2f2db458c8a0e300e799e2c811fdea3ea64ed3e19d88b"
     },
     {
       "path": "aura-ui/src/api/client.ts",
@@ -30,7 +34,7 @@
     },
     {
       "path": "aura-ui/src/App.tsx",
-      "sha256": "afb2504609c7f7575b940c5cabc3cd5ef8f2ffe5ec0812afa8502b03e24bbb83"
+      "sha256": "835c872f45a2cb7d057c23664cada554ac906fbd0d2382c47dd1ed68a7c6c674"
     },
     {
       "path": "aura-ui/src/assets/hero.png",
@@ -46,7 +50,7 @@
     },
     {
       "path": "aura-ui/src/AuraJarvisBridge.tsx",
-      "sha256": "91db993e3be0af5e2b54ef58e815463cf4e5b24f4b3246a04e98530a1b5c8c98"
+      "sha256": "d188bea11b86a06b78bb505a2b505dfafd32ac5655e56b65afcb7b00629ecd4b"
     },
     {
       "path": "aura-ui/src/components/ApprovalPanel.tsx",
@@ -105,6 +109,10 @@
       "sha256": "3573b5800212ca04be5ee549e9b5b7267d3972acdf2368b4fe5fb75cb1d473e9"
     },
     {
+      "path": "aura-ui/src/voice/orderedAudioPlayback.ts",
+      "sha256": "1c796e21dfa47ddb5c4054d9cae26fb0e33d2fffc97fdfbf82ec48988cac6d9f"
+    },
+    {
       "path": "aura-ui/src/voice/sessionState.ts",
       "sha256": "2e8695b1501bf7df1e29780ffef7fbc747f869289f2a38bcc9dd60967c18bb47"
     },
@@ -118,11 +126,27 @@
     },
     {
       "path": "aura-ui/src/voice/useFullDuplexAura.ts",
-      "sha256": "64b19383e965fa2bd6c1d0a8203700b95137b349e365c3e504b2824a9d369225"
+      "sha256": "80d2d70a00dd60f0a4ba8e52f32cee3abdb5b0c4783a97f83fbc0c916a5c13c2"
     },
     {
       "path": "core/pyproject.toml",
       "sha256": "e9659b037281acb116259ac9edd1c394ac318a3b32e5c2c6a4e91a1271abe567"
+    },
+    {
+      "path": "core/scripts/generate_final_lock.py",
+      "sha256": "8466de8085e752f2cf25c61c24de90de12c8d07c958fd52d659b9c47d73c6f44"
+    },
+    {
+      "path": "core/scripts/install_nirvana_voice_models.py",
+      "sha256": "8a01731501583846a3bc782bd8e69370f6a8778af2b4d428625dea413d2bf216"
+    },
+    {
+      "path": "core/scripts/kokoro_tts_mcp.py",
+      "sha256": "fad3a723f6e7560fb38d8609bf343a4f09138948a982be1e4cee68c234152abf"
+    },
+    {
+      "path": "core/scripts/verify_final_lock.py",
+      "sha256": "b4e278a5129ec3e7443dce27d60cbc9d7ddd6660a553f6db7358347b00cf4dee"
     },
     {
       "path": "core/src/aura_core/__init__.py",
@@ -218,7 +242,7 @@
     },
     {
       "path": "core/src/aura_core/application/directive_planner.py",
-      "sha256": "c1cfdcec1ffe07fa8164cd28ee341784213219fdf5376f81fb770ac37a66dc76"
+      "sha256": "e0e36fe4e10b27cc714354534aa58990ada8bc2dce1a2c2ae80b220854431946"
     },
     {
       "path": "core/src/aura_core/application/episodic_memory.py",
@@ -242,7 +266,7 @@
     },
     {
       "path": "core/src/aura_core/application/full_duplex_session.py",
-      "sha256": "84f0876d87770b6767266b9b6e6e0c13ac0c10dabacfa9cdc2da1edbec84d4e4"
+      "sha256": "67d0fd39a38b1649c5db8e64b8b79f29612e75e8706c20013ea147a0ffdb5239"
     },
     {
       "path": "core/src/aura_core/application/governed_autonomous_loop.py",
@@ -350,7 +374,7 @@
     },
     {
       "path": "core/src/aura_core/application/speech_api.py",
-      "sha256": "6dda891be92af2820f0c482bc2df43a189cb68fb1d32a055cdd1f271b8a584dc"
+      "sha256": "f410c50d8333389021facc6c46e1889af9e825ba4587866cecc4b245f6e241c3"
     },
     {
       "path": "core/src/aura_core/application/streaming_speech.py",
@@ -634,7 +658,7 @@
     },
     {
       "path": "core/src/aura_core/main.py",
-      "sha256": "994cb2dfe1723239a3032001ef75345c8f4a4dd73ddafe098d1cd2e512828fd6"
+      "sha256": "a78f0a47873dab2e7d16bd6a607c0840953498e5e55c03d8265494e06e539478"
     },
     {
       "path": "core/src/aura_core/mcp/__init__.py",
@@ -939,6 +963,18 @@
     {
       "path": "core/src/aura_core/tts/text.py",
       "sha256": "810181da3cf0be2004b91028b218a310e43c34535cdf93f38f268adf04ca6f90"
+    },
+    {
+      "path": "core/src/aura_core/voice/__init__.py",
+      "sha256": "5058b9b5b3c21ff2d6c463ceee131d721a4bff6fbfd5d6f20792b5133d2d041b"
+    },
+    {
+      "path": "core/src/aura_core/voice/metrics.py",
+      "sha256": "bd64abcc139d1f013de071bc23919739496105711b6f952ea55f1fea57a708ce"
+    },
+    {
+      "path": "core/src/aura_core/voice/sherpa_onnx.py",
+      "sha256": "f31a33e4f9923ff6e4e5c4d1565cf550efec3e5142401fe30135f305a1c7742c"
     },
     {
       "path": "core/uv.lock",

@@ -65,6 +65,18 @@ class DirectivePlanner:
         "bul", "incele", "ogren", "bilgi", "hakkinda",
     )
 
+    # Conversational requests are NOT tool executions. They produce an
+    # explicit empty plan that the UI routes to its existing streaming LLM.
+    # Unrecognized action directives must still be rejected, never promoted
+    # to an MCP capability or treated as authorized OS operations.
+    _CHAT_PREFIXES = (
+        "tell me", "what is", "what are", "what's", "who is", "why ",
+        "how does", "how do", "explain", "say ", "hello", "hi ", "hey ",
+        "write me", "give me a joke", "joke", "bana anlat",
+        "bana bir saka", "bir saka", "saka yap", "merhaba",
+        "selam", "nedir", "nasil", "kimdir", "acikla",
+    )
+
     _MODEL_RULES = (
         (frozenset({"disli", "gear", "gears"}), "gear-v1"),
         (frozenset({"kure", "sphere", "ball"}), "sphere-v1"),
@@ -128,6 +140,20 @@ class DirectivePlanner:
                         max_attempts=1,
                     ),
                 ),
+            )
+
+        # An explicitly conversational directive may use ONLY the local
+        # assistant response route; no MCP plan/approval is synthesized.
+        conversational = normalized
+        if conversational.startswith("aura"):
+            suffix = conversational[4:]
+            if not suffix or suffix[0] in " ,:;.!?-":
+                conversational = suffix.lstrip(" ,:;.!?-")
+        if any(conversational.startswith(prefix)
+               for prefix in self._CHAT_PREFIXES):
+            return GeneratedPlan(
+                resource_scope="local-assistant",
+                steps=(),
             )
 
         raise ValueError(

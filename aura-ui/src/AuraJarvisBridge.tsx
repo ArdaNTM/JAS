@@ -69,6 +69,15 @@ export default function AuraJarvisBridge({
     let pending = "";
     let playlist = Promise.resolve();
     let everQueued = false;
+    const bargeIn = () => {
+      window.removeEventListener("aura:voice-barge-in", bargeIn);
+      cancelled = true;
+      abort.abort();
+      player?.pause();
+      if (player) { player.src = ""; player = null; }
+      // Every queued promise checks cancelled before synthesizing.
+    };
+    window.addEventListener("aura:voice-barge-in", bargeIn);
 
     const playChunk = async (speech: string): Promise<void> => {
       if (cancelled || !speech) return;
@@ -85,9 +94,15 @@ export default function AuraJarvisBridge({
     };
 
     const queue = (raw: string): void => {
-      for (const segment of speechChunks(raw)) {
+      for (const segment of speechChunks(raw, 420)) {
         everQueued = true;
-        playlist = playlist.then(() => playChunk(segment));
+        playlist = playlist.then(async () => {
+          if (sessionActive && speakThroughSession) {
+            await speakThroughSession(segment);
+          } else {
+            await playChunk(segment);
+          }
+        });
         // The final await handles failures. No silent detached promises.
       }
     };
@@ -100,9 +115,8 @@ export default function AuraJarvisBridge({
         await streamAssistantResponse(directive.trim(), researchOutput, (delta) => {
           if (cancelled) return;
           spoken += delta;
-          if (!sessionActive) {
-            pending += delta;
-            if (pending.length >= 180) {
+          pending += delta;
+          if (pending.length >= 80) {
               const cut = Math.max(pending.lastIndexOf(". "), pending.lastIndexOf("! "),
                 pending.lastIndexOf("? "), pending.lastIndexOf("\n"));
               if (cut > 0) {
@@ -110,16 +124,10 @@ export default function AuraJarvisBridge({
                 pending = pending.slice(cut + 1);
                 queue(complete);
               }
-            }
           }
         }, abort.signal);
 
         if (cancelled) return;
-        if (sessionActive && speakThroughSession && spoken.length <= 3900) {
-          const handled = await speakThroughSession(normalizeSpeechText(spoken));
-          if (handled) return; // SSE player owns interrupted playback.
-        }
-        if (sessionActive) pending = spoken;
         if (pending.trim()) queue(pending);
         if (!everQueued) {
           onStatus?.("ready");

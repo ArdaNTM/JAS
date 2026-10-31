@@ -5,6 +5,9 @@ import asyncio
 import base64
 import io
 import json
+import os
+from pathlib import Path
+from threading import Lock
 from typing import Any
 
 import mcp.server.stdio
@@ -12,20 +15,42 @@ import mcp.types as types
 from mcp.server import Server, ServerRequestContext
 
 
+# ONNX session is reused across chunks. The process stays inside the
+# existing governed MCP service and cannot bypass PermissionEngine.
+_onnx = None
+_onnx_lock = Lock()
+
+
 def synthesize(text: str, voice: str, speed: float) -> dict[str, Any]:
     if not text.strip():
         raise ValueError("text is required")
-    try:
-        from kokoro import KPipeline
-        import soundfile as sf
-    except ImportError as exc:
-        raise RuntimeError("Kokoro is not installed. Install the locked Kokoro runtime before enabling speech synthesis.") from exc
-    pipeline = KPipeline(lang_code="a")
-    chunks = list(pipeline(text, voice=voice, speed=speed))
-    if not chunks:
-        raise RuntimeError("Kokoro produced no audio")
+    import soundfile as sf
     buffer = io.BytesIO()
-    sf.write(buffer, chunks[0].audio, 24000, format="WAV")
+    if os.getenv("AURA_KOKORO_ONNX_ENABLED", "0") == "1":
+        global _onnx
+        model = Path(os.getenv("AURA_KOKORO_ONNX_MODEL", ""))
+        voices = Path(os.getenv("AURA_KOKORO_ONNX_VOICES", ""))
+        if not model.is_file() or not voices.is_file():
+            raise RuntimeError("Owner-provisioned Kokoro ONNX model/voices are missing")
+        try:
+            from kokoro_onnx import Kokoro
+        except ImportError as exc:
+            raise RuntimeError("kokoro-onnx is required for native ONNX TTS") from exc
+        with _onnx_lock:
+            if _onnx is None:
+                _onnx = Kokoro(str(model), str(voices))
+            samples, sample_rate = _onnx.create(text, voice=voice, speed=speed, lang="en-us")
+        sf.write(buffer, samples, sample_rate, format="WAV")
+    else:
+        # Legacy TTS remains available only when the Nirvana flag is disabled.
+        if os.getenv("AURA_NIRVANA_VOICE_ENABLED", "0") == "1":
+            raise RuntimeError("Nirvana requires AURA_KOKORO_ONNX_ENABLED=1")
+        from kokoro import KPipeline
+        pipeline = KPipeline(lang_code="a")
+        chunks = list(pipeline(text, voice=voice, speed=speed))
+        if not chunks:
+            raise RuntimeError("Kokoro produced no audio")
+        sf.write(buffer, chunks[0].audio, 24000, format="WAV")
     return {"mime_type": "audio/wav", "audio_base64": base64.b64encode(buffer.getvalue()).decode("ascii"), "voice": voice}
 
 
