@@ -40,7 +40,7 @@ class ScreenReadRequest(BaseModel):
 def windows_operator_approval(prompt: str) -> bool:
     if sys.platform != "win32":
         return False
-    # MB_YESNO | MB_ICONWARNING | MB_DEFBUTTON2 (No by default).
+    # MB_YESNO | MB_ICONWARNING | MB_DEFBUTTON2 | MB_TOPMOST.\n    # The explicit operator dialog must remain visible above the HUD.
     result = ctypes.windll.user32.MessageBoxW(
         None,
         "AURA ScreenRead: Allow ONE screenshot of your current desktop for "
@@ -48,7 +48,7 @@ def windows_operator_approval(prompt: str) -> bool:
         "No screenshot will be stored or sent to the HUD.\n\n"
         "Question: " + prompt[:220],
         "AURA — ScreenRead approval",
-        0x0004 | 0x0030 | 0x0100,
+        0x0004 | 0x0030 | 0x0100 | 0x00040000,
     )
     return result == 6
 
