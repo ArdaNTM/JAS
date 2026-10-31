@@ -134,6 +134,22 @@ export default function App() {
   const [assistantRequestId, setAssistantRequestId] =
     useState(0);
 
+  // A visual HUD announcement is presentation only: this does not call any
+  // tool or invoke ScreenRead. Screen pixels always require separate approval.
+  useEffect(() => {
+    if (assistantRequestId <= 0 || !assistantDirective.trim()) return;
+    if (!/\\bgöster\\b/i.test(assistantDirective)) return;
+    const title = assistantDirective.trim().replace(/^(?:bana\\s+)/i, "").slice(0, 100);
+    void fetch("/api/hud/panel", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({ title, kind: "object" }),
+    }).catch(() => {
+      // HUD is opt-in and may be closed; main UI remains functional.
+    });
+  }, [assistantDirective, assistantRequestId]);
+
   const [command, setCommand] = useState("");
   const [hologramTarget, setHologramTarget] = useState("");
   const [hologramModelId, setHologramModelId] =
