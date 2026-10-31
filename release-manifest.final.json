@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-10-31T00:42:38.584Z",
+  "generated_at": "2026-10-31T00:45:29.771Z",
   "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:30a3ef2cd96d2f7ec32f7bcd45ed1c52895e38603b56f2dde5b9e983cc686f4a",
+  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
   "file_count": 233,
   "files": [
     {
@@ -86,7 +86,7 @@
     },
     {
       "path": "aura-ui/src/HudOverlay.tsx",
-      "sha256": "0b1958cfcdb45709a55276379d5e493f8c37c428fc974f671d508896adf40b76"
+      "sha256": "32cd681fd14834b9381d0d3e919b184032c028f9b4e84e82dda30460d71a3b0e"
     },
     {
       "path": "aura-ui/src/index.css",
