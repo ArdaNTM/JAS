@@ -14,7 +14,8 @@ for (const fragment of [
 ]) {
   assert.ok(main.includes(fragment), `HUD shell lost invariant: ${fragment}`);
 }
-assert.ok(main.indexOf("if (HUD_MODE)") < main.indexOf("startBackend();\n    createWindow();"),
+assert.match(main,
+  /app\.whenReady\(\)\.then\(\(\)\s*=>\s*\{\s*if\s*\(HUD_MODE\)\s*\{[\s\S]*?\}\s*else\s*\{\s*startBackend\(\);\s*createWindow\(\);\s*\}/,
   "HUD mode must not start another backend");
 for (const fragment of ["contextBridge.exposeInMainWorld", "hudSetInteractive", "aura-hud-set-interactive"]) {
   assert.ok(preload.includes(fragment), `HUD preload lost invariant: ${fragment}`);
