@@ -1,0 +1,58 @@
+/* The page is entirely transparent: only the floating HUD draws pixels. */
+html:has(.hud-root), body:has(.hud-root), body:has(.hud-root) #root {
+  margin: 0;
+  padding: 0;
+  background: transparent !important;
+  min-height: 0;
+  color: #bbfaff;
+}
+.hud-root { width: 540px; height: 470px; position: relative; background: transparent; overflow: hidden; }
+.hud-panel {
+  margin: 10px;
+  width: calc(100% - 20px);
+  max-height: calc(100% - 20px);
+  overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(41,208,246,.45);
+  border-radius: 18px;
+  background: linear-gradient(120deg,rgba(3,15,32,.82),rgba(0,20,37,.65));
+  box-shadow: inset 0 0 32px #06d9ff12, 0 0 30px #02a5ea24;
+  backdrop-filter: blur(8px);
+}
+.hud-panel:before { content:""; pointer-events:none; position:absolute; inset:0; background:repeating-linear-gradient(0deg,transparent 0px,transparent 4px,#71eeff07 5px); }
+.hud-top, .hud-footer { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; font: 10px Consolas,monospace; letter-spacing:.13em; }
+.hud-brand { font-size:15px; font-weight:700; color:#67eaff; }
+.hud-brand small { font-size:8px; margin-left:8px; color:#7d9ca8; }
+.hud-status { color:#a9b4ba; font-size:9px; }
+.hud-status.online { color:#41e5df; }
+.hud-visual { position:relative; height:210px; overflow:hidden; background:radial-gradient(ellipse,#0da4c41b,transparent 64%); }
+.hud-reticle { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
+.hud-reticle .ring { position:absolute; width:170px; height:170px; border:1px solid #03d9ff; border-radius:50%; box-shadow:0 0 22px #00cafe21,inset 0 0 20px #00a5ee17; }
+.hud-reticle .ring-b { width:205px; height:205px; border-style:dashed; border-color:#1da4d4a0; animation:auraspin 35s linear infinite; }
+.hud-reticle .ring-a { border-right-color:transparent; border-bottom-color:#0ee6fd45; transform:rotate(-32deg); }
+.hud-reticle .cross { position:absolute; background:#47dfff43; }
+.hud-reticle .cross-h { width:260px;height:1px; }
+.hud-reticle .cross-v { width:1px;height:193px; }
+.hud-schematic { position:relative; width:225px; filter:drop-shadow(0 0 8px #1cdcf950); }
+.hud-schematic svg { width:100%; fill:none; stroke:#21d8ff; stroke-width:1.7; opacity:.88; }
+.hud-focus { position:absolute; width:22px;height:22px;border:2px solid #57dfff; opacity:.8; }
+.hud-focus.one { top:23px;left:92px;border-right:0;border-bottom:0; }
+.hud-focus.two { bottom:25px;right:90px;border-left:0;border-top:0; }
+.hud-telemetry { position:absolute;left:14px;right:14px;bottom:8px;display:flex;justify-content:space-between; font:9px Consolas,monospace;color:#4ddcef;letter-spacing:.13em; }
+.hud-scanline { position:absolute; left:10%;right:10%;height:2px;top:0; background:#53f5fb;box-shadow:0 0 22px 8px #06d8ff80;animation:aurascan 1.7s ease-in-out infinite alternate; }
+.is-scanning .hud-reticle { animation:aurapulse 1.2s ease-in-out infinite alternate; }
+.hud-body { position:relative; padding:10px 17px 11px; min-height:66px;max-height:115px;overflow-y:auto; }
+.hud-title { font-weight:700;color:#cbfaff;font-size:13px;margin-bottom:6px; }
+.hud-copy { font:10px/1.45 Consolas,monospace;color:#9bc5ce;white-space:pre-line; }
+.hud-error {color:#ff808b;margin-top:5px;font-size:10px;}
+.hud-footer { padding-top:8px;border-top:1px solid #16678355;color:#57bbcf;font-size:8px; }
+.hud-controls { position:absolute;inset:42px 10px 27px;z-index:10;display:flex;flex-wrap:wrap;align-content:center;gap:8px;padding:15px;background:#04111cf5;border:1px solid #35dafa;border-radius:12px;box-shadow:0 0 25px #00bce844; }
+.hud-controls label { flex:1 1 100%;font:10px/1.5 Consolas,monospace;color:#70deee; }
+.hud-controls input {display:block;width:100%;height:28px;padding:5px 8px;background:#051826;border:1px solid #357588;color:#e3ffff;border-radius:5px;margin-top:3px;outline:none; }
+.hud-controls button { padding:8px 10px;border:1px solid #2a8ca2;border-radius:5px;background:#07304a;color:#b7f7fe;font:10px Consolas,monospace; }
+.hud-controls button:disabled {opacity:.5;}
+.hud-controls .hud-close {margin-left:auto;}
+@keyframes auraspin {to{transform:rotate(360deg)}}
+@keyframes aurascan {to{top:96%}}
+@keyframes aurapulse {to{filter:brightness(1.4)}}
+@media(prefers-reduced-motion:reduce){.hud-reticle .ring-b,.hud-scanline,.is-scanning .hud-reticle{animation:none}}

@@ -20,6 +20,7 @@ from aura_core.application.jarvis_api import router as jarvis_router
 from aura_core.application.autonomy_api import router as autonomy_router
 from aura_core.application.speech_api import router as speech_router
 from aura_core.application.perception_api import router as perception_router
+from aura_core.application.hud_api import router as hud_router
 from aura_core.application.ui_event_stream_api import router as ui_event_stream_router
 from aura_core.application.jarvis_intelligence import InitiativeEngine, SelfAdaptationEngine
 from aura_core.kernel.diagnostics import DiagnosticsService
@@ -82,6 +83,7 @@ def create_composed_app(
     app.include_router(autonomy_router)
     app.include_router(speech_router)
     app.include_router(perception_router)
+    app.include_router(hud_router)
     app.include_router(ui_event_stream_router)
     app.include_router(approval_router)
     app.include_router(ws_router)

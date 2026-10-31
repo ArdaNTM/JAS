@@ -5,6 +5,8 @@ const {
   nativeImage,
   Tray,
   Menu,
+  globalShortcut,
+  screen,
 } = require("electron");
 
 const { spawn } = require("child_process");
@@ -16,6 +18,9 @@ const CORE = path.join(ROOT, "core");
 let mainWindow = null;
 let tray = null;
 let backend = null;
+let hudWindow = null;
+let hudInteractive = false;
+const HUD_MODE = process.env.AURA_HUD_MODE === "1";
 
 function startBackend() {
   if (backend && !backend.killed) {
@@ -111,6 +116,60 @@ function createWindow() {
   });
 }
 
+function createHudWindow() {
+  if (hudWindow && !hudWindow.isDestroyed()) return;
+  const display = screen.getPrimaryDisplay().workArea;
+  hudWindow = new BrowserWindow({
+    width: 540,
+    height: 470,
+    x: Math.max(display.x, display.x + display.width - 560),
+    y: display.y + 26,
+    frame: false,
+    transparent: true,
+    backgroundColor: "#00000000",
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    hasShadow: false,
+    resizable: false,
+    show: false,
+    webPreferences: {
+      preload: path.join(__dirname, "electron-preload.cjs"),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+    },
+  });
+  hudWindow.setContentProtection(true);
+  hudInteractive = false;
+  hudWindow.setIgnoreMouseEvents(true, { forward: true });
+  hudWindow.setAlwaysOnTop(true, "floating");
+  const url = "http://127.0.0.1:5173/?auraHud=1";
+  // Only the operator-owned loopback Vite origin is allowed in this window.
+  hudWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+  hudWindow.webContents.on("will-navigate", (event, target) => {
+    if (target !== url) event.preventDefault();
+  });
+  hudWindow.loadURL(url);
+  hudWindow.once("ready-to-show", () => hudWindow?.showInactive());
+  hudWindow.on("closed", () => {
+    hudWindow = null;
+    hudInteractive = false;
+  });
+}
+
+function setHudInteractive(enabled) {
+  if (!hudWindow || hudWindow.isDestroyed()) return false;
+  hudInteractive = Boolean(enabled);
+  hudWindow.setIgnoreMouseEvents(!hudInteractive, { forward: true });
+  hudWindow.webContents.send("aura-hud-interactive", hudInteractive);
+  if (hudInteractive) hudWindow.focus();
+  return hudInteractive;
+}
+
+function toggleHudInteractive() {
+  return setHudInteractive(!hudInteractive);
+}
+
 function createTray() {
   tray = new Tray(
     nativeImage.createEmpty(),
@@ -122,15 +181,23 @@ function createTray() {
 
   tray.setContextMenu(
     Menu.buildFromTemplate([
+      ...(HUD_MODE ? [
+        { label: "Show HUD", click: () => { createHudWindow(); hudWindow?.showInactive(); } },
+        { label: "Hide HUD", click: () => hudWindow?.hide() },
+        { label: "Toggle HUD input (Ctrl+Alt+H)", click: toggleHudInteractive },
+        { type: "separator" },
+      ] : []),
       {
         label: "Open AURA",
         click: () => {
-          if (!mainWindow) {
-            createWindow();
+          if (HUD_MODE) {
+            createHudWindow();
+            hudWindow?.showInactive();
+          } else {
+            if (!mainWindow) createWindow();
+            mainWindow.show();
+            mainWindow.focus();
           }
-
-          mainWindow.show();
-          mainWindow.focus();
         },
       },
       {
@@ -175,14 +242,25 @@ ipcMain.handle(
   },
 );
 
+ipcMain.handle("aura-hud-set-interactive", (event, enabled) => {
+  if (!HUD_MODE || !hudWindow || event.sender !== hudWindow.webContents) return false;
+  return setHudInteractive(enabled);
+});
+
 app.whenReady().then(() => {
-  startBackend();
-  createWindow();
+  if (HUD_MODE) {
+    createHudWindow();
+    globalShortcut.register("Control+Alt+H", toggleHudInteractive);
+  } else {
+    startBackend();
+    createWindow();
+  }
   createTray();
 });
 
 app.on("before-quit", () => {
-  stopBackend();
+  globalShortcut.unregisterAll();
+  if (!HUD_MODE) stopBackend();
 });
 
 app.on("window-all-closed", (event) => {
@@ -190,9 +268,11 @@ app.on("window-all-closed", (event) => {
 });
 
 app.on("activate", () => {
-  if (!mainWindow) {
-    createWindow();
+  if (HUD_MODE) {
+    createHudWindow();
+    hudWindow?.showInactive();
+    return;
   }
-
+  if (!mainWindow) createWindow();
   mainWindow.show();
 });

@@ -23,7 +23,7 @@ function Wait-Http([string]$Url,[int]$Seconds,[switch]$Ready) {
  }
  return $false
 }
-$coreProc=$null; $uiProc=$null; $failed=$false
+$coreProc=$null; $uiProc=$null; $hudProc=$null; $failed=$false
 try {
  if (-not (Test-Path $Core) -or -not (Test-Path $Ui)) { throw "core/ or aura-ui/ missing." }
  Import-AuraEnvFile -Path (Join-Path $Core ".env.local")
@@ -95,6 +95,17 @@ try {
  if (-not (Test-Path -LiteralPath $viteScript)) { throw "Vite executable not found; run npm ci in aura-ui." }
  $uiProc=Start-Process $node.Source -ArgumentList @($viteScript,"--host","127.0.0.1","--port","$up","--strictPort") -WorkingDirectory $Ui -PassThru -WindowStyle Hidden -RedirectStandardOutput $uo -RedirectStandardError $ue
  if (-not (Wait-Http "http://127.0.0.1:$up/" 60)) { throw "UI readiness failed. Inspect $ue" }
+ if ($env:AURA_HUD_ENABLED -eq "1") {
+  $electronExe=Join-Path $Ui "node_modules\electron\dist\electron.exe"
+  if (-not (Test-Path -LiteralPath $electronExe)) {
+   throw "HUD enabled but Electron executable is missing. Run npm ci inside aura-ui."
+  }
+  # Use the existing healthy Core + Vite proxy; Electron MUST NOT spawn a
+  # second Core (AURA_HUD_MODE=1). The HUD remains alive if the main app closes.
+  $env:AURA_HUD_MODE="1"
+  $hudProc=Start-Process -FilePath $electronExe -ArgumentList @($Ui) -WorkingDirectory $Ui -PassThru
+  Write-Host "AURA HUD active. Ctrl+Alt+H toggles interactive controls." -ForegroundColor Cyan
+ }
  Write-Host "AURA ready: Core http://127.0.0.1:$cp  UI http://127.0.0.1:$up" -ForegroundColor Green
  Start-AuraAppWindow -Url "http://127.0.0.1:$up/"
  Write-Host "AURA supervisor active. Close the application and press Enter to stop Core and UI."
@@ -104,6 +115,10 @@ try {
  Write-Host "AURA startup failed: $($_.Exception.Message)" -ForegroundColor Red
  Write-Host "Logs: $Logs"
 } finally {
+ if ($null -ne $hudProc) {
+  # Stop only the Electron tree owned by this launcher.
+  & taskkill.exe /F /T /PID $hudProc.Id 2>$null | Out-Null
+ }
  foreach ($proc in @($uiProc,$coreProc)) {
   if ($null -ne $proc) {
    Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
