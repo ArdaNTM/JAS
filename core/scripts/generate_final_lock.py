@@ -51,7 +51,17 @@ def included(path: Path) -> bool:
 
 def files_to_hash() -> list[Path]:
     roots = (
+        ROOT / ".gitattributes",
         ROOT / "core" / "src",
+        # Protect attestor signer and release-lock scripts as executable assets.
+        ROOT / "core" / "scripts" / "evolution_attestor_sign.py",
+        ROOT / "core" / "scripts" / "start_owner_control_plane.py",
+        ROOT / "core" / "scripts" / "enroll_local_owner.py",
+        ROOT / "core" / "scripts" / "provision_windows_owner.ps1",
+        ROOT / ".github" / "workflows" / "aura-windows-launcher.yml",
+        ROOT / ".github" / "workflows" / "aura-windows-owner-security.yml",
+        ROOT / "core" / "scripts" / "generate_final_lock.py",
+        ROOT / "core" / "scripts" / "verify_final_lock.py",
         ROOT / "core" / "pyproject.toml",
         ROOT / "core" / "uv.lock",
         ROOT / "aura-ui" / "src",

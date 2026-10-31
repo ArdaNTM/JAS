@@ -1,0 +1,15 @@
+# SHA-256 release-lock inputs must have identical bytes on Windows and Unix.
+# Binary assets stay binary: text=auto only normalizes files detected as text.
+.gitattributes text eol=lf
+core/src/** text=auto eol=lf
+core/scripts/** text=auto eol=lf
+aura-ui/src/** text=auto eol=lf
+aura-ui/package.json text eol=lf
+aura-ui/package-lock.json text eol=lf
+core/pyproject.toml text eol=lf
+core/uv.lock text eol=lf
+.github/workflows/*.yml text eol=lf
+
+# Preserve native Windows batch semantics, where applicable.
+*.bat text eol=crlf
+*.cmd text eol=crlf
