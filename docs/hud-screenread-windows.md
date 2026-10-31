@@ -130,3 +130,66 @@ download Python dependencies during startup. For slow local VLM warm-up,
 Reference principles: Microsoft Mixed Reality billboarding/tag-along and the
 2026 Daniel Stallworth article "Iron Man Jarvis Capabilities" (capability
 awareness and context-sensitive display, not screen-capture bypass).
+
+## Spatial mesh v3 operator acceptance (three displays)
+
+The Electron host uses **one transparent, click-through BrowserWindow per
+attached display**, all in Electron's DIP coordinate system, with a single
+main-process scene. Hotplug / bounds changes are handled by the Electron
+screen module. Dragging a card uses Electron's screen cursor position to
+carry a single card across windows and physical display boundaries.
+`Ctrl+Alt+H` toggles interaction; while active the overlay can block pointer
+input to other apps until toggled off. The UI currently captures only the
+**primary display** in ScreenRead: visual localization is rendered only there.
+
+New object cards can make a user-initiated, Gateway-authorized **public**
+Wikimedia Commons media search. Search terms go to Wikimedia; no screenshot
+contents, vision prompts, private files or stored memories are queried.
+Thumbs with allowed Wikimedia hosts and reported license names are shown
+with visible attribution. The image may still have additional usage terms:
+follow the linked Commons source for licensing. If not available, the
+card clearly shows an **illustrative** wireframe, never a fake model.
+
+### Trusted ScreenRead Session
+
+In HUD controls choose `TRUSTED SESSION AÇ`, confirm the native one-time
+operator dialog, and the principal-bound session is armed for **90 seconds,
+maximum 3 captures**. Each further capture still obtains and atomically
+consumes a separate ApprovalStore record through the MCP Gateway. A spoken
+`AURA ekranımı analiz et` can use the active session; voice alone **cannot
+create or renew** it. A button revokes the session and the Core restart
+expires all sessions. The token remains in renderer memory only; never log,
+persist or publish it. The Windows Yes/No confirmation cannot be eliminated
+without introducing a separate trustworthy operator-presence mechanism.
+
+### Voice runtime
+
+The continuous voice control remains opt-in. Its browser microphone uses
+echo cancellation, noise suppression, and a dynamic energy threshold before
+sending bounded voiced segments to the existing local faster-whisper adapter.
+Unlike a dedicated sherpa-onnx KWS/OpenWakeWord engine with a provisioned
+AURA model, this is still **transcription-based wake phrase matching**:
+it is hardware-agnostic but does not claim dedicated wake-word quality or
+guaranteed low latency. No trained AURA keyword model is bundled or
+silently downloaded.
+
+### Visual grounding
+
+Qwen2.5-VL may return an array of JSON objects and 2D boxes in **pixels**,
+not normalized 0–1 values. The provider parses both shapes, extracts
+JPEG dimensions to normalize pixel boxes, rejects invalid boxes, and sends
+only untrusted descriptions and coordinates to the HUD. The overlay draws
+model-estimated reticles and animated boxes; they do not claim to be
+independently verified detections or continuously tracked objects.
+
+### Acceptance test
+
+1. Attach three displays, open two car card requests and move a card across
+   display boundaries; unplug/reconfigure a display and verify no orphan HUD.
+2. Verify actual photo, licensing metadata and Wikimedia query disclosure.
+3. Enable microphone intentionally, say the "AURA" prefix, disable and
+   confirm microphone recording stops. Assess accuracy with noise.
+4. Arm Trusted Session once, read at most three times within 90 seconds,
+   revoke and verify further capture refuses or needs a new native approval.
+5. Validate pixel-box JSON normalization and ensure screenshots and session
+   secrets are absent from EventBus and logs.
