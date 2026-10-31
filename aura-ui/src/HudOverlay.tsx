@@ -46,7 +46,15 @@ export default function HudOverlay() {
   const [connected, setConnected] = useState(false);
   const voice = useAuraVoice((transcript) => {
     const text = transcript.trim().slice(0, 100);
-    if (text) setTitle(text);
+    if (!text) return;
+    setTitle(text);
+    // Only presentation, never a tool or a screen capture.
+    if (/göster/i.test(text)) {
+      void postHUD("/api/hud/panel", { title: text, kind: "object" })
+        .catch(() => setError("HUD paneli yayınlanamadı."));
+    } else {
+      setQuestion(transcript.slice(0, 400));
+    }
   });
 
 
