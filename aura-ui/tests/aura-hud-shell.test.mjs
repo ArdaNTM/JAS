@@ -27,8 +27,11 @@ console.log("PASS: governed Electron HUD shell / click-through invariants");
 
 const hud = readFileSync(new URL("../src/HudOverlay.tsx", import.meta.url), "utf8");
 const css = readFileSync(new URL("../src/hud.css", import.meta.url), "utf8");
-assert.ok(main.includes("width: display.width") && main.includes("height: display.height"),
-  "HUD must span the display for spatial cards");
+for (const fragment of ["screen.getAllDisplays()", "display-added", "display-removed",
+  "display-metrics-changed", "hudWindows", "setIgnoreMouseEvents", "moveDraggedPanel",
+  "aura-hud-set-regions", "aura-hud-publish-panel"]) {
+  assert.ok(main.includes(fragment), "Multi-display HUD invariant missing: " + fragment);
+}
 for (const fragment of ["useContinuousAuraVoice", "hud-canvas", "model_estimate", "confirmed: true", "hud-region"]) {
   assert.ok(hud.includes(fragment), "Spatial HUD contract missing: " + fragment);
 }
