@@ -190,3 +190,53 @@ Windows isolated acceptance:
 Nothing is promoted into the trusted Core, no generated modules are imported,
 and neither owner approval UI nor independent runner service are claimed
 production-ready yet.
+
+
+## Primal Anchor v2.1 — durable replay and owner passkey proof
+
+New \`evolution/durable_attestation.py\` uses a preprovisioned, absolute,
+owner-controlled SQLite file outside the AURA checkout. Transactions use
+\`BEGIN IMMEDIATE\`, uniqueness on \`(key_id, run_id)\`, and full synchronous
+commits to prevent replay across restarts and concurrent writers. The receipt
+is re-verified against the pinned Ed25519 public key, image, test, policy,
+source and MCP binding identities on every lookup and expires independently.
+For actual production isolation, the replay ledger must be hosted by an
+independently privileged owner control-plane process, not mounted writable in
+Core or sandbox. OS ACLs (including Windows NTFS ACLs) must protect this data.
+
+\`evolution/owner_passkey.py\` verifies registered WebAuthn ES256/P-256
+assertions with exact \`localhost\` RP ID, expected \`http://localhost:5173\`
+origin, challenge, credential ID, UP+UV flags and signature counter. This is
+compatible with WebAuthn platform authenticators such as Windows Hello, but
+hardware/device acceptance has NOT been demonstrated. It is NOT a Windows
+Hello-specific password/prompt shortcut.
+
+\`evolution/owner_challenge.py\` provides a trusted owner control-plane
+library for one-shot, 90-second challenge creation and consumption. It binds
+each challenge to an existing pending \`GovernedSkillActivation\` approval,
+exact approval version and pinned policy digest, persists challenge consumption
+and signature counter, and ONLY then records a
+\`human:local-owner\` approval or denial. Duplicate challenge use, stale
+approval identity and counter rollback are rejected. Separate owner
+authentication is mandatory for sandbox smoke tests as well.
+
+**Still to integrate before production**: a separate authenticated HTTP
+control-plane service and credential enrollment, Windows Hello/passkey
+browser UI with CORS/CSRF/origin controls, protected durable owner approval
+store, NTFS ACL verification, and a real independent sandbox runner. Core's
+existing bearer auth and untrusted React click handlers are NOT suitable
+substitutes for physical Local Owner proof.
+
+Important: current Vite UI uses 127.0.0.1:5173, while this passkey policy is
+pinned to localhost:5173. Do not enable a passkey UI until the browser origin
+and RP ID are migrated/tested deliberately, without broad wildcard origins.
+No new approval route is mounted by this revision. The feature remains
+disabled until the separate owner service has been provisioned.
+
+Run local focused tests in the existing isolated worktree:
+\`\`\`powershell
+Set-Location D:\\AURA\\JAS-evolution-test\\core
+uv sync --frozen --group dev
+uv run --frozen pytest -q tests/test_evolution_owner_passkey_and_replay.py tests/test_evolution_owner_challenge.py tests/test_sandbox_attestor.py tests/test_governed_evolution_owner.py
+uv run --frozen python scripts/verify_final_lock.py
+\`\`\`
