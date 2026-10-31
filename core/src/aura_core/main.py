@@ -35,6 +35,8 @@ from aura_core.mcp.graph_memory_provider import GraphMemoryMCPProvider
 from aura_core.memory.graph_store import SQLiteGraphStore, PostgreSQLGraphStore
 from aura_core.application.windows_screen_driver import WindowsDesktopInputDriver, DesktopVLMAdapter
 from aura_core.mcp.screen_control_provider import ScreenControlMCPProvider
+from aura_core.mcp.screen_read_provider import ScreenReadMCPProvider
+from aura_core.providers.local_vision import LocalOllamaVisionProvider
 from aura_core.application.swarm_orchestration import SwarmOrchestrator
 from aura_core.enterprise.postgresql_approval_store import PostgreSQLApprovalStore
 from aura_core.enterprise.postgresql_workflow_store import PostgreSQLWorkflowStore
@@ -295,6 +297,35 @@ def build_app() -> FastAPI:
             decision=AuthorizationDecision.REQUIRE_APPROVAL,
         ))
 
+    # Independent ScreenRead capability: never authorize pixel capture through
+    # ScreenControl or through the old direct-perception path.
+    screen_read_enabled = os.getenv("AURA_SCREEN_READ_ENABLED", "0").strip().casefold() in {
+        "1", "true", "yes", "on"
+    }
+    screen_read_provider = ScreenReadMCPProvider()
+    if screen_read_enabled:
+        if approval_store is None:
+            raise RuntimeError(
+                "ScreenRead requires AURA_APPROVAL_FINGERPRINT_KEY and ApprovalStore"
+            )
+        screen_read_provider = ScreenReadMCPProvider(
+            capture=DesktopScreenCapture(),
+            describer=LocalOllamaVisionProvider(
+                model=os.getenv("AURA_VISION_MODEL", "qwen2.5vl:3b"),
+                base_url=os.getenv("AURA_OLLAMA_BASE_URL", "http://127.0.0.1:11434"),
+                timeout=float(os.getenv("AURA_VISION_TIMEOUT_SECONDS", "60")),
+            ),
+        )
+        kernel.permission_engine.add_policy(PermissionPolicy(
+            policy_id="local-owner:screen-read:interactive",
+            policy_version="1.0.0",
+            principal_id=http_principal_id,
+            capability_id="ScreenRead", operation_id="ScreenRead",
+            resource_scope="local_default",
+            authorization_level=AuthorizationLevel.USER_APPROVAL_REQUIRED,
+            decision=AuthorizationDecision.REQUIRE_APPROVAL,
+        ))
+
     # Register governed MCP adapters through the Kernel registries.
     memory_service = ServiceDefinition(
         name="tiered_memory_mcp", version="1.0.0", provider="aura",
@@ -353,6 +384,9 @@ def build_app() -> FastAPI:
         ("aura.graph-memory", "graph_memory_mcp", GraphMemoryMCPProvider(graph_store), (
             ("memory.graph.query", "graph_memory_query", "low", CapabilityCategory.MEMORY),
             ("memory.graph.insert", "graph_memory_insert", "medium", CapabilityCategory.MEMORY),
+        )),
+        ("aura.screen-read", "screen_read_mcp", screen_read_provider, (
+            ("ScreenRead", "screen_read", "high", CapabilityCategory.VISION),
         )),
         ("aura.screen-control", "screen_control_mcp", screen_control_provider, (
             ("ScreenControl", "screen_control", "high", CapabilityCategory.AUTOMATION),
@@ -414,6 +448,7 @@ def build_app() -> FastAPI:
     app.state.gateway_audit_ledger = gateway_audit_ledger
     app.state.graph_store = graph_store
     app.state.screen_control_enabled = screen_control_enabled
+    app.state.screen_read_enabled = screen_read_enabled
     app.state.swarm_orchestrator = SwarmOrchestrator(gateway=gateway, event_bus=kernel.event_bus)
     app.state.storage_mode = storage_mode
     app.state.task_memory = task_memory
