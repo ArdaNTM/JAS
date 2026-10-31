@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import ctypes
+import inspect
 import sys
 from uuid import uuid4
 
@@ -108,17 +109,20 @@ async def read_screen(
     prompt_fn = getattr(request.app.state, "screen_read_operator_approval", windows_operator_approval)
     try:
         accepted = await asyncio.to_thread(prompt_fn, body.prompt)
-        record = await asyncio.to_thread(store.get, first.approval_id)
+        record = store.get(first.approval_id)
+        if inspect.isawaitable(record):
+            record = await record
         if record is None:
             raise RuntimeError("Approval record disappeared")
         outcome = ApprovalStatus.APPROVED if accepted else ApprovalStatus.DENIED
-        await asyncio.to_thread(
-            store.decide,
+        decision = store.decide(
             first.approval_id,
             expected_version=record.version,
             approver_id="human:windows-interactive-dialog",
             decision=outcome,
         )
+        if inspect.isawaitable(decision):
+            await decision
         if not accepted:
             raise HTTPException(status_code=403, detail="Screen capture was declined by the operator")
     except HTTPException:
