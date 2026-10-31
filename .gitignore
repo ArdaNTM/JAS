@@ -58,6 +58,9 @@ core/.aura/
 /logs/
 /downloads/
 /disk-watch.csv
+# Local-mode Core SQLite memory/checkpoint databases (may contain private data).
+# Do not version runtime state; source and migrations remain tracked.
+/core/data/
 /core/artifacts/
 
 # Local SearXNG stack may contain machine-specific settings/secrets
