@@ -71,6 +71,7 @@ def files_to_hash() -> list[Path]:
         ROOT / ".github" / "workflows" / "aura-real-hardware-osworld.yml",
         ROOT / ".github" / "workflows" / "aura-osworld-secure-live.yml",
         ROOT / "core" / "scripts" / "osworld_secure_worker.py",
+        ROOT / "core" / "scripts" / "osworld_gateway_support.py",
         ROOT / "core" / "scripts" / "attest_osworld_network.py",
         ROOT / "core" / "tests" / "test_osworld_secure_live.py",
         ROOT / "core" / "scripts" / "physical_webauthn_probe.py",

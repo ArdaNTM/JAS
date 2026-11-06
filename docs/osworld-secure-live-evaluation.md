@@ -88,6 +88,42 @@ dataset revision 6e16459a2feb5a8f1ed65babcfe7a2a6205d049d.
 Verify ZIP SHA256 14b08aa7ba6c023ecb91d46de8df5de32af4d1d6bd75ea925519caf9677fc8b3
 before safely extracting it. The worker does not auto-download the image.
 
+## Dedicated Loopback Gateway (Docker Desktop)
+
+Docker Engine does not publish host ports for a VM attached exclusively to
+an internal bridge. This release does not attach the VM to a non-internal
+network or add new VM capabilities. The VM retains its internal bridge and
+has **zero host-published ports**. A separately digest-pinned, non-root
+Python relay is attached to (1) that internal bridge and (2) a distinct,
+per-run ordinary bridge with IPv6 and IP masquerading disabled. Only the
+relay has host port bindings, all explicitly bound to 127.0.0.1 for VM
+control ports 5000, 8006, 8080, and 9222. The relay's fixed source forwards
+only those four ports to the VM's inspected internal IPv4 address.
+
+The relay runs as uid/gid 65534, with a read-only root filesystem, no
+added Linux capabilities, cap_drop=ALL, no-new-privileges, no host mounts or
+devices, a 96 MiB memory limit and 64-PID limit. Its image is pinned to the
+Linux/amd64 manifest of python:3.12.16-alpine3.24. The worker checks exact
+container command, network identities, labels, port bindings, mounts and
+privileges before guest actions. The independent host auditor checks the
+same topology separately and performs representative negative external,
+metadata, DNS, IPv6 and host-gateway egress probes in **both** container
+network namespaces. A failing gateway egress check blocks the signed
+receipt even if screenshot readiness succeeds.
+
+The isolation receipt is v2 and signs VM container/network IDs plus the
+distinct gateway container/network IDs. Older v1 receipts are rejected.
+A forced worker termination removes only run-ID-labeled containers, ingress
+network and local QEMU storage; unrelated Docker resources are never pruned.
+No automatic attestation, Owner approval, MCP authorization or benchmark
+success is inferred from a working gateway.
+
+CAUTION: A non-internal ingress bridge gives the gateway potential host and
+outside routes. IP masquerading disabled and sampled negative probes are
+**not** a universal firewall proof. Physical egress acceptance must be
+performed and independently signed on the actual host before official
+evaluation. Keep this PR Draft until that evidence is available.
+
 ## Smoke profile without KVM or agent actions
 
 Run from D:\AURA\JAS-real-world-test\core after the QCOW2 exists:

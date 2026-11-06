@@ -120,6 +120,7 @@ class OSWorldSubprocessVM:
             obj = boot["boot"]
             if not isinstance(obj, dict) or set(obj) != {
                 "container_id", "network_id", "vm_sha256", "image",
+                "gateway_container_id", "gateway_network_id",
             }:
                 raise VMBridgeError("Worker did not report an exact VM identity")
             self.boot = BootIdentity(**obj)
@@ -245,6 +246,27 @@ class OSWorldSubprocessVM:
                     capture_output=True, text=True, timeout=20,
                     shell=False, check=False,
                 )
+            # An abrupt worker kill also skips ingress network cleanup.
+            # Only remove a run-ID scoped bridge with exact ownership labels.
+            ingress = "aura-osworld-v21-ingress-" + self._run_id
+            network_details = subprocess.run(
+                ["docker", "network", "inspect", ingress],
+                capture_output=True, text=True, timeout=10, shell=False,
+            )
+            if network_details.returncode == 0:
+                networks = json.loads(network_details.stdout)
+                if (isinstance(networks, list) and len(networks) == 1
+                        and networks[0].get("Name") == ingress
+                        and networks[0].get("Driver") == "bridge"
+                        and networks[0].get("Labels") == {
+                            "aura.osworld.run_id": self._run_id,
+                            "aura.osworld.purpose": "loopback-ingress",
+                        }):
+                    subprocess.run(
+                        ["docker", "network", "rm", ingress],
+                        capture_output=True, text=True, timeout=20,
+                        shell=False, check=False,
+                    )
             # A SIGKILL skips the 3.12 worker's volume cleanup. Only remove
             # this run's random, locally created storage, never any other
             # Docker volume. Refuse to delete a volume with wrong ownership

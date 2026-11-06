@@ -202,6 +202,8 @@ async def run(args: argparse.Namespace) -> dict:
             "phase": "SECURE_VM_BOOT",
             "container_id": boot.container_id,
             "network_id": boot.network_id,
+            "gateway_container_id": boot.gateway_container_id,
+            "gateway_network_id": boot.gateway_network_id,
             "vm_sha256": boot.vm_sha256,
             "kvm_mode": bridge.kvm_mode,
             "docker_network": "aura-osworld-v21-lab",

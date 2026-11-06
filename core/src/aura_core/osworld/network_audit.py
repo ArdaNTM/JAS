@@ -33,6 +33,13 @@ GUEST_NETWORK_MODE = "user"
 GUEST_FORWARD_PORTS = "5000,8080,9222"
 CONTAINER_ONLY_PORTS = "8006"
 MAX_DOCKER_OUTPUT = 2_000_000
+GATEWAY_IMAGE = "python:3.12.16-alpine@sha256:69ebe56e2a764c399514a0a6117131cb730cc4d0e71e85c08deb9af74cbb9f41"
+INGRESS_PREFIX = "aura-osworld-v21-ingress-"
+GATEWAY_PREFIX = "aura-osworld-v21-gateway-"
+INGRESS_OPTIONS = {"com.docker.network.bridge.enable_ip_masquerade": "false"}
+GATEWAY_MEMORY = 96 * 1024 * 1024
+GATEWAY_PIDS = 64
+GATEWAY_CODE_SHA256 = "4bf0fc7cfe01080958f25789975ba4b8e1a3b3f32847101984db925168a65bed"
 
 
 def docker_json(argv: list[str], *, timeout: int = 20) -> object:
@@ -46,6 +53,110 @@ def docker_json(argv: list[str], *, timeout: int = 20) -> object:
         return json.loads(proc.stdout)
     except json.JSONDecodeError as exc:
         raise IsolationDenied("Docker inspection produced invalid JSON") from exc
+
+
+def _gateway_topology(obj: dict[str, Any], internal_id: str) -> tuple[str, str, dict[str, str], str]:
+    """Independent audit of the exact dual-homed relay and its egress bridge."""
+    config_vm = obj.get("Config") or {}
+    run_id = (config_vm.get("Labels") or {}).get("aura.osworld.run_id")
+    if not isinstance(run_id, str) or not re.fullmatch(r"[0-9a-f]{32}", run_id):
+        raise IsolationDenied("Missing VM run ownership for ingress")
+    ingress_name = INGRESS_PREFIX + run_id
+    gateway_name = GATEWAY_PREFIX + run_id
+    data = docker_json(["inspect", gateway_name])
+    if not isinstance(data, list) or len(data) != 1 or not isinstance(data[0], dict):
+        raise IsolationDenied("Missing unambiguous loopback gateway")
+    gateway = data[0]
+    gateway_id = gateway.get("Id")
+    if not isinstance(gateway_id, str) or not re.fullmatch(r"[0-9a-f]{64}", gateway_id):
+        raise IsolationDenied("Invalid gateway container identity")
+    config = gateway.get("Config") or {}
+    host = gateway.get("HostConfig") or {}
+    nets = (gateway.get("NetworkSettings") or {}).get("Networks") or {}
+    vm_network = (obj.get("NetworkSettings") or {}).get("Networks") or {}
+    vm_ip = vm_network.get(NETWORK_NAME, {}).get("IPAddress")
+    try:
+        ip = ipaddress.IPv4Address(vm_ip)
+        if not ip.is_private or ip.is_loopback or ip.is_link_local:
+            raise ValueError("Unexpected VM IP")
+    except (TypeError, ValueError) as exc:
+        raise IsolationDenied("VM address is not a private internal IPv4") from exc
+    source_path = Path(__file__).with_name("loopback_gateway.py")
+    if source_path.is_symlink() or not source_path.is_file() or source_path.stat().st_size > 8192:
+        raise IsolationDenied("Sealed gateway source missing")
+    code = source_path.read_text(encoding="utf-8")
+    if hashlib.sha256(code.encode("utf-8")).hexdigest() != GATEWAY_CODE_SHA256:
+        raise IsolationDenied("Gateway executable differs from release-pinned source")
+    if (gateway.get("Name") != "/" + gateway_name
+            or gateway.get("State", {}).get("Running") is not True
+            or config.get("Image") != GATEWAY_IMAGE
+            or config.get("User") != "65534:65534"
+            or config.get("Entrypoint") != ["python3", "-B", "-u", "-c"]
+            or config.get("Cmd") != [code, vm_ip]
+            or config.get("Labels") != {
+                "aura.osworld.run_id": run_id,
+                "aura.osworld.role": "loopback-gateway",
+            }
+            or host.get("NetworkMode") != ingress_name
+            or set(nets) != {NETWORK_NAME, ingress_name}
+            or nets[NETWORK_NAME].get("NetworkID") != internal_id):
+        raise IsolationDenied("Untrusted ingress relay command, identity or network")
+    ingress_network = docker_json(["network", "inspect", ingress_name])
+    if (not isinstance(ingress_network, list) or len(ingress_network) != 1
+            or not isinstance(ingress_network[0], dict)):
+        raise IsolationDenied("Untrusted ingress bridge")
+    nw = ingress_network[0]
+    ingress_id = nw.get("Id")
+    if (not isinstance(ingress_id, str) or not re.fullmatch(r"[0-9a-f]{64}", ingress_id)
+            or nets[ingress_name].get("NetworkID") != ingress_id
+            or nw.get("Name") != ingress_name
+            or nw.get("Driver") != "bridge"
+            or nw.get("Internal") is not False
+            or nw.get("EnableIPv6") is not False
+            or nw.get("Attachable") is not False
+            or any((nw.get("Options") or {}).get(k) != v for k, v in INGRESS_OPTIONS.items())
+            or nw.get("Labels") != {
+                "aura.osworld.run_id": run_id,
+                "aura.osworld.purpose": "loopback-ingress",
+            }):
+        raise IsolationDenied("Unsafe gateway bridge or mutated ownership")
+    if (host.get("Privileged") is not False
+            or host.get("ReadonlyRootfs") is not True
+            or host.get("CapDrop") not in (["ALL"], ["CAP_ALL"])
+            or host.get("CapAdd") not in (None, [])
+            or not any(v in ("no-new-privileges", "no-new-privileges:true")
+                       for v in (host.get("SecurityOpt") or []))
+            or host.get("Memory") != GATEWAY_MEMORY
+            or host.get("PidsLimit") != GATEWAY_PIDS
+            or host.get("Devices") or host.get("Tmpfs") or gateway.get("Mounts")):
+        raise IsolationDenied("Gateway privilege or mount policy changed")
+    expected = {f"{port}/tcp" for port in EXPECTED_PORTS}
+    bindings = host.get("PortBindings") or {}
+    actual_ports = (gateway.get("NetworkSettings") or {}).get("Ports") or {}
+    if set(bindings) != expected or set(actual_ports) != expected:
+        raise IsolationDenied("Unexpected gateway published ports")
+    ports = {}
+    for port in EXPECTED_PORTS:
+        key = f"{port}/tcp"
+        b = bindings[key]
+        a = actual_ports[key]
+        if (not isinstance(b, list) or len(b) != 1
+                or not isinstance(a, list) or a != b
+                or b[0].get("HostIp") != "127.0.0.1"):
+            raise IsolationDenied("Gateway port escaped localhost or was not published")
+        number = str(b[0].get("HostPort", ""))
+        if not number.isdigit() or not 1 <= int(number) <= 65535:
+            raise IsolationDenied("Invalid gateway host port")
+        ports[str(port)] = "127.0.0.1:" + number
+    gateway_ip = nets[ingress_name].get("Gateway") or ""
+    try:
+        addr = ipaddress.IPv4Address(gateway_ip)
+        if not addr.is_private or addr.is_loopback:
+            raise ValueError("Gateway host IP invalid")
+    except (ValueError, TypeError) as exc:
+        raise IsolationDenied("Invalid gateway ingress router") from exc
+    return gateway_id, ingress_id, ports, str(addr)
+
 
 
 def inspect_topology(container_id: str, *, expected_vm_hash: str) -> tuple[BootIdentity, dict[str, str], str]:
@@ -163,31 +274,22 @@ def inspect_topology(container_id: str, *, expected_vm_hash: str) -> tuple[BootI
         raise IsolationDenied("Untrusted or unpinned OSWorld storage volume")
     if config.get("Image") != IMAGE:
         raise IsolationDenied("Runtime image not pinned to approved digest")
-    bindings = host.get("PortBindings") or {}
-    if set(bindings) != {f"{port}/tcp" for port in EXPECTED_PORTS}:
-        raise IsolationDenied("Host port bindings do not exactly match four endpoints")
-    ports: dict[str, str] = {}
-    for port in EXPECTED_PORTS:
-        entries = bindings[f"{port}/tcp"]
-        actual = (network_settings.get("Ports") or {}).get(f"{port}/tcp")
-        if (not isinstance(entries, list) or len(entries) != 1
-                or entries[0].get("HostIp") != "127.0.0.1"
-                or not isinstance(actual, list) or len(actual) != 1
-                or actual[0].get("HostIp") != "127.0.0.1"
-                or entries[0].get("HostPort") != actual[0].get("HostPort")):
-            raise IsolationDenied("VM control endpoints are not exclusively loopback")
-        portnum = str(entries[0].get("HostPort", ""))
-        if not portnum.isdigit() or not 1 <= int(portnum) <= 65535:
-            raise IsolationDenied("Invalid loopback published port")
-        ports[str(port)] = f"127.0.0.1:{portnum}"
+    # The application VM must never be attached to ingress or publish host
+    # ports. Docker may show its exposed-but-unpublished ports as null.
+    if (host.get("PortBindings") or any(
+            b for b in (network_settings.get("Ports") or {}).values())):
+        raise IsolationDenied("Internal OSWorld VM unexpectedly publishes host ports")
+    gateway_id, ingress_id, ports, _ = _gateway_topology(obj, nid)
     gateway = net.get("Gateway") or ""
     try:
         ip = ipaddress.ip_address(gateway)
         if not isinstance(ip, ipaddress.IPv4Address) or ip.is_global or ip.is_loopback:
-            raise ValueError("Unexpected gateway")
+            raise ValueError("Unexpected internal gateway")
     except ValueError as exc:
         raise IsolationDenied("Missing internal network gateway") from exc
-    return BootIdentity(container_id, nid, expected_vm_hash, IMAGE), ports, gateway
+    return BootIdentity(
+        container_id, nid, expected_vm_hash, IMAGE, gateway_id, ingress_id,
+    ), ports, gateway
 
 
 def _probe(container_id: str, script: str) -> bool:
@@ -256,11 +358,21 @@ def audit_network(
     """Host audit rejects fake/evasive network topology before invoking probes."""
     image_hash = sha256_file(vm_image.resolve(strict=True))
     boot, ports, gateway = inspect_topology(container_id, expected_vm_hash=image_hash)
+    # Probe the relay separately; the VM must remain internal-only, while
+    # the dual-homed ingress exposes only explicitly signed localhost ports.
+    ingress_details = docker_json(["network", "inspect", INGRESS_PREFIX + (
+        docker_json(["inspect", container_id])[0]["Config"]["Labels"]["aura.osworld.run_id"]
+    )])
+    ingress_gateway = ingress_details[0]["IPAM"]["Config"][0]["Gateway"]
+    vm_checks = negative_network_probes(container_id, gateway)
+    gateway_checks = negative_network_probes(boot.gateway_container_id, ingress_gateway)
     checks = {
         "network_internal": True, "single_network": True,
         "loopback_ports": True, "unprivileged": True,
         "no_docker_socket": True, "image_pinned": True,
-        **negative_network_probes(container_id, gateway),
+        "gateway_topology": True,
+        **vm_checks,
+        **{"gateway_" + k: v for k, v in gateway_checks.items()},
     }
     if set(checks) != REQUIRED_CHECKS or not all(checks.values()):
         raise IsolationDenied("Negative egress or network topology check failed")

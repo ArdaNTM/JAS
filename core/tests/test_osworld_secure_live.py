@@ -41,7 +41,7 @@ def _script(name: str):
 def _fixture_receipt(now: int | None = None):
     now = int(time.time()) if now is None else now
     key = Ed25519PrivateKey.generate()
-    boot = BootIdentity("a" * 64, "b" * 64, "c" * 64, IMAGE)
+    boot = BootIdentity("a" * 64, "b" * 64, "c" * 64, IMAGE, "d" * 64, "e" * 64)
     ports = {str(i): f"127.0.0.1:{i + 20000}" for i in EXPECTED_PORTS}
     provisional = IsolationReceipt(
         "host_auditor", boot, now, now + 180, secrets.token_hex(16),
@@ -98,7 +98,8 @@ def test_signed_receipt_exact_container_and_expiring_five_minutes():
     verify_receipt(evidence, expected=evidence.boot, trusted_public_keys=trusted)
     with pytest.raises(IsolationDenied, match="different"):
         verify_receipt(evidence, expected=BootIdentity(
-            "d" * 64, evidence.boot.network_id, evidence.boot.vm_sha256, IMAGE,
+            "f" * 64, evidence.boot.network_id, evidence.boot.vm_sha256,
+            IMAGE, evidence.boot.gateway_container_id, evidence.boot.gateway_network_id,
         ), trusted_public_keys=trusted)
     with pytest.raises(IsolationDenied):
         verify_receipt(evidence, expected=evidence.boot, trusted_public_keys={
@@ -117,6 +118,8 @@ def test_signed_receipt_tampering_stale_nonce_and_false_checks():
         patch(host_ports={**sample.host_ports, "5000": "0.0.0.0:5000"}),
         patch(expires_at=sample.checked_at + 301),
         patch(nonce="n" * 32),
+        patch(gateway_container_id="f" * 64),
+        patch(gateway_network_id="f" * 64),
     ):
         with pytest.raises(IsolationDenied):
             verify_receipt(r, expected=sample.boot, trusted_public_keys=trust)
@@ -159,7 +162,7 @@ def _docker_inspection():
         },
         "HostConfig": {
             "Privileged": False, "NetworkMode": NETWORK_NAME,
-            "PortBindings": binding, "CapAdd": ["CHOWN", "NET_ADMIN"],
+            "PortBindings": {}, "CapAdd": ["CHOWN", "NET_ADMIN"],
             "CapDrop": ["ALL"], "SecurityOpt": ["no-new-privileges:true"],
             "Tmpfs": {"/var/log/nginx": network_audit.NGINX_LOG_TMPFS},
             "Devices": [{
@@ -171,9 +174,9 @@ def _docker_inspection():
         },
         "NetworkSettings": {
             "Networks": {NETWORK_NAME: {
-                "NetworkID": nid, "Gateway": "172.22.0.1",
+                "NetworkID": nid, "Gateway": "172.22.0.1", "IPAddress": "172.22.0.3",
             }},
-            "Ports": binding,
+            "Ports": {f"{port}/tcp": None for port in EXPECTED_PORTS},
         },
         "Mounts": [{
             "Source": "/approved/osworld-v2-ubuntu-x86.qcow2",
@@ -191,10 +194,24 @@ def _docker_inspection():
 
 
 def _fake_docker_json(args, container, network):
+    run_id = container["Config"]["Labels"]["aura.osworld.run_id"]
+    ingress = network_audit.INGRESS_PREFIX + run_id
+    gateway_name = network_audit.GATEWAY_PREFIX + run_id
     if args[:2] == ["network", "inspect"]:
-        return [network]
+        if args[2] == NETWORK_NAME:
+            return [network]
+        assert args[2] == ingress
+        return [{
+            "Id": "e" * 64, "Name": ingress, "Driver": "bridge",
+            "Internal": False, "EnableIPv6": False, "Attachable": False,
+            "Options": dict(network_audit.INGRESS_OPTIONS),
+            "Labels": {
+                "aura.osworld.run_id": run_id,
+                "aura.osworld.purpose": "loopback-ingress",
+            },
+            "IPAM": {"Config": [{"Gateway": "172.25.0.1"}]},
+        }]
     if args[:2] == ["volume", "inspect"]:
-        run_id = container["Config"]["Labels"]["aura.osworld.run_id"]
         return [{
             "Name": network_audit.STORAGE_VOLUME_PREFIX + run_id,
             "Driver": "local", "Scope": "local", "Options": None,
@@ -203,7 +220,119 @@ def _fake_docker_json(args, container, network):
                 "aura.osworld.purpose": "vm-storage",
             },
         }]
+    if args[:2] == ["inspect", gateway_name]:
+        return [container.get("_mock_gateway", {
+            "Id": "d" * 64,
+            "Name": "/" + gateway_name,
+            "State": {"Running": True},
+            "Config": {
+                "Image": network_audit.GATEWAY_IMAGE,
+                "User": "65534:65534",
+                "Entrypoint": ["python3", "-B", "-u", "-c"],
+                "Cmd": [
+                    (Path(__file__).resolve().parents[1] / "src" / "aura_core" /
+                     "osworld" / "loopback_gateway.py").read_text(encoding="utf-8"),
+                    "172.22.0.3",
+                ],
+                "Labels": {
+                    "aura.osworld.run_id": run_id,
+                    "aura.osworld.role": "loopback-gateway",
+                },
+            },
+            "HostConfig": {
+                "NetworkMode": ingress, "Privileged": False,
+                "ReadonlyRootfs": True,
+                "CapDrop": ["ALL"], "CapAdd": [],
+                "SecurityOpt": ["no-new-privileges:true"],
+                "Memory": 96 * 1024 * 1024,
+                "PidsLimit": 64, "Devices": [], "Tmpfs": {},
+                "PortBindings": {
+                    f"{port}/tcp": [{
+                        "HostIp": "127.0.0.1",
+                        "HostPort": str(20000 + port),
+                    }] for port in EXPECTED_PORTS
+                },
+            },
+            "NetworkSettings": {
+                "Networks": {
+                    NETWORK_NAME: {"NetworkID": "b" * 64},
+                    ingress: {"NetworkID": "e" * 64, "Gateway": "172.25.0.1"},
+                },
+                "Ports": {
+                    f"{port}/tcp": [{
+                        "HostIp": "127.0.0.1",
+                        "HostPort": str(20000 + port),
+                    }] for port in EXPECTED_PORTS
+                },
+            },
+            "Mounts": [],
+        })]
     return [container]
+
+
+
+@pytest.mark.parametrize("mutate", [
+    lambda g: g["HostConfig"].update(Privileged=True),
+    lambda g: g["HostConfig"].update(ReadonlyRootfs=False),
+    lambda g: g["HostConfig"].update(CapAdd=["NET_ADMIN"]),
+    lambda g: g["HostConfig"].update(CapDrop=[]),
+    lambda g: g["HostConfig"].update(Memory=0),
+    lambda g: g["Config"].update(User="0:0"),
+    lambda g: g["Config"].update(Cmd=["unaudited-code", "172.22.0.3"]),
+    lambda g: g["Config"].update(Image="python:latest"),
+    lambda g: g["NetworkSettings"]["Networks"].update(bridge={"NetworkID": "9" * 64}),
+    lambda g: g["HostConfig"]["PortBindings"]["5000/tcp"][0].update(HostIp="0.0.0.0"),
+    lambda g: g["NetworkSettings"]["Ports"]["5000/tcp"][0].update(HostIp="0.0.0.0"),
+])
+def test_gateway_topology_fails_closed_on_privileges_mutation_and_port_escape(monkeypatch, mutate):
+    import copy
+    vm, network = _docker_inspection()
+    name = network_audit.GATEWAY_PREFIX + "f" * 32
+    proxy = copy.deepcopy(_fake_docker_json(["inspect", name], vm, network)[0])
+    mutate(proxy)
+    vm["_mock_gateway"] = proxy
+    monkeypatch.setattr(
+        network_audit, "docker_json",
+        lambda args, **kwargs: _fake_docker_json(args, vm, network),
+    )
+    with pytest.raises(IsolationDenied):
+        network_audit.inspect_topology("a" * 64, expected_vm_hash="c" * 64)
+
+
+def test_receipt_signatures_bind_gateway_and_ingress_ids():
+    evidence, trusted = _fixture_receipt()
+    for change in ("gateway_container_id", "gateway_network_id"):
+        modified = evidence.to_dict()
+        modified[change] = "9" * 64
+        altered = IsolationReceipt.from_dict(modified)
+        with pytest.raises(IsolationDenied, match="different"):
+            verify_receipt(altered, expected=evidence.boot, trusted_public_keys=trusted)
+    legacy = evidence.to_dict()
+    legacy["schema"] = "aura.osworld.network-isolation.v1"
+    with pytest.raises(IsolationDenied, match="schema"):
+        IsolationReceipt.from_dict(legacy)
+
+
+def test_host_audit_denies_when_gateway_egress_probe_is_not_blocked(monkeypatch, tmp_path):
+    vm, network = _docker_inspection()
+    monkeypatch.setattr(
+        network_audit, "docker_json",
+        lambda args, **kwargs: _fake_docker_json(args, vm, network),
+    )
+    monkeypatch.setattr(network_audit, "sha256_file", lambda path: "c" * 64)
+    def probes(container, gateway):
+        result = {key: True for key in (
+            "egress_v4_blocked", "metadata_blocked", "external_dns_blocked",
+            "ipv6_blocked", "host_gateway_blocked",
+        )}
+        if container == "d" * 64:
+            result["egress_v4_blocked"] = False
+        return result
+    monkeypatch.setattr(network_audit, "negative_network_probes", probes)
+    image = tmp_path / "qcow2"
+    image.write_bytes(b"disk")
+    with pytest.raises(IsolationDenied, match="Negative egress"):
+        network_audit.audit_network(container_id="a" * 64, vm_image=image)
 
 
 def test_network_inspection_rejects_external_ports_networks_and_privilege(monkeypatch):
@@ -215,10 +344,12 @@ def test_network_inspection_rejects_external_ports_networks_and_privilege(monkey
     identity, ports, gateway = network_audit.inspect_topology(
         "a" * 64, expected_vm_hash="c" * 64,
     )
-    assert identity == BootIdentity("a" * 64, "b" * 64, "c" * 64, IMAGE)
+    assert identity == BootIdentity("a" * 64, "b" * 64, "c" * 64, IMAGE, "d" * 64, "e" * 64)
     assert len(ports) == 4 and gateway == "172.22.0.1"
-    c["HostConfig"]["PortBindings"]["5000/tcp"][0]["HostIp"] = "0.0.0.0"
-    with pytest.raises(IsolationDenied, match="loopback"):
+    c["HostConfig"]["PortBindings"]["5000/tcp"] = [{
+        "HostIp": "0.0.0.0", "HostPort": "25000",
+    }]
+    with pytest.raises(IsolationDenied, match="unexpectedly publishes"):
         network_audit.inspect_topology("a" * 64, expected_vm_hash="c" * 64)
     c, n = _docker_inspection()
     c["NetworkSettings"]["Networks"]["bridge"] = {"NetworkID": "d" * 64}
@@ -363,10 +494,7 @@ def test_worker_revalidates_exact_nginx_log_tmpfs_before_vm_action(changed_polic
                         "PathInContainer": "/dev/net/tun",
                         "CgroupPermissions": "rwm",
                     }],
-                    "PortBindings": {
-                        f"{port}/tcp": [{"HostIp": "127.0.0.1"}]
-                        for port in worker.PORTS
-                    },
+                    "PortBindings": {},
                 },
                 "NetworkSettings": {
                     "Networks": {worker.NETWORK: {"NetworkID": "b" * 64}},
@@ -554,15 +682,26 @@ def test_worker_network_patch_forces_isolated_ports_and_no_kvm(monkeypatch, tmp_
     disk = tmp_path / "osworld-v2-ubuntu-x86.qcow2"
     disk.write_bytes(b"offline disk fixture; not a real VM")
     class FakeContainer:
-        id = "a" * 64
-        attrs = {}
+        def __init__(self, role):
+            self.id = ("d" if role == "proxy" else "a") * 64
+            self.attrs = {
+                "Config": {"Labels": {
+                    "aura.osworld.run_id": "0" * 32,
+                    **({"aura.osworld.role": "loopback-gateway"} if role == "proxy" else {}),
+                }},
+                "NetworkSettings": {"Networks": {
+                    NETWORK_NAME: {"NetworkID": "b" * 64, "IPAddress": "172.22.0.3"},
+                }},
+            }
         def reload(self): pass
+        def stop(self, timeout=3): self.stopped = True
+        def remove(self, force=False): self.removed = True
     class FakeContainers:
         def __init__(self):
             self.calls = []
         def run(self, *args, **kwargs):
             self.calls.append((args, kwargs))
-            return FakeContainer()
+            return FakeContainer("proxy" if len(self.calls) == 3 else "vm")
 
     class FakeVolume:
         def __init__(self, name, labels):
@@ -581,14 +720,34 @@ def test_worker_network_patch_forces_isolated_ports_and_no_kvm(monkeypatch, tmp_
             self.created = FakeVolume(name, labels)
             return self.created
     class FakeNetwork:
-        attrs = {"Name": NETWORK_NAME, "Internal": True, "EnableIPv6": False,
-                 "Driver": "bridge", "Id": "b" * 64}
+        def __init__(self, name=NETWORK_NAME):
+            self.attrs = {
+                "Name": name, "Internal": name == NETWORK_NAME,
+                "EnableIPv6": False, "Driver": "bridge",
+                "Id": ("b" if name == NETWORK_NAME else "e") * 64,
+                "Labels": {
+                    "aura.osworld.run_id": "0" * 32,
+                    "aura.osworld.purpose": "loopback-ingress",
+                },
+            }
         def reload(self): pass
+        def connect(self, relay): self.attached = relay
+        def remove(self): self.removed = True
+    class FakeNetworks:
+        def __init__(self):
+            self.internal = FakeNetwork()
+            self.ingress = None
+        def get(self, name):
+            return self.internal if name == NETWORK_NAME else self.ingress
+        def create(self, name, **kwargs):
+            self.ingress = FakeNetwork(name)
+            self.creation = (name, kwargs)
+            return self.ingress
     class FakeClient:
         def __init__(self):
             self.containers = FakeContainers()
             self.volumes = FakeVolumes()
-            self.networks = SimpleNamespace(get=lambda name: FakeNetwork())
+            self.networks = FakeNetworks()
     worker.secure_docker_patch(900, force_no_kvm=True)
     provider = FakeDockerProvider()
     provider.client = FakeClient()
@@ -596,10 +755,13 @@ def test_worker_network_patch_forces_isolated_ports_and_no_kvm(monkeypatch, tmp_
     provider.environment = {"RAM_SIZE": "4G"}
     provider._get_available_port = lambda start: start + 1000
     provider._wait_for_vm_ready = lambda timeout: setattr(provider, "seen_timeout", timeout)
+    import osworld_gateway_support as gateway_support
+    monkeypatch.setattr(gateway_support, "verify_gateway", lambda *a, **k: None)
+    monkeypatch.setattr(worker, "verify_gateway", lambda *a, **k: None)
     monkeypatch.setattr(worker, "verify_running_container", lambda *a, **k: None)
     provider.start_emulator(str(disk), True, "Ubuntu")
     calls = provider.client.containers.calls
-    assert len(calls) == 2
+    assert len(calls) == 3
     seed_args, seed_opts = calls[0]
     assert seed_args == (worker.IMAGE,)
     assert seed_opts["network_mode"] == "none"
@@ -612,8 +774,7 @@ def test_worker_network_patch_forces_isolated_ports_and_no_kvm(monkeypatch, tmp_
     assert "cp /usr/share/OVMF/edk2-x86_64-code.fd" in seed_opts["command"][0]
     _, options = calls[1]
     assert options["network"] == NETWORK_NAME
-    assert options["ports"][5000] == ("127.0.0.1", 6000)
-    assert options["ports"][8006] == ("127.0.0.1", 9006)
+    assert options["ports"] == {}
     assert options["environment"]["KVM"] == "N"
     assert options["environment"]["NETWORK"] == "user"
     assert options["environment"]["USER_PORTS"] == "5000,8080,9222"
@@ -631,9 +792,20 @@ def test_worker_network_patch_forces_isolated_ports_and_no_kvm(monkeypatch, tmp_
     assert options["cap_add"] == ["CHOWN", "NET_ADMIN"]
     assert options["tmpfs"] == {"/var/log/nginx": worker.NGINX_LOG_TMPFS}
     assert options["security_opt"] == ["no-new-privileges:true"]
+    gateway_args, gateway_options = calls[2]
+    assert gateway_args == (gateway_support.GATEWAY_IMAGE,)
+    assert gateway_options["network"] == gateway_support.INGRESS_PREFIX + "0" * 32
+    assert gateway_options["ports"][5000] == ("127.0.0.1", 6000)
+    assert gateway_options["ports"][8006] == ("127.0.0.1", 9006)
+    assert gateway_options["cap_drop"] == ["ALL"]
+    assert gateway_options["read_only"] is True
+    assert gateway_options["user"] == "65534:65534"
+    assert gateway_options["command"][1] == "172.22.0.3"
+    assert gateway_options["command"][0] == gateway_support.proxy_source()
     assert provider.seen_timeout == 900
     provider.stop_emulator("ignored")
     assert volume.removed is True
+    assert provider.client.networks.ingress.removed is True
 
 
 @pytest.mark.parametrize("authorized_label", [True, False])
@@ -650,6 +822,8 @@ def test_bridge_cleanup_never_removes_foreign_docker_volume(monkeypatch, authori
         commands.append(argv)
         if argv[:3] == ["docker", "ps", "-aq"]:
             return SimpleNamespace(returncode=0, stdout="a" * 64 + "\n")
+        if argv[:3] == ["docker", "network", "inspect"]:
+            return SimpleNamespace(returncode=1, stdout="")
         if argv[:3] == ["docker", "volume", "inspect"]:
             label = bridge._run_id if authorized_label else "foreign-run"
             return SimpleNamespace(returncode=0, stdout=json.dumps([{

@@ -26,7 +26,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 NETWORK_NAME = "aura-osworld-v21-lab"
 IMAGE = "happysixd/osworld-docker@sha256:0e6497a9295647cf05bf2b2af522fdd79bdeba2737595259cab310a3bcf6baa9"
 EXPECTED_PORTS = (5000, 8006, 8080, 9222)
-DOMAIN = b"AURA:OSWORLD:NETWORK-ISOLATION:v1\n"
+DOMAIN = b"AURA:OSWORLD:NETWORK-ISOLATION:v2\n"
 REQUIRED_CHECKS = frozenset({
     "network_internal",
     "single_network",
@@ -39,6 +39,12 @@ REQUIRED_CHECKS = frozenset({
     "external_dns_blocked",
     "ipv6_blocked",
     "host_gateway_blocked",
+    "gateway_topology",
+    "gateway_egress_v4_blocked",
+    "gateway_metadata_blocked",
+    "gateway_external_dns_blocked",
+    "gateway_ipv6_blocked",
+    "gateway_host_gateway_blocked",
 })
 _HEX64 = re.compile(r"^[0-9a-f]{64}$")
 _HEX32 = re.compile(r"^[0-9a-f]{32}$")
@@ -55,10 +61,13 @@ class BootIdentity:
     network_id: str
     vm_sha256: str
     image: str
+    gateway_container_id: str
+    gateway_network_id: str
 
     def __post_init__(self) -> None:
         if any(not isinstance(x, str) or not _HEX64.fullmatch(x) for x in (
             self.container_id, self.network_id, self.vm_sha256,
+            self.gateway_container_id, self.gateway_network_id,
         )):
             raise IsolationDenied("Malformed VM, network or container identity")
         if self.image != IMAGE:
@@ -78,12 +87,14 @@ class IsolationReceipt:
 
     def _claims(self) -> dict[str, object]:
         return {
-            "schema": "aura.osworld.network-isolation.v1",
+            "schema": "aura.osworld.network-isolation.v2",
             "signer_id": self.signer_id,
             "container_id": self.boot.container_id,
             "network_id": self.boot.network_id,
             "vm_sha256": self.boot.vm_sha256,
             "image": self.boot.image,
+            "gateway_container_id": self.boot.gateway_container_id,
+            "gateway_network_id": self.boot.gateway_network_id,
             "network_name": NETWORK_NAME,
             "checked_at": self.checked_at,
             "expires_at": self.expires_at,
@@ -105,14 +116,18 @@ class IsolationReceipt:
     def from_dict(cls, obj: object) -> IsolationReceipt:
         fields = {
             "schema", "signer_id", "container_id", "network_id", "vm_sha256",
-            "image", "network_name", "checked_at", "expires_at", "nonce",
+            "image", "gateway_container_id", "gateway_network_id",
+            "network_name", "checked_at", "expires_at", "nonce",
             "checks", "host_ports", "signature_b64",
         }
         if not isinstance(obj, dict) or set(obj) != fields:
             raise IsolationDenied("Invalid signed isolation envelope")
-        if obj["schema"] != "aura.osworld.network-isolation.v1" or obj["network_name"] != NETWORK_NAME:
+        if obj["schema"] != "aura.osworld.network-isolation.v2" or obj["network_name"] != NETWORK_NAME:
             raise IsolationDenied("Unexpected isolation schema or network")
-        boot = BootIdentity(obj["container_id"], obj["network_id"], obj["vm_sha256"], obj["image"])
+        boot = BootIdentity(
+            obj["container_id"], obj["network_id"], obj["vm_sha256"],
+            obj["image"], obj["gateway_container_id"], obj["gateway_network_id"],
+        )
         return cls(
             signer_id=obj["signer_id"], boot=boot, checked_at=obj["checked_at"],
             expires_at=obj["expires_at"], nonce=obj["nonce"], checks=obj["checks"],

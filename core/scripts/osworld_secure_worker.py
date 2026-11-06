@@ -25,6 +25,10 @@ import re
 import subprocess
 import sys
 import time
+# Under Python -I the script directory is deliberately not on sys.path.
+# Make ONLY this sealed, fixed local helper importable (never the upstream cwd).
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from osworld_gateway_support import start_gateway, verify_gateway, cleanup_gateway
 
 EXPECTED_COMMIT = "3d778a3c9a34a079316f70df023b166700445792"
 RELEASE = "osworld-v2.1"
@@ -159,14 +163,11 @@ def verify_running_container(container: object, network_id: str) -> None:
                 ("/dev/kvm", "/dev/kvm", "rwm"),
             }):
         raise WorkerDenied("Required pinned TUN /dev/net/tun device missing or changed")
-    host_ports = host.get("PortBindings") or {}
-    if set(host_ports) != {str(p) + "/tcp" for p in PORTS}:
-        raise WorkerDenied("Unexpected VM control port")
-    for port in PORTS:
-        entry = host_ports.get(str(port) + "/tcp")
-        if (not isinstance(entry, list) or len(entry) != 1
-                or entry[0].get("HostIp") != "127.0.0.1"):
-            raise WorkerDenied("Control port escaped localhost")
+    # Internal-only VM may expose TCP services within Docker, but MUST have
+    # no host-published ports. Only its independently audited proxy publishes.
+    if host.get("PortBindings") or any(
+            entries for entries in (settings.get("Ports") or {}).values()):
+        raise WorkerDenied("Internal VM unexpectedly published host ports")
 
 
 def secure_docker_patch(
@@ -251,18 +252,24 @@ def secure_docker_patch(
                     # log DIRECTORY with an empty, root-owned, size-bounded tmpfs.
                     # No host bind, entrypoint override, or new Linux capability.
                     tmpfs={"/var/log/nginx": NGINX_LOG_TMPFS},
-                    ports={
-                        8006: ("127.0.0.1", self.vnc_port),
-                        5000: ("127.0.0.1", self.server_port),
-                        9222: ("127.0.0.1", self.chromium_port),
-                        8080: ("127.0.0.1", self.vlc_port),
-                    },
+                    ports={},  # Docker internal networks cannot publish host ports.
                     detach=True,
                 )
             verify_running_container(self.container, network_id)
+            start_gateway(
+                self, run_id=run_id, vm=self.container,
+                internal=NETWORK, internal_id=network_id,
+                ports={
+                    5000: self.server_port, 8006: self.vnc_port,
+                    8080: self.vlc_port, 9222: self.chromium_port,
+                },
+            )
+            verify_gateway(self, self.container, NETWORK, network_id)
             self._wait_for_vm_ready(timeout=boot_timeout)
             verify_running_container(self.container, network_id)
+            verify_gateway(self, self.container, NETWORK, network_id)
         except BaseException:
+            cleanup_gateway(self)
             if self.container is not None:
                 try:
                     self.container.stop(timeout=3)
@@ -287,6 +294,7 @@ def secure_docker_patch(
         try:
             return original_stop_emulator(self, *args, **kwargs)
         finally:
+            cleanup_gateway(self)
             volume = getattr(self, "_aura_storage_volume", None)
             if volume is not None:
                 try:
@@ -413,11 +421,14 @@ def main(argv: list[str] | None = None) -> int:
         container = env.provider.container
         net_id = verify_docker_network(env.provider.client)
         verify_running_container(container, net_id)
+        verify_gateway(env.provider, container, NETWORK, net_id)
         boot = {
             "container_id": container.id,
             "network_id": net_id,
             "vm_sha256": vm_hash,
             "image": IMAGE,
+            "gateway_container_id": env.provider._aura_gateway.id,
+            "gateway_network_id": env.provider._aura_ingress_network_id,
         }
         wire.write(json.dumps({"ok": True, "boot": boot,
                                "kvm_mode": env.provider.environment.get("KVM")},
@@ -440,6 +451,7 @@ def main(argv: list[str] | None = None) -> int:
                     break
                 if op == "reset" and set(req) == {"op", "task_id", "task_sha256"}:
                     verify_running_container(container, net_id)
+                    verify_gateway(env.provider, container, NETWORK, net_id)
                     with contextlib.redirect_stdout(sys.stderr):
                         task = load_official_task(upstream, req["task_id"], req["task_sha256"])
                         obs = env.reset(task)
@@ -447,12 +459,14 @@ def main(argv: list[str] | None = None) -> int:
                              "instruction": str(task.get("instruction", ""))[:2000]}
                 elif op == "step" and set(req) == {"op", "action"}:
                     verify_running_container(container, net_id)
+                    verify_gateway(env.provider, container, NETWORK, net_id)
                     command = _action(req["action"])
                     with contextlib.redirect_stdout(sys.stderr):
                         obs, _, done, _ = env.step(command, pause=0)
                     reply = {"ok": True, "observation": _observation(obs), "done": bool(done)}
                 elif op == "evaluate" and set(req) == {"op"}:
                     verify_running_container(container, net_id)
+                    verify_gateway(env.provider, container, NETWORK, net_id)
                     with contextlib.redirect_stdout(sys.stderr):
                         result = env.evaluate()  # EXACT official OSWorld-V2.1 signature
                     value = result.get("score") if isinstance(result, dict) else result
