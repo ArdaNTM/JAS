@@ -2,15 +2,19 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "review-candidate",
-  "generated_at": "2026-10-31T23:10:00Z",
-  "git_commit": "6a88a5b131b0e064bc8840f1db6605facc791981",
+  "generated_at": "2026-11-06T20:30:00+01:00",
+  "git_commit": "335c2c2ded9b32a9c41008a71470d625e6267aa7",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:5a8bef650035cf4a89577f6564a58304f7ff410a6edc7bec9933276c467ea1e3",
-  "file_count": 307,
+  "release_digest": "sha256:8976fb0b0052579dab6544eaedc953e4f76c216cbac4366c79df666b3633946f",
+  "file_count": 317,
   "files": [
     {
       "path": ".gitattributes",
-      "sha256": "32c1a4911d84da7f8498f1c3b9197ad37281636990f201f5fb4e7184cdb9aac7"
+      "sha256": "6db80b6e5d1166f006510a27be3459967967bfcf10fbb5afb7c4942ac68d891a"
+    },
+    {
+      "path": ".github/workflows/aura-osworld-secure-live.yml",
+      "sha256": "091d6b5ec1ecbfab714b1e9c8d578965aae42d55b45fcb127d4c463b98513f25"
     },
     {
       "path": ".github/workflows/aura-physical-trust-acceptance.yml",
@@ -189,6 +193,10 @@
       "sha256": "a0b240a42862f79f2b804948ccdc1cade3b9c86a452768cb7868c595d1ef3b88"
     },
     {
+      "path": "core/scripts/attest_osworld_network.py",
+      "sha256": "b2edb281c11718d396a569784bc031af8703f897e0ae2e3752d21f152263f275"
+    },
+    {
       "path": "core/scripts/enroll_local_owner.py",
       "sha256": "c180b4c50ea8cc0aa1a32523fc7ff7663a49abfab19ad5d1752cd1b585823e10"
     },
@@ -198,7 +206,7 @@
     },
     {
       "path": "core/scripts/generate_final_lock.py",
-      "sha256": "fe245fcaa40b2420a0a4681f1177dcf0ea24e6c517ca0b605db274976a5c7a63"
+      "sha256": "133f0957c3981a8f6bba58e8b106e8def45161628513bb7db33f5732148601ab"
     },
     {
       "path": "core/scripts/hardware_stage_c_acceptance.py",
@@ -211,6 +219,14 @@
     {
       "path": "core/scripts/kokoro_tts_mcp.py",
       "sha256": "fad3a723f6e7560fb38d8609bf343a4f09138948a982be1e4cee68c234152abf"
+    },
+    {
+      "path": "core/scripts/osworld_gateway_support.py",
+      "sha256": "971ba56237fe5e7fe721194e754d762a37f76d0be3d53d23fb45c54e22cea10d"
+    },
+    {
+      "path": "core/scripts/osworld_secure_worker.py",
+      "sha256": "610ac0a409d13713f41d433661f32ff3d99bcc573ee6c7fb298c484b0c1a3313"
     },
     {
       "path": "core/scripts/osworld_v2_lab.py",
@@ -230,7 +246,7 @@
     },
     {
       "path": "core/scripts/run_osworld_v2_live.py",
-      "sha256": "3ac380737de02dd3e12e6306ee6b65f429248f2ddc2178fbde7d389e488634f8"
+      "sha256": "74d4100f06f9d46cdb3ae5b40cf5095a85cbf18448850484ed0847fa056caec7"
     },
     {
       "path": "core/scripts/start_owner_control_plane.py",
@@ -666,11 +682,11 @@
     },
     {
       "path": "core/src/aura_core/evolution/owner_enroll.js",
-      "sha256": "2587439a4fdf5033853b8596c5d2456e75faf0bbe770f69e2bc97cd03cce0340"
+      "sha256": "32035247aa29377fbe2e17543525840ca97698557d610eb0be64591ee3db0e71"
     },
     {
       "path": "core/src/aura_core/evolution/owner_enrollment.py",
-      "sha256": "9681f63205effd0ed103f8820e17674f958b9ff3331c8eaf784d1b68dfad6620"
+      "sha256": "2e82ec9bbbb630c7455e863fa9f60598dac7fd91a312425bfb4aa4ff7bdf8be4"
     },
     {
       "path": "core/src/aura_core/evolution/owner_enrollment_http.py",
@@ -1049,12 +1065,28 @@
       "sha256": "b42d8246d44735643d8e74d34ed2b76cdee37a24592d46a7854211c446f9ab25"
     },
     {
+      "path": "core/src/aura_core/osworld/isolation.py",
+      "sha256": "990493413fc73c464412566127564bdd8e7951cffaf11fbfb4f397d7d05f04ec"
+    },
+    {
       "path": "core/src/aura_core/osworld/live_vm.py",
-      "sha256": "714d8e1dc17e57c62c191cd89812916dadb619dde7eb89f9dc8743e7ed76cd2d"
+      "sha256": "7c5d1be7db2031fc545f3353def64bbb120bb18e89ba3589869b9d91fa8bd2b3"
+    },
+    {
+      "path": "core/src/aura_core/osworld/loopback_gateway.py",
+      "sha256": "4bf0fc7cfe01080958f25789975ba4b8e1a3b3f32847101984db925168a65bed"
+    },
+    {
+      "path": "core/src/aura_core/osworld/network_audit.py",
+      "sha256": "96fde150bd557eea386a27dff409bbcbb652a9e259d95adc2b3c9caa40292bd5"
     },
     {
       "path": "core/src/aura_core/osworld/runtime.py",
-      "sha256": "96fc3fbf4234d5edc78595294721f14801de19817c74362bccec94b09a862813"
+      "sha256": "8659a13500229bf62f6f6ae4f13075510f5cd56a48bbfd6274a393e9a38f7074"
+    },
+    {
+      "path": "core/src/aura_core/osworld/runtime_bridge.py",
+      "sha256": "bdee42bc7ceb5dc07a751c6de1592ab0e60b69063aeeea4621b4d0d428bd40d2"
     },
     {
       "path": "core/src/aura_core/persistence/__init__.py",
@@ -1227,6 +1259,14 @@
     {
       "path": "core/src/aura_core/voice/sherpa_onnx.py",
       "sha256": "f31a33e4f9923ff6e4e5c4d1565cf550efec3e5142401fe30135f305a1c7742c"
+    },
+    {
+      "path": "core/tests/test_osworld_secure_live.py",
+      "sha256": "a9226fc4799f92f5b3923038b9c46b1d7bb2efc83b33707077758ddcf7e3a35b"
+    },
+    {
+      "path": "core/tests/test_owner_enrollment.py",
+      "sha256": "ae6a900a5bb0ec6c4c9521b79f62f6afbbc443438d27c6b3814a7e095d054cff"
     },
     {
       "path": "core/tests/test_real_hardware_osworld.py",

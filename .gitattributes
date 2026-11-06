@@ -4,6 +4,8 @@
 core/src/** text=auto eol=lf
 core/scripts/** text=auto eol=lf
 core/tests/test_real_hardware_osworld.py text eol=lf
+core/tests/test_osworld_secure_live.py text eol=lf
+core/tests/test_owner_enrollment.py text eol=lf
 aura-ui/src/** text=auto eol=lf
 aura-ui/package.json text eol=lf
 aura-ui/package-lock.json text eol=lf
