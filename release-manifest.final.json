@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "review-candidate",
-  "generated_at": "2026-11-07T00:30:00+01:00",
-  "git_commit": "3618ed521cc7ad767f91f57f75c4d3af8c154200",
+  "generated_at": "2026-11-07T00:35:00+01:00",
+  "git_commit": "d5b40d843a4a310f03c02a44291f9ffc9dcb4b67",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:4da4139cef2b524abc01d80473ea1890ed3ef55ee1efb07d926adf2136c0070d",
+  "release_digest": "sha256:8c3bf0f9de8b88a01b14d7786f7f5459995a7d58768f8efa94d39358d29b77fa",
   "file_count": 323,
   "files": [
     {
@@ -1282,7 +1282,7 @@
     },
     {
       "path": "core/tests/test_audit_broker_security.py",
-      "sha256": "5292b4f2a815aeeb2bd336b1d18e9829306453b4493e48ed97d057c6f6a02f6d"
+      "sha256": "26a3f9bd6aaff010c47579cb91aebd50c8dd84d5f94d3dce454565e2654efbc7"
     },
     {
       "path": "core/tests/test_osworld_secure_live.py",

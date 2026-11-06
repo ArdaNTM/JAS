@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import base64
+from contextlib import closing
 import json
 from pathlib import Path
 import sqlite3
@@ -87,7 +88,7 @@ class DurableNonceTests(unittest.TestCase):
     def test_sqlite_unique_primary_key(self):
         store = DurableNonceStore(self.path)
         self.assertTrue(store.claim(NONCE, now=NOW))
-        with sqlite3.connect(self.path) as db:
+        with closing(sqlite3.connect(self.path)) as db:
             with self.assertRaises(sqlite3.IntegrityError):
                 db.execute(
                     "INSERT INTO consumed_nonces (nonce, expires_at) VALUES (?, ?)",
