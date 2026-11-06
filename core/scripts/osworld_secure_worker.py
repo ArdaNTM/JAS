@@ -33,6 +33,23 @@ IMAGE = "happysixd/osworld-docker@sha256:0e6497a9295647cf05bf2b2af522fdd79bdeba2
 PORTS = (5000, 8006, 8080, 9222)
 # Empty root-owned, memory-bounded log directory: no DAC_OVERRIDE, no host bind.
 NGINX_LOG_TMPFS = "rw,nosuid,nodev,noexec,size=16m,mode=0755"
+STORAGE_VOLUME_PREFIX = "aura-osworld-v21-storage-"
+STORAGE_VOLUME_PURPOSE = "vm-storage"
+# The pinned image carries this read-only firmware; copy it to a fresh,
+# isolated Docker volume *before* QEMU starts and explicitly set 0644.
+# Never chmod a host path, broaden DAC privileges or overlay /storage on RAM.
+STORAGE_SEED_SCRIPT = """set -eu
+umask 022
+test -d /storage
+test -f /usr/share/OVMF/edk2-x86_64-code.fd
+test ! -e /storage/uefi.rom
+test ! -e /storage/uefi.vars
+chmod 0755 /storage
+cp /usr/share/OVMF/edk2-x86_64-code.fd /storage/uefi.rom
+chmod 0644 /storage/uefi.rom
+test -r /storage/uefi.rom
+test -s /storage/uefi.rom
+"""
 ALLOWED_KEYS = frozenset({"enter", "esc", "tab", "backspace", "space", "up", "down", "left", "right"})
 UUID_ID = re.compile(r"^[0-9a-f]{3}$")
 DIGEST = re.compile(r"^[0-9a-f]{64}$")
@@ -94,6 +111,39 @@ def verify_running_container(container: object, network_id: str) -> None:
         raise WorkerDenied("Running VM network or image has changed")
     if (host.get("Tmpfs") or {}) != {"/var/log/nginx": NGINX_LOG_TMPFS}:
         raise WorkerDenied("Nginx logs must use the exact bounded private tmpfs")
+    labels = attrs.get("Config", {}).get("Labels") or {}
+    run_id = labels.get("aura.osworld.run_id")
+    if not isinstance(run_id, str) or not re.fullmatch(r"[0-9a-f]{32}", run_id):
+        raise WorkerDenied("Running VM lacks protected run identity")
+    storage = STORAGE_VOLUME_PREFIX + run_id
+    mounts = attrs.get("Mounts") or []
+    if (not isinstance(mounts, list)
+            or not all(isinstance(m, dict) for m in mounts)
+            or len({m.get("Destination") for m in mounts}) != len(mounts)
+            or len(mounts) not in (2, 3)
+            or len([m for m in mounts if m.get("Destination") == "/storage"
+                    and m.get("Type") == "volume" and m.get("Name") == storage
+                    and m.get("RW") is True]) != 1
+            or len([m for m in mounts if m.get("Destination") == "/System.qcow2"
+                    and m.get("Type") in ("bind", None)
+                    and m.get("RW") is False]) != 1
+            or any(m.get("Destination") not in (
+                "/storage", "/System.qcow2", "/var/log/nginx")
+                for m in mounts)
+            or any(m.get("Destination") == "/var/log/nginx"
+                   and (m.get("Type") != "tmpfs" or m.get("RW") is not True)
+                   for m in mounts)):
+        raise WorkerDenied("Unapproved VM storage mount")
+    devices = host.get("Devices") or []
+    keys = {(d.get("PathOnHost"), d.get("PathInContainer"), d.get("CgroupPermissions"))
+            for d in devices if isinstance(d, dict)}
+    if (len(keys) != len(devices) or
+            ("/dev/net/tun", "/dev/net/tun", "rwm") not in keys
+            or keys - {
+                ("/dev/net/tun", "/dev/net/tun", "rwm"),
+                ("/dev/kvm", "/dev/kvm", "rwm"),
+            }):
+        raise WorkerDenied("Required pinned /dev/net/tun device missing or changed")
     host_ports = host.get("PortBindings") or {}
     if set(host_ports) != {str(p) + "/tcp" for p in PORTS}:
         raise WorkerDenied("Unexpected VM control port")
@@ -124,14 +174,37 @@ def secure_docker_patch(
         if disk.is_symlink() or not disk.is_file():
             raise WorkerDenied("Expected external read-only QCOW2 image")
         network_id = verify_docker_network(self.client)
+        volume_name = STORAGE_VOLUME_PREFIX + run_id
+        # A per-run local named volume permits sparse guest disks without
+        # exposing any writable host bind mount or unbounded tmpfs.
+        # The init container never joins a network or receives host secrets.
         try:
+            volume = self.client.volumes.create(
+                name=volume_name,
+                driver="local",
+                labels={
+                    "aura.osworld.run_id": run_id,
+                    "aura.osworld.purpose": STORAGE_VOLUME_PURPOSE,
+                },
+            )
+            self._aura_storage_volume = volume
+            self.client.containers.run(
+                IMAGE, command=STORAGE_SEED_SCRIPT,
+                entrypoint=["/bin/sh", "-ec"], user="0:0",
+                network_mode="none",
+                cap_drop=["ALL"],
+                security_opt=["no-new-privileges:true"],
+                pids_limit=32,
+                volumes={volume_name: {"bind": "/storage", "mode": "rw"}},
+                remove=True, detach=False,
+            )
             with FileLock(str(self.lock_file), timeout=20):
                 self.vnc_port = self._get_available_port(8006)
                 self.server_port = self._get_available_port(5000)
                 self.chromium_port = self._get_available_port(9222)
                 self.vlc_port = self._get_available_port(8080)
                 # No /dev/kvm on Docker Desktop/WSL2 => QEMU software mode.
-                devices: list[str] = []
+                devices: list[str] = ["/dev/net/tun:/dev/net/tun:rwm"]
                 if not force_no_kvm and os.name != "nt" and os.path.exists("/dev/kvm"):
                     devices.append("/dev/kvm")
                     self.environment["KVM"] = "Y"
@@ -148,7 +221,10 @@ def secure_docker_patch(
                     security_opt=["no-new-privileges:true"],
                     pids_limit=512,
                     devices=devices,
-                    volumes={str(disk): {"bind": "/System.qcow2", "mode": "ro"}},
+                    volumes={
+                        str(disk): {"bind": "/System.qcow2", "mode": "ro"},
+                        volume_name: {"bind": "/storage", "mode": "rw"},
+                    },
                     # The pinned Nginx image's pre-existing error.log is not
                     # writable without broad DAC permissions. Overlay only its
                     # log DIRECTORY with an empty, root-owned, size-bounded tmpfs.
@@ -173,9 +249,33 @@ def secure_docker_patch(
                 except Exception:
                     pass
                 self.container = None
+            # Never use force=True: remove only the fresh volume we created,
+            # after the container has been removed.
+            volume = getattr(self, "_aura_storage_volume", None)
+            if volume is not None:
+                try:
+                    volume.remove(force=False)
+                except Exception:
+                    pass
+                self._aura_storage_volume = None
             raise
 
+    original_stop_emulator = DockerProvider.stop_emulator
+
+    def stop_emulator(self, *args, **kwargs):
+        try:
+            return original_stop_emulator(self, *args, **kwargs)
+        finally:
+            volume = getattr(self, "_aura_storage_volume", None)
+            if volume is not None:
+                try:
+                    volume.remove(force=False)
+                except Exception:
+                    pass
+                self._aura_storage_volume = None
+
     DockerProvider.start_emulator = start_emulator
+    DockerProvider.stop_emulator = stop_emulator
 
 
 def _action(value: object) -> str:

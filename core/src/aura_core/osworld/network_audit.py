@@ -12,6 +12,7 @@ from __future__ import annotations
 import hashlib
 import ipaddress
 import json
+import re
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -24,6 +25,8 @@ from .isolation import (
 ALPINE = "alpine:3.21"
 # HostConfig.Tmpfs must match the worker policy EXACTLY.
 NGINX_LOG_TMPFS = "rw,nosuid,nodev,noexec,size=16m,mode=0755"
+STORAGE_VOLUME_PREFIX = "aura-osworld-v21-storage-"
+STORAGE_VOLUME_PURPOSE = "vm-storage"
 MAX_DOCKER_OUTPUT = 2_000_000
 
 
@@ -88,19 +91,61 @@ def inspect_topology(container_id: str, *, expected_vm_hash: str) -> tuple[BootI
     # Mounts depending on the creation API and Engine version.
     if (host.get("Tmpfs") or {}) != {"/var/log/nginx": NGINX_LOG_TMPFS}:
         raise IsolationDenied("Unexpected Nginx log tmpfs policy")
+    # Docker Desktop must expose /dev/net/tun as a *specific* host character
+    # device; allowing MKNOD or privileged container is prohibited. KVM is
+    # optional only on capable non-Windows Docker engines.
+    devices = host.get("Devices") or []
+    if not isinstance(devices, list) or not all(isinstance(d, dict) for d in devices):
+        raise IsolationDenied("Malformed host device policy")
+    device_tuples = {
+        (d.get("PathOnHost"), d.get("PathInContainer"), d.get("CgroupPermissions"))
+        for d in devices
+    }
+    tun = ("/dev/net/tun", "/dev/net/tun", "rwm")
+    kvm = ("/dev/kvm", "/dev/kvm", "rwm")
+    if (tun not in device_tuples
+            or len(device_tuples) != len(devices)
+            or device_tuples - {tun, kvm}):
+        raise IsolationDenied("Missing TUN device or unapproved host device mapping")
+    labels = config.get("Labels") or {}
+    run_id = labels.get("aura.osworld.run_id")
+    if not isinstance(run_id, str) or not re.fullmatch(r"[0-9a-f]{32}", run_id):
+        raise IsolationDenied("Missing exact Docker storage run identity")
+    volume_name = STORAGE_VOLUME_PREFIX + run_id
     mounts = obj.get("Mounts") or []
     if not isinstance(mounts, list) or not all(isinstance(m, dict) for m in mounts):
         raise IsolationDenied("Malformed Docker mount inventory")
     disk_mounts = [m for m in mounts if m.get("Destination") == "/System.qcow2"]
     log_mounts = [m for m in mounts if m.get("Destination") == "/var/log/nginx"]
+    storage_mounts = [m for m in mounts if m.get("Destination") == "/storage"]
     if (len(disk_mounts) != 1 or disk_mounts[0].get("RW") is not False
             or disk_mounts[0].get("Type") not in (None, "bind")
+            or len(storage_mounts) != 1
+            or storage_mounts[0].get("Type") != "volume"
+            or storage_mounts[0].get("Name") != volume_name
+            or storage_mounts[0].get("Driver") not in (None, "local")
+            or storage_mounts[0].get("RW") is not True
             or len(log_mounts) > 1
             or any(m.get("Type") != "tmpfs" or m.get("RW") is not True
                    for m in log_mounts)
-            or len(mounts) != len(disk_mounts) + len(log_mounts)
+            or len(mounts) != len(disk_mounts) + len(log_mounts) + len(storage_mounts)
             or any("docker.sock" in str(m.get("Source", "")) for m in mounts)):
-        raise IsolationDenied("Container mounts exceed pinned disk and bounded Nginx tmpfs")
+        raise IsolationDenied("Container mounts exceed pinned disk, ephemeral storage and Nginx tmpfs")
+    # The independently signed receipt must not accept a user-supplied or
+    # remote driver volume masquerading as our ephemeral /storage.
+    details = docker_json(["volume", "inspect", volume_name])
+    if not isinstance(details, list) or len(details) != 1:
+        raise IsolationDenied("Ephemeral OSWorld storage not inspectable")
+    volume = details[0]
+    if (volume.get("Name") != volume_name
+            or volume.get("Driver") != "local"
+            or volume.get("Scope") not in ("local", None)
+            or volume.get("Options") not in ({}, None)
+            or volume.get("Labels") != {
+                "aura.osworld.run_id": run_id,
+                "aura.osworld.purpose": STORAGE_VOLUME_PURPOSE,
+            }):
+        raise IsolationDenied("Untrusted or unpinned OSWorld storage volume")
     if config.get("Image") != IMAGE:
         raise IsolationDenied("Runtime image not pinned to approved digest")
     bindings = host.get("PortBindings") or {}

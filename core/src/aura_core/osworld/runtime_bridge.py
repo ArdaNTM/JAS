@@ -245,5 +245,28 @@ class OSWorldSubprocessVM:
                     capture_output=True, text=True, timeout=20,
                     shell=False, check=False,
                 )
-        except (OSError, subprocess.SubprocessError):
+            # A SIGKILL skips the 3.12 worker's volume cleanup. Only remove
+            # this run's random, locally created storage, never any other
+            # Docker volume. Refuse to delete a volume with wrong ownership
+            # labels, and never force-detach a volume still in use.
+            name = "aura-osworld-v21-storage-" + self._run_id
+            inspected = subprocess.run(
+                ["docker", "volume", "inspect", name],
+                capture_output=True, text=True, timeout=10, shell=False,
+            )
+            if inspected.returncode == 0:
+                value = json.loads(inspected.stdout)
+                if (isinstance(value, list) and len(value) == 1
+                        and value[0].get("Name") == name
+                        and value[0].get("Driver") == "local"
+                        and value[0].get("Labels") == {
+                            "aura.osworld.run_id": self._run_id,
+                            "aura.osworld.purpose": "vm-storage",
+                        }):
+                    subprocess.run(
+                        ["docker", "volume", "rm", name],
+                        capture_output=True, text=True, timeout=20,
+                        shell=False, check=False,
+                    )
+        except (OSError, subprocess.SubprocessError, ValueError, TypeError):
             pass

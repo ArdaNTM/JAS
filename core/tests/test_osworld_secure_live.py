@@ -112,15 +112,22 @@ def _docker_inspection():
         f"{port}/tcp": [{"HostIp": "127.0.0.1", "HostPort": str(20000 + port)}]
         for port in EXPECTED_PORTS
     }
+    run_id = "f" * 32
+    storage_name = network_audit.STORAGE_VOLUME_PREFIX + run_id
     container = {
         "Id": cid,
         "State": {"Running": True},
-        "Config": {"Image": IMAGE},
+        "Config": {"Image": IMAGE, "Labels": {"aura.osworld.run_id": run_id}},
         "HostConfig": {
             "Privileged": False, "NetworkMode": NETWORK_NAME,
             "PortBindings": binding, "CapAdd": ["CHOWN", "NET_ADMIN"],
             "CapDrop": ["ALL"], "SecurityOpt": ["no-new-privileges:true"],
             "Tmpfs": {"/var/log/nginx": network_audit.NGINX_LOG_TMPFS},
+            "Devices": [{
+                "PathOnHost": "/dev/net/tun",
+                "PathInContainer": "/dev/net/tun",
+                "CgroupPermissions": "rwm",
+            }],
             "PidMode": "", "IpcMode": "private",
         },
         "NetworkSettings": {
@@ -132,6 +139,9 @@ def _docker_inspection():
         "Mounts": [{
             "Source": "/approved/osworld-v2-ubuntu-x86.qcow2",
             "Destination": "/System.qcow2", "RW": False,
+        }, {
+            "Type": "volume", "Name": storage_name, "Driver": "local",
+            "Destination": "/storage", "RW": True,
         }],
     }
     network = {
@@ -141,11 +151,27 @@ def _docker_inspection():
     return container, network
 
 
+def _fake_docker_json(args, container, network):
+    if args[:2] == ["network", "inspect"]:
+        return [network]
+    if args[:2] == ["volume", "inspect"]:
+        run_id = container["Config"]["Labels"]["aura.osworld.run_id"]
+        return [{
+            "Name": network_audit.STORAGE_VOLUME_PREFIX + run_id,
+            "Driver": "local", "Scope": "local", "Options": None,
+            "Labels": {
+                "aura.osworld.run_id": run_id,
+                "aura.osworld.purpose": "vm-storage",
+            },
+        }]
+    return [container]
+
+
 def test_network_inspection_rejects_external_ports_networks_and_privilege(monkeypatch):
     c, n = _docker_inspection()
     monkeypatch.setattr(
         network_audit, "docker_json",
-        lambda args, **kwargs: [n] if args[:2] == ["network", "inspect"] else [c],
+        lambda args, **kwargs: _fake_docker_json(args, c, n),
     )
     identity, ports, gateway = network_audit.inspect_topology(
         "a" * 64, expected_vm_hash="c" * 64,
@@ -179,8 +205,7 @@ def test_network_attestation_rejects_unapproved_capabilities(monkeypatch, capabi
     container["HostConfig"]["CapAdd"] = capabilities
     monkeypatch.setattr(
         network_audit, "docker_json",
-        lambda args, **kwargs: [network] if args[:2] == ["network", "inspect"]
-        else [container],
+        lambda args, **kwargs: _fake_docker_json(args, container, network),
     )
     with pytest.raises(IsolationDenied, match="privileges"):
         network_audit.inspect_topology("a" * 64, expected_vm_hash="c" * 64)
@@ -198,8 +223,7 @@ def test_network_attestation_rejects_weak_container_sandbox(monkeypatch, field, 
     container["HostConfig"][field] = value
     monkeypatch.setattr(
         network_audit, "docker_json",
-        lambda args, **kwargs: [network] if args[:2] == ["network", "inspect"]
-        else [container],
+        lambda args, **kwargs: _fake_docker_json(args, container, network),
     )
     with pytest.raises(IsolationDenied, match="privileges"):
         network_audit.inspect_topology("a" * 64, expected_vm_hash="c" * 64)
@@ -210,8 +234,7 @@ def test_network_attestation_accepts_normalized_cap_names(monkeypatch):
     container["HostConfig"]["CapAdd"] = ["CAP_CHOWN", "CAP_NET_ADMIN"]
     monkeypatch.setattr(
         network_audit, "docker_json",
-        lambda args, **kwargs: [network] if args[:2] == ["network", "inspect"]
-        else [container],
+        lambda args, **kwargs: _fake_docker_json(args, container, network),
     )
     boot, ports, gateway = network_audit.inspect_topology(
         "a" * 64, expected_vm_hash="c" * 64,
@@ -234,8 +257,7 @@ def test_attestor_denies_missing_or_weakened_nginx_tmpfs(monkeypatch, tmpfs):
     container["HostConfig"]["Tmpfs"] = tmpfs
     monkeypatch.setattr(
         network_audit, "docker_json",
-        lambda args, **kwargs: [network] if args[:2] == ["network", "inspect"]
-        else [container],
+        lambda args, **kwargs: _fake_docker_json(args, container, network),
     )
     with pytest.raises(IsolationDenied, match="tmpfs"):
         network_audit.inspect_topology("a" * 64, expected_vm_hash="c" * 64)
@@ -249,8 +271,7 @@ def test_attestor_accepts_nginx_tmpfs_in_mount_inventory(monkeypatch):
     })
     monkeypatch.setattr(
         network_audit, "docker_json",
-        lambda args, **kwargs: [network] if args[:2] == ["network", "inspect"]
-        else [container],
+        lambda args, **kwargs: _fake_docker_json(args, container, network),
     )
     boot, ports, gateway = network_audit.inspect_topology(
         "a" * 64, expected_vm_hash="c" * 64,
@@ -270,8 +291,7 @@ def test_attestor_rejects_unapproved_writable_mounts(monkeypatch, invalid_mount)
     container["Mounts"].append(invalid_mount)
     monkeypatch.setattr(
         network_audit, "docker_json",
-        lambda args, **kwargs: [network] if args[:2] == ["network", "inspect"]
-        else [container],
+        lambda args, **kwargs: _fake_docker_json(args, container, network),
     )
     with pytest.raises(IsolationDenied, match="mounts"):
         network_audit.inspect_topology("a" * 64, expected_vm_hash="c" * 64)
@@ -290,10 +310,17 @@ def test_worker_revalidates_exact_nginx_log_tmpfs_before_vm_action(changed_polic
         def __init__(self, policy):
             self.attrs = {
                 "State": {"Running": True},
-                "Config": {"Image": worker.IMAGE},
+                "Config": {"Image": worker.IMAGE, "Labels": {
+                    "aura.osworld.run_id": "f" * 32,
+                }},
                 "HostConfig": {
                     "Privileged": False, "NetworkMode": worker.NETWORK,
                     "Tmpfs": policy,
+                    "Devices": [{
+                        "PathOnHost": "/dev/net/tun",
+                        "PathInContainer": "/dev/net/tun",
+                        "CgroupPermissions": "rwm",
+                    }],
                     "PortBindings": {
                         f"{port}/tcp": [{"HostIp": "127.0.0.1"}]
                         for port in worker.PORTS
@@ -302,6 +329,14 @@ def test_worker_revalidates_exact_nginx_log_tmpfs_before_vm_action(changed_polic
                 "NetworkSettings": {
                     "Networks": {worker.NETWORK: {"NetworkID": "b" * 64}},
                 },
+                "Mounts": [{
+                    "Destination": "/System.qcow2", "Type": "bind",
+                    "RW": False,
+                }, {
+                    "Destination": "/storage", "Type": "volume",
+                    "Name": worker.STORAGE_VOLUME_PREFIX + "f" * 32,
+                    "RW": True,
+                }],
             }
 
         def reload(self):
@@ -313,6 +348,114 @@ def test_worker_revalidates_exact_nginx_log_tmpfs_before_vm_action(changed_polic
     invalid = StubContainer(changed_policy)
     with pytest.raises(worker.WorkerDenied, match="tmpfs"):
         worker.verify_running_container(invalid, "b" * 64)
+
+
+@pytest.mark.parametrize("devices", [
+    [],
+    [{"PathOnHost": "/dev/kvm", "PathInContainer": "/dev/kvm",
+      "CgroupPermissions": "rwm"}],
+    [{"PathOnHost": "/dev/net/tun", "PathInContainer": "/dev/net/tun",
+      "CgroupPermissions": "rwm"},
+     {"PathOnHost": "/dev/sda", "PathInContainer": "/dev/sda",
+      "CgroupPermissions": "rwm"}],
+    [{"PathOnHost": "/dev/net/tun", "PathInContainer": "/dev/net/tun",
+      "CgroupPermissions": "rw"}],
+    [{"PathOnHost": "/dev/net/tun", "PathInContainer": "/dev/fake",
+      "CgroupPermissions": "rwm"}],
+])
+def test_attestor_refuses_missing_or_overscoped_tun(monkeypatch, devices):
+    container, network = _docker_inspection()
+    container["HostConfig"]["Devices"] = devices
+    monkeypatch.setattr(
+        network_audit, "docker_json",
+        lambda args, **kwargs: _fake_docker_json(args, container, network),
+    )
+    with pytest.raises(IsolationDenied, match="device"):
+        network_audit.inspect_topology("a" * 64, expected_vm_hash="c" * 64)
+
+
+def test_attestor_permits_only_exact_tun_and_optional_pinned_kvm(monkeypatch):
+    container, network = _docker_inspection()
+    container["HostConfig"]["Devices"].append({
+        "PathOnHost": "/dev/kvm", "PathInContainer": "/dev/kvm",
+        "CgroupPermissions": "rwm",
+    })
+    monkeypatch.setattr(
+        network_audit, "docker_json",
+        lambda args, **kwargs: _fake_docker_json(args, container, network),
+    )
+    boot, _, _ = network_audit.inspect_topology(
+        "a" * 64, expected_vm_hash="c" * 64,
+    )
+    assert boot.network_id == "b" * 64
+
+
+@pytest.mark.parametrize("change", ["name", "type", "writable", "extra"])
+def test_attestor_refuses_untrusted_vm_storage_mount(monkeypatch, change):
+    container, network = _docker_inspection()
+    storage = next(m for m in container["Mounts"]
+                   if m["Destination"] == "/storage")
+    if change == "name":
+        storage["Name"] = "external-foreign-volume"
+    elif change == "type":
+        storage["Type"] = "bind"
+    elif change == "writable":
+        storage["RW"] = False
+    else:
+        container["Mounts"].append({
+            "Type": "volume", "Name": "foreign", "RW": True,
+            "Destination": "/home",
+        })
+    monkeypatch.setattr(
+        network_audit, "docker_json",
+        lambda args, **kwargs: _fake_docker_json(args, container, network),
+    )
+    with pytest.raises(IsolationDenied, match="mounts"):
+        network_audit.inspect_topology("a" * 64, expected_vm_hash="c" * 64)
+
+
+@pytest.mark.parametrize("bad", [
+    {"Name": "unexpected", "Driver": "local", "Scope": "local",
+     "Options": None, "Labels": {
+         "aura.osworld.run_id": "f" * 32, "aura.osworld.purpose": "vm-storage",
+     }},
+    {"Name": network_audit.STORAGE_VOLUME_PREFIX + "f" * 32,
+     "Driver": "nfs", "Scope": "local", "Options": None, "Labels": {
+         "aura.osworld.run_id": "f" * 32, "aura.osworld.purpose": "vm-storage",
+     }},
+    {"Name": network_audit.STORAGE_VOLUME_PREFIX + "f" * 32,
+     "Driver": "local", "Scope": "local",
+     "Options": {"device": "/some/host/path"}, "Labels": {
+         "aura.osworld.run_id": "f" * 32, "aura.osworld.purpose": "vm-storage",
+     }},
+    {"Name": network_audit.STORAGE_VOLUME_PREFIX + "f" * 32,
+     "Driver": "local", "Scope": "local", "Options": None,
+     "Labels": {"aura.osworld.run_id": "another"}},
+])
+def test_attestor_refuses_untrusted_volume_driver_and_labels(monkeypatch, bad):
+    container, network = _docker_inspection()
+    def docker_query(args, **kwargs):
+        if args[:2] == ["volume", "inspect"]:
+            return [bad]
+        return _fake_docker_json(args, container, network)
+    monkeypatch.setattr(network_audit, "docker_json", docker_query)
+    with pytest.raises(IsolationDenied, match="volume"):
+        network_audit.inspect_topology("a" * 64, expected_vm_hash="c" * 64)
+
+
+def test_worker_fails_closed_when_tun_disappears():
+    worker = _script("osworld_secure_worker")
+    class Fake:
+        def reload(self):
+            return None
+    container = Fake()
+    c, _ = _docker_inspection()
+    c["Config"]["Image"] = worker.IMAGE
+    c["HostConfig"]["Tmpfs"] = {"/var/log/nginx": worker.NGINX_LOG_TMPFS}
+    c["HostConfig"]["Devices"] = []
+    container.attrs = c
+    with pytest.raises(worker.WorkerDenied, match="TUN"):
+        worker.verify_running_container(container, "b" * 64)
 
 
 def test_network_negative_checks_are_never_optimistic(monkeypatch):
@@ -358,7 +501,8 @@ def test_worker_network_patch_forces_isolated_ports_and_no_kvm(monkeypatch, tmp_
 
     fake_provider_module = types.ModuleType("desktop_env.providers.docker.provider")
     class FakeDockerProvider:
-        pass
+        def stop_emulator(self, *args, **kwargs):
+            self.stopped = True
     fake_provider_module.DockerProvider = FakeDockerProvider
     fake_provider_module.FileLock = FakeLock
     monkeypatch.setitem(sys.modules, "desktop_env", types.ModuleType("desktop_env"))
@@ -372,9 +516,28 @@ def test_worker_network_patch_forces_isolated_ports_and_no_kvm(monkeypatch, tmp_
         attrs = {}
         def reload(self): pass
     class FakeContainers:
+        def __init__(self):
+            self.calls = []
         def run(self, *args, **kwargs):
-            self.call = (args, kwargs)
+            self.calls.append((args, kwargs))
             return FakeContainer()
+
+    class FakeVolume:
+        def __init__(self, name, labels):
+            self.name = name
+            self.labels = labels
+            self.removed = False
+        def remove(self, force=False):
+            assert force is False
+            self.removed = True
+
+    class FakeVolumes:
+        def __init__(self):
+            self.created = None
+        def create(self, *, name, driver, labels):
+            assert driver == "local"
+            self.created = FakeVolume(name, labels)
+            return self.created
     class FakeNetwork:
         attrs = {"Name": NETWORK_NAME, "Internal": True, "EnableIPv6": False,
                  "Driver": "bridge", "Id": "b" * 64}
@@ -382,6 +545,7 @@ def test_worker_network_patch_forces_isolated_ports_and_no_kvm(monkeypatch, tmp_
     class FakeClient:
         def __init__(self):
             self.containers = FakeContainers()
+            self.volumes = FakeVolumes()
             self.networks = SimpleNamespace(get=lambda name: FakeNetwork())
     worker.secure_docker_patch(900, force_no_kvm=True)
     provider = FakeDockerProvider()
@@ -392,17 +556,72 @@ def test_worker_network_patch_forces_isolated_ports_and_no_kvm(monkeypatch, tmp_
     provider._wait_for_vm_ready = lambda timeout: setattr(provider, "seen_timeout", timeout)
     monkeypatch.setattr(worker, "verify_running_container", lambda *a, **k: None)
     provider.start_emulator(str(disk), True, "Ubuntu")
-    _, options = provider.client.containers.call
+    calls = provider.client.containers.calls
+    assert len(calls) == 2
+    seed_args, seed_opts = calls[0]
+    assert seed_args == (worker.IMAGE,)
+    assert seed_opts["network_mode"] == "none"
+    assert seed_opts["cap_drop"] == ["ALL"]
+    assert seed_opts["security_opt"] == ["no-new-privileges:true"]
+    assert seed_opts["entrypoint"] == ["/bin/sh", "-ec"]
+    assert seed_opts["command"] == worker.STORAGE_SEED_SCRIPT
+    assert "chmod 0644 /storage/uefi.rom" in seed_opts["command"]
+    assert "chmod 0755 /storage" in seed_opts["command"]
+    assert "cp /usr/share/OVMF/edk2-x86_64-code.fd" in seed_opts["command"]
+    _, options = calls[1]
     assert options["network"] == NETWORK_NAME
     assert options["ports"][5000] == ("127.0.0.1", 6000)
     assert options["ports"][8006] == ("127.0.0.1", 9006)
     assert options["environment"]["KVM"] == "N"
     assert options["volumes"][str(disk)]["mode"] == "ro"
+    volume = provider.client.volumes.created
+    assert volume.name == worker.STORAGE_VOLUME_PREFIX + "0" * 32
+    assert volume.labels == {
+        "aura.osworld.run_id": "0" * 32,
+        "aura.osworld.purpose": "vm-storage",
+    }
+    assert options["volumes"][volume.name] == {"bind": "/storage", "mode": "rw"}
+    assert options["devices"] == ["/dev/net/tun:/dev/net/tun:rwm"]
     assert options["cap_drop"] == ["ALL"]
     assert options["cap_add"] == ["CHOWN", "NET_ADMIN"]
     assert options["tmpfs"] == {"/var/log/nginx": worker.NGINX_LOG_TMPFS}
     assert options["security_opt"] == ["no-new-privileges:true"]
     assert provider.seen_timeout == 900
+    provider.stop_emulator("ignored")
+    assert volume.removed is True
+
+
+@pytest.mark.parametrize("authorized_label", [True, False])
+def test_bridge_cleanup_never_removes_foreign_docker_volume(monkeypatch, authorized_label):
+    import subprocess as sp
+    from aura_core.osworld.runtime_bridge import OSWorldSubprocessVM
+
+    bridge = OSWorldSubprocessVM.__new__(OSWorldSubprocessVM)
+    bridge._run_id = "f" * 32
+    volume_name = "aura-osworld-v21-storage-" + bridge._run_id
+    commands = []
+
+    def run(argv, **kwargs):
+        commands.append(argv)
+        if argv[:3] == ["docker", "ps", "-aq"]:
+            return SimpleNamespace(returncode=0, stdout="a" * 64 + "\n")
+        if argv[:3] == ["docker", "volume", "inspect"]:
+            label = bridge._run_id if authorized_label else "foreign-run"
+            return SimpleNamespace(returncode=0, stdout=json.dumps([{
+                "Name": volume_name, "Driver": "local",
+                "Labels": {
+                    "aura.osworld.run_id": label,
+                    "aura.osworld.purpose": "vm-storage",
+                },
+            }]))
+        return SimpleNamespace(returncode=0, stdout="")
+
+    monkeypatch.setattr(sp, "run", run)
+    bridge._cleanup_run_containers()
+    assert ["docker", "rm", "-f", "a" * 64] in commands
+    assert ["docker", "volume", "inspect", volume_name] in commands
+    removed = ["docker", "volume", "rm", volume_name] in commands
+    assert removed is authorized_label
 
 
 def test_bridge_denies_unpinned_runtime_before_spawn(tmp_path):

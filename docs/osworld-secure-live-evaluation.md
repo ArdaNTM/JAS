@@ -19,11 +19,37 @@ existing aura-osworld-v21-lab internal IPv4-only bridge with no external
 network attachment and only four localhost control ports. To avoid granting DAC_OVERRIDE for
 the pinned Nginx error.log, the worker overlays ONLY /var/log/nginx with a
 root-owned 16 MiB tmpfs (rw,nosuid,nodev,noexec,mode=0755). No host log bind,
-privileged container, custom entrypoint or additional Linux capability.
+privileged main container, custom VM entrypoint or additional Linux capability.
 The host attestor requires this exact tmpfs and rejects extra mounts.
 Nginx files written to tmpfs are intentionally ephemeral and may disappear
 at container exit. Collect startup stderr with the Docker monitor, and
-inspect in-container logs before VM teardown if needed. It runs QEMU
+inspect in-container logs before VM teardown if needed.
+
+The pinned image also declares /storage as a Docker volume. To fix
+QEMU's EACCES reading /storage/uefi.rom without DAC_OVERRIDE, the host
+worker provisions a randomly named, local-only, per-run Docker volume.
+An isolated, one-shot *preparation* container using the SAME digest-pinned
+image and network_mode=none, cap_drop=ALL and no-new-privileges copies
+/usr/share/OVMF/edk2-x86_64-code.fd into that empty volume as
+/storage/uefi.rom, with owner-accessible mode 0644 and directory mode 0755.
+The main VM uses this named volume at /storage (no writable host bind).
+A stopped/failed VM removes its own ephemeral volume; a killed worker's
+parent bridge independently performs run-ID-scoped cleanup. The host
+attestor checks the named volume's exact local driver, run-specific labels,
+mount identity and denies remote drivers or extra mounts. The /storage
+volume is intentionally NOT a tmpfs: it must accommodate 32 GB sparse disks.
+
+The VM also needs a TUN character device for NAT/TAP; the worker
+explicitly binds exactly /dev/net/tun:/dev/net/tun:rwm, retaining only
+NET_ADMIN and CHOWN capabilities and cap_drop=ALL. If Docker Desktop's
+Linux daemon lacks /dev/net/tun, VM startup is BLOCKED instead of
+enabling mknod, MKNOD, DAC_OVERRIDE, SYS_ADMIN, privileged or ungoverned
+SLIRP fallback. The attestor and pre-action worker re-check the device.
+Note: VM guest networking and the container's host-published screenshot
+API are separate layers; TUN fallback does not itself remove Docker's
+published port mapping.
+
+With those constraints, it runs QEMU
 with KVM=N when hardware KVM is unavailable. The official Ubuntu disk image
 mount is read-only and the worker has a random per-run cleanup label.
 
