@@ -2,15 +2,15 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "review-candidate",
-  "generated_at": "2026-11-06T20:23:00+01:00",
-  "git_commit": "4ff3aef3748506401d57cf55648081f6a959c5c2",
+  "generated_at": "2026-11-06T20:30:00+01:00",
+  "git_commit": "335c2c2ded9b32a9c41008a71470d625e6267aa7",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:3eba93adf101fc2a0863e049761bbd694f032a7b144f275c235fa88ce04dde27",
+  "release_digest": "sha256:8976fb0b0052579dab6544eaedc953e4f76c216cbac4366c79df666b3633946f",
   "file_count": 317,
   "files": [
     {
       "path": ".gitattributes",
-      "sha256": "0f9a93c2a09b5f78551a3c5c9193575465d16aca04b9ca50f8641165426bd01e"
+      "sha256": "6db80b6e5d1166f006510a27be3459967967bfcf10fbb5afb7c4942ac68d891a"
     },
     {
       "path": ".github/workflows/aura-osworld-secure-live.yml",
