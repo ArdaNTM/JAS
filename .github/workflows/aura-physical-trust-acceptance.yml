@@ -1,0 +1,77 @@
+name: AURA Physical Trust Acceptance
+on:
+  pull_request:
+    paths:
+      - "core/src/aura_core/acceptance/**"
+      - "core/src/aura_core/network_egress/**"
+      - "core/src/aura_core/evolution/trusted_promotion.py"
+      - "core/src/aura_core/mcp/stage_c_browser.py"
+      - "core/src/aura_core/main.py"
+      - "core/tests/test_physical_trust_bridges.py"
+      - "core/scripts/start_pinned_egress_proxy.py"
+      - ".github/workflows/aura-physical-trust-acceptance.yml"
+      - "release-manifest.final.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-physical-trust-linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Locked Core environment
+        working-directory: core
+        run: uv sync --frozen --group dev
+      - name: Signed hardware, DNS rebinding, Owner bridge and OSWorld contract
+        working-directory: core
+        run: |
+          uv run --frozen python -m pytest -q tests/test_physical_trust_bridges.py
+          uv run --frozen python scripts/osworld_v2_lab.py
+          uv run --frozen python scripts/hardware_stage_c_acceptance.py
+          uv run --frozen python scripts/verify_final_lock.py
+  offline-physical-trust-windows:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Locked Windows Core environment
+        working-directory: core
+        run: uv sync --frozen --group dev
+      - name: NTFS Owner receipts, physical acceptance contracts and release lock
+        working-directory: core
+        shell: pwsh
+        run: |
+          uv run --frozen python -m pytest -q tests/test_physical_trust_bridges.py tests/test_windows_owner_acl.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          uv run --frozen python scripts/verify_final_lock.py
+          exit $LASTEXITCODE
+  npm-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Desktop build and high/critical audit
+        working-directory: aura-ui
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+          node --test tests/aura-hud-shell.test.mjs tests/stage-c-control.test.mjs
+          npm audit --audit-level=high
+      - name: Console build and high/critical audit
+        working-directory: core/frontend
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+          npm audit --audit-level=high
