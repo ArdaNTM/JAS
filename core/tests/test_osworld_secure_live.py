@@ -60,6 +60,38 @@ def _fixture_receipt(now: int | None = None):
     return signed, {"host_auditor": public}
 
 
+@pytest.mark.parametrize(("key", "value"), [
+    ("NETWORK", "nat"),
+    ("NETWORK", "slirp"),
+    ("USER_PORTS", ""),
+    ("USER_PORTS", "5000,8080,9222,22"),
+    ("HOST_PORTS", ""),
+    ("HOST_PORTS", "5000"),
+])
+def test_network_attestor_rejects_unapproved_slirp_environment(monkeypatch, key, value):
+    container, network = _docker_inspection()
+    env = container["Config"]["Env"]
+    env[:] = [entry for entry in env if not entry.startswith(key + "=")]
+    env.append(key + "=" + value)
+    monkeypatch.setattr(
+        network_audit, "docker_json",
+        lambda args, **kwargs: _fake_docker_json(args, container, network),
+    )
+    with pytest.raises(IsolationDenied, match="QEMU network"):
+        network_audit.inspect_topology("a" * 64, expected_vm_hash="c" * 64)
+
+
+def test_network_attestor_rejects_duplicate_slirp_environment(monkeypatch):
+    container, network = _docker_inspection()
+    container["Config"]["Env"].append("NETWORK=user")
+    monkeypatch.setattr(
+        network_audit, "docker_json",
+        lambda args, **kwargs: _fake_docker_json(args, container, network),
+    )
+    with pytest.raises(IsolationDenied, match="QEMU network"):
+        network_audit.inspect_topology("a" * 64, expected_vm_hash="c" * 64)
+
+
 def test_signed_receipt_exact_container_and_expiring_five_minutes():
     evidence, trusted = _fixture_receipt()
     assert IsolationReceipt.from_dict(evidence.to_dict()) == evidence
@@ -117,7 +149,14 @@ def _docker_inspection():
     container = {
         "Id": cid,
         "State": {"Running": True},
-        "Config": {"Image": IMAGE, "Labels": {"aura.osworld.run_id": run_id}},
+        "Config": {
+            "Image": IMAGE,
+            "Labels": {"aura.osworld.run_id": run_id},
+            "Env": [
+                "NETWORK=user", "USER_PORTS=5000,8080,9222",
+                "HOST_PORTS=8006", "KVM=N",
+            ],
+        },
         "HostConfig": {
             "Privileged": False, "NetworkMode": NETWORK_NAME,
             "PortBindings": binding, "CapAdd": ["CHOWN", "NET_ADMIN"],
@@ -312,7 +351,10 @@ def test_worker_revalidates_exact_nginx_log_tmpfs_before_vm_action(changed_polic
                 "State": {"Running": True},
                 "Config": {"Image": worker.IMAGE, "Labels": {
                     "aura.osworld.run_id": "f" * 32,
-                }},
+                }, "Env": [
+                    "NETWORK=user", "USER_PORTS=5000,8080,9222",
+                    "HOST_PORTS=8006", "KVM=N",
+                ]},
                 "HostConfig": {
                     "Privileged": False, "NetworkMode": worker.NETWORK,
                     "Tmpfs": policy,
@@ -573,6 +615,9 @@ def test_worker_network_patch_forces_isolated_ports_and_no_kvm(monkeypatch, tmp_
     assert options["ports"][5000] == ("127.0.0.1", 6000)
     assert options["ports"][8006] == ("127.0.0.1", 9006)
     assert options["environment"]["KVM"] == "N"
+    assert options["environment"]["NETWORK"] == "user"
+    assert options["environment"]["USER_PORTS"] == "5000,8080,9222"
+    assert options["environment"]["HOST_PORTS"] == "8006"
     assert options["volumes"][str(disk)]["mode"] == "ro"
     volume = provider.client.volumes.created
     assert volume.name == worker.STORAGE_VOLUME_PREFIX + "0" * 32
