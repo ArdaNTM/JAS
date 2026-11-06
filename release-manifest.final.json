@@ -1,16 +1,20 @@
 {
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
-  "status": "stage-c-review",
+  "status": "review-candidate",
   "generated_at": "2026-10-31T23:10:00Z",
   "git_commit": "6a88a5b131b0e064bc8840f1db6605facc791981",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:3244d4fb4d3c0bb0aca9f3478fcd4b1f784405b3fa202489b66d59e15f309245",
-  "file_count": 287,
+  "release_digest": "sha256:e6ac44abf22e2107d7693de82613ea187011e9e86db496dba5a9775ce1719c37",
+  "file_count": 291,
   "files": [
     {
       "path": ".gitattributes",
       "sha256": "5ea37efe8f52ed1f432d2a216f196453a4ab0b4d5e3de25d3acde2582b8bd8a4"
+    },
+    {
+      "path": ".github/workflows/aura-secure-evolution.yml",
+      "sha256": "f80e01e5008abfae79f1850fc157020c840bf553c3be5d86fa04dfff81b31d6f"
     },
     {
       "path": ".github/workflows/aura-stage-c-assurance.yml",
@@ -94,7 +98,7 @@
     },
     {
       "path": "aura-ui/src/components/EvolutionReviewPanel.tsx",
-      "sha256": "ba6ee1e16f93f41c2269af7097d9a766c7a638e5e01ed0fb2aaa5dc9d3db6872"
+      "sha256": "ab10a4629e80408842285d1300d744e162b9acb60d08411d9fc177183586175b"
     },
     {
       "path": "aura-ui/src/components/StageCControlPanel.tsx",
@@ -186,7 +190,7 @@
     },
     {
       "path": "core/scripts/generate_final_lock.py",
-      "sha256": "d30dd54cc2862fa36648a3dae5cd69c1703117312f0b5b75e7bb2af3fd3f1019"
+      "sha256": "1776f1ef2ac18dbef79b78d10861a2578af7fdc85f86d47e39c846aae8150715"
     },
     {
       "path": "core/scripts/hardware_stage_c_acceptance.py",
@@ -250,7 +254,7 @@
     },
     {
       "path": "core/src/aura_core/application/api.py",
-      "sha256": "ac2862efdb4e29d6e4aa9ea795e9f8906828d6dbe2c06034c97b6735a97d5492"
+      "sha256": "83e10a2cfea1d53fb42e5b410fa072426fb1af71c620234051f80d4589051371"
     },
     {
       "path": "core/src/aura_core/application/approval_api.py",
@@ -366,7 +370,7 @@
     },
     {
       "path": "core/src/aura_core/application/ollama_completion.py",
-      "sha256": "edeabeb18a795cb2029c24fd3628ba8f3b5e9cc266990f10139622869e6ca56a"
+      "sha256": "00bb962dfeb83861c6ee3dc85671cea3d07207450a95c672b30769b8d18c87a9"
     },
     {
       "path": "core/src/aura_core/application/perception_api.py",
@@ -593,8 +597,12 @@
       "sha256": "6f1dbe38caa1a7141a4689247081f32ec5ac203b15a044fecdfaa53ca7ae1c8f"
     },
     {
+      "path": "core/src/aura_core/evolution/evolution_gateway.py",
+      "sha256": "01448505067f224b82696497c854865104a173b990e943fe50c43fbe1ce145e5"
+    },
+    {
       "path": "core/src/aura_core/evolution/evolution_planner.py",
-      "sha256": "29669e266c9c0f71a5ceaeceb7e722c7290a1e068d793748a6d729f1882302fd"
+      "sha256": "a6644a73be279ce7127d91e7ae24235e0c889dadb91173b72d05d7c5cc0d1189"
     },
     {
       "path": "core/src/aura_core/evolution/goal_tree.py",
@@ -602,7 +610,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/mutation_engine.py",
-      "sha256": "fe5c0caca6011df568f3980d1d91ab554e067df75a94e409404695eb570ec802"
+      "sha256": "14decd174d52274bb7e72f16543d6f3003e240cb805087d20011dc9f439ff702"
     },
     {
       "path": "core/src/aura_core/evolution/owner_authority.py",
@@ -826,7 +834,7 @@
     },
     {
       "path": "core/src/aura_core/main.py",
-      "sha256": "1c1725536ab872b8ee3e672789241eed4e965df4b4308762a43fdeb3627c14d8"
+      "sha256": "5b39c6f054c3fe61f772c1992f6582ca48ac1dfa70d553bf26d4275cf63fe755"
     },
     {
       "path": "core/src/aura_core/mcp/__init__.py",
@@ -843,6 +851,14 @@
     {
       "path": "core/src/aura_core/mcp/dispatch_context.py",
       "sha256": "80d08dd2c2b1bda9be0fe5b6a225e4b7a0ba1fc5db1719346fac21c770fd294a"
+    },
+    {
+      "path": "core/src/aura_core/mcp/drafts/README.md",
+      "sha256": "349cc836334db82714a35010aba708f98a9154cbdff1f86ff24b80e2412894c5"
+    },
+    {
+      "path": "core/src/aura_core/mcp/dynamic_tools/README.md",
+      "sha256": "d074ce60b187efa65ea40be45991f82703d2af2e76333df60844ef828b3ffde0"
     },
     {
       "path": "core/src/aura_core/mcp/gateway.py",

@@ -9,6 +9,7 @@ import os
 import re
 from datetime import time
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 
@@ -21,6 +22,7 @@ from aura_core.application.tasks import AgentTaskService
 from aura_core.application.task_memory import TaskMemoryCoordinator
 from aura_core.application.task_state_machine import TaskStateMachine
 from aura_core.application.autonomy_composition import compose_governed_autonomy
+from aura_core.evolution.evolution_gateway import EvolutionReviewGateway
 from aura_core.application.autonomous_adapters import AllowedOperation, CapabilityDrivenPlanner
 from aura_core.application.ollama_completion import OllamaJSONCompletionProvider
 from aura_core.application.stage_c_runtime import StageCLedger, StageCController
@@ -496,6 +498,19 @@ def build_app() -> FastAPI:
     app.state.http_principal_id = http_principal_id
     app.state.approval_store = approval_store
     app.state.gateway_audit_ledger = gateway_audit_ledger
+    # User-opted draft quarantine is DATA only, outside locked JAS sources.
+    # Only the composition root can attach it to the Kernel EventBus.
+    if os.getenv("AURA_EVOLUTION_DRAFTS_ENABLED", "0").strip() == "1":
+        drafts_path = os.getenv("AURA_EVOLUTION_DRAFTS_PATH", "").strip()
+        if not drafts_path:
+            raise RuntimeError("Explicit private evolution draft path is required")
+        app.state.evolution_review_gateway = EvolutionReviewGateway(
+            directory=drafts_path,
+            # The immutable checkout trust root is derived from installed
+            # code, never from an operator override or model-controlled data.
+            checkout_root=Path(__file__).resolve().parents[3],
+            event_bus=kernel.event_bus,
+        )
     app.state.graph_store = graph_store
     app.state.screen_control_enabled = screen_control_enabled
     app.state.screen_read_enabled = screen_read_enabled

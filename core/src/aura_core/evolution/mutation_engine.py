@@ -111,3 +111,126 @@ class MutationReviewQueue:
             candidate=draft.candidate, cases=list(draft.test_cases),
             principal_id=principal_id, approval_id=approval_id,
         )
+
+
+# ---------------------------------------------------------------------------
+# Bounded model-assisted debugging, always behind explicit Gateway approval.
+# ---------------------------------------------------------------------------
+
+import asyncio
+from typing import Mapping, Protocol, Sequence
+
+
+class RevisionModel(Protocol):
+    """A model proposing a replacement draft without having execution rights."""
+
+    async def revise(
+        self, *, candidate: ToolCandidate, bounded_feedback: str,
+        attempt: int,
+    ) -> ToolCandidate: ...
+
+
+@dataclass(frozen=True, slots=True)
+class DebugOutcome:
+    """No provisional smoke test can certify or activate a model-generated MCP tool."""
+
+    status: str
+    candidate: ToolCandidate
+    attempts: int
+    needs_new_approval: bool
+    independent_attestation: bool = False
+    deployment_allowed: bool = False
+
+
+class GovernedMutationDebugLoop:
+    """Bounded, sequential self-debugging with a fresh owner approval per attempt.
+
+    Every test is submitted through GovernedSandboxReview -> MCPGateway ->
+    digest-pinned Docker CodeAct. Existing DockerPythonRunner enforces
+    --pull=never, no network, read-only root, CPU/memory/PID limits and timeout.
+    Test cases must originate in trusted review input, not be rewritten by the
+    language model. Failed smoke reports are *untrusted* diagnostics: the model
+    receives only their bounded status, not raw output or host secrets.
+
+    Explicit approvals are provided by a separate trusted owner process.
+    The loop cannot mint approvals or promise that a candidate will pass.
+    """
+
+    def __init__(
+        self, *, sandbox: GovernedSandboxReview,
+        reviser: RevisionModel, max_attempts: int = 3,
+        timeout_seconds: float = 45.0,
+    ) -> None:
+        if not 1 <= max_attempts <= 3 or not 1 <= timeout_seconds <= 120:
+            raise ValueError("Invalid recursive-debug budgets")
+        self._sandbox = sandbox
+        self._reviser = reviser
+        self._max = max_attempts
+        self._timeout = timeout_seconds
+        self._validator = CandidateToolValidator()
+
+    async def debug(
+        self, *, candidate: ToolCandidate,
+        test_cases: Sequence[dict[str, Any]],
+        principal_id: str, owner_approvals: Sequence[str],
+    ) -> DebugOutcome:
+        """Return a provisional result or pause; never deploy candidate code.
+
+        Each authorization token must be obtained through the separately
+        authenticated WebAuthn owner review flow. Any missing token pauses the
+        loop, rather than running unattended or reusing a prior approval.
+        """
+        if principal_id != "local_owner":
+            raise PermissionError("Model debugging cannot impersonate Local Owner")
+        if not 1 <= len(test_cases) <= 8 or any(
+            not isinstance(case, dict) or set(case) != {"input", "expected"}
+            for case in test_cases
+        ):
+            raise ValueError("Trusted test cases required")
+        if len(owner_approvals) > self._max:
+            raise ValueError("Approval sequence exceeds debug budget")
+        current = candidate
+        for attempt in range(1, self._max + 1):
+            if not self._validator.validate(current)["valid"]:
+                raise ValueError("Unsafe model proposal; no sandbox dispatch")
+            if len(owner_approvals) < attempt or not owner_approvals[attempt - 1]:
+                return DebugOutcome("awaiting_owner_approval", current, attempt - 1, True)
+            approval_id = owner_approvals[attempt - 1]
+            try:
+                report = await asyncio.wait_for(
+                    self._sandbox.smoke_test(
+                        candidate=current, cases=list(test_cases),
+                        principal_id=principal_id, approval_id=approval_id,
+                    ),
+                    timeout=self._timeout,
+                )
+            except asyncio.CancelledError:
+                raise
+            except (asyncio.TimeoutError, PermissionError, ValueError, OSError):
+                # Unknown or denied results must not trigger an automatic retry.
+                return DebugOutcome("sandbox_needs_review", current, attempt, False)
+            if report.passed and report.source_sha256 == current.digest:
+                return DebugOutcome("provisional_pass", current, attempt, False)
+            if attempt == self._max:
+                return DebugOutcome("failed_bounded_tests", current, attempt, False)
+            # The model receives only the coarse, bounded status, not stdout
+            # or stderr, which may contain instructions or sensitive material.
+            try:
+                replacement = await asyncio.wait_for(
+                    self._reviser.revise(
+                        candidate=current,
+                        bounded_feedback=("Sandbox test failed: " + report.status[:80]),
+                        attempt=attempt + 1,
+                    ),
+                    timeout=self._timeout,
+                )
+            except asyncio.CancelledError:
+                raise
+            except (asyncio.TimeoutError, ValueError, TypeError, OSError):
+                return DebugOutcome("revision_needs_review", current, attempt, False)
+            if not isinstance(replacement, ToolCandidate):
+                return DebugOutcome("invalid_revision", current, attempt, False)
+            if replacement.tool_name != current.tool_name:
+                return DebugOutcome("identity_changed", current, attempt, False)
+            current = replacement
+        raise AssertionError("Unreachable bounded debug state")

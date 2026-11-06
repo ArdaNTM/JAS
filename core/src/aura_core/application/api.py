@@ -11,6 +11,7 @@ import threading
 import time
 from time import perf_counter
 from uuid import uuid4
+from urllib.parse import urlsplit
 
 from fastapi import Depends, FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.exceptions import RequestValidationError
@@ -36,7 +37,10 @@ from aura_core.application.context_synthesizer import ContextSynthesizer
 from aura_core.application.context_aware_stt import build_stt_prompt
 from aura_core.application.background_thinking import IdleMemoryReflectionDaemon
 from aura_core.evolution.autonomous_analyzer import AutonomousAnalyzer
-from aura_core.evolution.evolution_planner import EvolutionPlanner
+from aura_core.evolution.evolution_planner import EvolutionPlanner, ProactiveEvolutionCoordinator
+from aura_core.application.task_memory import TaskMemoryCoordinator
+from aura_core.application.ollama_completion import OllamaJSONCompletionProvider
+from aura_core.application.self_tool_synthesis import ToolCandidate
 from aura_core.application.persona_policy import PersonaPolicy
 from aura_core.application.reflexion import ExperimentBudget, ProceduralSkillLibrary, ReflexionExperimentLoop
 from aura_core.application.reflexion_inference import ModelBackedDraftRevision, ModelRevisionConfig
@@ -717,16 +721,57 @@ def create_api(
     # authorize source inspection, network discovery, code generation or deployment.
     # No discovery/drafting adapters are installed by default.
     evolution_enabled = os.getenv("AURA_EVOLUTION_REVIEW_ENABLED", "0").strip().casefold() in {"1", "true", "yes"}
-    app.state.evolution_review = (
+    evolution_root = Path(os.getenv("AURA_JAS_ROOT") or Path(__file__).resolve().parents[4])
+    base_evolution = (
         EvolutionPlanner(
-            AutonomousAnalyzer(Path(os.getenv("AURA_JAS_ROOT") or Path(__file__).resolve().parents[4])),
-            idle_seconds=int(os.getenv("AURA_EVOLUTION_IDLE_SECONDS", "300")),
+            AutonomousAnalyzer(evolution_root),
+            idle_seconds=int(os.getenv("AURA_EVOLUTION_IDLE_SECONDS",
+                                       os.getenv("AURA_BACKGROUND_THINKING_IDLE_SECONDS", "300"))),
             interval_seconds=int(os.getenv("AURA_EVOLUTION_INTERVAL_SECONDS", "900")),
             max_cycles=int(os.getenv("AURA_EVOLUTION_MAX_CYCLES", "100")),
             last_activity=lambda: app.state.last_user_activity,
         )
         if evolution_enabled else None
     )
+    # Model source introspection must be explicitly opted in, in addition to
+    # background thinking. It produces only untrusted hierarchical-memory tasks.
+    introspect_enabled = (
+        evolution_enabled and reflection_enabled and
+        os.getenv("AURA_EVOLUTION_INTROSPECTION_ENABLED", "0").strip() == "1"
+    )
+    if introspect_enabled and str(getattr(app.state.storage_mode, "value",
+                                         app.state.storage_mode)).lower() == "remote":
+        raise RuntimeError("Evolution introspection requires a local task-scoped memory store")
+    # This path reads source excerpts. Never allow a remote Ollama endpoint or
+    # prefix-matched lookalike hostname to receive private repository content.
+    evolution_model_endpoint = os.getenv("AURA_OLLAMA_BASE_URL", "http://127.0.0.1:11434")
+    if introspect_enabled:
+        parsed_endpoint = urlsplit(evolution_model_endpoint)
+        if (parsed_endpoint.scheme != "http"
+                or parsed_endpoint.hostname not in {"localhost", "127.0.0.1", "::1"}
+                or parsed_endpoint.username is not None
+                or parsed_endpoint.password is not None
+                or parsed_endpoint.path not in {"", "/"}
+                or parsed_endpoint.query or parsed_endpoint.fragment):
+            raise RuntimeError("Evolution source inspection requires an exact loopback Ollama endpoint")
+    app.state.evolution_review = (
+        ProactiveEvolutionCoordinator(
+            base_evolution,
+            model=OllamaJSONCompletionProvider(
+                base_url=evolution_model_endpoint,
+                model=os.getenv("AURA_EVOLUTION_MODEL", "qwen3"),
+                timeout_seconds=20,
+                trust_env=False,  # source context must never traverse env proxies
+            ),
+            memory=TaskMemoryCoordinator(SQLiteEpisodicMemory(
+                os.getenv("AURA_EVOLUTION_MEMORY_DB", "./data/evolution-introspection.sqlite3")
+            )),
+            checkout_root=evolution_root,
+        ) if introspect_enabled else base_evolution
+    )
+    # The governed gateway is attached by the Core composition root AFTER the
+    # real Kernel EventBus is created, never by this HTTP factory.
+    app.state.evolution_review_gateway = None
 
     @app.middleware("http")
     async def log_request(request: Request, call_next):
@@ -1722,6 +1767,55 @@ def create_api(
         worker = app.state.evolution_review
         return {"mode": "review_only",
                 "items": worker.list_proposals(limit=limit) if worker else []}
+
+    @app.get("/api/evolution/drafts")
+    def evolution_drafts(
+        http_request: Request,
+        principal_id: str = Depends(authenticated_principal),
+    ) -> dict[str, object]:
+        """Expose quarantined artifact metadata; never code or approval controls."""
+        require_local_client(http_request)
+        review = app.state.evolution_review_gateway
+        return {
+            "items": list(review.pending()) if review is not None else [],
+            "approval_granted": False,
+            "execution_performed": False,
+            "mode": "quarantined_owner_review" if review is not None else "disabled",
+        }
+
+    @app.post("/api/evolution/drafts", status_code=202)
+    def submit_evolution_draft(
+        body: dict[str, object], http_request: Request,
+        principal_id: str = Depends(authenticated_principal),
+    ) -> dict[str, object]:
+        """Store only a static proposal; no Python, WebAuthn or MCP execution."""
+        require_local_client(http_request)
+        review = app.state.evolution_review_gateway
+        if review is None:
+            raise HTTPException(status_code=503, detail="Draft review disabled")
+        if principal_id != "local_owner":
+            raise HTTPException(status_code=403, detail="Local Owner draft submission required")
+        required = {"tool_name", "description", "source_code", "input_schema", "output_schema", "test_count"}
+        if set(body) != required or not all(
+            isinstance(body[key], str) for key in ("tool_name", "description", "source_code")
+        ) or not all(
+            isinstance(body[key], dict) for key in ("input_schema", "output_schema")
+        ) or type(body["test_count"]) is not int:
+            raise HTTPException(status_code=422, detail="Invalid draft schema")
+        if len(body["source_code"]) > 24000:
+            raise HTTPException(status_code=422, detail="Draft source exceeds review limits")
+        try:
+            candidate = ToolCandidate(
+                tool_name=body["tool_name"],
+                description=body["description"],
+                source_code=body["source_code"],
+                input_schema=body["input_schema"],
+                output_schema=body["output_schema"],
+            )
+            draft = review.stage(candidate, test_count=body["test_count"])
+        except (PermissionError, ValueError, TypeError, OSError) as exc:
+            raise HTTPException(status_code=422, detail="Draft could not be quarantined") from exc
+        return draft.public()
 
     @app.get("/api/evolution/goals")
     def evolution_goal_tree(
