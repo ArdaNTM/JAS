@@ -29,6 +29,7 @@ from aura_core.kernel.services import ServiceCategory, ServiceDefinition, Servic
 from aura_core.mcp.gateway import MCPGateway
 from aura_core.mcp.provider import ProviderDefinition, ProviderRegistry
 from aura_core.osworld.live_vm import OSWorldVMMCPProvider
+from aura_core.osworld.runtime_bridge import OSWorldSubprocessVM
 
 
 def policy_digest() -> str:
@@ -107,10 +108,13 @@ class OwnerApprovalPolling:
 def compose_vm_gateway(
     *, environment: object, store: SQLiteApprovalStore,
     fingerprint_key: bytes,
+    isolation_guard: Any | None = None,
 ) -> MCPGateway:
     """Create the same deterministic PermissionEngine/Gateway as AURA Core."""
     if not isinstance(fingerprint_key, bytes) or len(fingerprint_key) < 32:
         raise ValueError("Strong Gateway fingerprint key required")
+    if isinstance(environment, OSWorldSubprocessVM) and isolation_guard is None:
+        raise PermissionError("Real OSWorld VM cannot bypass signed isolation guard")
     services = ServiceRegistry()
     service = ServiceDefinition(
         name="osworld_vm", version="1", provider="stage-d",
@@ -124,7 +128,7 @@ def compose_vm_gateway(
             name="Official disposable OSWorld VM", version="1",
             service_id=service.service_id,
         ),
-        OSWorldVMMCPProvider(environment),
+        OSWorldVMMCPProvider(environment, isolation_guard=isolation_guard),
     )
     capabilities = CapabilityRegistry(services)
     capabilities.register(CapabilityDefinition(

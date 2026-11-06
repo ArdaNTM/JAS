@@ -43,7 +43,7 @@ class GuestEnvironment(Protocol):
     """Subset of the upstream DesktopEnv; actual run uses the official package."""
     def reset(self, task_config: dict[str, Any]) -> dict[str, Any]: ...
     def step(self, action: str, pause: int = 0) -> Any: ...
-    def evaluate(self, logger: logging.Logger) -> float: ...
+    def evaluate(self) -> float: ...
     def close(self) -> None: ...
 
 
@@ -107,8 +107,12 @@ class OSWorldVMMCPProvider:
     provider_id = "aura.osworld.v2.1.guest"
     requires_approval = True
 
-    def __init__(self, environment: GuestEnvironment) -> None:
+    def __init__(
+        self, environment: GuestEnvironment,
+        *, isolation_guard: Callable[[], None] | None = None,
+    ) -> None:
         self._env = environment
+        self._guard = isolation_guard
         self._lock = asyncio.Lock()
 
     async def list_tools(self) -> tuple[MCPTool, ...]:
@@ -136,11 +140,21 @@ class OSWorldVMMCPProvider:
             raise LiveEvaluationDenied("Guest actions require consumed MCP Gateway Owner approval")
         action = VMAction.from_dict(arguments or {})
         async with self._lock:
-            # The official guest VM executes the fixed command. Never execute
-            # model-generated scripts in the host Python interpreter.
-            observation, _, done, _ = await asyncio.to_thread(
-                self._env.step, action.command(), 0,
-            )
+            # Receipt expiry, container/network changes and external signer
+            # trust are checked BEFORE each separately authorized action.
+            if self._guard is not None:
+                await asyncio.to_thread(self._guard)
+            # Python 3.12 worker receives strictly typed JSON, never
+            # model-generated Python source; offline test VMs remain supported.
+            step_action = getattr(self._env, "step_action", None)
+            if callable(step_action):
+                observation, _, done, _ = await asyncio.to_thread(
+                    step_action, dict(arguments or {}),
+                )
+            else:
+                observation, _, done, _ = await asyncio.to_thread(
+                    self._env.step, action.command(), 0,
+                )
             return {
                 "executed": True, "done": bool(done),
                 "untrusted": True,
@@ -230,7 +244,7 @@ async def evaluate_live_vm(
     if not finished:
         return LiveEvaluationResult(task_config["id"], None, attempted, True)
     # Official evaluator runs only after the task has received an authorized DONE.
-    score = await asyncio.to_thread(environment.evaluate, _LOGGER)
+    score = await asyncio.to_thread(environment.evaluate)
     if not isinstance(score, (int, float)) or not 0 <= float(score) <= 1:
         raise LiveEvaluationDenied("Official evaluator returned an invalid score")
     return LiveEvaluationResult(task_config["id"], float(score), attempted, True)
