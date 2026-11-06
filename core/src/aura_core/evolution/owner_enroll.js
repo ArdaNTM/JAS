@@ -31,6 +31,12 @@ document.getElementById("enroll").addEventListener("click", async () => {
     if (!navigator.credentials?.create) throw new Error("WebAuthn unavailable in this browser");
     const options = await request("/api/enrollment/begin",token,{});
     const pub = options.publicKey;
+    if (!pub || !pub.user ||
+        typeof pub.user.name !== "string" || !pub.user.name ||
+        typeof pub.user.displayName !== "string" || !pub.user.displayName ||
+        !pub.rp || pub.rp.id !== "localhost") {
+      throw new Error("Invalid WebAuthn enrollment options from trusted server");
+    }
     pub.challenge = decode(pub.challenge);
     pub.user.id = decode(pub.user.id);
     if (Array.isArray(pub.excludeCredentials)) {

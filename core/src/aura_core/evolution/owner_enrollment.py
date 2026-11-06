@@ -78,8 +78,11 @@ class ProtectedEnrollment:
                 AuthenticatorAttachment, ResidentKeyRequirement, UserVerificationRequirement,
             )
             options, state = self._server.register_begin(
+                # Fido2Server uses PublicKeyCredentialUserEntity.from_dict:
+                # WebAuthn wire keys MUST be camelCase. "display_name" is
+                # silently ignored and browsers reject missing displayName.
                 user={"id": secrets.token_bytes(32),
-                      "name": "local_owner", "display_name": "AURA Local Owner"},
+                      "name": "local_owner", "displayName": "AURA Local Owner"},
                 credentials=[],
                 resident_key_requirement=ResidentKeyRequirement.REQUIRED,
                 user_verification=UserVerificationRequirement.REQUIRED,

@@ -61,6 +61,22 @@ def make_registration(options, *, origin="http://localhost:8766", rp="localhost"
     }
 
 
+def test_begin_serializes_required_webauthn_user_display_name(setup):
+    token, ceremony, output = setup
+    options = ceremony.begin(token)
+    pub = options["publicKey"]
+    user = pub["user"]
+    assert user["name"] == "local_owner"
+    assert user["displayName"] == "AURA Local Owner"
+    assert isinstance(user["id"], str) and len(user["id"]) >= 32
+    assert pub["rp"]["id"] == "localhost"
+    assert not output.exists()
+    from fido2.webauthn import PublicKeyCredentialUserEntity
+    parsed = PublicKeyCredentialUserEntity.from_dict(user)
+    assert parsed.name == "local_owner"
+    assert parsed.display_name == "AURA Local Owner"
+
+
 def test_yubico_registration_issues_one_time_config_verified_by_owner_passkey(setup):
     token, ceremony, output = setup
     options = ceremony.begin(token)
@@ -133,6 +149,8 @@ def test_enrollment_http_host_origin_json_and_secret_guards(setup):
         })
         assert response.status_code == 200, response.text
         assert response.headers["Cache-Control"] == "no-store"
+        assert response.json()["publicKey"]["user"]["displayName"] == "AURA Local Owner"
+        assert response.json()["publicKey"]["user"]["name"] == "local_owner"
         created=client.post("/api/enrollment/complete", json={
             "response":make_registration(response.json()),
         }, headers={"Origin":"http://localhost:8766","X-Aura-Bootstrap":token})

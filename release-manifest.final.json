@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "review-candidate",
-  "generated_at": "2026-11-06T19:19:00+01:00",
-  "git_commit": "80d892bb20ea64e194fef9ddde68a5b5c5f80631",
+  "generated_at": "2026-11-06T20:23:00+01:00",
+  "git_commit": "4ff3aef3748506401d57cf55648081f6a959c5c2",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:c7e99639086c73b4bc3bfd6a9218930ed3b47d8c3eb374d49b28f20b0108b06b",
-  "file_count": 316,
+  "release_digest": "sha256:3eba93adf101fc2a0863e049761bbd694f032a7b144f275c235fa88ce04dde27",
+  "file_count": 317,
   "files": [
     {
       "path": ".gitattributes",
@@ -206,7 +206,7 @@
     },
     {
       "path": "core/scripts/generate_final_lock.py",
-      "sha256": "407822cb1d928f33c1a62946512a6dd0cd3d38a2f5d6487d42bfee999fdfb1e3"
+      "sha256": "133f0957c3981a8f6bba58e8b106e8def45161628513bb7db33f5732148601ab"
     },
     {
       "path": "core/scripts/hardware_stage_c_acceptance.py",
@@ -682,11 +682,11 @@
     },
     {
       "path": "core/src/aura_core/evolution/owner_enroll.js",
-      "sha256": "2587439a4fdf5033853b8596c5d2456e75faf0bbe770f69e2bc97cd03cce0340"
+      "sha256": "32035247aa29377fbe2e17543525840ca97698557d610eb0be64591ee3db0e71"
     },
     {
       "path": "core/src/aura_core/evolution/owner_enrollment.py",
-      "sha256": "9681f63205effd0ed103f8820e17674f958b9ff3331c8eaf784d1b68dfad6620"
+      "sha256": "2e82ec9bbbb630c7455e863fa9f60598dac7fd91a312425bfb4aa4ff7bdf8be4"
     },
     {
       "path": "core/src/aura_core/evolution/owner_enrollment_http.py",
@@ -1263,6 +1263,10 @@
     {
       "path": "core/tests/test_osworld_secure_live.py",
       "sha256": "a9226fc4799f92f5b3923038b9c46b1d7bb2efc83b33707077758ddcf7e3a35b"
+    },
+    {
+      "path": "core/tests/test_owner_enrollment.py",
+      "sha256": "ae6a900a5bb0ec6c4c9521b79f62f6afbbc443438d27c6b3814a7e095d054cff"
     },
     {
       "path": "core/tests/test_real_hardware_osworld.py",
