@@ -62,11 +62,23 @@ def inspect_topology(container_id: str, *, expected_vm_hash: str) -> tuple[BootI
     if (nw.get("Id") != nid or nw.get("Internal") is not True
             or nw.get("EnableIPv6") is not False or nw.get("Driver") != "bridge"):
         raise IsolationDenied("Docker network is not strict internal IPv4 bridge")
+    # Require exactly the minimal privilege set, not merely a subset.
+    # Docker Engine may return capability names as CHOWN or CAP_CHOWN.
+    raw_caps = host.get("CapAdd")
+    caps = ({cap.removeprefix("CAP_") for cap in raw_caps}
+            if isinstance(raw_caps, list)
+            and all(isinstance(cap, str) for cap in raw_caps) else set())
     if (host.get("Privileged") is not False
             or host.get("PidMode") not in ("", None)
             or host.get("IpcMode") not in ("", None, "private")
             or host.get("NetworkMode") == "host"
-            or set(host.get("CapAdd") or []) - {"NET_ADMIN"}):
+            or caps != {"CHOWN", "NET_ADMIN"}
+            or len(raw_caps or []) != 2
+            or host.get("CapDrop") not in (["ALL"], ["CAP_ALL"])
+            or not any(
+                value in ("no-new-privileges", "no-new-privileges:true")
+                for value in (host.get("SecurityOpt") or [])
+            )):
         raise IsolationDenied("Unexpected elevated Docker sandbox host privileges")
     mounts = obj.get("Mounts") or []
     if (len(mounts) != 1

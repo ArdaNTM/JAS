@@ -118,7 +118,8 @@ def _docker_inspection():
         "Config": {"Image": IMAGE},
         "HostConfig": {
             "Privileged": False, "NetworkMode": NETWORK_NAME,
-            "PortBindings": binding, "CapAdd": ["NET_ADMIN"],
+            "PortBindings": binding, "CapAdd": ["CHOWN", "NET_ADMIN"],
+            "CapDrop": ["ALL"], "SecurityOpt": ["no-new-privileges:true"],
             "PidMode": "", "IpcMode": "private",
         },
         "NetworkSettings": {
@@ -161,6 +162,61 @@ def test_network_inspection_rejects_external_ports_networks_and_privilege(monkey
     c["HostConfig"]["Privileged"] = True
     with pytest.raises(IsolationDenied):
         network_audit.inspect_topology("a" * 64, expected_vm_hash="c" * 64)
+
+
+@pytest.mark.parametrize("capabilities", [
+    ["NET_ADMIN"],  # Missing CHOWN, Nginx cannot chown its working directory
+    ["CHOWN"],      # Missing NET_ADMIN for the pinned VM runtime
+    [],
+    ["CHOWN", "NET_ADMIN", "SYS_ADMIN"],
+    ["CHOWN", "NET_ADMIN", "DAC_OVERRIDE"],
+    ["ALL"],
+    ["CHOWN", "NET_ADMIN", "CHOWN"],
+])
+def test_network_attestation_rejects_unapproved_capabilities(monkeypatch, capabilities):
+    container, network = _docker_inspection()
+    container["HostConfig"]["CapAdd"] = capabilities
+    monkeypatch.setattr(
+        network_audit, "docker_json",
+        lambda args, **kwargs: [network] if args[:2] == ["network", "inspect"]
+        else [container],
+    )
+    with pytest.raises(IsolationDenied, match="privileges"):
+        network_audit.inspect_topology("a" * 64, expected_vm_hash="c" * 64)
+
+
+@pytest.mark.parametrize(("field", "value"), [
+    ("CapDrop", None),
+    ("CapDrop", []),
+    ("CapDrop", ["NET_RAW"]),
+    ("SecurityOpt", None),
+    ("SecurityOpt", []),
+])
+def test_network_attestation_rejects_weak_container_sandbox(monkeypatch, field, value):
+    container, network = _docker_inspection()
+    container["HostConfig"][field] = value
+    monkeypatch.setattr(
+        network_audit, "docker_json",
+        lambda args, **kwargs: [network] if args[:2] == ["network", "inspect"]
+        else [container],
+    )
+    with pytest.raises(IsolationDenied, match="privileges"):
+        network_audit.inspect_topology("a" * 64, expected_vm_hash="c" * 64)
+
+
+def test_network_attestation_accepts_normalized_cap_names(monkeypatch):
+    container, network = _docker_inspection()
+    container["HostConfig"]["CapAdd"] = ["CAP_CHOWN", "CAP_NET_ADMIN"]
+    monkeypatch.setattr(
+        network_audit, "docker_json",
+        lambda args, **kwargs: [network] if args[:2] == ["network", "inspect"]
+        else [container],
+    )
+    boot, ports, gateway = network_audit.inspect_topology(
+        "a" * 64, expected_vm_hash="c" * 64,
+    )
+    assert boot.network_id == "b" * 64
+    assert len(ports) == 4 and gateway == "172.22.0.1"
 
 
 def test_network_negative_checks_are_never_optimistic(monkeypatch):
@@ -247,6 +303,7 @@ def test_worker_network_patch_forces_isolated_ports_and_no_kvm(monkeypatch, tmp_
     assert options["environment"]["KVM"] == "N"
     assert options["volumes"][str(disk)]["mode"] == "ro"
     assert options["cap_drop"] == ["ALL"]
+    assert options["cap_add"] == ["CHOWN", "NET_ADMIN"]
     assert options["security_opt"] == ["no-new-privileges:true"]
     assert provider.seen_timeout == 900
 

@@ -137,7 +137,10 @@ def secure_docker_patch(
                     IMAGE, network=NETWORK,
                     labels={"aura.osworld.run_id": run_id},
                     environment={**self.environment, "AURA_OSWORLD_GOVERNED": "1"},
-                    cap_drop=["ALL"], cap_add=["NET_ADMIN"],
+                    # The pinned Nginx startup chowns /var/lib/nginx/body
+                    # to www-data (uid 33); CAP_CHOWN is the minimal required
+                    # capability. Do not restore Docker defaults or privileged.
+                    cap_drop=["ALL"], cap_add=["CHOWN", "NET_ADMIN"],
                     security_opt=["no-new-privileges:true"],
                     pids_limit=512,
                     devices=devices,
