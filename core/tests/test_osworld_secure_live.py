@@ -564,10 +564,10 @@ def test_worker_network_patch_forces_isolated_ports_and_no_kvm(monkeypatch, tmp_
     assert seed_opts["cap_drop"] == ["ALL"]
     assert seed_opts["security_opt"] == ["no-new-privileges:true"]
     assert seed_opts["entrypoint"] == ["/bin/sh", "-ec"]
-    assert seed_opts["command"] == worker.STORAGE_SEED_SCRIPT
-    assert "chmod 0644 /storage/uefi.rom" in seed_opts["command"]
-    assert "chmod 0755 /storage" in seed_opts["command"]
-    assert "cp /usr/share/OVMF/edk2-x86_64-code.fd" in seed_opts["command"]
+    assert seed_opts["command"] == [worker.STORAGE_SEED_SCRIPT]
+    assert "chmod 0644 /storage/uefi.rom" in seed_opts["command"][0]
+    assert "chmod 0755 /storage" in seed_opts["command"][0]
+    assert "cp /usr/share/OVMF/edk2-x86_64-code.fd" in seed_opts["command"][0]
     _, options = calls[1]
     assert options["network"] == NETWORK_NAME
     assert options["ports"][5000] == ("127.0.0.1", 6000)

@@ -5,7 +5,7 @@
   "generated_at": "2026-10-31T23:10:00Z",
   "git_commit": "6a88a5b131b0e064bc8840f1db6605facc791981",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:92d156f3ca2d638c986d35b531683af2742871bca450cb88945e09cbb02c0a07",
+  "release_digest": "sha256:57c7bc8086ab45ec01d66df625c9044edc9a77e2e7e85bd89c613f5630e841ac",
   "file_count": 314,
   "files": [
     {
@@ -222,7 +222,7 @@
     },
     {
       "path": "core/scripts/osworld_secure_worker.py",
-      "sha256": "aaf48a30a7225e2599f2dd742c79594324ea2cd41e1f076f8bd062f3d4801edf"
+      "sha256": "97b80c513afdee8df4015f1528caf967b6faa9ab9c3a11812e2b3c93906230da"
     },
     {
       "path": "core/scripts/osworld_v2_lab.py",
@@ -1254,7 +1254,7 @@
     },
     {
       "path": "core/tests/test_osworld_secure_live.py",
-      "sha256": "b0d9aa7b10ecbe23c4863ca5e787a96a3c33372480166db4ee137a8c311871cf"
+      "sha256": "b88e512aa9c46ab8c7b9c252059d00c5834dd7f2004f389521e1b3b1c756584a"
     },
     {
       "path": "core/tests/test_real_hardware_osworld.py",

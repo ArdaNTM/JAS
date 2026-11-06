@@ -189,7 +189,7 @@ def secure_docker_patch(
             )
             self._aura_storage_volume = volume
             self.client.containers.run(
-                IMAGE, command=STORAGE_SEED_SCRIPT,
+                IMAGE, command=[STORAGE_SEED_SCRIPT],
                 entrypoint=["/bin/sh", "-ec"], user="0:0",
                 network_mode="none",
                 cap_drop=["ALL"],
