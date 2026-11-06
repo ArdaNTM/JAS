@@ -143,7 +143,7 @@ def verify_running_container(container: object, network_id: str) -> None:
                 ("/dev/net/tun", "/dev/net/tun", "rwm"),
                 ("/dev/kvm", "/dev/kvm", "rwm"),
             }):
-        raise WorkerDenied("Required pinned /dev/net/tun device missing or changed")
+        raise WorkerDenied("Required pinned TUN /dev/net/tun device missing or changed")
     host_ports = host.get("PortBindings") or {}
     if set(host_ports) != {str(p) + "/tcp" for p in PORTS}:
         raise WorkerDenied("Unexpected VM control port")
