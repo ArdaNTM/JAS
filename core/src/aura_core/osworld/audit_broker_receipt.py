@@ -6,6 +6,7 @@ Signer keys are independently provisioned outside the repo, never generated here
 from __future__ import annotations
 
 import base64
+from contextlib import contextmanager
 import binascii
 import hashlib
 import json
@@ -75,14 +76,18 @@ class DurableNonceStore:
             """)
         _harden_state_file(path)
 
-    def _connect(self) -> sqlite3.Connection:
+    @contextmanager
+    def _connect(self):
         db = sqlite3.connect(
             self.path, timeout=2.0, isolation_level=None,
         )
-        db.execute("PRAGMA busy_timeout=2000")
-        db.execute("PRAGMA journal_mode=DELETE")
-        db.execute("PRAGMA synchronous=FULL")
-        return db
+        try:
+            db.execute("PRAGMA busy_timeout=2000")
+            db.execute("PRAGMA journal_mode=DELETE")
+            db.execute("PRAGMA synchronous=FULL")
+            yield db
+        finally:
+            db.close()
 
     def claim(self, nonce: str, *, now: int | None = None) -> bool:
         if type(nonce) is not str or not _HEX32.fullmatch(nonce):

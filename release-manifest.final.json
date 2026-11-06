@@ -2,15 +2,15 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "review-candidate",
-  "generated_at": "2026-11-07T00:15:00+01:00",
-  "git_commit": "486132e35140ed07ba2f6d675ecdcdcda5e89e1b",
+  "generated_at": "2026-11-07T00:30:00+01:00",
+  "git_commit": "3618ed521cc7ad767f91f57f75c4d3af8c154200",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:dea9b74f5df2ee06274725403452583455c0e6bf2ff9e238d2c82ab3869c481b",
+  "release_digest": "sha256:4da4139cef2b524abc01d80473ea1890ed3ef55ee1efb07d926adf2136c0070d",
   "file_count": 323,
   "files": [
     {
       "path": ".gitattributes",
-      "sha256": "6db80b6e5d1166f006510a27be3459967967bfcf10fbb5afb7c4942ac68d891a"
+      "sha256": "39e199665cd36c2251cf7ef460379eafe94c8682030f016d03e03eb6ba9dc602"
     },
     {
       "path": ".github/workflows/aura-osworld-secure-live.yml",
@@ -1074,11 +1074,11 @@
     },
     {
       "path": "core/src/aura_core/osworld/audit_broker_receipt.py",
-      "sha256": "07dbb32a6634438a45c8332e829535b5807c5dbdefd8f87714dc86e581303f14"
+      "sha256": "e4c32706951bd20005c5f72d4a21a3c2eb64cb6587eef4462c63075c7efbc2cc"
     },
     {
       "path": "core/src/aura_core/osworld/audit_broker_windows.py",
-      "sha256": "f3b12b022ac26089c2de757c00f1633083bcd7b828092791c555d14cabbf5c4c"
+      "sha256": "85114c423a83afd9dc707a14cf07a298b3e2ac7d2c79032e43c9a639427af54c"
     },
     {
       "path": "core/src/aura_core/osworld/isolation.py",

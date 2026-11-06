@@ -67,15 +67,17 @@ def authenticated_pipe_peer_sid(handle: object) -> str:
             security.RevertToSelf()
 
 
-def _pipe_security_attributes(auditor_sid: str):
+def _pipe_security_attributes(auditor_sid: str, service_sid: str):
     pywintypes, _, _, _, _, security = _win32()
     # Windows SID syntax is checked by ConvertStringSidToSid; never accept
     # an SDDL fragment from an untrusted caller.
     security.ConvertStringSidToSid(auditor_sid)
+    security.ConvertStringSidToSid(service_sid)
     sddl = (
-        "O:SYG:SYD:P"
+        "D:P"
         "(A;;GA;;;SY)"
         "(A;;GA;;;BA)"
+        f"(A;;GA;;;{service_sid})"
         f"(A;;GRGW;;;{auditor_sid})"
     )
     descriptor = security.ConvertStringSecurityDescriptorToSecurityDescriptor(
@@ -109,7 +111,7 @@ def serve_once(
         raise BrokerDenied("Broker must run under isolated service identity")
 
     _, _, _, win32file, win32pipe, _ = _win32()
-    attrs = _pipe_security_attributes(auditor_sid)
+    attrs = _pipe_security_attributes(auditor_sid, service_sid)
 
     handle = win32pipe.CreateNamedPipe(
         PIPE_NAME,
