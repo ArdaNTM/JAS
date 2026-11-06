@@ -13,6 +13,8 @@ import re
 import socket
 from urllib.parse import urlsplit
 
+_PROXY_TOKEN = re.compile(r"^[0-9a-f]{64}$")
+
 from aura_core.mcp.dispatch_context import current_dispatch
 from aura_core.mcp.mcp_provider import MCPTool
 
@@ -67,8 +69,27 @@ class OriginGuard:
 class PlaywrightSessions:
     """An ephemeral Chromium context per run; no ambient browser profile."""
 
-    def __init__(self, guard: OriginGuard):
+    def __init__(
+        self, guard: OriginGuard, *,
+        proxy_server: str | None = None,
+        proxy_token: str | None = None,
+    ) -> None:
         self._guard = guard
+        self._proxy: dict[str, str] | None = None
+        if proxy_server is not None or proxy_token is not None:
+            if not isinstance(proxy_server, str) or not isinstance(proxy_token, str):
+                raise ValueError("Authenticated local proxy requires endpoint and token")
+            parts = urlsplit(proxy_server)
+            if (parts.scheme != "http" or parts.hostname != "127.0.0.1"
+                    or parts.port is None or not 1 <= parts.port <= 65535
+                    or parts.username or parts.password
+                    or parts.path not in ("", "/") or parts.query or parts.fragment
+                    or not _PROXY_TOKEN.fullmatch(proxy_token)):
+                raise ValueError("Pinned browser proxy must be authenticated loopback HTTP")
+            self._proxy = {
+                "server": f"http://127.0.0.1:{parts.port}",
+                "username": "aura", "password": proxy_token,
+            }
         self._sessions: dict[str, tuple[object, object, object, object]] = {}
 
     async def _page(self, run_id: str):
@@ -77,7 +98,12 @@ class PlaywrightSessions:
         from playwright.async_api import async_playwright
         engine = await async_playwright().start()
         try:
-            browser = await engine.chromium.launch(headless=True)
+            # Chromium validates destination TLS cert and SNI through the
+            # authenticated pinned CONNECT proxy; no certificate bypass.
+            browser = await engine.chromium.launch(
+                headless=True,
+                **({"proxy": self._proxy} if self._proxy is not None else {}),
+            )
             context = await browser.new_context(
                 accept_downloads=False, service_workers="block",
                 permissions=[], ignore_https_errors=False,

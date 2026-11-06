@@ -289,9 +289,20 @@ def build_app() -> FastAPI:
     if stage_c_browser_enabled:
         if os.getenv("AURA_STAGE_C_EGRESS_ISOLATED", "0").strip() != "1":
             raise RuntimeError("BrowserControl requires explicitly isolated network egress")
+        # Application-only DNS checks do not prevent rebinding. The browser is
+        # fail-closed unless an authenticated pinned-IP CONNECT proxy and
+        # independently enforced OS/VM network isolation are provisioned.
+        if os.getenv("AURA_STAGE_C_EGRESS_FIREWALL_CONFIRMED", "0").strip() != "1":
+            raise RuntimeError("BrowserControl requires operator-verified VM firewall isolation")
+        proxy_server = os.getenv("AURA_STAGE_C_EGRESS_PROXY_URL", "").strip()
+        proxy_token = os.getenv("AURA_STAGE_C_EGRESS_PROXY_TOKEN", "").strip()
         raw_origins = os.getenv("AURA_STAGE_C_BROWSER_ORIGINS", "")
         guard = OriginGuard(tuple(v.strip() for v in raw_origins.split(",") if v.strip()))
-        browser_sessions = PlaywrightSessions(guard)
+        browser_sessions = PlaywrightSessions(
+            guard, proxy_server=proxy_server, proxy_token=proxy_token,
+        )
+        if browser_sessions._proxy is None:
+            raise RuntimeError("BrowserControl requires an authenticated pinned CONNECT proxy")
         browser_provider = BrowserControlMCPProvider(browser_sessions)
         kernel.permission_engine.add_policy(PermissionPolicy(
             policy_id="local-owner:stage-c:browser",

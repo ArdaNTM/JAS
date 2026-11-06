@@ -67,6 +67,8 @@ def files_to_hash() -> list[Path]:
         ROOT / "core" / "scripts" / "hardware_stage_c_acceptance.py",
         ROOT / ".github" / "workflows" / "aura-stage-c-assurance.yml",
         ROOT / ".github" / "workflows" / "aura-secure-evolution.yml",
+        ROOT / ".github" / "workflows" / "aura-physical-trust-acceptance.yml",
+        ROOT / "core" / "scripts" / "start_pinned_egress_proxy.py",
         # Integrate opt-in voice artifacts and the privileged Electron shell.
         ROOT / "core" / "scripts" / "install_nirvana_voice_models.py",
         ROOT / "core" / "scripts" / "kokoro_tts_mcp.py",
