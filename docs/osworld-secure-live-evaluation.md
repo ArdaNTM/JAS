@@ -39,15 +39,28 @@ attestor checks the named volume's exact local driver, run-specific labels,
 mount identity and denies remote drivers or extra mounts. The /storage
 volume is intentionally NOT a tmpfs: it must accommodate 32 GB sparse disks.
 
-The VM also needs a TUN character device for NAT/TAP; the worker
-explicitly binds exactly /dev/net/tun:/dev/net/tun:rwm, retaining only
-NET_ADMIN and CHOWN capabilities and cap_drop=ALL. If Docker Desktop's
-Linux daemon lacks /dev/net/tun, VM startup is BLOCKED instead of
-enabling mknod, MKNOD, DAC_OVERRIDE, SYS_ADMIN, privileged or ungoverned
-SLIRP fallback. The attestor and pre-action worker re-check the device.
-Note: VM guest networking and the container's host-published screenshot
-API are separate layers; TUN fallback does not itself remove Docker's
-published port mapping.
+Docker Desktop's WSL2 Linux kernel can reject the pinned image's
+iptables NAT initialization even with NET_ADMIN and an explicitly mapped
+/dev/net/tun device. The worker now requests QEMU's supported user-mode
+SLIRP **explicitly** using NETWORK=user, USER_PORTS=5000,8080,9222 and
+HOST_PORTS=8006. Those are fixed literal environment values, overriding
+untrusted provider environment settings. The guest's screenshot API (5000),
+VLC (8080) and Chrome debugging endpoint (9222) are forwarded inside the
+container; 8006 remains the container's own web UI and is never a guest
+forwarding target. Docker publishes these four endpoints to 127.0.0.1
+only. Both the worker's pre-action inspection and the independent host
+attestor reject missing, duplicate or mutated QEMU network environment
+values; a permissive, automatic fallback is not an attested configuration.
+
+This targeted compatibility hotfix intentionally makes no change to the
+existing Docker capability/device inventory: cap_drop=ALL,
+cap_add=CHOWN,NET_ADMIN, and exactly /dev/net/tun (plus optional pinned
+/dev/kvm) remain enforced, with no privileged, MKNOD, SYS_ADMIN or kernel
+module loading. They are *not required by SLIRP itself* and should be
+removed in a separate, tested tightening change after real Windows VM
+readiness is confirmed. This is not a claim that host or guest isolation
+has been physically certified: the signed host negative probes and
+Owner/MCP authorization gates remain mandatory.
 
 With those constraints, it runs QEMU
 with KVM=N when hardware KVM is unavailable. The official Ubuntu disk image
