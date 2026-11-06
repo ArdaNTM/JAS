@@ -27,6 +27,11 @@ ALPINE = "alpine:3.21"
 NGINX_LOG_TMPFS = "rw,nosuid,nodev,noexec,size=16m,mode=0755"
 STORAGE_VOLUME_PREFIX = "aura-osworld-v21-storage-"
 STORAGE_VOLUME_PURPOSE = "vm-storage"
+# Independent host policy: explicit SLIRP must forward only approved guest
+# services, never the container-hosted 8006 web UI.
+GUEST_NETWORK_MODE = "user"
+GUEST_FORWARD_PORTS = "5000,8080,9222"
+CONTAINER_ONLY_PORTS = "8006"
 MAX_DOCKER_OUTPUT = 2_000_000
 
 
@@ -52,6 +57,16 @@ def inspect_topology(container_id: str, *, expected_vm_hash: str) -> tuple[BootI
         raise IsolationDenied("Docker returned no unambiguous container")
     obj = info[0]
     config = obj.get("Config") or {}
+    env = config.get("Env")
+    if not isinstance(env, list) or not all(isinstance(item, str) for item in env):
+        raise IsolationDenied("Missing governed QEMU network environment")
+    for key, expected in (
+        ("NETWORK", GUEST_NETWORK_MODE),
+        ("USER_PORTS", GUEST_FORWARD_PORTS),
+        ("HOST_PORTS", CONTAINER_ONLY_PORTS),
+    ):
+        if [item[len(key) + 1:] for item in env if item.startswith(key + "=")] != [expected]:
+            raise IsolationDenied("Unapproved QEMU network mode or guest port forwarding")
     host = obj.get("HostConfig") or {}
     network_settings = obj.get("NetworkSettings") or {}
     nets = network_settings.get("Networks") or {}
