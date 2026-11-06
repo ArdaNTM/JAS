@@ -119,9 +119,14 @@ def create_owner_control_plane(
                 "status": r.status.value,
             }
             for r in approvals.list_pending(limit=100)
-            if r.capability_id == "GovernedSkillActivation"
-            and r.principal_id == "local_owner"
-            and r.operation_id in {"activate", "rollback", "revoke"}
+            if r.principal_id == "local_owner"
+            and (
+                (r.capability_id == "GovernedSkillActivation"
+                 and r.operation_id in {"activate", "rollback", "revoke"})
+                or (r.capability_id == "OSWorldVM"
+                    and r.operation_id == "GuestAction"
+                    and r.resource_scope == "osworld:v2.1:disposable_vm")
+            )
         ], "mode": "read_only_until_owner_auth"}
 
     @app.post("/api/owner/challenge")
@@ -150,7 +155,9 @@ def create_owner_control_plane(
         # handoff only after a server-verified passkey decision. The client
         # transports it explicitly; this endpoint NEVER executes an MCP tool.
         receipt = None
-        if updated.status is ApprovalStatus.APPROVED and receipt_issuer is not None:
+        if (updated.status is ApprovalStatus.APPROVED
+                and updated.capability_id == "GovernedSkillActivation"
+                and receipt_issuer is not None):
             receipt = receipt_issuer.issue(updated)
         return {
             "approval_id": updated.approval_id, "status": updated.status.value,

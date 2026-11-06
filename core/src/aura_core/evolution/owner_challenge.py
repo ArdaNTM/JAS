@@ -91,12 +91,23 @@ class TrustedOwnerPasskeyDecider:
 
     def _record(self, approval_id: str):
         record = self._approvals.get(approval_id)
-        if (record is None or record.status is not ApprovalStatus.PENDING
-                or record.capability_id != "GovernedSkillActivation"
-                or record.principal_id != "local_owner"
-                or record.policy_digest != self._policy
-                or record.operation_id not in {"activate", "rollback", "revoke"}
-                or record.resource_scope != "evolution:skill:" + record.request_fingerprint):
+        if record is None or record.status is not ApprovalStatus.PENDING:
+            raise PermissionError("Owner request is not pending")
+        governed = (
+            record.capability_id == "GovernedSkillActivation"
+            and record.operation_id in {"activate", "rollback", "revoke"}
+            and record.resource_scope == "evolution:skill:" + record.request_fingerprint
+        )
+        # OSWorld VM requests are separately fingerprint-bound by MCPGateway
+        # (principal, capability, operation, scope, action payload and policy).
+        # The same native WebAuthn challenge still requires exact policy digest.
+        vm = (
+            record.capability_id == "OSWorldVM"
+            and record.operation_id == "GuestAction"
+            and record.resource_scope == "osworld:v2.1:disposable_vm"
+        )
+        if (record.principal_id != "local_owner"
+                or record.policy_digest != self._policy or not (governed or vm)):
             raise PermissionError("Not an eligible owner-governed pending approval")
         return record
 
