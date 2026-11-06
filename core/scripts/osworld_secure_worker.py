@@ -31,6 +31,11 @@ RELEASE = "osworld-v2.1"
 NETWORK = "aura-osworld-v21-lab"
 IMAGE = "happysixd/osworld-docker@sha256:0e6497a9295647cf05bf2b2af522fdd79bdeba2737595259cab310a3bcf6baa9"
 PORTS = (5000, 8006, 8080, 9222)
+# Explicit QEMU SLIRP forwarding avoids kernel iptables NAT on Docker Desktop.
+# 8006 is the container's own web UI, never a forwarded guest listener.
+GUEST_NETWORK_MODE = "user"
+GUEST_FORWARD_PORTS = "5000,8080,9222"
+CONTAINER_ONLY_PORTS = "8006"
 # Empty root-owned, memory-bounded log directory: no DAC_OVERRIDE, no host bind.
 NGINX_LOG_TMPFS = "rw,nosuid,nodev,noexec,size=16m,mode=0755"
 STORAGE_VOLUME_PREFIX = "aura-osworld-v21-storage-"
@@ -102,6 +107,16 @@ def verify_running_container(container: object, network_id: str) -> None:
     host = attrs.get("HostConfig") or {}
     settings = attrs.get("NetworkSettings") or {}
     networks = settings.get("Networks") or {}
+    env = (attrs.get("Config") or {}).get("Env")
+    if not isinstance(env, list) or not all(isinstance(item, str) for item in env):
+        raise WorkerDenied("Missing pinned QEMU network environment")
+    for key, expected in (
+        ("NETWORK", GUEST_NETWORK_MODE),
+        ("USER_PORTS", GUEST_FORWARD_PORTS),
+        ("HOST_PORTS", CONTAINER_ONLY_PORTS),
+    ):
+        if [item[len(key) + 1:] for item in env if item.startswith(key + "=")] != [expected]:
+            raise WorkerDenied("Unexpected QEMU network mode or forwarded ports")
     if (attrs.get("State", {}).get("Running") is not True
             or attrs.get("Config", {}).get("Image") != IMAGE
             or host.get("Privileged") is not False
@@ -213,7 +228,13 @@ def secure_docker_patch(
                 self.container = self.client.containers.run(
                     IMAGE, network=NETWORK,
                     labels={"aura.osworld.run_id": run_id},
-                    environment={**self.environment, "AURA_OSWORLD_GOVERNED": "1"},
+                    environment={
+                        **self.environment,
+                        "AURA_OSWORLD_GOVERNED": "1",
+                        "NETWORK": GUEST_NETWORK_MODE,
+                        "USER_PORTS": GUEST_FORWARD_PORTS,
+                        "HOST_PORTS": CONTAINER_ONLY_PORTS,
+                    },
                     # The pinned Nginx startup chowns /var/lib/nginx/body
                     # to www-data (uid 33); CAP_CHOWN is the minimal required
                     # capability. Do not restore Docker defaults or privileged.
