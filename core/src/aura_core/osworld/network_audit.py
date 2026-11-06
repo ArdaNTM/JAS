@@ -22,6 +22,8 @@ from .isolation import (
 )
 
 ALPINE = "alpine:3.21"
+# HostConfig.Tmpfs must match the worker policy EXACTLY.
+NGINX_LOG_TMPFS = "rw,nosuid,nodev,noexec,size=16m,mode=0755"
 MAX_DOCKER_OUTPUT = 2_000_000
 
 
@@ -80,12 +82,25 @@ def inspect_topology(container_id: str, *, expected_vm_hash: str) -> tuple[BootI
                 for value in (host.get("SecurityOpt") or [])
             )):
         raise IsolationDenied("Unexpected elevated Docker sandbox host privileges")
+    # Empty bounded tmpfs masks the pinned image's unwritable Nginx log file,
+    # without granting DAC_OVERRIDE or mounting a writable host path.
+    # Docker Engine can report the tmpfs only in HostConfig.Tmpfs or also in
+    # Mounts depending on the creation API and Engine version.
+    if (host.get("Tmpfs") or {}) != {"/var/log/nginx": NGINX_LOG_TMPFS}:
+        raise IsolationDenied("Unexpected Nginx log tmpfs policy")
     mounts = obj.get("Mounts") or []
-    if (len(mounts) != 1
-            or mounts[0].get("Destination") != "/System.qcow2"
-            or mounts[0].get("RW") is not False
+    if not isinstance(mounts, list) or not all(isinstance(m, dict) for m in mounts):
+        raise IsolationDenied("Malformed Docker mount inventory")
+    disk_mounts = [m for m in mounts if m.get("Destination") == "/System.qcow2"]
+    log_mounts = [m for m in mounts if m.get("Destination") == "/var/log/nginx"]
+    if (len(disk_mounts) != 1 or disk_mounts[0].get("RW") is not False
+            or disk_mounts[0].get("Type") not in (None, "bind")
+            or len(log_mounts) > 1
+            or any(m.get("Type") != "tmpfs" or m.get("RW") is not True
+                   for m in log_mounts)
+            or len(mounts) != len(disk_mounts) + len(log_mounts)
             or any("docker.sock" in str(m.get("Source", "")) for m in mounts)):
-        raise IsolationDenied("Container mounts exceed read-only guest disk")
+        raise IsolationDenied("Container mounts exceed pinned disk and bounded Nginx tmpfs")
     if config.get("Image") != IMAGE:
         raise IsolationDenied("Runtime image not pinned to approved digest")
     bindings = host.get("PortBindings") or {}

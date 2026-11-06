@@ -31,6 +31,8 @@ RELEASE = "osworld-v2.1"
 NETWORK = "aura-osworld-v21-lab"
 IMAGE = "happysixd/osworld-docker@sha256:0e6497a9295647cf05bf2b2af522fdd79bdeba2737595259cab310a3bcf6baa9"
 PORTS = (5000, 8006, 8080, 9222)
+# Empty root-owned, memory-bounded log directory: no DAC_OVERRIDE, no host bind.
+NGINX_LOG_TMPFS = "rw,nosuid,nodev,noexec,size=16m,mode=0755"
 ALLOWED_KEYS = frozenset({"enter", "esc", "tab", "backspace", "space", "up", "down", "left", "right"})
 UUID_ID = re.compile(r"^[0-9a-f]{3}$")
 DIGEST = re.compile(r"^[0-9a-f]{64}$")
@@ -90,6 +92,8 @@ def verify_running_container(container: object, network_id: str) -> None:
             or set(networks) != {NETWORK}
             or networks[NETWORK].get("NetworkID") != network_id):
         raise WorkerDenied("Running VM network or image has changed")
+    if (host.get("Tmpfs") or {}) != {"/var/log/nginx": NGINX_LOG_TMPFS}:
+        raise WorkerDenied("Nginx logs must use the exact bounded private tmpfs")
     host_ports = host.get("PortBindings") or {}
     if set(host_ports) != {str(p) + "/tcp" for p in PORTS}:
         raise WorkerDenied("Unexpected VM control port")
@@ -145,6 +149,11 @@ def secure_docker_patch(
                     pids_limit=512,
                     devices=devices,
                     volumes={str(disk): {"bind": "/System.qcow2", "mode": "ro"}},
+                    # The pinned Nginx image's pre-existing error.log is not
+                    # writable without broad DAC permissions. Overlay only its
+                    # log DIRECTORY with an empty, root-owned, size-bounded tmpfs.
+                    # No host bind, entrypoint override, or new Linux capability.
+                    tmpfs={"/var/log/nginx": NGINX_LOG_TMPFS},
                     ports={
                         8006: ("127.0.0.1", self.vnc_port),
                         5000: ("127.0.0.1", self.server_port),

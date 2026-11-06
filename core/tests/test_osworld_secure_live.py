@@ -120,6 +120,7 @@ def _docker_inspection():
             "Privileged": False, "NetworkMode": NETWORK_NAME,
             "PortBindings": binding, "CapAdd": ["CHOWN", "NET_ADMIN"],
             "CapDrop": ["ALL"], "SecurityOpt": ["no-new-privileges:true"],
+            "Tmpfs": {"/var/log/nginx": network_audit.NGINX_LOG_TMPFS},
             "PidMode": "", "IpcMode": "private",
         },
         "NetworkSettings": {
@@ -219,6 +220,101 @@ def test_network_attestation_accepts_normalized_cap_names(monkeypatch):
     assert len(ports) == 4 and gateway == "172.22.0.1"
 
 
+@pytest.mark.parametrize("tmpfs", [
+    None,
+    {},
+    {"/var/log/nginx": "rw,size=16m,mode=1777"},
+    {"/var/log/nginx": "rw,nosuid,nodev,noexec,size=1g,mode=0755"},
+    {"/var/log/nginx": network_audit.NGINX_LOG_TMPFS,
+     "/var/log": network_audit.NGINX_LOG_TMPFS},
+    {"/var/log/nginx": "rw,exec,suid,dev,size=16m,mode=0755"},
+])
+def test_attestor_denies_missing_or_weakened_nginx_tmpfs(monkeypatch, tmpfs):
+    container, network = _docker_inspection()
+    container["HostConfig"]["Tmpfs"] = tmpfs
+    monkeypatch.setattr(
+        network_audit, "docker_json",
+        lambda args, **kwargs: [network] if args[:2] == ["network", "inspect"]
+        else [container],
+    )
+    with pytest.raises(IsolationDenied, match="tmpfs"):
+        network_audit.inspect_topology("a" * 64, expected_vm_hash="c" * 64)
+
+
+def test_attestor_accepts_nginx_tmpfs_in_mount_inventory(monkeypatch):
+    container, network = _docker_inspection()
+    container["Mounts"].append({
+        "Type": "tmpfs", "Destination": "/var/log/nginx",
+        "RW": True, "Source": "",
+    })
+    monkeypatch.setattr(
+        network_audit, "docker_json",
+        lambda args, **kwargs: [network] if args[:2] == ["network", "inspect"]
+        else [container],
+    )
+    boot, ports, gateway = network_audit.inspect_topology(
+        "a" * 64, expected_vm_hash="c" * 64,
+    )
+    assert boot.network_id == "b" * 64
+    assert len(ports) == 4 and gateway == "172.22.0.1"
+
+
+@pytest.mark.parametrize("invalid_mount", [
+    {"Type": "bind", "Destination": "/var/log/nginx", "RW": True,
+     "Source": "/host/secret"},
+    {"Type": "tmpfs", "Destination": "/etc/nginx", "RW": True,
+     "Source": ""},
+])
+def test_attestor_rejects_unapproved_writable_mounts(monkeypatch, invalid_mount):
+    container, network = _docker_inspection()
+    container["Mounts"].append(invalid_mount)
+    monkeypatch.setattr(
+        network_audit, "docker_json",
+        lambda args, **kwargs: [network] if args[:2] == ["network", "inspect"]
+        else [container],
+    )
+    with pytest.raises(IsolationDenied, match="mounts"):
+        network_audit.inspect_topology("a" * 64, expected_vm_hash="c" * 64)
+
+
+@pytest.mark.parametrize("changed_policy", [
+    None,
+    {},
+    {"/var/log/nginx": "rw,exec,suid,size=16m,mode=0777"},
+    {"/var/log/nginx": "rw,nosuid,nodev,noexec,size=64m,mode=0755"},
+])
+def test_worker_revalidates_exact_nginx_log_tmpfs_before_vm_action(changed_policy):
+    worker = _script("osworld_secure_worker")
+
+    class StubContainer:
+        def __init__(self, policy):
+            self.attrs = {
+                "State": {"Running": True},
+                "Config": {"Image": worker.IMAGE},
+                "HostConfig": {
+                    "Privileged": False, "NetworkMode": worker.NETWORK,
+                    "Tmpfs": policy,
+                    "PortBindings": {
+                        f"{port}/tcp": [{"HostIp": "127.0.0.1"}]
+                        for port in worker.PORTS
+                    },
+                },
+                "NetworkSettings": {
+                    "Networks": {worker.NETWORK: {"NetworkID": "b" * 64}},
+                },
+            }
+
+        def reload(self):
+            pass
+
+    valid = StubContainer({"/var/log/nginx": worker.NGINX_LOG_TMPFS})
+    worker.verify_running_container(valid, "b" * 64)
+
+    invalid = StubContainer(changed_policy)
+    with pytest.raises(worker.WorkerDenied, match="tmpfs"):
+        worker.verify_running_container(invalid, "b" * 64)
+
+
 def test_network_negative_checks_are_never_optimistic(monkeypatch):
     monkeypatch.setattr(network_audit, "_probe", lambda container, code: False)
     checks = network_audit.negative_network_probes("a" * 64, "172.22.0.1")
@@ -304,6 +400,7 @@ def test_worker_network_patch_forces_isolated_ports_and_no_kvm(monkeypatch, tmp_
     assert options["volumes"][str(disk)]["mode"] == "ro"
     assert options["cap_drop"] == ["ALL"]
     assert options["cap_add"] == ["CHOWN", "NET_ADMIN"]
+    assert options["tmpfs"] == {"/var/log/nginx": worker.NGINX_LOG_TMPFS}
     assert options["security_opt"] == ["no-new-privileges:true"]
     assert provider.seen_timeout == 900
 

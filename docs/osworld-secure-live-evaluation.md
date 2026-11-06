@@ -16,7 +16,14 @@ Every VM action requires independent MCP Gateway + human Owner WebAuthn.
 The OSWorld worker patches the DockerProvider only in that isolated Python
 3.12 interpreter, not in the upstream checkout. The container MUST use the
 existing aura-osworld-v21-lab internal IPv4-only bridge with no external
-network attachment and only four localhost control ports. It runs QEMU
+network attachment and only four localhost control ports. To avoid granting DAC_OVERRIDE for
+the pinned Nginx error.log, the worker overlays ONLY /var/log/nginx with a
+root-owned 16 MiB tmpfs (rw,nosuid,nodev,noexec,mode=0755). No host log bind,
+privileged container, custom entrypoint or additional Linux capability.
+The host attestor requires this exact tmpfs and rejects extra mounts.
+Nginx files written to tmpfs are intentionally ephemeral and may disappear
+at container exit. Collect startup stderr with the Docker monitor, and
+inspect in-container logs before VM teardown if needed. It runs QEMU
 with KVM=N when hardware KVM is unavailable. The official Ubuntu disk image
 mount is read-only and the worker has a random per-run cleanup label.
 
