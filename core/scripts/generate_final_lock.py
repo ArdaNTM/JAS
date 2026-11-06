@@ -68,6 +68,12 @@ def files_to_hash() -> list[Path]:
         ROOT / ".github" / "workflows" / "aura-stage-c-assurance.yml",
         ROOT / ".github" / "workflows" / "aura-secure-evolution.yml",
         ROOT / ".github" / "workflows" / "aura-physical-trust-acceptance.yml",
+        ROOT / ".github" / "workflows" / "aura-real-hardware-osworld.yml",
+        ROOT / "core" / "scripts" / "physical_webauthn_probe.py",
+        ROOT / "core" / "scripts" / "physical_microphone_probe.py",
+        ROOT / "core" / "scripts" / "verify_physical_hardware.py",
+        ROOT / "core" / "scripts" / "run_osworld_v2_live.py",
+        ROOT / "core" / "tests" / "test_real_hardware_osworld.py",
         ROOT / "core" / "scripts" / "start_pinned_egress_proxy.py",
         # Integrate opt-in voice artifacts and the privileged Electron shell.
         ROOT / "core" / "scripts" / "install_nirvana_voice_models.py",

@@ -5,16 +5,20 @@
   "generated_at": "2026-10-31T23:10:00Z",
   "git_commit": "6a88a5b131b0e064bc8840f1db6605facc791981",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:165c7f74f7a9fc42cf07bd57102c71a80082e1fbd642ba0b588d25577c8e596e",
-  "file_count": 298,
+  "release_digest": "sha256:5a8bef650035cf4a89577f6564a58304f7ff410a6edc7bec9933276c467ea1e3",
+  "file_count": 307,
   "files": [
     {
       "path": ".gitattributes",
-      "sha256": "5ea37efe8f52ed1f432d2a216f196453a4ab0b4d5e3de25d3acde2582b8bd8a4"
+      "sha256": "32c1a4911d84da7f8498f1c3b9197ad37281636990f201f5fb4e7184cdb9aac7"
     },
     {
       "path": ".github/workflows/aura-physical-trust-acceptance.yml",
       "sha256": "c777a84ef17c8b1e36d067c5150a1d2bb19ffbe78083280afb2684bf30c16532"
+    },
+    {
+      "path": ".github/workflows/aura-real-hardware-osworld.yml",
+      "sha256": "8fddc666841c509941774f3a60d3c95b2bb4e2f6517635e3a68c10a58ed9dbe8"
     },
     {
       "path": ".github/workflows/aura-secure-evolution.yml",
@@ -194,7 +198,7 @@
     },
     {
       "path": "core/scripts/generate_final_lock.py",
-      "sha256": "11d0b6fa019ba03c901c0d62dc68354e159d3a4d6d698996d122524e580f1a42"
+      "sha256": "fe245fcaa40b2420a0a4681f1177dcf0ea24e6c517ca0b605db274976a5c7a63"
     },
     {
       "path": "core/scripts/hardware_stage_c_acceptance.py",
@@ -210,11 +214,23 @@
     },
     {
       "path": "core/scripts/osworld_v2_lab.py",
-      "sha256": "7e44d7434b59d7d18bd7222c61c619ce4c10063c8b662b772e66fd2c2ec182aa"
+      "sha256": "d7e0ffc3f0918b1b9fe4918c0be2d475816380a7d75e590a729768c19883d62b"
+    },
+    {
+      "path": "core/scripts/physical_microphone_probe.py",
+      "sha256": "cc6aa640f300e2fa67d972cc63def46779fe25e7a5dfd966268c3a9b4b64fb32"
+    },
+    {
+      "path": "core/scripts/physical_webauthn_probe.py",
+      "sha256": "874d8471c56a6bb446343c71b865b5e6593ae4684f3906fce99b793ceb2dd448"
     },
     {
       "path": "core/scripts/provision_windows_owner.ps1",
       "sha256": "5e94114eb08fedcd639f237534ae75bb9a82090f8a4b05ba10cc20779da27f5f"
+    },
+    {
+      "path": "core/scripts/run_osworld_v2_live.py",
+      "sha256": "3ac380737de02dd3e12e6306ee6b65f429248f2ddc2178fbde7d389e488634f8"
     },
     {
       "path": "core/scripts/start_owner_control_plane.py",
@@ -227,6 +243,10 @@
     {
       "path": "core/scripts/verify_final_lock.py",
       "sha256": "b4e278a5129ec3e7443dce27d60cbc9d7ddd6660a553f6db7358347b00cf4dee"
+    },
+    {
+      "path": "core/scripts/verify_physical_hardware.py",
+      "sha256": "aac1f21d7e1170f521cb87ef0d8b541c3ca878083c2a4d1e126eb0c18e53dc5f"
     },
     {
       "path": "core/src/aura_core/__init__.py",
@@ -634,11 +654,11 @@
     },
     {
       "path": "core/src/aura_core/evolution/owner_challenge.py",
-      "sha256": "5e63e4e1ffb9e364ebd9e5cfdf1f3fb3f68460c20333fc9b40b97710af1a61e1"
+      "sha256": "58e6b459b2f92f8e1b50ba2bb3c9a828523cc6784a7da68a6d3eb57075c48779"
     },
     {
       "path": "core/src/aura_core/evolution/owner_control_plane.py",
-      "sha256": "40d7ab3a26bdea5c4e1029e6c511dbd2a42c88168021ff45257dd4f5bf413b87"
+      "sha256": "fbf5c5d7c2b2447e3dd6403102b24565cdde2221160e9a3ecaacf297cdc60da6"
     },
     {
       "path": "core/src/aura_core/evolution/owner_enroll.html",
@@ -1025,6 +1045,18 @@
       "sha256": "333d4972a86d006d0662963bba9628e030c910373b479c009c06a91608e9d58d"
     },
     {
+      "path": "core/src/aura_core/osworld/__init__.py",
+      "sha256": "b42d8246d44735643d8e74d34ed2b76cdee37a24592d46a7854211c446f9ab25"
+    },
+    {
+      "path": "core/src/aura_core/osworld/live_vm.py",
+      "sha256": "714d8e1dc17e57c62c191cd89812916dadb619dde7eb89f9dc8743e7ed76cd2d"
+    },
+    {
+      "path": "core/src/aura_core/osworld/runtime.py",
+      "sha256": "96fc3fbf4234d5edc78595294721f14801de19817c74362bccec94b09a862813"
+    },
+    {
       "path": "core/src/aura_core/persistence/__init__.py",
       "sha256": "b39a6a6501945d7017c12c2eec3880c88c1787f21bdf086e49929c911031d932"
     },
@@ -1195,6 +1227,10 @@
     {
       "path": "core/src/aura_core/voice/sherpa_onnx.py",
       "sha256": "f31a33e4f9923ff6e4e5c4d1565cf550efec3e5142401fe30135f305a1c7742c"
+    },
+    {
+      "path": "core/tests/test_real_hardware_osworld.py",
+      "sha256": "16f6afdd5a9c1dc063e61a65916fea56ed73e88afd9e583101f35037e366e179"
     },
     {
       "path": "core/uv.lock",

@@ -41,6 +41,14 @@ def validate_manifest(manifest: dict) -> None:
 
 
 def main(argv=None) -> int:
+    # Opt-in real provider. Dry-run stays the safe default and never claims a
+    # VM score. A real run requires external Docker, signed Owner approvals,
+    # gated OSWorld assets, the pinned osworld-v2.1 tag, and a disposable VM.
+    import sys
+    selected = list(sys.argv[1:] if argv is None else argv)
+    if selected and selected[0] == "--live":
+        from run_osworld_v2_live import main as live_main
+        return live_main(selected[1:])
     parser = argparse.ArgumentParser()
     parser.add_argument("--manifest", type=Path)
     args = parser.parse_args(argv)
