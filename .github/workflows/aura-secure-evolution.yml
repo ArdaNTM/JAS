@@ -1,0 +1,48 @@
+name: AURA Secure Evolution Acceptance
+on:
+  pull_request:
+    paths:
+      - "core/src/aura_core/evolution/**"
+      - "core/src/aura_core/mcp/drafts/**"
+      - "core/src/aura_core/mcp/dynamic_tools/**"
+      - "core/tests/test_secure_evolution_pipeline.py"
+      - "core/src/aura_core/application/api.py"
+      - "core/src/aura_core/main.py"
+      - "aura-ui/src/components/EvolutionReviewPanel.tsx"
+      - "release-manifest.final.json"
+      - ".github/workflows/aura-secure-evolution.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  secure-evolution-core:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: astral-sh/setup-uv@v5
+      - name: Install locked Core
+        working-directory: core
+        run: uv sync --frozen --group dev
+      - name: Security boundary tests
+        working-directory: core
+        run: |
+          uv run --frozen python -m pytest -q tests/test_secure_evolution_pipeline.py
+          uv run --frozen python scripts/verify_final_lock.py
+  secure-evolution-hud:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Compile HUD and audit dependencies
+        working-directory: aura-ui
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+          npm audit --audit-level=high

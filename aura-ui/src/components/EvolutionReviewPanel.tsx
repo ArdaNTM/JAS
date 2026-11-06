@@ -7,6 +7,15 @@ interface GoalGroup {
   proposal_ids: string[];
   requires_owner_review: boolean;
 }
+interface ReviewDraft {
+  draft_id: string;
+  source_sha256: string;
+  tool_name: string;
+  test_count: number;
+  status: string;
+  independent_attestation: false;
+  approval_granted: false;
+}
 interface GoalTree {
   root_goal?: string;
   groups?: GoalGroup[];
@@ -23,6 +32,7 @@ export default function EvolutionReviewPanel() {
   const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [tree, setTree] = useState<GoalTree | null>(null);
+  const [drafts, setDrafts] = useState<ReviewDraft[]>([]);
   const [message, setMessage] = useState("Evolution incelemesi yalnızca görüntüleme modundadır.");
 
   const refresh = useCallback(async () => {
@@ -39,9 +49,22 @@ export default function EvolutionReviewPanel() {
         throw new Error("Beklenmeyen yetki bildirimi; güvenlik için inceleme kapatıldı.");
       }
       setTree(result);
+      // Read-only metadata: the HUD NEVER receives source, attestation keys,
+      // WebAuthn assertions, or an activation endpoint.
+      const pending = await fetch("/api/evolution/drafts", {
+        method: "GET", headers: { Accept: "application/json" }, cache: "no-store",
+      });
+      if (pending.ok) {
+        const payload: { items?: ReviewDraft[]; approval_granted?: boolean } = await pending.json();
+        if (payload.approval_granted) throw new Error("Unexpected authorization from review API");
+        setDrafts((payload.items ?? []).filter(d => !d.approval_granted).slice(0, 20));
+      } else {
+        setDrafts([]);
+      }
       setMessage("Kaynak kanıtlı hedefler; yetkilendirme verilmedi.");
     } catch (error) {
       setTree(null);
+      setDrafts([]);
       setMessage(error instanceof Error ? error.message : "Evolution durumuna erişilemedi");
     } finally {
       setLoading(false);
@@ -91,6 +114,22 @@ export default function EvolutionReviewPanel() {
                 </div>
               ))}
             </>
+          )}
+          {drafts.length > 0 && (
+            <div className="space-y-3 border-t border-cyan-950 pt-4">
+              <h3 className="text-amber-300">KARANTİNA / OWNER REVIEW BEKLİYOR</h3>
+              {drafts.map(draft => (
+                <div key={draft.draft_id} className="rounded border border-amber-900 p-3">
+                  <p className="text-cyan-100">{draft.tool_name} · {draft.test_count} test</p>
+                  <p className="break-all font-mono text-[10px] text-slate-500">
+                    SHA-256: {draft.source_sha256}
+                  </p>
+                  <p className="text-amber-300">
+                    Onay: YOK · Bağımsız attestation: YOK · Durum: {draft.status}
+                  </p>
+                </div>
+              ))}
+            </div>
           )}
           <div className="border-t border-cyan-950 pt-3">
             <p className="mb-2 text-[11px] text-slate-400">
