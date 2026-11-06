@@ -58,6 +58,36 @@ class WebAuthnProbeResult:
         }
 
 
+def verify_selected_assertion(
+    server: Any, state: Any, credentials: list[Any], selection: Any,
+) -> Any:
+    """Verify the python-fido2 2.x AssertionSelection correctly.
+
+    WindowsClient.get_assertion() returns AssertionSelection, not an
+    AuthenticationResponse. Its get_response(0) returns the full WebAuthn
+    AuthenticationResponse expected by Fido2Server.authenticate_complete.
+    AttestedCredentialData (the server's return value) is *not* the
+    authenticator data and cannot be queried for the UV bit.
+    """
+    get_response = getattr(selection, "get_response", None)
+    if not callable(get_response):
+        raise HardwareUnavailable("Windows FIDO2 client returned no assertion selection")
+    try:
+        assertion = get_response(0)
+    except (IndexError, ValueError, TypeError) as exc:
+        raise HardwareUnavailable("No usable authenticator assertion") from exc
+    inner = getattr(assertion, "response", None)
+    auth_data = getattr(inner, "authenticator_data", None)
+    if auth_data is None or not callable(getattr(auth_data, "is_user_verified", None)):
+        raise HardwareUnavailable("Invalid WebAuthn assertion payload")
+    # This raises on the wrong challenge, origin, RP ID or invalid signature.
+    # Never interpret an unverified assertion's UV bit as proof.
+    server.authenticate_complete(state, credentials, assertion)
+    if auth_data.is_user_verified() is not True:
+        raise HardwareUnavailable("Verified assertion lacks the required UV flag")
+    return assertion
+
+
 def _run_platform_authenticator() -> WebAuthnProbeResult:
     """Real native Win32 prompt; must be called from the physical console."""
     if sys.platform != "win32":
@@ -99,17 +129,15 @@ def _run_platform_authenticator() -> WebAuthnProbeResult:
         credentials=credentials, user_verification="required",
     )
     print("Windows Hello: confirm the second, fresh assertion.", file=sys.stderr)
-    assertion = client.get_assertion(request["publicKey"])
-    assertion_data = server.authenticate_complete(assertion_state, credentials, assertion)
-    if not assertion_data.is_user_verified():
-        raise HardwareUnavailable("Assertion missing UV flag")
-    # Original assertion MUST fail when checked against a different challenge.
+    selection = client.get_assertion(request["publicKey"])
+    assertion = verify_selected_assertion(server, assertion_state, credentials, selection)
+    # Original VALID assertion MUST fail against a distinct challenge.
     _, fresh_state = server.authenticate_begin(
         credentials=credentials, user_verification="required",
     )
     try:
         server.authenticate_complete(fresh_state, credentials, assertion)
-    except (ValueError, TypeError):
+    except ValueError:
         rejected_replay = True
     else:
         rejected_replay = False
@@ -138,13 +166,14 @@ def main(argv: list[str] | None = None) -> int:
         result = asyncio.run(run())
         print(json.dumps(result.public(), indent=2))
         return 0
-    except (HardwareUnavailable, OSError, ValueError, RuntimeError) as exc:
-        # Fail closed. Do not report fingerprint, credential ID or assertion.
+    except Exception as exc:
+        # Fail closed even for native FIDO2 ClientError or unexpected SDK types.
+        # Never print raw WebAuthn responses, credential IDs or private material.
         print(json.dumps({
             "check": "webauthn_uv",
             "hardware_verified": False,
-            "native_windows_webauthn": False,
             "error_type": type(exc).__name__,
+            "stage": "native_webauthn_validation",
             "independent_owner_receipt_issued": False,
         }, indent=2))
         return 2

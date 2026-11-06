@@ -35,7 +35,10 @@ the separate \`http://localhost:8766\` Owner Control Plane, not this probe.
 ## Real microphone (no mock)
 
 \`\`\`powershell
+uv run --frozen python scripts/physical_microphone_probe.py --list-devices
 uv run --frozen python scripts/physical_microphone_probe.py --samples 40
+# If Windows default capture fails, choose a physical input ID from the list:
+uv run --frozen python scripts/physical_microphone_probe.py --device 0 --samples 40
 \`\`\`
 
 This script directly uses WinMM \`waveIn*\` API to capture real PCM and
@@ -124,3 +127,27 @@ CI tests are synthetic GUARDRAIL tests, not a claim of physical observation.
 Real Windows Hello prompts, microphone, voice barge-in, OSWorld VM and
 network enforcement require an operator-owned device and cannot run on
 hosted GitHub Actions.
+
+## Stage E native physical probe hotfix
+
+- For `fido2==2.2.1`, the Windows client's `get_assertion()` returns an
+  `AssertionSelection`; use `get_response(0)` to supply the
+  `AuthenticationResponse` to `Fido2Server.authenticate_complete()`.
+  Check the signed response's authenticator-data UV flag. On Windows Hello
+  PIN entry, UV means *user verification*, not necessarily biometrics.
+- WinMM now enumerates devices via `waveInGetNumDevs` and
+  `waveInGetDevCapsW`, tries the default mapper then explicit endpoints,
+  negotiates mono/stereo 16/44.1/48 kHz PCM, and queues a prepared buffer
+  *before* starting `waveInStart`. Errors report the native WinMM
+  `MMRESULT` and Windows error text, with no raw PCM.
+- Diagnostic failures must **not** trigger new trusted Owner receipts,
+  signed evidence issuance, or automatic release-lock rewriting.
+- If WinMM reports no endpoints, check *Settings > Privacy & security >
+  Microphone > Let desktop apps access your microphone* and recording device
+  enablement. If `WAVERR_BADFORMAT` occurs, use `--list-devices` to try
+  a different endpoint; for Bluetooth headsets, switch to a capture-capable
+  headset profile.
+- Successful probes still report `hardware_verified: false`. AURA's
+  independent physical acceptance verifier requires **all six** signed
+  on-device measurements, including real Nirvana Voice latency/barge-in,
+  dual-monitor, negative-coordinate HUD and persistent Kill Switch.
