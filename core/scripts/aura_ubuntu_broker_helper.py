@@ -9,6 +9,7 @@ Deployment is intentionally absent and deny_only remains unchanged.
 """
 from __future__ import annotations
 
+from contextlib import closing
 import os
 from pathlib import Path
 import socket
@@ -51,7 +52,7 @@ class DurableNonceStore:
             if os.geteuid() != 0:
                 raise policy.Denied("Nonce store must run under root helper")
             _require_root_storage(path)
-        with self._connection() as db:
+        with closing(self._connection()) as db:
             db.execute("CREATE TABLE IF NOT EXISTS consumed ("
                        "nonce TEXT PRIMARY KEY, run_id TEXT NOT NULL, "
                        "vm_id TEXT NOT NULL, seen_at INTEGER NOT NULL)")
@@ -77,7 +78,7 @@ class DurableNonceStore:
                 or type(run_id) is not str or policy.HEX32.fullmatch(run_id) is None
                 or type(vm_id) is not str or policy.HEX64.fullmatch(vm_id) is None):
             raise policy.Denied("Invalid nonce ownership")
-        with self._connection() as db:
+        with closing(self._connection()) as db:
             try:
                 db.execute("BEGIN IMMEDIATE")
                 # Expiry cleanup cannot permit replay within the 30 s freshness

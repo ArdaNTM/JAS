@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "review-candidate",
-  "generated_at": "2026-11-07T12:08:12.381Z",
-  "git_commit": "c473ef1f461e6badd2b09294433633fc3c253818",
+  "generated_at": "2026-11-07T12:10:21.972Z",
+  "git_commit": "2a8adb8d57c1cc2053d3de09fd561d72c3411c79",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:f9f34be72e8b6914eb6ce799fb33e5fb365e2e5faa96d3f350f361981f06244c",
+  "release_digest": "sha256:1807aefdc8aa542efeea88a330e5349860631024898ea076b08554b909f60fa5",
   "file_count": 349,
   "files": [
     {
@@ -206,7 +206,7 @@
     },
     {
       "path": "core/scripts/aura_ubuntu_broker_helper.py",
-      "sha256": "f09d5255ffff3dc530fc5792592955d46717540830bd9c8b737e389e3a293a0f"
+      "sha256": "e64b40d2b1678d87980d94f681a4659951faee1bcfb4f35d2e182ade55996ff1"
     },
     {
       "path": "core/scripts/aura_ubuntu_broker_policy.py",
