@@ -139,6 +139,17 @@ def _guard_signed_network(
 async def run(args: argparse.Namespace) -> dict:
     if not args.allow_real_vm:
         raise PermissionError("Explicit --allow-real-vm operator consent required")
+    if not args.smoke:
+        # F2.5 safety gate: the current OSWorld worker still initializes
+        # docker-py and launches containers using its own host process.
+        # That code path is incompatible with an agent that has NO Docker
+        # privileges. Do not accept environment flags or a successful
+        # signed network receipt as permission to retain direct daemon
+        # access. A future *separate* broker-owned VM executor is required.
+        raise PermissionError(
+            "F2.5: direct agent-owned Docker VM worker disabled; "
+            "broker-owned lifecycle transport is not yet provisioned"
+        )
     upstream = args.upstream.resolve(strict=True)
     if args.upstream_commit != COMMIT:
         raise PermissionError("Only exact pinned osworld-v2.1 source commit is allowed")

@@ -55,15 +55,18 @@ def docker_json(argv: list[str], *, timeout: int = 20) -> object:
         raise IsolationDenied("Docker inspection produced invalid JSON") from exc
 
 
-def _gateway_topology(obj: dict[str, Any], internal_id: str) -> tuple[str, str, dict[str, str], str]:
+def _gateway_topology(
+    obj: dict[str, Any], internal_id: str, *, docker_json_fn=None,
+) -> tuple[str, str, dict[str, str], str]:
     """Independent audit of the exact dual-homed relay and its egress bridge."""
+    call_docker = docker_json if docker_json_fn is None else docker_json_fn
     config_vm = obj.get("Config") or {}
     run_id = (config_vm.get("Labels") or {}).get("aura.osworld.run_id")
     if not isinstance(run_id, str) or not re.fullmatch(r"[0-9a-f]{32}", run_id):
         raise IsolationDenied("Missing VM run ownership for ingress")
     ingress_name = INGRESS_PREFIX + run_id
     gateway_name = GATEWAY_PREFIX + run_id
-    data = docker_json(["inspect", gateway_name])
+    data = call_docker(["inspect", gateway_name])
     if not isinstance(data, list) or len(data) != 1 or not isinstance(data[0], dict):
         raise IsolationDenied("Missing unambiguous loopback gateway")
     gateway = data[0]
@@ -101,7 +104,7 @@ def _gateway_topology(obj: dict[str, Any], internal_id: str) -> tuple[str, str, 
             or set(nets) != {NETWORK_NAME, ingress_name}
             or nets[NETWORK_NAME].get("NetworkID") != internal_id):
         raise IsolationDenied("Untrusted ingress relay command, identity or network")
-    ingress_network = docker_json(["network", "inspect", ingress_name])
+    ingress_network = call_docker(["network", "inspect", ingress_name])
     if (not isinstance(ingress_network, list) or len(ingress_network) != 1
             or not isinstance(ingress_network[0], dict)):
         raise IsolationDenied("Untrusted ingress bridge")
@@ -159,11 +162,14 @@ def _gateway_topology(obj: dict[str, Any], internal_id: str) -> tuple[str, str, 
 
 
 
-def inspect_topology(container_id: str, *, expected_vm_hash: str) -> tuple[BootIdentity, dict[str, str], str]:
+def inspect_topology(
+    container_id: str, *, expected_vm_hash: str, docker_json_fn=None,
+) -> tuple[BootIdentity, dict[str, str], str]:
     """Validate live Docker container identity, ports and only isolated net."""
+    call_docker = docker_json if docker_json_fn is None else docker_json_fn
     if not isinstance(container_id, str) or len(container_id) != 64 or any(c not in "0123456789abcdef" for c in container_id):
         raise IsolationDenied("Invalid full Docker container id")
-    info = docker_json(["inspect", container_id])
+    info = call_docker(["inspect", container_id])
     if not isinstance(info, list) or len(info) != 1 or not isinstance(info[0], dict):
         raise IsolationDenied("Docker returned no unambiguous container")
     obj = info[0]
@@ -186,7 +192,7 @@ def inspect_topology(container_id: str, *, expected_vm_hash: str) -> tuple[BootI
         raise IsolationDenied("Container is not running exclusively on the lab network")
     net = nets[NETWORK_NAME]
     nid = net.get("NetworkID", "")
-    network = docker_json(["network", "inspect", NETWORK_NAME])
+    network = call_docker(["network", "inspect", NETWORK_NAME])
     if not isinstance(network, list) or len(network) != 1:
         raise IsolationDenied("No unambiguous Docker network")
     nw = network[0]
@@ -259,7 +265,7 @@ def inspect_topology(container_id: str, *, expected_vm_hash: str) -> tuple[BootI
         raise IsolationDenied("Container mounts exceed pinned disk, ephemeral storage and Nginx tmpfs")
     # The independently signed receipt must not accept a user-supplied or
     # remote driver volume masquerading as our ephemeral /storage.
-    details = docker_json(["volume", "inspect", volume_name])
+    details = call_docker(["volume", "inspect", volume_name])
     if not isinstance(details, list) or len(details) != 1:
         raise IsolationDenied("Ephemeral OSWorld storage not inspectable")
     volume = details[0]
@@ -279,7 +285,7 @@ def inspect_topology(container_id: str, *, expected_vm_hash: str) -> tuple[BootI
     if (host.get("PortBindings") or any(
             b for b in (network_settings.get("Ports") or {}).values())):
         raise IsolationDenied("Internal OSWorld VM unexpectedly publishes host ports")
-    gateway_id, ingress_id, ports, _ = _gateway_topology(obj, nid)
+    gateway_id, ingress_id, ports, _ = _gateway_topology(obj, nid, docker_json_fn=call_docker)
     gateway = net.get("Gateway") or ""
     try:
         ip = ipaddress.ip_address(gateway)
@@ -312,8 +318,21 @@ def _probe(container_id: str, script: str) -> bool:
     return proc.returncode == 0 and proc.stdout.strip() == "AURA_DENIED"
 
 
-def negative_network_probes(container_id: str, gateway: str) -> dict[str, bool]:
+def negative_network_probes(
+    container_id: str, gateway: str, *, probe_check=None,
+) -> dict[str, bool]:
     """Strict representative network probes; failed/unknown => NO signed receipt."""
+    if probe_check is not None:
+        # The broker checks the identical CHECK schema without invoking the
+        # legacy floating-image shell probe. Never catch/convert exceptions:
+        # failed backend measurements abort the whole audit.
+        return {
+            "egress_v4_blocked": probe_check(container_id, "egress_v4_blocked", None),
+            "metadata_blocked": probe_check(container_id, "metadata_blocked", None),
+            "external_dns_blocked": probe_check(container_id, "external_dns_blocked", None),
+            "ipv6_blocked": probe_check(container_id, "ipv6_blocked", None),
+            "host_gateway_blocked": probe_check(container_id, "host_gateway_blocked", gateway),
+        }
     def connect(host: str, port: int) -> str:
         if host != gateway and host not in {
             "1.1.1.1", "169.254.169.254", "8.8.8.8", "192.168.1.1", "10.0.0.1",
@@ -353,19 +372,30 @@ def sha256_file(path: Path) -> str:
 
 
 def audit_network(
-    *, container_id: str, vm_image: Path,
+    *, container_id: str, vm_image: Path, docker_json_fn=None, probe_check=None,
 ) -> tuple[BootIdentity, dict[str, str], dict[str, bool]]:
     """Host audit rejects fake/evasive network topology before invoking probes."""
+    call_docker = docker_json if docker_json_fn is None else docker_json_fn
     image_hash = sha256_file(vm_image.resolve(strict=True))
-    boot, ports, gateway = inspect_topology(container_id, expected_vm_hash=image_hash)
+    boot, ports, gateway = inspect_topology(
+        container_id, expected_vm_hash=image_hash, docker_json_fn=call_docker,
+    )
     # Probe the relay separately; the VM must remain internal-only, while
     # the dual-homed ingress exposes only explicitly signed localhost ports.
-    ingress_details = docker_json(["network", "inspect", INGRESS_PREFIX + (
-        docker_json(["inspect", container_id])[0]["Config"]["Labels"]["aura.osworld.run_id"]
+    ingress_details = call_docker(["network", "inspect", INGRESS_PREFIX + (
+        call_docker(["inspect", container_id])[0]["Config"]["Labels"]["aura.osworld.run_id"]
     )])
     ingress_gateway = ingress_details[0]["IPAM"]["Config"][0]["Gateway"]
-    vm_checks = negative_network_probes(container_id, gateway)
-    gateway_checks = negative_network_probes(boot.gateway_container_id, ingress_gateway)
+    # Keep the existing positional signature for legacy independent-auditor
+    # unit tests and callers. Only the broker opts into the new pinned backend.
+    if probe_check is None:
+        vm_checks = negative_network_probes(container_id, gateway)
+        gateway_checks = negative_network_probes(boot.gateway_container_id, ingress_gateway)
+    else:
+        vm_checks = negative_network_probes(container_id, gateway, probe_check=probe_check)
+        gateway_checks = negative_network_probes(
+            boot.gateway_container_id, ingress_gateway, probe_check=probe_check,
+        )
     checks = {
         "network_internal": True, "single_network": True,
         "loopback_ports": True, "unprivileged": True,
