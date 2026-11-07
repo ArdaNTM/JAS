@@ -108,5 +108,68 @@ class BrokerServicePolicyTests(unittest.TestCase):
             self.assertIs(kwargs["handler"], service.blocked_handler)
 
 
+class UbuntuDenyOnlySCMPreflightTests(unittest.TestCase):
+    """Offline SCM checks; never open a Docker pipe or contact Ubuntu."""
+
+    def test_ubuntu_deny_only_sealed_sid_without_desktop_daemon(self):
+        approved = service.parse_service_policy(policy())
+        with (
+            patch.object(service, "verify_trusted_runtime") as sealed,
+            patch.object(service, "load_service_policy", return_value=approved),
+            patch.object(service, "current_process_sid", return_value=SERVICE),
+            patch("aura_core.osworld.audit_broker_boundary.inspect_current_principal")
+            as docker_probe,
+        ):
+            observed = service.preflight_ubuntu_deny_only_service()
+            self.assertIs(observed, approved)
+            sealed.assert_called_once()
+            docker_probe.assert_not_called()
+
+    def test_ubuntu_deny_only_wrong_runtime_token_refused(self):
+        approved = service.parse_service_policy(policy())
+        with (
+            patch.object(service, "verify_trusted_runtime"),
+            patch.object(service, "load_service_policy", return_value=approved),
+            patch.object(service, "current_process_sid", return_value=AGENT),
+            patch("aura_core.osworld.audit_broker_boundary.inspect_current_principal")
+            as docker_probe,
+        ):
+            with self.assertRaises(BrokerDenied):
+                service.preflight_ubuntu_deny_only_service()
+            docker_probe.assert_not_called()
+
+    def test_fabricated_audit_only_dataclass_cannot_start_ubuntu_scm(self):
+        from dataclasses import replace
+        approved = replace(service.parse_service_policy(policy()), mode="audit_only")
+        with (
+            patch.object(service, "verify_trusted_runtime"),
+            patch.object(service, "load_service_policy", return_value=approved),
+            patch.object(service, "current_process_sid") as identity,
+        ):
+            with self.assertRaises(BrokerDenied):
+                service.preflight_ubuntu_deny_only_service()
+            identity.assert_not_called()
+
+    def test_missing_sealed_runtime_fails_before_policy_and_scm(self):
+        with (
+            patch.object(service, "verify_trusted_runtime",
+                         side_effect=BrokerDenied("unsealed")) as sealed,
+            patch.object(service, "load_service_policy") as policy_loader,
+        ):
+            with self.assertRaises(BrokerDenied):
+                service.preflight_ubuntu_deny_only_service()
+            sealed.assert_called_once()
+            policy_loader.assert_not_called()
+
+    def test_scm_adapter_explicitly_uses_ubuntu_deny_only_preflight(self):
+        from pathlib import Path
+        source = (Path(__file__).resolve().parents[1] / "scripts" /
+                  "aura_docker_broker_service.py").read_text("utf-8")
+        self.assertIn("policy = preflight_ubuntu_deny_only_service()", source)
+        self.assertIn("verify_registered_service_account(policy)", source)
+        self.assertIn("serve_denied_request_once(policy)", source)
+        self.assertNotIn("UbuntuBrokerSshTransport(", source)
+
+
 if __name__ == "__main__":
     unittest.main()

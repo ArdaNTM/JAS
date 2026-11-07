@@ -114,16 +114,25 @@ def load_service_policy(path: Path = POLICY_PATH) -> BrokerServicePolicy:
     return parse_service_policy(path.read_bytes())
 
 
-def preflight_service() -> BrokerServicePolicy:
-    """Must run under SCM-created dedicated account before opening IPC."""
+def _sealed_deny_only_service_policy() -> BrokerServicePolicy:
+    """Common Windows SCM guard: sealed runtime, real process SID, deny-only.
+
+    A policy file is not proof of the current Windows process identity.
+    The separately registered SCM logon identity is checked by the adapter.
+    """
     verify_trusted_runtime(
         source_file=Path(__file__), python_executable=Path(sys.executable)
     )
     policy = load_service_policy()
+    if type(policy) is not BrokerServicePolicy or policy.mode != "deny_only":
+        raise BrokerDenied("SCM service cannot activate audit capabilities")
     validate_service_identity(policy, actual_sid=current_process_sid())
-    # A distinct Windows SID alone proves nothing about Docker rights.
-    # The service must be able to open the pinned Linux Engine endpoint
-    # under its own token; the denial-only handler is *not* unlocked here.
+    return policy
+
+
+def preflight_service() -> BrokerServicePolicy:
+    """Legacy Windows Docker Desktop preflight; keep its daemon guard intact."""
+    policy = _sealed_deny_only_service_policy()
     from .audit_broker_boundary import inspect_current_principal
     observation = inspect_current_principal(
         role="broker", expected_sid=policy.service_sid,
@@ -131,6 +140,16 @@ def preflight_service() -> BrokerServicePolicy:
     if observation.access != "allowed":
         raise BrokerDenied("Broker service cannot access the pinned Docker daemon")
     return policy
+
+
+def preflight_ubuntu_deny_only_service() -> BrokerServicePolicy:
+    """Ubuntu-targeted SCM adapter: identity-checked, strictly deny-only.
+
+    Do not require Windows Docker Desktop access for an Ubuntu transport.
+    This path does not instantiate SSH, authorize Docker, or issue receipts.
+    Any future audit_only path needs a separate operator-reviewed gate.
+    """
+    return _sealed_deny_only_service_policy()
 
 
 def blocked_handler(raw: bytes, peer_sid: str) -> bytes:
