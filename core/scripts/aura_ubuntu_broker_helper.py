@@ -43,7 +43,7 @@ class DurableNonceStore:
     """Atomic INSERT under SQLite immediate transaction; survives restarts."""
 
     def __init__(self, path: Path = NONCE_DB, *, enforce_root: bool = True) -> None:
-        if type(path) is not Path or (enforce_root and path != NONCE_DB):
+        if not isinstance(path, Path) or (enforce_root and path != NONCE_DB):
             raise policy.Denied("Unpinned nonce state")
         self.path = path
         self.enforce_root = enforce_root
@@ -111,9 +111,11 @@ def _expected_peer_uid() -> int:
 
 def _peer_uid(connection: socket.socket) -> int:
     """Never trust a JSON-supplied uid or the SSH caller's environment."""
-    if not hasattr(socket, "SO_PEERCRED") or connection.family != socket.AF_UNIX:
+    option = getattr(socket, "SO_PEERCRED", None)
+    family = getattr(socket, "AF_UNIX", None)
+    if type(option) is not int or family is None or connection.family != family:
         raise policy.Denied("Kernel peer credentials are unavailable")
-    creds = connection.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, struct.calcsize("3i"))
+    creds = connection.getsockopt(socket.SOL_SOCKET, option, struct.calcsize("3i"))
     pid, uid, gid = struct.unpack("3i", creds)
     if pid <= 0 or uid <= 0 or gid < 0:
         raise policy.Denied("Malformed kernel credentials")

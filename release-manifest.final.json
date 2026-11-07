@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "review-candidate",
-  "generated_at": "2026-11-07T12:05:21.359Z",
-  "git_commit": "b5b1366f01cc7f7d718789122e8b9d768e1d6689",
+  "generated_at": "2026-11-07T12:08:12.381Z",
+  "git_commit": "c473ef1f461e6badd2b09294433633fc3c253818",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:af52466d50a78f7ee258e89da124ff76830364e88289336df82d71f0c6224f48",
+  "release_digest": "sha256:f9f34be72e8b6914eb6ce799fb33e5fb365e2e5faa96d3f350f361981f06244c",
   "file_count": 349,
   "files": [
     {
@@ -206,7 +206,7 @@
     },
     {
       "path": "core/scripts/aura_ubuntu_broker_helper.py",
-      "sha256": "b5018cdfc3e6b8159b3c5f63f6712110a48d0dbce3a74b80560e06e823301751"
+      "sha256": "f09d5255ffff3dc530fc5792592955d46717540830bd9c8b737e389e3a293a0f"
     },
     {
       "path": "core/scripts/aura_ubuntu_broker_policy.py",
@@ -1382,7 +1382,7 @@
     },
     {
       "path": "core/tests/test_audit_broker_ubuntu_transport.py",
-      "sha256": "9107ed36984111bf10ec3d5fd94186b139efe5a583b5450fd6703abc4c0013a9"
+      "sha256": "5c791398887ffcfc661152bce85a8f8f70a01640ee9d58fe990117c373d5c656"
     },
     {
       "path": "core/tests/test_audit_broker_vm_executor.py",

@@ -342,16 +342,20 @@ class LinuxPeerBoundaryTests(unittest.TestCase):
     def test_no_socket_credentials_is_not_accepted(self):
         with patch.object(helper.socket, "SO_PEERCRED", None, create=True):
             conn = Mock()
-            conn.family = socket.AF_UNIX
-            with self.assertRaises((policy.Denied, TypeError)):
+            conn.family = getattr(socket, "AF_UNIX", 1)
+            with self.assertRaises(policy.Denied):
                 helper._peer_uid(conn)
 
     @unittest.skipUnless(hasattr(socket, "SO_PEERCRED"), "Linux-only kernel peer credentials")
     def test_real_socketpair_kernel_peer_uid(self):
-        with socket.socketpair() as (a, b):
+        a, b = socket.socketpair()
+        try:
             if os.getuid() == 0:
                 self.skipTest("CI test expects non-root Linux job")
             self.assertEqual(helper._peer_uid(a), os.getuid())
+        finally:
+            a.close()
+            b.close()
 
     def test_wrong_peer_denied_before_nonce_and_docker(self):
         conn = Mock()
