@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "review-candidate",
-  "generated_at": "2026-11-07T01:10:00+01:00",
-  "git_commit": "5999cb2aacfc3ddc498e64f11cf4d90c9c1c2fb6",
+  "generated_at": "2026-11-07T01:25:00+01:00",
+  "git_commit": "12960984a74aea262650fbd99a8f0facad60e2c6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:f71d61a672d9d97a769f03c8e9290bbf0b0515b533a8a53fd489d5cf33de33d1",
+  "release_digest": "sha256:5ca88e0d7ca5737a838f5b70a04c10e74174962882d218a507761f1ee778adb8",
   "file_count": 328,
   "files": [
     {
@@ -1070,7 +1070,7 @@
     },
     {
       "path": "core/src/aura_core/osworld/audit_broker_client.py",
-      "sha256": "fceede808167c4f6c3ac50b5d8c748f7a610537a3f467d533a94342d883e8dab"
+      "sha256": "9b11f884640d1c6c7ce4b61770ea2981bbbd89e5bae66d273da395c881633fae"
     },
     {
       "path": "core/src/aura_core/osworld/audit_broker_docker.py",

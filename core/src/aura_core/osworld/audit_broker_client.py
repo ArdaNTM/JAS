@@ -104,7 +104,12 @@ def _overlapped_transfer(handle, *, message: bytes | None, timeout_ms: int) -> b
                 raise BrokerDenied("Timed out waiting for broker pipe")
             transferred = win32file.GetOverlappedResult(handle, operation, False)
         elif code == 0:
-            transferred = len(output) if message is None else len(message)
+            # PyWin32 returns a full-size overlapped read buffer, even when
+            # fewer bytes were received. Never trust len(output) as the count.
+            transferred = (
+                win32file.GetOverlappedResult(handle, operation, False)
+                if message is None else output
+            )
         else:
             raise BrokerDenied("Named-pipe I/O failed")
         if type(transferred) is not int or transferred < 0:
