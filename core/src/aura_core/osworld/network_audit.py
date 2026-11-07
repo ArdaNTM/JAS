@@ -386,8 +386,16 @@ def audit_network(
         call_docker(["inspect", container_id])[0]["Config"]["Labels"]["aura.osworld.run_id"]
     )])
     ingress_gateway = ingress_details[0]["IPAM"]["Config"][0]["Gateway"]
-    vm_checks = negative_network_probes(container_id, gateway, probe_check=probe_check)
-    gateway_checks = negative_network_probes(boot.gateway_container_id, ingress_gateway, probe_check=probe_check)
+    # Keep the existing positional signature for legacy independent-auditor
+    # unit tests and callers. Only the broker opts into the new pinned backend.
+    if probe_check is None:
+        vm_checks = negative_network_probes(container_id, gateway)
+        gateway_checks = negative_network_probes(boot.gateway_container_id, ingress_gateway)
+    else:
+        vm_checks = negative_network_probes(container_id, gateway, probe_check=probe_check)
+        gateway_checks = negative_network_probes(
+            boot.gateway_container_id, ingress_gateway, probe_check=probe_check,
+        )
     checks = {
         "network_internal": True, "single_network": True,
         "loopback_ports": True, "unprivileged": True,

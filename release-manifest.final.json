@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "review-candidate",
-  "generated_at": "2026-11-07T01:50:00+01:00",
-  "git_commit": "8b209da7983c4a2053717421bc2e5eec15b4d9bd",
+  "generated_at": "2026-11-07T02:00:00+01:00",
+  "git_commit": "23065ef32236481f21a7c5602270e3f425119ecb",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:93bc45f09edeedfba6fa72a20421d0768d93932f3e617ba3d9873d9eba5fe40a",
-  "file_count": 330,
+  "release_digest": "sha256:f5c75d257074ae1d857c6ae81058a4fb77d38ef83ed7426d0bcb9ba68f712290",
+  "file_count": 331,
   "files": [
     {
       "path": ".gitattributes",
@@ -1077,6 +1077,10 @@
       "sha256": "aea3473738141a41b8207d8bd2e621adffc71616b282717e864517b58ecbbb24"
     },
     {
+      "path": "core/src/aura_core/osworld/audit_broker_measurement.py",
+      "sha256": "9af4e02ee4b83a6b1a1d7b5daeedfdeaad10fffc19ec73dc81980c577360ad6b"
+    },
+    {
       "path": "core/src/aura_core/osworld/audit_broker_protocol.py",
       "sha256": "8215cad5ab63494940a537dde07208e1095b51d3975d142468055192d782f52f"
     },
@@ -1090,7 +1094,7 @@
     },
     {
       "path": "core/src/aura_core/osworld/audit_broker_topology.py",
-      "sha256": "f2869069a2aad15562a6bb294bc3affdeab36ebe0e18352569670bb1a70b8c12"
+      "sha256": "34a2f4945638366feda9727df28945a6aa88bea3f008ffd06626c9f2f3896db3"
     },
     {
       "path": "core/src/aura_core/osworld/audit_broker_windows.py",
@@ -1110,7 +1114,7 @@
     },
     {
       "path": "core/src/aura_core/osworld/network_audit.py",
-      "sha256": "28a01ebc1d5964a895602a7996005e40e8be12e4b44360451ac77272cc974559"
+      "sha256": "842d620e1b3fa4f57dd36346e3b1afa8ffa97b7e2a7b9bfc845a0b25ef2f1a79"
     },
     {
       "path": "core/src/aura_core/osworld/runtime.py",
@@ -1298,7 +1302,7 @@
     },
     {
       "path": "core/tests/test_audit_broker_f23.py",
-      "sha256": "df60315546db2c653e59b5962e666c28bb439ebf7bbdbf189c892797738459e8"
+      "sha256": "0b97a5e929a9fb3ec144b7f326128efed885d47a1134054f7af3ffbf8840a990"
     },
     {
       "path": "core/tests/test_audit_broker_protocol.py",

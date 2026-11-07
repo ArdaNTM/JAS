@@ -222,6 +222,11 @@ class TopologyRunner(FakeEngine):
 
 class BrokerTopologyF23Tests(unittest.TestCase):
     def setUp(self):
+        # Hosted Windows uses C: temporary directories; production's D:
+        # enforcement is tested separately and remains enabled in real code.
+        self.enterContext(patch(
+            "aura_core.osworld.audit_broker_topology._require_d_drive"
+        ))
         self.temp = TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.image = Path(self.temp.name) / "System.qcow2"
@@ -274,6 +279,122 @@ class BrokerTopologyF23Tests(unittest.TestCase):
             self.skipTest("Symlink creation unavailable")
         with self.assertRaises(BrokerDenied):
             BrokerTopologyAudit(backend=self.backend, pinned_vm_image=other)
+
+
+
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from aura_core.osworld.audit_broker_measurement import evaluate_broker_measurement
+from aura_core.osworld.audit_broker_receipt import verify_measurement
+from aura_core.osworld.audit_broker_protocol import PROTOCOL, OPERATION
+
+AUDITOR_SID = "S-1-5-21-111-222-333-1001"
+AGENT_SID = "S-1-5-21-111-222-333-1003"
+FIXED_NOW = 1794000000
+
+
+class BrokerMeasuredReceiptF23Tests(BrokerTopologyF23Tests):
+    def setUp(self):
+        super().setUp()
+        self.signer = Ed25519PrivateKey.generate()
+        self.used = set()
+
+    def claim_nonce(self, nonce):
+        if nonce in self.used:
+            return False
+        self.used.add(nonce)
+        return True
+
+    def message(self, **overrides):
+        data = {
+            "protocol": PROTOCOL, "operation": OPERATION,
+            "run_id": "f" * 32, "container_id": VM,
+            "nonce": "c" * 32, "issued_at": FIXED_NOW,
+        }
+        data.update(overrides)
+        return json.dumps(data).encode("utf-8")
+
+    def measure(self, raw=None, **overrides):
+        args = {
+            "peer_sid": AUDITOR_SID,
+            "auditor_sid": AUDITOR_SID,
+            "topology": self.audit,
+            "claim_nonce": self.claim_nonce,
+            "signer": self.signer,
+            "now": FIXED_NOW,
+        }
+        args.update(overrides)
+        return evaluate_broker_measurement(self.message() if raw is None else raw, **args)
+
+    def test_complete_broker_audit_generates_verifiable_measurement(self):
+        wire = self.measure()
+        envelope = json.loads(wire)
+        public = self.signer.public_key().public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw,
+        )
+        validated = verify_measurement(
+            envelope, pinned_public_key=public,
+            expected_run_id="f" * 32, expected_container_id=VM,
+            expected_nonce="c" * 32, now=FIXED_NOW,
+        )
+        self.assertEqual(validated["boot"]["container_id"], VM)
+        self.assertEqual(set(validated["checks"]), REQUIRED_CHECKS)
+        self.assertTrue(all(validated["checks"].values()))
+
+    def test_replayed_nonce_denied_before_second_probe(self):
+        message = self.message()
+        self.measure(message)
+        count = len(self.runner.calls)
+        with self.assertRaises(BrokerDenied):
+            self.measure(message)
+        self.assertLessEqual(len(self.runner.calls), count + 1)
+
+    def test_untrusted_caller_rejected_before_docker_inspection(self):
+        with self.assertRaises(BrokerDenied):
+            self.measure(peer_sid=AGENT_SID)
+        self.assertEqual(self.runner.calls, [])
+
+    def test_wrong_run_ownership_fails_without_consuming_nonce(self):
+        with self.assertRaises(BrokerDenied):
+            self.measure(self.message(run_id="e" * 32))
+        self.assertEqual(self.used, set())
+
+    def test_arbitrary_operation_denied_before_docker(self):
+        with self.assertRaises(BrokerDenied):
+            self.measure(self.message(operation="docker exec"))
+        self.assertEqual(self.runner.calls, [])
+
+    def test_uncertain_network_result_cannot_be_signed(self):
+        self.runner.fail_probe = "metadata_blocked"
+        with self.assertRaises(IsolationDenied):
+            self.measure()
+        self.assertIn("c" * 32, self.used)
+
+    def test_untrusted_or_missing_signer_denied(self):
+        with self.assertRaises(BrokerDenied):
+            self.measure(signer=None)
+        self.assertEqual(self.runner.calls, [])
+
+    def test_output_cannot_be_verified_using_an_unpinned_broker_key(self):
+        wire = self.measure()
+        invalid_public = Ed25519PrivateKey.generate().public_key().public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw,
+        )
+        with self.assertRaises(BrokerDenied):
+            verify_measurement(
+                json.loads(wire), pinned_public_key=invalid_public,
+                expected_run_id="f" * 32, expected_container_id=VM,
+                expected_nonce="c" * 32, now=FIXED_NOW,
+            )
+
+    def test_signer_receipt_is_not_aura_host_isolation_receipt(self):
+        wire = self.measure()
+        data = json.loads(wire)
+        self.assertEqual(data["schema"], "aura.osworld.docker-broker-measurement.v1")
+        self.assertNotIn("ISOLATION_SIGNED", wire.decode())
+        self.assertNotIn("signer_id", data)
 
 
 if __name__ == "__main__":

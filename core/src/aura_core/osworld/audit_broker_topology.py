@@ -34,6 +34,12 @@ def _measured_identity(value: object) -> tuple[str, str]:
     return run_id, cid
 
 
+def _require_d_drive(image: Path) -> None:
+    """Production Windows image location policy (mocked in hosted CI only)."""
+    if os.name == "nt" and image.drive.upper() != "D:":
+        raise BrokerDenied("Pinned Windows OSWorld image must remain on D:")
+
+
 class BrokerTopologyAudit:
     """Never accept expected IDs or egress results from a network client."""
 
@@ -43,8 +49,7 @@ class BrokerTopologyAudit:
         if (not isinstance(pinned_vm_image, Path) or not pinned_vm_image.is_absolute()
                 or pinned_vm_image.is_symlink() or not pinned_vm_image.is_file()):
             raise BrokerDenied("Pinned local VM image is missing or redirected")
-        if os.name == "nt" and pinned_vm_image.drive.upper() != "D:":
-            raise BrokerDenied("Pinned Windows OSWorld image must remain on D:")
+        _require_d_drive(pinned_vm_image)
         self.backend = backend
         self.pinned_vm_image = pinned_vm_image
 
