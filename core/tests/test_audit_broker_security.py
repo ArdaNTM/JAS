@@ -4,6 +4,7 @@ from __future__ import annotations
 import base64
 from contextlib import closing
 import json
+import errno
 from pathlib import Path
 import sqlite3
 import subprocess
@@ -214,7 +215,12 @@ class FakeDocker:
         self.calls.append((argv, kwargs))
         return SimpleNamespace(
             returncode=self.returncode,
-            stdout="AURA_DENIED" if argv[1] == "run" else self.stdout,
+            stdout=(json.dumps({
+                "schema": "aura.osworld.network-probe.v1",
+                "name": json.loads(argv[-1])["name"],
+                "errno": errno.ENETUNREACH,
+                "blocked": True,
+            }) if "run" in argv else self.stdout),
             stderr="",
         )
 
@@ -228,7 +234,11 @@ class DockerBackendTests(unittest.TestCase):
         self.backend.inspect_container(CONTAINER)
         self.assertEqual(
             self.fake.calls[-1][0],
-            [str(DOCKER_EXE), "inspect", CONTAINER],
+            [
+                str(DOCKER_EXE), "--config",
+                r"D:\AURA\Trust\DockerBroker\policy\docker-config",
+                "--context", "desktop-linux", "inspect", CONTAINER,
+            ],
         )
 
     def test_gateway_inspection_pinned(self):

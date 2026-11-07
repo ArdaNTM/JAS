@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "review-candidate",
-  "generated_at": "2026-11-07T01:25:00+01:00",
-  "git_commit": "12960984a74aea262650fbd99a8f0facad60e2c6",
+  "generated_at": "2026-11-07T01:40:00+01:00",
+  "git_commit": "54bce948067968b0c45637e875cc386b82c9f384",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:5ca88e0d7ca5737a838f5b70a04c10e74174962882d218a507761f1ee778adb8",
-  "file_count": 328,
+  "release_digest": "sha256:ae96463215d5694954bfa705a95cd609854e01d6b5cea7be900ec30315b92681",
+  "file_count": 329,
   "files": [
     {
       "path": ".gitattributes",
@@ -14,7 +14,7 @@
     },
     {
       "path": ".github/workflows/aura-osworld-secure-live.yml",
-      "sha256": "55b33f71c73c063cfc49ab678beb942bd0136dc0dcfd8e33108c258e6088c5e8"
+      "sha256": "5362082278caa8b3b96582a0d12f13bb9c12e6ad16564f2a9fd237e3a66140b7"
     },
     {
       "path": ".github/workflows/aura-physical-trust-acceptance.yml",
@@ -210,7 +210,7 @@
     },
     {
       "path": "core/scripts/generate_final_lock.py",
-      "sha256": "07a97ebfa1918f1dd67bfea314d11827ec7a4148335e1f41c4173ef4ea67aeff"
+      "sha256": "c823d696b0f95252f5f48df8fbe890a5034245763efd4f21633e37059bf5f40f"
     },
     {
       "path": "core/scripts/hardware_stage_c_acceptance.py",
@@ -477,12 +477,12 @@
       "sha256": "6b0d021c3d22f96eac9c83e3be73b2f5dcd19eb1df06f59720b01758de7ee727"
     },
     {
-      "path": "core/src/aura_core/application/reflexion.py",
-      "sha256": "91bca907d904b7426712f1a134e90ba5781f5c46585d1f5265c4fc89124d9090"
-    },
-    {
       "path": "core/src/aura_core/application/reflexion_inference.py",
       "sha256": "2215a44162cdcc7ca3a8421386bb2dbdf94b0d772893c5339db6b0f9c471e05b"
+    },
+    {
+      "path": "core/src/aura_core/application/reflexion.py",
+      "sha256": "91bca907d904b7426712f1a134e90ba5781f5c46585d1f5265c4fc89124d9090"
     },
     {
       "path": "core/src/aura_core/application/sandbox_contract.py",
@@ -689,12 +689,12 @@
       "sha256": "32035247aa29377fbe2e17543525840ca97698557d610eb0be64591ee3db0e71"
     },
     {
-      "path": "core/src/aura_core/evolution/owner_enrollment.py",
-      "sha256": "2e82ec9bbbb630c7455e863fa9f60598dac7fd91a312425bfb4aa4ff7bdf8be4"
-    },
-    {
       "path": "core/src/aura_core/evolution/owner_enrollment_http.py",
       "sha256": "6d4f4f18c567ab577b7ce1ccf3986bffa6e473fbf64a5c446dc56ee0cb9c879c"
+    },
+    {
+      "path": "core/src/aura_core/evolution/owner_enrollment.py",
+      "sha256": "2e82ec9bbbb630c7455e863fa9f60598dac7fd91a312425bfb4aa4ff7bdf8be4"
     },
     {
       "path": "core/src/aura_core/evolution/owner_passkey.py",
@@ -1074,7 +1074,7 @@
     },
     {
       "path": "core/src/aura_core/osworld/audit_broker_docker.py",
-      "sha256": "0429ef6ce75de59962d1908defbed5bec8feb4570522901d1d60156571a41c83"
+      "sha256": "aea3473738141a41b8207d8bd2e621adffc71616b282717e864517b58ecbbb24"
     },
     {
       "path": "core/src/aura_core/osworld/audit_broker_protocol.py",
@@ -1109,12 +1109,12 @@
       "sha256": "96fde150bd557eea386a27dff409bbcbb652a9e259d95adc2b3c9caa40292bd5"
     },
     {
-      "path": "core/src/aura_core/osworld/runtime.py",
-      "sha256": "8659a13500229bf62f6f6ae4f13075510f5cd56a48bbfd6274a393e9a38f7074"
-    },
-    {
       "path": "core/src/aura_core/osworld/runtime_bridge.py",
       "sha256": "bdee42bc7ceb5dc07a751c6de1592ab0e60b69063aeeea4621b4d0d428bd40d2"
+    },
+    {
+      "path": "core/src/aura_core/osworld/runtime.py",
+      "sha256": "8659a13500229bf62f6f6ae4f13075510f5cd56a48bbfd6274a393e9a38f7074"
     },
     {
       "path": "core/src/aura_core/persistence/__init__.py",
@@ -1205,12 +1205,12 @@
       "sha256": "a6d9ce74c609a8dc0b423685d50520a3b9b62c312cf6849cc9affd331e44d2ea"
     },
     {
-      "path": "core/src/aura_core/runtime/mock.py",
-      "sha256": "aa0d52fd04b3cb1190dd3e76b402fd7589363d6c7f938330c343640400f1e760"
-    },
-    {
       "path": "core/src/aura_core/runtime/mock_transport.py",
       "sha256": "3da4e35fb03a1f490668293bba9743f3e9f6522fb6e86065aacee7c2b9ce38c9"
+    },
+    {
+      "path": "core/src/aura_core/runtime/mock.py",
+      "sha256": "aa0d52fd04b3cb1190dd3e76b402fd7589363d6c7f938330c343640400f1e760"
     },
     {
       "path": "core/src/aura_core/runtime/ollama.py",
@@ -1293,12 +1293,16 @@
       "sha256": "56329aae25c968ae5a815afcc3595f920a0a801502f07337d41222241e8ef815"
     },
     {
+      "path": "core/tests/test_audit_broker_f23.py",
+      "sha256": "295848132f2ad01bf973bbcee212e0be8fe7cd0f3d98296543baf5dff1d380c4"
+    },
+    {
       "path": "core/tests/test_audit_broker_protocol.py",
       "sha256": "87824ecec9fa897090fd171312f1a36b405395b834b5ba2955d237e555bf3b90"
     },
     {
       "path": "core/tests/test_audit_broker_security.py",
-      "sha256": "26a3f9bd6aaff010c47579cb91aebd50c8dd84d5f94d3dce454565e2654efbc7"
+      "sha256": "0f85a2ae6dd99d3245c0b6c1e9dd17c4de70025e27ed0c7c0c40ba7992fa9ea3"
     },
     {
       "path": "core/tests/test_audit_broker_service.py",
