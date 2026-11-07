@@ -77,6 +77,8 @@ def files_to_hash() -> list[Path]:
         ROOT / "core" / "tests" / "test_osworld_secure_live.py",
         ROOT / "core" / "tests" / "test_audit_broker_protocol.py",
         ROOT / "core" / "tests" / "test_audit_broker_security.py",
+        ROOT / "core" / "tests" / "test_audit_broker_service.py",
+        ROOT / "core" / "scripts" / "aura_docker_broker_service.py",
         ROOT / "core" / "scripts" / "physical_webauthn_probe.py",
         ROOT / "core" / "scripts" / "physical_microphone_probe.py",
         ROOT / "core" / "scripts" / "verify_physical_hardware.py",
