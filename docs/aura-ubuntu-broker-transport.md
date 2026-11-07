@@ -116,3 +116,51 @@ path; a root helper launched only via that systemd socket with fd 3,
 real SCM/SSH identity/ACL negative checks; and measured OSWorld resource
 ownership. Avoid generic sudo grants, Docker group membership, TCP daemon,
 credential forwarding and any live `audit_only`/signed activation.
+
+## F2.6 SCM preparation: deny-only only (2026-11-07)
+
+The separate `preflight_ubuntu_deny_only_service()` verifies the protected
+Windows Python/runtime and policy files, exact current process SID and a
+`BrokerServicePolicy` with mode `deny_only`. The SCM adapter independently
+verifies the actual registered service logon SID before opening its existing
+deny-only named pipe. It **does not** require Windows Docker Desktop access:
+the legacy `preflight_service()` still does, and remains unchanged for
+Docker Desktop-specific checks. Neither preflight grants Docker access.
+
+`require_operator_approved_ubuntu_activation()` is an **unimplemented
+authorization gate**. It rejects both shipped `deny_only` and an artificially
+constructed `audit_only` policy, even if a caller bypasses the normal JSON
+parser. No SSH runner, Docker audit pipeline, signer or receipt is reachable
+through the installed SCM adapter. A real future activation implementation
+must verify independent operator authorization, real SCM/Agent/Auditor token
+boundaries, sealed SSH runtime/key host pin, physical Ubuntu/QEMU/VM isolation
+and immutable request/nonce evidence. Merely changing `service.json` must
+never enable it.
+
+### Protected Windows runtime packaging — operator procedure, NOT activation
+
+1. Use the exact reviewed PR commit and the passing hosted Linux/Windows CI
+   and release-lock manifest. Record its commit SHA and per-file SHA-256 values.
+2. Build/pin a Windows Python runtime with `pywin32` on an isolated trusted
+   staging machine; audit the full dependency closure and native DLLs. Copy
+   the executable, `aura_core` package, and SCM adapter under
+   `D:\\AURA\\Trust\\DockerBroker\\bin`. Reject symlinks/reparse points,
+   mutable AURA checkout dependencies, missing files and mismatched hashes.
+3. Provision explicit protected NTFS ACLs (Broker account read/execute,
+   SYSTEM/Administrators full) and Administrators owner on **every** packaged
+   executable/source/config file and directory. Check as the real Broker
+   token; the private key, known_hosts and parent Trust ACLs must remain
+   sealed. Never expose the private key to the interactive Agent.
+4. A separately approved operator may later create the protected
+   `policy/service.json` with distinct **actual** Broker, Agent and Auditor
+   user SIDs and exactly `mode: deny_only`. Only after independent review
+   may an SCM registration under the dedicated Broker account be attempted.
+   The SCM installer is intentionally not included in this commit.
+5. Prior to any SCM start, verify the SCM-configured logon SID equals the
+   running process SID, and require negative write/daemon access tests from
+   separate Agent/Auditor tokens. Service acceptance is only
+   `ISOLATION_BLOCKED`, never a signed measurement. Keep the account
+   disabled and do not deploy a service during this review candidate phase.
+
+This staged code change creates **no** Windows users, credentials, service
+registration, `service.json`, Ubuntu systemd unit or signed receipts.

@@ -430,5 +430,47 @@ class BackendContractTests(unittest.TestCase):
             host.parse_response(data, nonce=NONCE, operation="inspect_container")
 
 
+class UbuntuSCMActivationGateTests(unittest.TestCase):
+    def test_shipped_deny_only_policy_never_authorizes_ssh(self):
+        data = BrokerServicePolicy(
+            "S-1-5-21-1-2-3-1001", "S-1-5-21-1-2-3-1002",
+            "S-1-5-21-1-2-3-1003", "deny_only",
+        )
+        with self.assertRaises(BrokerDenied):
+            host.require_operator_approved_ubuntu_activation(data)
+
+    def test_forged_audit_only_policy_is_not_operator_approval(self):
+        data = BrokerServicePolicy(
+            "S-1-5-21-1-2-3-1001", "S-1-5-21-1-2-3-1002",
+            "S-1-5-21-1-2-3-1003", "audit_only",
+        )
+        with (
+            patch.object(host, "verify_trusted_runtime"),
+            patch.object(host, "load_service_policy", return_value=data),
+            patch.object(host, "validate_service_identity") as identity,
+            patch.object(host, "verify_registered_service_account") as scm,
+            patch.object(host, "_require_sealed_ssh_files") as ssh,
+        ):
+            with self.assertRaisesRegex(BrokerDenied, "verifier is not installed"):
+                host._production_preflight()
+            identity.assert_not_called()
+            scm.assert_not_called()
+            ssh.assert_not_called()
+
+    def test_ssh_runner_not_called_even_with_fabricated_audit_only(self):
+        fake = BrokerServicePolicy(
+            "S-1-5-21-1-2-3-1001", "S-1-5-21-1-2-3-1002",
+            "S-1-5-21-1-2-3-1003", "audit_only",
+        )
+        runner = Mock()
+        with (patch.object(host, "verify_trusted_runtime"),
+              patch.object(host, "load_service_policy", return_value=fake)):
+            with self.assertRaises(BrokerDenied):
+                host.UbuntuBrokerSshTransport(runner=runner).exchange(
+                    "inspect_container", VM, run_id=RUN, vm_id=VM,
+                )
+            runner.assert_not_called()
+
+
 if __name__ == "__main__":
     unittest.main()

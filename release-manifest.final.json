@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "review-candidate",
-  "generated_at": "2026-11-07T12:10:21.972Z",
+  "generated_at": "2026-11-07T15:25:00.254Z",
   "git_commit": "2a8adb8d57c1cc2053d3de09fd561d72c3411c79",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:1807aefdc8aa542efeea88a330e5349860631024898ea076b08554b909f60fa5",
+  "release_digest": "sha256:3c75ed20803ed60d786e3b2da64f70c90cef4490be4831e3e27e829b220b0ccd",
   "file_count": 349,
   "files": [
     {
@@ -198,7 +198,7 @@
     },
     {
       "path": "core/scripts/aura_docker_broker_service.py",
-      "sha256": "f13d05832b0141c464e1eee6561f0423f2cdbb9ff124ac334275caa5ad2796da"
+      "sha256": "4812d0ec38ea5ed2ba6506d2f1a020c178f54f292c50d2a2048f6f7697af8930"
     },
     {
       "path": "core/scripts/aura_ubuntu_broker_forced_command.py",
@@ -1130,7 +1130,7 @@
     },
     {
       "path": "core/src/aura_core/osworld/audit_broker_service.py",
-      "sha256": "7945b460c1d0c4b631937c457b80ea900bfe8f9e8f8964225e6a7ede47e54798"
+      "sha256": "1a4e7ec4576613bf038a9ee76afecf9aba1b1127b01b2dd83310d99b044828f0"
     },
     {
       "path": "core/src/aura_core/osworld/audit_broker_topology.py",
@@ -1138,7 +1138,7 @@
     },
     {
       "path": "core/src/aura_core/osworld/audit_broker_ubuntu_transport.py",
-      "sha256": "891b563bae7a3271c1b8a4261e7964930847a5d7139ca8a48dd1c3d2b5f12969"
+      "sha256": "adb37ce9187bda7e84304bba0d923a7300e02fc89f28f411279631a4836fd9ab"
     },
     {
       "path": "core/src/aura_core/osworld/audit_broker_vm_executor.py",
@@ -1378,11 +1378,11 @@
     },
     {
       "path": "core/tests/test_audit_broker_service.py",
-      "sha256": "1de65d5dd494520d3ccf1e8b0ea17b7b2096a8d1aba13f4dae9e35d633ae7ec9"
+      "sha256": "e04d7f0e89956e0844933c16ad8b0ee121800cf5996d19c2070d2510c4848641"
     },
     {
       "path": "core/tests/test_audit_broker_ubuntu_transport.py",
-      "sha256": "5c791398887ffcfc661152bce85a8f8f70a01640ee9d58fe990117c373d5c656"
+      "sha256": "f4e1de025e48c3e3441ab4fb700a084cec9a5ad5a8b4e1f27c1a974cf6f5e67f"
     },
     {
       "path": "core/tests/test_audit_broker_vm_executor.py",

@@ -183,12 +183,23 @@ def _ssh_argv() -> list[str]:
             "-l", REMOTE_USER, "--", REMOTE_IP, REMOTE_COMMAND]
 
 
+def require_operator_approved_ubuntu_activation(policy: BrokerServicePolicy) -> None:
+    """Explicit F2.6 activation seam; no independently approved verifier exists.
+
+    A fabricated audit_only dataclass or a modified JSON file is insufficient.
+    This function must be replaced only with an independently reviewed, real
+    operator approval/attestation verifier; it cannot be toggled by the Agent.
+    """
+    if type(policy) is not BrokerServicePolicy or policy.mode != "audit_only":
+        raise BrokerDenied("Ubuntu audit activation requires a reviewed audit-only policy")
+    raise BrokerDenied("Independent operator approval verifier is not installed")
+
+
 def _production_preflight() -> None:
     """No real SSH call is authorized by the shipped deny_only SCM policy."""
     verify_trusted_runtime(source_file=Path(__file__), python_executable=Path(os.sys.executable))
     policy = load_service_policy()
-    if type(policy) is not BrokerServicePolicy or policy.mode != "audit_only":
-        raise BrokerDenied("Operator-reviewed Ubuntu audit activation missing")
+    require_operator_approved_ubuntu_activation(policy)
     validate_service_identity(policy, actual_sid=current_process_sid())
     verify_registered_service_account(policy)
     _require_sealed_ssh_files()

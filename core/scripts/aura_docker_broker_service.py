@@ -1,4 +1,4 @@
-"""Windows SCM adapter for the deny-only Stage F2.1 audit broker.
+"""Windows SCM adapter for the staged Ubuntu-targeted deny-only broker.
 
 Do NOT register/start this from the writable AURA checkout. Package a pinned,
 ACL-protected Python runtime, source tree and policy into
@@ -14,7 +14,7 @@ import sys
 
 from aura_core.osworld.audit_broker_protocol import BrokerDenied
 from aura_core.osworld.audit_broker_service import (
-    BIN_ROOT, SERVICE_NAME, POLICY_PATH, preflight_service,
+    BIN_ROOT, SERVICE_NAME, POLICY_PATH, preflight_ubuntu_deny_only_service,
     serve_denied_request_once, verify_trusted_runtime,
 )
 
@@ -40,10 +40,11 @@ if os.name == "nt":
             win32event.SetEvent(self._stop_event)
 
         def SvcDoRun(self):
-            # Fail before creating the named pipe if any identity/ACL/path
+            # Ubuntu deny-only requires real SID and sealed runtime, not a
+            # Windows Docker Desktop pipe. Fail before creating any IPC.
             # assertion fails. Catching here does not authorize continuation.
             try:
-                policy = preflight_service()
+                policy = preflight_ubuntu_deny_only_service()
                 # SCM registration must match this real process token. A
                 # policy JSON SID by itself is not Windows account evidence.
                 from aura_core.osworld.audit_broker_scm_identity import (
