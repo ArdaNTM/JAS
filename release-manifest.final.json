@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "review-candidate",
-  "generated_at": "2026-11-07T02:00:00+01:00",
-  "git_commit": "23065ef32236481f21a7c5602270e3f425119ecb",
+  "generated_at": "2026-11-07T02:25:00+01:00",
+  "git_commit": "2ce34d17746bdefce0269aa4e31c360cae349c3f",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:f5c75d257074ae1d857c6ae81058a4fb77d38ef83ed7426d0bcb9ba68f712290",
-  "file_count": 331,
+  "release_digest": "sha256:9267a7a4c7a60b40fae4764d6d6ee486e54c9e8022aedfc7c9ad1bc8c9717082",
+  "file_count": 333,
   "files": [
     {
       "path": ".gitattributes",
@@ -14,7 +14,7 @@
     },
     {
       "path": ".github/workflows/aura-osworld-secure-live.yml",
-      "sha256": "5362082278caa8b3b96582a0d12f13bb9c12e6ad16564f2a9fd237e3a66140b7"
+      "sha256": "ea30ed9690d1010cef34603eaf2548261619e51584e89d8d836eed31ae4d5d5c"
     },
     {
       "path": ".github/workflows/aura-physical-trust-acceptance.yml",
@@ -194,7 +194,7 @@
     },
     {
       "path": "core/scripts/attest_osworld_network.py",
-      "sha256": "b2edb281c11718d396a569784bc031af8703f897e0ae2e3752d21f152263f275"
+      "sha256": "390283ac035bbea333510bd17cacca734f0e44876516e7c6f04d13a23c5e1c54"
     },
     {
       "path": "core/scripts/aura_docker_broker_service.py",
@@ -210,7 +210,7 @@
     },
     {
       "path": "core/scripts/generate_final_lock.py",
-      "sha256": "c823d696b0f95252f5f48df8fbe890a5034245763efd4f21633e37059bf5f40f"
+      "sha256": "90ac5291e30ce206be2066cbeff0b69386d0e3e23a94f0b10d5fa87c65add11e"
     },
     {
       "path": "core/scripts/hardware_stage_c_acceptance.py",
@@ -1069,6 +1069,10 @@
       "sha256": "b42d8246d44735643d8e74d34ed2b76cdee37a24592d46a7854211c446f9ab25"
     },
     {
+      "path": "core/src/aura_core/osworld/audit_broker_attestor.py",
+      "sha256": "f20c8c67edef67bb6e276d8ae687111effc40fa0acfd7e12d374714ea5987e76"
+    },
+    {
       "path": "core/src/aura_core/osworld/audit_broker_client.py",
       "sha256": "9b11f884640d1c6c7ce4b61770ea2981bbbd89e5bae66d273da395c881633fae"
     },
@@ -1295,6 +1299,10 @@
     {
       "path": "core/src/aura_core/voice/sherpa_onnx.py",
       "sha256": "f31a33e4f9923ff6e4e5c4d1565cf550efec3e5142401fe30135f305a1c7742c"
+    },
+    {
+      "path": "core/tests/test_audit_broker_attestor.py",
+      "sha256": "f3d302513c64c9cbc88e518670d56c956d2a11657dd8caf574cb3e978f6dc34f"
     },
     {
       "path": "core/tests/test_audit_broker_client.py",

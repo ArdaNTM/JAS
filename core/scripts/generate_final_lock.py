@@ -80,6 +80,7 @@ def files_to_hash() -> list[Path]:
         ROOT / "core" / "tests" / "test_audit_broker_service.py",
         ROOT / "core" / "tests" / "test_audit_broker_client.py",
         ROOT / "core" / "tests" / "test_audit_broker_f23.py",
+        ROOT / "core" / "tests" / "test_audit_broker_attestor.py",
         ROOT / "core" / "scripts" / "aura_docker_broker_service.py",
         ROOT / "core" / "scripts" / "physical_webauthn_probe.py",
         ROOT / "core" / "scripts" / "physical_microphone_probe.py",
