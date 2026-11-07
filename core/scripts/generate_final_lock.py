@@ -86,6 +86,8 @@ def files_to_hash() -> list[Path]:
         ROOT / "core" / "tests" / "test_audit_broker_host_runtime.py",
         ROOT / "core" / "tests" / "test_audit_broker_readiness.py",
         ROOT / "core" / "scripts" / "preflight_osworld_f26.py",
+        ROOT / "core" / "scripts" / "aura_ubuntu_broker_forced_command.py",
+        ROOT / "core" / "tests" / "test_audit_broker_ubuntu_transport.py",
         ROOT / "core" / "scripts" / "inspect_osworld_docker_boundary.py",
         ROOT / "core" / "scripts" / "aura_docker_broker_service.py",
         ROOT / "core" / "scripts" / "physical_webauthn_probe.py",

@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "review-candidate",
-  "generated_at": "2026-11-07T02:40:00+01:00",
-  "git_commit": "7bd5853b4702880984075678ebcd31e5f5586dad",
+  "generated_at": "2026-11-07T06:38:12.290Z",
+  "git_commit": "d10a03981d166a665a48f186c0b439fef64057c0",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:99b5445aab5e43023e1d1bb3a0d21d6bd51baaeb951a5edd17ef4f0511c38d31",
-  "file_count": 344,
+  "release_digest": "sha256:ddb23377e52b999f712bd2286074912af89c6451a74e7d0eba2950d08ea068bb",
+  "file_count": 347,
   "files": [
     {
       "path": ".gitattributes",
@@ -14,7 +14,7 @@
     },
     {
       "path": ".github/workflows/aura-osworld-secure-live.yml",
-      "sha256": "f4af4fb81add61354e366181fe2a7a2c801a10e15a88f96e2a14ed0cbd68ced3"
+      "sha256": "31adb752153fcebc1ed4492249b975b8bd96e1a74ad926798a5945294f716e64"
     },
     {
       "path": ".github/workflows/aura-physical-trust-acceptance.yml",
@@ -201,6 +201,10 @@
       "sha256": "f13d05832b0141c464e1eee6561f0423f2cdbb9ff124ac334275caa5ad2796da"
     },
     {
+      "path": "core/scripts/aura_ubuntu_broker_forced_command.py",
+      "sha256": "0272e668ba76c936c769e20ffde2b4eb6f20f984f65be483a06fbcc1ec4e0720"
+    },
+    {
       "path": "core/scripts/enroll_local_owner.py",
       "sha256": "c180b4c50ea8cc0aa1a32523fc7ff7663a49abfab19ad5d1752cd1b585823e10"
     },
@@ -210,7 +214,7 @@
     },
     {
       "path": "core/scripts/generate_final_lock.py",
-      "sha256": "b95a3ade00605d44e3852cdad2aa1530559a00b76be727c55939be2896678262"
+      "sha256": "8237e0997448bc733f09297b0443430e67c231f354f95d99b8cf934b316cdc28"
     },
     {
       "path": "core/scripts/hardware_stage_c_acceptance.py",
@@ -1125,6 +1129,10 @@
       "sha256": "34a2f4945638366feda9727df28945a6aa88bea3f008ffd06626c9f2f3896db3"
     },
     {
+      "path": "core/src/aura_core/osworld/audit_broker_ubuntu_transport.py",
+      "sha256": "82a2dcb88cfcd20392be270fb68a1301326be2f8fd9aa49f42add776892d9118"
+    },
+    {
       "path": "core/src/aura_core/osworld/audit_broker_vm_executor.py",
       "sha256": "ab876a404a099e59eb12134b5405bba444b970e4d45f04cdb2949b528fff9d28"
     },
@@ -1363,6 +1371,10 @@
     {
       "path": "core/tests/test_audit_broker_service.py",
       "sha256": "1de65d5dd494520d3ccf1e8b0ea17b7b2096a8d1aba13f4dae9e35d633ae7ec9"
+    },
+    {
+      "path": "core/tests/test_audit_broker_ubuntu_transport.py",
+      "sha256": "b8ce043fa810eef2eff16b223faa2cbe5108afe7979a5e2c02df4e9e4b9add96"
     },
     {
       "path": "core/tests/test_audit_broker_vm_executor.py",
