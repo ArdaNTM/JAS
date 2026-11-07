@@ -1,269 +1,429 @@
-"""F2.6 isolated Ubuntu SSH broker: fake-only positive and adversarial tests."""
+"""F2.6 P0/P1 security regressions: no real SSH, SCM or Docker used."""
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 import errno
 import importlib.util
 import json
-import subprocess
-import unittest
+import os
 from pathlib import Path
+import socket
+import subprocess
+import sys
+from tempfile import TemporaryDirectory
+import unittest
+from unittest.mock import Mock, patch
 from types import SimpleNamespace
-from unittest.mock import patch
 
 from aura_core.osworld.audit_broker_protocol import BrokerDenied
 from aura_core.osworld import audit_broker_ubuntu_transport as host
 from aura_core.osworld import network_audit
+from aura_core.osworld.audit_broker_service import BrokerServicePolicy
+
+SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
+sys.path.insert(0, str(SCRIPTS))
+
+
+def load(name: str, path: Path):
+    spec = importlib.util.spec_from_file_location(name, path)
+    assert spec is not None and spec.loader is not None
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+policy = load("aura_ubuntu_broker_policy", SCRIPTS / "aura_ubuntu_broker_policy.py")
+helper = load("aura_ubuntu_helper_test", SCRIPTS / "aura_ubuntu_broker_helper.py")
+front = load("aura_ubuntu_front_test", SCRIPTS / "aura_ubuntu_broker_forced_command.py")
 
 VM = "a" * 64
 RUN = "b" * 32
 NONCE = "c" * 32
+GATEWAY_ID = "d" * 64
 NOW = 1794000000
 
-GUEST_PATH = Path(__file__).resolve().parents[1] / "scripts" / "aura_ubuntu_broker_forced_command.py"
-SPEC = importlib.util.spec_from_file_location("aura_ubuntu_forced_test", GUEST_PATH)
-assert SPEC is not None and SPEC.loader is not None
-GUEST = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(GUEST)
+
+def request(op: str = "inspect_container", target: str = VM, **kw) -> bytes:
+    return host.make_request(op, target, run_id=RUN, vm_id=VM,
+                             nonce=NONCE, issued_at=NOW, **kw)
 
 
-class RequestContractTests(unittest.TestCase):
-    def make(self, op="inspect_container", target=VM, **kwargs):
-        return host.make_request(op, target, nonce=NONCE, issued_at=NOW, **kwargs)
+class FakeDocker:
+    def __init__(self):
+        self.calls: list[list[str]] = []
+        self.vm = {
+            "Id": VM,
+            "State": {"Running": True},
+            "Config": {"Image": policy.VM_IMAGE, "Labels": {policy.RUN_LABEL: RUN}},
+            "HostConfig": {"NetworkMode": policy.NETWORK},
+            "NetworkSettings": {"Networks": {policy.NETWORK: {"NetworkID": "1" * 64}}},
+            "Mounts": [{"Type": "volume", "Name": policy.STORAGE + RUN, "Destination": "/storage"}],
+        }
+        self.gateway = {
+            "Id": GATEWAY_ID,
+            "Name": "/" + policy.GATEWAY + RUN,
+            "State": {"Running": True},
+            "Config": {"Labels": {policy.RUN_LABEL: RUN, "aura.osworld.role": "loopback-gateway"}},
+            "NetworkSettings": {"Networks": {
+                policy.NETWORK: {"NetworkID": "1" * 64},
+                policy.INGRESS + RUN: {"NetworkID": "2" * 64},
+            }},
+        }
+        self.internal = {
+            "Name": policy.NETWORK, "Id": "1" * 64, "Internal": True,
+            "Driver": "bridge", "IPAM": {"Config": [{"Gateway": "172.17.0.1"}]},
+        }
+        self.ingress = {
+            "Name": policy.INGRESS + RUN, "Id": "2" * 64,
+            "Internal": False, "EnableIPv6": False, "Driver": "bridge",
+            "Labels": {policy.RUN_LABEL: RUN, "aura.osworld.purpose": "loopback-ingress"},
+            "IPAM": {"Config": [{"Gateway": "172.18.0.1"}]},
+        }
+        self.volume = {
+            "Name": policy.STORAGE + RUN, "Driver": "local",
+            "Labels": {policy.RUN_LABEL: RUN, "aura.osworld.purpose": "vm-storage"},
+        }
+        self.errno = errno.ENETUNREACH
 
-    def test_client_guest_contract_exactly_matches(self):
-        data = GUEST.parse_request(self.make(), now=NOW)
-        self.assertEqual(data["target"], VM)
-        self.assertEqual(data["nonce"], NONCE)
-        self.assertEqual(GUEST.REQUEST_SCHEMA, host.REQUEST_SCHEMA)
-        self.assertEqual(GUEST.RESPONSE_SCHEMA, host.RESPONSE_SCHEMA)
-        self.assertEqual(GUEST.PROBE_IMAGE, network_audit.GATEWAY_IMAGE)
+    def __call__(self, args, *, timeout=20):
+        self.calls.append(list(args))
+        if args == ["inspect", VM]:
+            return [self.vm]
+        if args == ["inspect", policy.GATEWAY + RUN]:
+            return [self.gateway]
+        if args == ["network", "inspect", policy.NETWORK]:
+            return [self.internal]
+        if args == ["network", "inspect", policy.INGRESS + RUN]:
+            return [self.ingress]
+        if args == ["volume", "inspect", policy.STORAGE + RUN]:
+            return [self.volume]
+        if args and args[0] == "run":
+            info = json.loads(args[-1])
+            return {
+                "schema": policy.PROBE_SCHEMA, "name": info["name"],
+                "errno": self.errno, "blocked": self.errno == errno.ENETUNREACH,
+            }
+        raise AssertionError("unexpected Docker args: " + repr(args))
 
-    def test_allowlisted_inspections_roundtrip(self):
-        targets = [
+
+class TransportProtocolTests(unittest.TestCase):
+    def test_schema_and_pinned_images_consistent(self):
+        self.assertEqual(host.REQUEST_SCHEMA, policy.REQUEST_SCHEMA)
+        self.assertEqual(host.RESPONSE_SCHEMA, policy.RESPONSE_SCHEMA)
+        self.assertEqual(host.REMOTE_COMMAND, front.REMOTE_COMMAND)
+        self.assertEqual(host.REMOTE_IP, "192.168.247.2")
+        self.assertEqual(policy.PROBE_IMAGE, network_audit.GATEWAY_IMAGE)
+        self.assertEqual(policy.VM_IMAGE, network_audit.IMAGE)
+
+    def test_exact_roundtrip_of_every_inspect(self):
+        for name, target in [
             ("inspect_container", VM),
-            ("inspect_gateway", GUEST.GATEWAY + RUN),
-            ("inspect_network", GUEST.NETWORK),
-            ("inspect_network", GUEST.INGRESS + RUN),
-            ("inspect_volume", GUEST.STORAGE + RUN),
-        ]
-        for op, target in targets:
-            with self.subTest(op=op, target=target):
-                self.assertEqual(GUEST.parse_request(self.make(op, target), now=NOW)["target"], target)
+            ("inspect_gateway", policy.GATEWAY + RUN),
+            ("inspect_network", policy.NETWORK),
+            ("inspect_network", policy.INGRESS + RUN),
+            ("inspect_volume", policy.STORAGE + RUN),
+        ]:
+            with self.subTest(name=name):
+                data = policy.parse_request(request(name, target), now=NOW)
+                self.assertEqual(data["run_id"], RUN)
+                self.assertEqual(data["vm_id"], VM)
+                self.assertEqual(data["target"], target)
 
-    def test_arbitrary_actions_names_and_mounts_denied(self):
-        attempts = [
-            ("exec", VM), ("run", VM), ("mount", VM),
-            ("inspect_container", "bridge"),
-            ("inspect_gateway", "evil"),
-            ("inspect_network", "bridge"),
-            ("inspect_network", GUEST.INGRESS + "../../"),
-            ("inspect_volume", "secrets"),
-        ]
-        for op, target in attempts:
-            with self.subTest(op=op, target=target), self.assertRaises(BrokerDenied):
-                self.make(op, target)
+    def test_client_refuses_unbound_or_wrong_run_resource(self):
+        for operation, target in [
+            ("inspect_container", "f" * 64),
+            ("inspect_gateway", policy.GATEWAY + "e" * 32),
+            ("inspect_network", policy.INGRESS + "e" * 32),
+            ("inspect_volume", policy.STORAGE + "e" * 32),
+            ("exec", VM), ("run", VM), ("inspect_network", "bridge"),
+        ]:
+            with self.subTest(operation=operation), self.assertRaises(BrokerDenied):
+                request(operation, target)
 
-    def test_no_client_chosen_probes(self):
-        for values in [
-            {"probe_name": "curl"},
+    def test_server_refuses_tampered_run_vm_or_unauthorized_fields(self):
+        original = json.loads(request())
+        for delta in [
+            {"run_id": "f" * 32}, {"vm_id": "f" * 64},
+            {"operation": "docker run"}, {"target": "f" * 64},
+            {"extra": "--privileged"}, {"issued_at": NOW - 60},
+        ]:
+            data = dict(original, **delta)
+            with self.subTest(delta=delta), self.assertRaises(policy.Denied):
+                policy.parse_request(json.dumps(data).encode(), now=NOW)
+
+    def test_duplicate_json_keys_and_replay_window_rejected(self):
+        raw = request()
+        with self.assertRaises(policy.Denied):
+            policy.parse_request(raw[:-1] + b',"nonce":"' + NONCE.encode() + b'"}', now=NOW)
+        with self.assertRaises(policy.Denied):
+            policy.parse_request(raw, now=NOW + 31)
+
+    def test_fixed_probe_targets_cannot_be_overridden(self):
+        for fields in [
+            {"probe_name": "shell"},
             {"probe_name": "egress_v4_blocked", "gateway_ip": "1.1.1.1"},
             {"probe_name": "host_gateway_blocked", "gateway_ip": "1.1.1.1", "port": 22},
             {"probe_name": "host_gateway_blocked", "gateway_ip": "172.17.0.1", "port": 1234},
         ]:
-            with self.subTest(values=values), self.assertRaises(BrokerDenied):
-                self.make("probe", VM, **values)
+            with self.subTest(fields=fields), self.assertRaises(BrokerDenied):
+                request("probe", VM, **fields)
 
-    def test_probe_positive_and_guest_rejects_unapproved_fields(self):
-        raw = self.make("probe", VM, probe_name="host_gateway_blocked", gateway_ip="172.17.0.1", port=22)
-        self.assertEqual(GUEST.parse_request(raw, now=NOW)["port"], 22)
-        data = json.loads(raw)
-        data["docker_args"] = ["--privileged"]
-        with self.assertRaises(GUEST.Denied):
-            GUEST.parse_request(json.dumps(data).encode(), now=NOW)
+    def test_ssh_frontend_never_accepts_arbitrary_commands(self):
+        with patch.dict(os.environ, {"SSH_ORIGINAL_COMMAND": "docker run --privileged"}):
+            self.assertEqual(front.main(), 2)
+        self.assertNotIn("docker", front.__dict__)
+        self.assertNotIn("subprocess", front.__dict__)
 
-    def test_duplicate_json_fields_and_stale_or_future_nonce(self):
-        raw = self.make()
-        with self.assertRaises(GUEST.Denied):
-            GUEST.parse_request(raw[:-1] + b',"nonce":"' + NONCE.encode() + b'"}', now=NOW)
-        with self.assertRaises(GUEST.Denied):
-            GUEST.parse_request(raw, now=NOW + 40)
-        with self.assertRaises(GUEST.Denied):
-            GUEST.parse_request(raw, now=NOW - 6)
-
-    def test_guest_refuses_unknown_linux_commands(self):
-        with patch.dict(GUEST.os.environ, {"SSH_ORIGINAL_COMMAND": "docker run --privileged"}):
-            self.assertEqual(GUEST.main(), 2)
-
-
-class ResponseContractTests(unittest.TestCase):
-    def response(self, result=None, **extra):
-        data = {"schema": host.RESPONSE_SCHEMA, "operation": "inspect_container",
-                "nonce": NONCE, "result": [{"Id": VM}] if result is None else result}
-        data.update(extra)
-        return json.dumps(data).encode()
-
-    def test_valid_inspection(self):
-        self.assertEqual(host.parse_response(self.response(), nonce=NONCE, operation="inspect_container"), [{"Id": VM}])
-
-    def test_wrong_nonce_or_extra_field_rejected(self):
-        for x in [self.response(nonce="d" * 32), self.response(approved=True),
-                  self.response(operation="exec")]:
-            with self.assertRaises(BrokerDenied):
-                host.parse_response(x, nonce=NONCE, operation="inspect_container")
-
-    def test_duplicate_and_oversized_reply_rejected(self):
-        with self.assertRaises(BrokerDenied):
-            host.parse_response(self.response()[:-1] + b',"nonce":"' + NONCE.encode() + b'"}',
-                                nonce=NONCE, operation="inspect_container")
-        with self.assertRaises(BrokerDenied):
-            host.parse_response(b"x" * (host.MAX_OUTPUT + 1), nonce=NONCE, operation="inspect_container")
-
-    def test_probe_success_not_confused_with_isolation_receipt(self):
-        data = {"schema": host.RESPONSE_SCHEMA, "operation": "probe", "nonce": NONCE,
-                "result": {"schema": "aura.osworld.network-probe.v1",
-                           "name": "egress_v4_blocked", "errno": errno.ENETUNREACH, "blocked": True}}
-        value = host.parse_response(json.dumps(data).encode(), nonce=NONCE, operation="probe")
-        self.assertIs(value["blocked"], True)
-        self.assertNotIn("ISOLATION_SIGNED", json.dumps(data))
-
-
-class PinnedSshTests(unittest.TestCase):
-    def test_ssh_uses_fixed_host_identity_and_forbids_tunnels(self):
+    def test_pinned_ssh_command_disables_agent_and_forwarding(self):
         argv = host._ssh_argv()
-        self.assertEqual(argv[-4:], ["-l", host.REMOTE_USER, "--", host.REMOTE_IP, host.REMOTE_COMMAND][-4:])
+        self.assertEqual(argv[-3:], ["--", host.REMOTE_IP, host.REMOTE_COMMAND])
         joined = " ".join(argv)
-        for part in ("StrictHostKeyChecking=yes", "BatchMode=yes", "PasswordAuthentication=no",
-                     "ClearAllForwardings=yes", "ProxyCommand=none", "ForwardAgent=no",
-                     "-F none", "HostKeyAlgorithms=ssh-ed25519"):
-            self.assertIn(part, joined)
-        for part in ("docker.exe", "-p 2375", "--privileged", "ssh-agent"):
-            self.assertNotIn(part, joined)
+        for option in ("-F none", "BatchMode=yes", "StrictHostKeyChecking=yes",
+                       "HostKeyAlgorithms=ssh-ed25519", "IdentitiesOnly=yes",
+                       "ClearAllForwardings=yes", "ForwardAgent=no",
+                       "PasswordAuthentication=no", "ProxyCommand=none"):
+            self.assertIn(option, joined)
+        self.assertNotIn("docker.exe", joined)
 
-    def test_ssh_runner_only_gets_json_stdin_no_unsafe_env(self):
-        seen = []
+    def test_deny_only_cannot_activate_remote_ssh_even_with_fake_runner(self):
+        data = BrokerServicePolicy(
+            "S-1-5-21-1-2-3-1001", "S-1-5-21-1-2-3-1002",
+            "S-1-5-21-1-2-3-1003", "deny_only",
+        )
+        with (patch.object(host, "verify_trusted_runtime"),
+              patch.object(host, "load_service_policy", return_value=data),
+              patch.object(host, "verify_registered_service_account") as scm):
+            with self.assertRaises(BrokerDenied):
+                host.UbuntuBrokerSshTransport(runner=Mock()).exchange(
+                    "inspect_container", VM, run_id=RUN, vm_id=VM)
+            scm.assert_not_called()
+
+
+class OwnershipTests(unittest.TestCase):
+    def setUp(self):
+        self.docker = FakeDocker()
+
+    def process(self, op="inspect_container", target=VM, **kw):
+        return policy.process_request(
+            request(op, target, **kw),
+            claim_nonce=lambda *args: True,
+            docker=self.docker, now=NOW,
+        )
+
+    def test_full_run_and_volume_network_gateway_ownership_pass(self):
+        for op, target in [
+            ("inspect_container", VM), ("inspect_gateway", policy.GATEWAY + RUN),
+            ("inspect_network", policy.NETWORK),
+            ("inspect_network", policy.INGRESS + RUN),
+            ("inspect_volume", policy.STORAGE + RUN),
+        ]:
+            with self.subTest(op=op):
+                result = json.loads(self.process(op, target))
+                self.assertEqual(result["nonce"], NONCE)
+                self.assertEqual(result["operation"], op)
+                self.assertIsInstance(result["result"], list)
+
+    def test_wrong_vm_run_label_fails_before_other_docker_calls(self):
+        self.docker.vm["Config"]["Labels"][policy.RUN_LABEL] = "e" * 32
+        with self.assertRaises(policy.Denied):
+            self.process()
+        self.assertEqual(len(self.docker.calls), 1)
+
+    def test_wrong_vm_image_or_network_fails(self):
+        self.docker.vm["Config"]["Image"] = "happysixd/osworld-docker:latest"
+        with self.assertRaises(policy.Denied):
+            self.process()
+        self.docker.vm["Config"]["Image"] = policy.VM_IMAGE
+        self.docker.vm["HostConfig"]["NetworkMode"] = "host"
+        with self.assertRaises(policy.Denied):
+            self.process()
+
+    def test_gateway_name_same_but_wrong_label_fails(self):
+        self.docker.gateway["Config"]["Labels"][policy.RUN_LABEL] = "f" * 32
+        with self.assertRaises(policy.Denied):
+            self.process("inspect_gateway", policy.GATEWAY + RUN)
+
+    def test_network_same_name_but_wrong_id_fails(self):
+        self.docker.internal["Id"] = "f" * 64
+        with self.assertRaises(policy.Denied):
+            self.process("inspect_network", policy.NETWORK)
+
+    def test_ingress_same_name_but_wrong_label_or_attachment_fails(self):
+        self.docker.ingress["Labels"]["aura.osworld.purpose"] = "unknown"
+        with self.assertRaises(policy.Denied):
+            self.process("inspect_network", policy.INGRESS + RUN)
+        self.docker.ingress["Labels"]["aura.osworld.purpose"] = "loopback-ingress"
+        self.docker.gateway["NetworkSettings"]["Networks"][policy.INGRESS + RUN]["NetworkID"] = "f" * 64
+        with self.assertRaises(policy.Denied):
+            self.process("inspect_network", policy.INGRESS + RUN)
+
+    def test_volume_same_name_not_mounted_or_labeled_fails(self):
+        self.docker.volume["Labels"][policy.RUN_LABEL] = "f" * 32
+        with self.assertRaises(policy.Denied):
+            self.process("inspect_volume", policy.STORAGE + RUN)
+        self.docker.volume["Labels"][policy.RUN_LABEL] = RUN
+        self.docker.vm["Mounts"].clear()
+        with self.assertRaises(policy.Denied):
+            self.process("inspect_volume", policy.STORAGE + RUN)
+
+    def test_gateway_probe_is_bound_to_exact_measured_id(self):
+        raw = self.process("probe", GATEWAY_ID, probe_name="egress_v4_blocked")
+        self.assertTrue(json.loads(raw)["result"]["blocked"])
+        self.assertIn("container:" + GATEWAY_ID, next(x for x in self.docker.calls if x[0] == "run"))
+        with self.assertRaises(policy.Denied):
+            self.process("probe", "f" * 64, probe_name="egress_v4_blocked")
+
+    def test_gateway_ip_must_match_authoritative_bridge_inspection(self):
+        with self.assertRaises(policy.Denied):
+            self.process("probe", VM, probe_name="host_gateway_blocked",
+                         gateway_ip="172.19.0.1", port=22)
+        result = json.loads(self.process(
+            "probe", VM, probe_name="host_gateway_blocked",
+            gateway_ip="172.17.0.1", port=22,
+        ))
+        self.assertTrue(result["result"]["blocked"])
+
+    def test_timeout_or_refused_is_not_isolation_proof(self):
+        self.docker.errno = errno.ECONNREFUSED
+        result = json.loads(self.process("probe", VM, probe_name="metadata_blocked"))
+        self.assertFalse(result["result"]["blocked"])
+        self.docker.errno = errno.ETIMEDOUT
+        result = json.loads(self.process("probe", VM, probe_name="metadata_blocked"))
+        self.assertFalse(result["result"]["blocked"])
+
+    def test_root_docker_runner_has_no_privileged_or_mount_flags(self):
+        self.process("probe", VM, probe_name="egress_v4_blocked")
+        cmd = next(args for args in self.docker.calls if args[0] == "run")
+        for item in ("--cap-drop", "ALL", "--read-only", "--pull", "never",
+                     "--user", "65534:65534", "--network", "container:" + VM):
+            self.assertIn(item, cmd)
+        for item in ("--privileged", "--mount", "--volume", "--network=host"):
+            self.assertNotIn(item, cmd)
+
+
+class PersistentReplayTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.path = Path(self.temp.name) / "nonce.sqlite3"
+        self.store = helper.DurableNonceStore(self.path, enforce_root=False)
+
+    def test_atomic_nonce_consumption_survives_store_reopen(self):
+        self.assertTrue(self.store.claim(NONCE, RUN, VM))
+        reopened = helper.DurableNonceStore(self.path, enforce_root=False)
+        self.assertFalse(reopened.claim(NONCE, RUN, VM))
+
+    def test_nonce_replay_with_new_run_cannot_reopen(self):
+        self.assertTrue(self.store.claim(NONCE, RUN, VM))
+        self.assertFalse(self.store.claim(NONCE, "e" * 32, VM))
+
+    def test_multiple_concurrent_claims_have_one_winner(self):
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            results = list(pool.map(lambda _: self.store.claim(NONCE, RUN, VM), range(12)))
+        self.assertEqual(results.count(True), 1)
+        self.assertEqual(results.count(False), 11)
+
+    def test_nonce_consumed_before_any_docker_inspection(self):
+        docker = FakeDocker()
+        raw = request()
+        policy.process_request(raw, claim_nonce=self.store.claim, docker=docker, now=NOW)
+        count = len(docker.calls)
+        with self.assertRaises(policy.Denied):
+            policy.process_request(raw, claim_nonce=self.store.claim, docker=docker, now=NOW)
+        self.assertEqual(len(docker.calls), count)
+
+    def test_nonce_store_rejects_malformed_nonce(self):
+        with self.assertRaises(policy.Denied):
+            self.store.claim("../state", RUN, VM)
+
+
+class LinuxPeerBoundaryTests(unittest.TestCase):
+    def test_no_socket_credentials_is_not_accepted(self):
+        with patch.object(helper.socket, "SO_PEERCRED", None, create=True):
+            conn = Mock()
+            conn.family = socket.AF_UNIX
+            with self.assertRaises((policy.Denied, TypeError)):
+                helper._peer_uid(conn)
+
+    @unittest.skipUnless(hasattr(socket, "SO_PEERCRED"), "Linux-only kernel peer credentials")
+    def test_real_socketpair_kernel_peer_uid(self):
+        with socket.socketpair() as (a, b):
+            if os.getuid() == 0:
+                self.skipTest("CI test expects non-root Linux job")
+            self.assertEqual(helper._peer_uid(a), os.getuid())
+
+    def test_wrong_peer_denied_before_nonce_and_docker(self):
+        conn = Mock()
+        store = Mock()
+        with patch.object(helper, "_peer_uid", return_value=999):
+            with self.assertRaises(policy.Denied):
+                helper.handle_connection(conn, store=store, expected_uid=1001)
+        store.claim.assert_not_called()
+        conn.recv.assert_not_called()
+
+    def test_systemd_socket_activation_is_mandatory(self):
+        with patch.dict(os.environ, {"LISTEN_FDS": "0", "LISTEN_PID": "12345"}):
+            with self.assertRaises(policy.Denied):
+                helper._systemd_listener()
+
+    def test_no_deployed_scm_or_signing(self):
+        import aura_core.osworld.audit_broker_service as scm
+        self.assertIn("deny_only", scm.parse_service_policy.__code__.co_consts)
+        self.assertNotIn("UbuntuDockerAuditBackend", scm.__dict__)
+
+
+class BackendContractTests(unittest.TestCase):
+    def setUp(self):
         def runner(cmd, **kw):
-            seen.append((cmd, kw))
-            req = json.loads(kw["input"])
-            out = {"schema": host.RESPONSE_SCHEMA, "operation": req["operation"],
-                   "nonce": req["nonce"], "result": [{"Id": VM}]}
-            return SimpleNamespace(returncode=0, stdout=json.dumps(out).encode(), stderr=b"")
-        transport = host.UbuntuBrokerSshTransport(runner=runner)
-        self.assertEqual(transport.exchange("inspect_container", VM), [{"Id": VM}])
-        cmd, kw = seen[0]
-        self.assertIs(kw["shell"], False)
-        self.assertIsInstance(kw["input"], bytes)
-        self.assertNotIn("DOCKER_HOST", kw["env"])
-        self.assertNotIn("SSH_AUTH_SOCK", kw["env"])
-        self.assertNotIn(VM, cmd)
+            body = json.loads(kw["input"])
+            if body["operation"] == "probe":
+                value = {"schema": policy.PROBE_SCHEMA, "name": body["probe_name"],
+                         "errno": errno.ENETUNREACH, "blocked": True}
+            else:
+                value = [{"Id": GATEWAY_ID if body["operation"] == "inspect_gateway" else VM}]
+            reply = {"schema": host.RESPONSE_SCHEMA, "operation": body["operation"],
+                     "nonce": body["nonce"], "result": value}
+            return SimpleNamespace(returncode=0, stdout=json.dumps(reply).encode(), stderr=b"")
+        self.addCleanup(patch.stopall)
+        self.patcher = patch.object(host, "_production_preflight")
+        self.patcher.start()
+        self.transport = host.UbuntuBrokerSshTransport(runner=runner)
+        self.backend = host.UbuntuDockerAuditBackend(
+            transport=self.transport, run_id=RUN, vm_id=VM)
 
-    def test_transport_failure_is_fail_closed(self):
-        def bad_runner(*args, **kwargs):
-            return SimpleNamespace(returncode=255, stdout=b"", stderr=b"connection refused")
+    def test_pinned_backend_inspect_api(self):
+        self.assertEqual(self.backend.inspect_container(VM), [{"Id": VM}])
+        self.assertEqual(self.backend.inspect_gateway(RUN), [{"Id": GATEWAY_ID}])
+        self.assertEqual(self.backend.inspect_network(network_audit.NETWORK_NAME), [{"Id": VM}])
+        self.assertEqual(self.backend.inspect_volume(network_audit.STORAGE_VOLUME_PREFIX + RUN), [{"Id": VM}])
+
+    def test_cannot_inspect_other_run_even_if_name_matches_pattern(self):
         with self.assertRaises(BrokerDenied):
-            host.UbuntuBrokerSshTransport(runner=bad_runner).exchange("inspect_container", VM)
-
-    def test_release_guard_rejects_forged_server_reply(self):
-        def forge(cmd, **kw):
-            return SimpleNamespace(returncode=0, stdout=b'{"status":"ISOLATION_SIGNED"}', stderr=b"")
+            self.backend.inspect_gateway("f" * 32)
         with self.assertRaises(BrokerDenied):
-            host.UbuntuBrokerSshTransport(runner=forge).exchange("inspect_container", VM)
+            self.backend.inspect_container("f" * 64)
+        with self.assertRaises(BrokerDenied):
+            self.backend.inspect_volume(network_audit.STORAGE_VOLUME_PREFIX + "f" * 32)
 
+    def test_fixed_probes_on_vm_and_measured_gateway(self):
+        self.assertTrue(self.backend.fixed_probe(container_id=VM, name="egress_v4_blocked"))
+        self.assertFalse(self.backend.fixed_probe(container_id=GATEWAY_ID, name="egress_v4_blocked"))
+        self.backend.inspect_gateway(RUN)
+        self.assertTrue(self.backend.fixed_probe(container_id=GATEWAY_ID, name="egress_v4_blocked"))
+        self.assertFalse(self.backend.fixed_probe(container_id="f" * 64, name="egress_v4_blocked"))
 
-class GuestBackendTests(unittest.TestCase):
-    def test_guest_inspect_uses_fixed_docker_binary_and_socket(self):
-        calls = []
-        def runner(argv, **kw):
-            calls.append((argv, kw))
-            return SimpleNamespace(returncode=0, stdout=b'[{"Id":"' + VM.encode() + b'"}]', stderr=b"")
-        with (patch.object(GUEST.os.path, "isfile", return_value=True),
-              patch.object(GUEST.os.path, "islink", return_value=False),
-              patch.object(GUEST.subprocess, "run", side_effect=runner)):
-            self.assertIsInstance(GUEST._docker(["inspect", VM]), list)
-        argv, kw = calls[0]
-        self.assertEqual(argv[:5], [GUEST.DOCKER, "--host", GUEST.DOCKER_SOCKET,
-                                    "--config", GUEST.DOCKER_CONFIG])
-        self.assertFalse(kw["shell"])
-        self.assertNotIn("DOCKER_HOST", kw["env"])
+    def test_trusted_runner_never_inherits_hostile_docker_env(self):
+        with patch.dict(os.environ, {
+            "DOCKER_HOST": "tcp://attacker:2375", "DOCKER_CONTEXT": "attacker",
+            "SSH_AUTH_SOCK": "/tmp/attacker.sock",
+        }):
+            self.assertEqual(self.backend.inspect_container(VM), [{"Id": VM}])
 
-    def test_probe_requires_real_running_aura_container(self):
-        with patch.object(GUEST, "_docker", return_value=[{"Id": VM, "Config": {"Labels": {}}, "State": {"Running": True}}]):
-            with self.assertRaises(GUEST.Denied):
-                GUEST._require_aura_container(VM)
-
-    def test_gateway_probe_no_external_target(self):
-        data = json.loads(host.make_request("probe", VM, nonce=NONCE, issued_at=NOW,
-                                            probe_name="host_gateway_blocked",
-                                            gateway_ip="172.17.0.1", port=22))
-        with patch.object(GUEST, "_docker", return_value={"schema": "aura.osworld.network-probe.v1",
-                                                          "name": "host_gateway_blocked", "errno": 0, "blocked": False}) as dock:
-            with patch.object(GUEST, "_require_aura_container"):
-                self.assertFalse(GUEST.execute(data)["blocked"])
-        args = dock.call_args.args[0]
-        self.assertNotIn("--privileged", args)
-        self.assertNotIn("--mount", args)
-        self.assertIn("--read-only", args)
-        self.assertIn("--pull", args)
-        self.assertIn("never", args)
-        self.assertIn("container:" + VM, args)
-        self.assertEqual(args[args.index("--network") + 1], "container:" + VM)
-
-    def test_connection_refused_is_never_isolation_proof(self):
-        data = json.loads(host.make_request("probe", VM, nonce=NONCE, issued_at=NOW,
-                                            probe_name="egress_v4_blocked"))
-        with (patch.object(GUEST, "_require_aura_container"),
-              patch.object(GUEST, "_docker", return_value={"schema": "aura.osworld.network-probe.v1",
-                                                          "name": "egress_v4_blocked", "errno": errno.ECONNREFUSED,
-                                                          "blocked": True})):
-            self.assertFalse(GUEST.execute(data)["blocked"])
-
-    def test_service_is_not_activated(self):
-        import aura_core.osworld.audit_broker_service as service
-        self.assertIn('deny_only', service.parse_service_policy.__code__.co_consts)
-        # No imports from the deployed service to Ubuntu backend are introduced.
-        self.assertNotIn("UbuntuDockerAuditBackend", service.__dict__)
+    def test_remote_spoofed_signature_never_accepted_as_receipt(self):
+        data = json.dumps({"status": "ISOLATION_SIGNED"}).encode()
+        with self.assertRaises(BrokerDenied):
+            host.parse_response(data, nonce=NONCE, operation="inspect_container")
 
 
 if __name__ == "__main__":
     unittest.main()
-
-
-class BackendCompatibilityTests(unittest.TestCase):
-    def setUp(self):
-        def fake_runner(cmd, **kw):
-            request = json.loads(kw["input"])
-            if request["operation"] == "probe":
-                result = {"schema": "aura.osworld.network-probe.v1",
-                          "name": request["probe_name"], "errno": errno.ENETUNREACH, "blocked": True}
-            else:
-                result = [{"Id": VM}]
-            wire = {"schema": host.RESPONSE_SCHEMA, "operation": request["operation"],
-                    "nonce": request["nonce"], "result": result}
-            return SimpleNamespace(returncode=0, stdout=json.dumps(wire).encode(), stderr=b"")
-        self.transport = host.UbuntuBrokerSshTransport(runner=fake_runner)
-        self.backend = host.UbuntuDockerAuditBackend(transport=self.transport)
-
-    def test_existing_inspect_backend_interface_is_preserved(self):
-        from aura_core.osworld.audit_broker_docker import DockerAuditBackend
-        self.assertIsInstance(self.backend, DockerAuditBackend)
-        self.assertEqual(self.backend.inspect_container(VM), [{"Id": VM}])
-        self.assertEqual(self.backend.inspect_gateway(RUN), [{"Id": VM}])
-        self.assertEqual(self.backend.inspect_network(network_audit.NETWORK_NAME), [{"Id": VM}])
-        self.assertEqual(self.backend.inspect_volume(network_audit.STORAGE_VOLUME_PREFIX + RUN), [{"Id": VM}])
-
-    def test_backend_does_not_accept_arbitrary_inspect_flags(self):
-        for args in (["run", "--privileged"], ["exec", VM, "sh"],
-                     ["network", "inspect", "bridge"], ["inspect", "../var/run/docker.sock"]):
-            with self.subTest(args=args), self.assertRaises(BrokerDenied):
-                self.backend._invoke(args, timeout=5)
-
-    def test_negative_probe_response_must_use_explicit_network_errno(self):
-        self.assertTrue(self.backend._one_probe(
-            VM, name="egress_v4_blocked", kind="tcp4", host="1.1.1.1", port=443,
-        ))
-        self.assertFalse(self.backend._one_probe(
-            VM, name="egress_v4_blocked", kind="tcp4", host="8.8.8.8", port=443,
-        ))
-
-    def test_ssh_transport_literal_matches_linux_forced_command(self):
-        self.assertEqual(host.REMOTE_COMMAND, GUEST.REMOTE_COMMAND)
-        self.assertEqual(host.REMOTE_IP, "192.168.247.2")

@@ -78,3 +78,41 @@ From the AURA Core Python 3.13 environment:
     python scripts/verify_final_lock.py
 
 The guest worker itself targets Ubuntu's Python 3.12 and uses stdlib only.
+
+## F2.6 P0/P1 hardening (review candidate, not deployed)
+
+- The OpenSSH forced-command front end is **not root** and contains no Docker
+  CLI calls. Only a pinned local Unix socket can reach the privileged helper.
+- The separate root-owned, systemd socket-activated helper requires an exact
+  Unix socket path and kernel `SO_PEERCRED` UID matching the dedicated
+  `aura-transport` user. It rejects this principal when in privileged
+  `docker`, `sudo`, `lxd`, `root` or `wheel` groups. The helper's
+  Python script and enclosing installation directory must be root-owned and
+  non-writable by less privileged accounts.
+- The helper uses an operator-provisioned root-owned 0700 state directory and
+  0600 SQLite database. `BEGIN IMMEDIATE` plus a UNIQUE nonce key atomically
+  consumes each request nonce across processes/restarts; cleanup retains
+  entries for 24 hours. Replays and storage errors fail closed before Docker.
+- The wire protocol v2 binds **both** `run_id` and full `vm_id` on
+  every request. Linux independently inspects the expected immutable OSWorld
+  VM image, live Docker labels and single internal network; gateway, ingress
+  network, and per-run volume inspect requests must match their exact labels,
+  attachments and measured VM. Gateway container network probes accept only
+  its exact independently inspected 64-hex ID. Host-gateway negative probes
+  reject private IPs not matching the verified bridge gateway fields.
+- The Windows transport's production preflight **rejects** current
+  `deny_only`; it is not callable by the shipped SCM service.
+  Hosted regressions mock this preflight solely to verify protocol behavior.
+
+### Deployment remains blocked
+
+Do not install accounts or services merely because CI passes. The required
+separately reviewed operator deployment must include: a locked-down
+`aura-transport` authorized key and SSH forced command; root-owned
+immutable worker files; a root-owned systemd **Accept=no** Unix socket with
+`SocketGroup=aura-transport` and `SocketMode=0660` at the exact pinned
+path; a root helper launched only via that systemd socket with fd 3,
+`LISTEN_FDS=1`, matching `LISTEN_PID`; a root-private SQLite directory;
+real SCM/SSH identity/ACL negative checks; and measured OSWorld resource
+ownership. Avoid generic sudo grants, Docker group membership, TCP daemon,
+credential forwarding and any live `audit_only`/signed activation.
