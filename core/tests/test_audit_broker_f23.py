@@ -186,5 +186,95 @@ class DockerF23PolicyTests(unittest.TestCase):
         self.assertEqual(self.runner.calls, [])
 
 
+
+# Reuse the production topology acceptance fixtures rather than substituting
+# a smaller broker-specific topology policy.
+from test_osworld_secure_live import _docker_inspection, _fake_docker_json
+from aura_core.osworld.audit_broker_protocol import AuditRequest
+from aura_core.osworld.audit_broker_topology import BrokerTopologyAudit
+from aura_core.osworld.isolation import IsolationDenied, REQUIRED_CHECKS
+from tempfile import TemporaryDirectory
+
+
+class TopologyRunner(FakeEngine):
+    def __init__(self):
+        super().__init__()
+        self.vm, self.network = _docker_inspection()
+        self.fail_probe = None
+
+    def __call__(self, command, **kw):
+        self.calls.append((command, kw))
+        args = command[5:]
+        if args[0] == "run":
+            req = json.loads(args[-1])
+            rc = 0 if req["name"] != self.fail_probe else errno.ETIMEDOUT
+            out = json.dumps({
+                "schema": docker.PROBE_SCHEMA,
+                "name": req["name"],
+                "errno": errno.ENETUNREACH if rc == 0 else rc,
+                "blocked": rc == 0,
+            })
+            return SimpleNamespace(returncode=0, stdout=out, stderr="")
+        return SimpleNamespace(returncode=0, stdout=json.dumps(
+            _fake_docker_json(args, self.vm, self.network)
+        ), stderr="")
+
+
+class BrokerTopologyF23Tests(unittest.TestCase):
+    def setUp(self):
+        self.temp = TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.image = Path(self.temp.name) / "System.qcow2"
+        self.image.write_bytes(b"trusted-pinned-osworld-disk-fixture")
+        self.runner = TopologyRunner()
+        self.backend = docker.DockerAuditBackend(runner=self.runner)
+        self.audit = BrokerTopologyAudit(
+            backend=self.backend, pinned_vm_image=self.image
+        )
+        self.req = AuditRequest("f" * 32, VM, "c" * 32, 1794000000)
+
+    def test_original_topology_policy_retained_with_broker_io(self):
+        boot, ports, checks = self.audit.audit(self.req)
+        self.assertEqual(boot.container_id, VM)
+        self.assertEqual(set(checks), REQUIRED_CHECKS)
+        self.assertTrue(all(checks.values()))
+        self.assertIn("5000", ports)
+        inspected = [call[0][5:] for call in self.runner.calls
+                     if "inspect" in call[0]]
+        self.assertIn(["inspect", VM], inspected)
+        self.assertIn(["network", "inspect", docker.network_audit.NETWORK_NAME], inspected)
+        self.assertIn(["volume", "inspect", docker.network_audit.STORAGE_VOLUME_PREFIX + "f" * 32], inspected)
+
+    def test_request_run_id_must_match_inspected_label(self):
+        self.req = AuditRequest("e" * 32, VM, "c" * 32, 1794000000)
+        with self.assertRaises(BrokerDenied):
+            self.audit.audit(self.req)
+        self.assertFalse(any("run" in call[0] for call in self.runner.calls))
+
+    def test_privileged_vm_rejected_by_existing_policy(self):
+        self.runner.vm["HostConfig"]["Privileged"] = True
+        with self.assertRaises(IsolationDenied):
+            self.audit.audit(self.req)
+
+    def test_probe_ambiguity_denies_full_topology_attestation(self):
+        self.runner.fail_probe = "metadata_blocked"
+        with self.assertRaises(IsolationDenied):
+            self.audit.audit(self.req)
+
+    def test_mutated_container_id_is_rejected(self):
+        self.runner.vm["Id"] = "e" * 64
+        with self.assertRaises(BrokerDenied):
+            self.audit.audit(self.req)
+
+    def test_symlinked_disk_is_not_trusted(self):
+        other = Path(self.temp.name) / "linked.qcow2"
+        try:
+            other.symlink_to(self.image)
+        except (OSError, NotImplementedError):
+            self.skipTest("Symlink creation unavailable")
+        with self.assertRaises(BrokerDenied):
+            BrokerTopologyAudit(backend=self.backend, pinned_vm_image=other)
+
+
 if __name__ == "__main__":
     unittest.main()
