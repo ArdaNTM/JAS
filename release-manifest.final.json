@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "review-candidate",
-  "generated_at": "2026-11-07T02:35:00+01:00",
+  "generated_at": "2026-11-07T02:40:00+01:00",
   "git_commit": "dffe293d318666c7a86c5a2bf83d2882f155c6ce",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:6898fd86b8fd1b7215872b87a0c673c656b8f9a2cebad016e0cafb9f6e10b39a",
+  "release_digest": "sha256:f0c4eb6f407787ff5faed355a5e54306ebcfb3945b6c2bfca342251a08d8ccc2",
   "file_count": 336,
   "files": [
     {
@@ -1314,7 +1314,7 @@
     },
     {
       "path": "core/tests/test_audit_broker_boundary.py",
-      "sha256": "cd590d4ed548175e0ea0a34a03d6ac64cc2ebfe878d7c4334aa488dc3335c05c"
+      "sha256": "9ce7e02dfb325dba9a611c6ba352bdbcafc6bdc86163d8e550b80a3643e3479c"
     },
     {
       "path": "core/tests/test_audit_broker_client.py",

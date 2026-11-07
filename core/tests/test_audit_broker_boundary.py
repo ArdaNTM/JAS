@@ -247,7 +247,9 @@ class DaemonBoundaryCLIAndRunnerTests(unittest.TestCase):
         args = SimpleNamespace(allow_real_vm=True, smoke=True,
                                upstream=Path("definitely-missing-osworld"),
                                upstream_commit="f" * 40)
-        with self.assertRaises(PermissionError):
+        # The guarded smoke path may fail at the missing upstream checkout
+        # before checking the pinned commit, but can never launch a VM.
+        with self.assertRaises((PermissionError, FileNotFoundError)):
             asyncio.run(runner.run(args))
 
     def test_agent_consent_remains_required(self):
