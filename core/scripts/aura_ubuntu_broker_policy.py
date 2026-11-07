@@ -199,7 +199,7 @@ def _get_gateway(run_id: str, docker: Callable[..., object]) -> dict:
     nets = (obj.get("NetworkSettings") or {}).get("Networks") or {}
     if (obj.get("Name") != "/" + name
             or type(obj.get("Id")) is not str or HEX64.fullmatch(obj["Id"]) is None
-            or labels != {RUN_LABEL: run_id, "aura.osworld.role": "loopback-gateway"
+            or labels != {RUN_LABEL: run_id, "aura.osworld.role": "loopback-gateway"}
             or (obj.get("State") or {}).get("Running") is not True
             or set(nets) != {NETWORK, INGRESS + run_id}):
         raise Denied("Gateway not owned by pinned run")

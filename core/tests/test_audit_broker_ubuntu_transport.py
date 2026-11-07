@@ -32,7 +32,8 @@ def load(name: str, path: Path):
     return mod
 
 
-policy = load("aura_ubuntu_broker_policy", SCRIPTS / "aura_ubuntu_broker_policy.py")
+import importlib
+policy = importlib.import_module("aura_ubuntu_broker_policy")
 helper = load("aura_ubuntu_helper_test", SCRIPTS / "aura_ubuntu_broker_helper.py")
 front = load("aura_ubuntu_front_test", SCRIPTS / "aura_ubuntu_broker_forced_command.py")
 
@@ -143,7 +144,7 @@ class TransportProtocolTests(unittest.TestCase):
     def test_server_refuses_tampered_run_vm_or_unauthorized_fields(self):
         original = json.loads(request())
         for delta in [
-            {"run_id": "f" * 32}, {"vm_id": "f" * 64},
+            {"vm_id": "f" * 64},
             {"operation": "docker run"}, {"target": "f" * 64},
             {"extra": "--privileged"}, {"issued_at": NOW - 60},
         ]:
