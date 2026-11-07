@@ -121,6 +121,15 @@ def preflight_service() -> BrokerServicePolicy:
     )
     policy = load_service_policy()
     validate_service_identity(policy, actual_sid=current_process_sid())
+    # A distinct Windows SID alone proves nothing about Docker rights.
+    # The service must be able to open the pinned Linux Engine endpoint
+    # under its own token; the denial-only handler is *not* unlocked here.
+    from .audit_broker_boundary import inspect_current_principal
+    observation = inspect_current_principal(
+        role="broker", expected_sid=policy.service_sid,
+    )
+    if observation.access != "allowed":
+        raise BrokerDenied("Broker service cannot access the pinned Docker daemon")
     return policy
 
 
