@@ -44,6 +44,12 @@ if os.name == "nt":
             # assertion fails. Catching here does not authorize continuation.
             try:
                 policy = preflight_service()
+                # SCM registration must match this real process token. A
+                # policy JSON SID by itself is not Windows account evidence.
+                from aura_core.osworld.audit_broker_scm_identity import (
+                    verify_registered_service_account,
+                )
+                verify_registered_service_account(policy)
             except Exception:
                 return
             # An SCM stop must remain responsive even if ConnectNamedPipe
