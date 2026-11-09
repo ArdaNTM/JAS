@@ -17,7 +17,7 @@ $ErrorActionPreference = 'Stop'
 $SourceCommit = '38c42d1308056cc157b7233280a7d51a2d5b998f'
 $SourceDigest = '3c75ed20803ed60d786e3b2da64f70c90cef4490be4831e3e27e829b220b0ccd'
 $RuntimeInventorySha = 'cb897595b79b9d2599ed90a12a60383ea9abd9b50a8eebe05dd929f094dd88a7'
-$ProvenanceSha = 'dcba98548770f7610ce00313aa246179d7c2e00e2159182b71b584e35bfa0a'
+$ProvenanceSha = 'dcba98548770f7610ce00313aa246179d7c2e00e2159182b71b584e35bfa0a0a'
 $ScriptsInventorySha = '31c6efd24ad3bf2c193a2a6c8b6d36a59fe4231df5f2fcba2e7be0a2d12869f0'
 $TrustRoot = 'D:\AURA\Trust\DockerBroker'
 $StageRoot = Join-Path $TrustRoot 'staging-f26-38c42d1'
@@ -27,6 +27,25 @@ $SystemSid = 'S-1-5-18'
 function Assert-Condition([bool]$Condition, [string]$Reason) {
     if (-not $Condition) { throw "STOP: $Reason" }
 }
+
+function Assert-Sha256Pin([string]$Value, [string]$Name) {
+    Assert-Condition ($Value -cmatch '^[0-9a-f]{64}$') "Invalid SHA-256 pin ($Name): requires exactly 64 lower-case hex characters"
+}
+
+function Assert-AllSha256Pins {
+    $Pinned = [ordered]@{
+        SourceDigest = $SourceDigest
+        RuntimeInventorySha = $RuntimeInventorySha
+        ProvenanceSha = $ProvenanceSha
+        ScriptsInventorySha = $ScriptsInventorySha
+    }
+    foreach ($Name in $Pinned.Keys) {
+        Assert-Sha256Pin ([string]$Pinned[$Name]) $Name
+    }
+}
+
+# Preflight applies to operator, real-token probes AND CI -SelfTest.
+Assert-AllSha256Pins
 
 function Assert-SafeRelative([string]$Relative) {
     Assert-Condition (-not [string]::IsNullOrWhiteSpace($Relative)) 'Empty inventory path'
@@ -291,6 +310,11 @@ function Assert-DeniedFileOpen([string]$Path, [IO.FileAccess]$Access) {
 }
 
 if ($SelfTest) {
+    $RejectTruncation = $false
+    try { Assert-Sha256Pin ('a' * 62) 'truncated-regression' }
+    catch { $RejectTruncation = $_.Exception.Message.Contains('Invalid SHA-256 pin') }
+    Assert-Condition $RejectTruncation '62-character SHA-256 pin must fail closed'
+    Assert-Sha256Pin ('a' * 64) 'complete-regression'
     Assert-SafeRelative 'bin/aura_core/osworld/audit_broker_service.py'
     foreach ($Bad in @('../escape', 'C:\Windows\evil', 'a//b', 'a/./b', 'a\b\..\c')) {
         $WasDenied = $false
