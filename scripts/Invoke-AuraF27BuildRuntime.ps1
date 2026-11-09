@@ -154,6 +154,7 @@ foreach($Rel in @('policy\service.json','policy\operator-approval.json','keys\op
 }
 $BrokerSid=$Broker.SID.Value
 foreach($D in @($Trust,$Bin,$Base,$OperatorRoot)){DirectoryGuard $D}
+VerifyAcl $OperatorRoot $Broker.SID.Value $true
 $Target=Join-Path $Bin ('f27-'+$Short)
 $Proof=Join-Path $OperatorRoot ('F27-build-'+$Short)
 Check (-not (Test-Path -LiteralPath $Target)) 'F2.7 target already exists'
@@ -186,6 +187,8 @@ Check ($LASTEXITCODE -eq 0) 'Git archive failed'
 $Extracted=Join-Path $Proof 'source'
 Expand-Archive -LiteralPath $Zip -DestinationPath $Extracted -ErrorAction Stop
 $OverlaySha=[collections.generic.Dictionary[string,string]]::new([StringComparer]::OrdinalIgnoreCase)
+Check (@(Get-ChildItem -LiteralPath $Extracted -Recurse -File -Force).Count -eq $Overlay.Count) 'Unexpected files in Git source archive'
+foreach($Node in @(Get-ChildItem -LiteralPath $Extracted -Recurse -Force)){NoLink $Node.FullName}
 foreach($Key in $Paths){
  $From=Join-Path $Extracted $Key.Replace('/','\')
  NoLink $From
@@ -220,16 +223,24 @@ try {
  VerifyTree $Stage $Index $BrokerSid
  $Python=Join-Path $Stage 'python.exe'
  $Code=@'
-import importlib, pathlib, sys
+import importlib, importlib.util, pathlib, sys
 root=pathlib.Path(sys.executable).resolve().parent
 sys.path.insert(0,str(root))
 for name in ("cryptography","win32api","win32service","aura_core.osworld.audit_broker_f27_activation","aura_core.osworld.audit_broker_f27_bridge","aura_core.osworld.audit_broker_ubuntu_transport","aura_core.osworld.audit_broker_scm_identity"):
     mod=importlib.import_module(name)
     if name.startswith("aura_core.") and not pathlib.Path(mod.__file__).resolve().is_relative_to(root):
         raise SystemExit("STOP: module outside trusted runtime")
-print("PASS: F2.7 isolated Python import closure")
+entry = root / "aura_docker_broker_service.py"
+spec = importlib.util.spec_from_file_location("aura_f27_scm_entry", entry)
+if spec is None or spec.loader is None:
+    raise SystemExit("STOP: Windows SCM entry module cannot be loaded")
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+if not hasattr(mod, "AuraDockerBrokerService"):
+    raise SystemExit("STOP: Windows SCM service class is missing")
+print("PASS: F2.7 isolated Python and SCM import closure")
 '@
- & $Python -I -c $Code
+ & $Python -I -B -c $Code
  Check ($LASTEXITCODE -eq 0) 'F2.7 isolated Python import failure'
  $Entries=@(foreach($Item in @($Index.GetEnumerator()|Sort-Object Key)){
   [PSCustomObject][ordered]@{path=$Item.Key.Replace('\','/');sha256=$Item.Value}
