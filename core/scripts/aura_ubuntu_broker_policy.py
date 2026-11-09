@@ -7,6 +7,8 @@ paths, Docker context, run ownership, network destinations or privileges.
 from __future__ import annotations
 
 import errno
+import hashlib
+from pathlib import Path
 import ipaddress
 import json
 import os
@@ -19,6 +21,10 @@ from typing import Callable
 REQUEST_SCHEMA = "aura.osworld.ubuntu-transport.request.v2"
 RESPONSE_SCHEMA = "aura.osworld.ubuntu-transport.response.v2"
 PROBE_SCHEMA = "aura.osworld.network-probe.v1"
+DISK_SCHEMA = "aura.osworld.vm-disk-measurement.v1"
+VM_DISK_NAME = "osworld-v2-ubuntu-x86.qcow2"
+MAX_VM_DISK_BYTES = 128 * 1024 ** 3
+MAX_VM_DISK_SECONDS = 150
 DOCKER = "/usr/bin/docker"
 DOCKER_SOCKET = "unix:///var/run/docker.sock"
 DOCKER_CONFIG = "/var/empty"
@@ -85,7 +91,7 @@ def parse_request(raw: bytes, *, now: int | None = None) -> dict[str, object]:
     op, target, run_id, vm_id = (
         data["operation"], data["target"], data["run_id"], data["vm_id"])
     if (type(op) is not str or op not in {
-        "inspect_container", "inspect_gateway", "inspect_network", "inspect_volume", "probe"}
+        "inspect_container", "inspect_gateway", "inspect_network", "inspect_volume", "measure_vm_disk", "probe"}
             or type(target) is not str or type(run_id) is not str
             or HEX32.fullmatch(run_id) is None or type(vm_id) is not str
             or HEX64.fullmatch(vm_id) is None or type(data["nonce"]) is not str
@@ -99,6 +105,7 @@ def parse_request(raw: bytes, *, now: int | None = None) -> dict[str, object]:
         "inspect_gateway": {GATEWAY + run_id},
         "inspect_network": {NETWORK, INGRESS + run_id},
         "inspect_volume": {STORAGE + run_id},
+        "measure_vm_disk": {vm_id},
         "probe": {vm_id},
     }
     # Gateway namespace is a second, separately measured target. Its full
@@ -218,6 +225,77 @@ def _get_volume(run_id: str, vm: dict, docker: Callable[..., object]) -> dict:
     return volume
 
 
+
+def _verified_vm_disk_path(vm: dict) -> Path:
+    """Only Docker's pinned VM RO bind; never a caller-supplied path."""
+    mounts = vm.get("Mounts")
+    if type(mounts) is not list or not all(type(m) is dict for m in mounts):
+        raise Denied("Untrusted VM mount inventory")
+    match = [m for m in mounts if m.get("Destination") == "/System.qcow2"]
+    if (len(match) != 1 or match[0].get("Type") != "bind"
+            or match[0].get("RW") is not False
+            or type(match[0].get("Source")) is not str):
+        raise Denied("Expected exactly one read-only host QCOW2 bind")
+    source = match[0]["Source"]
+    path = Path(source)
+    if (not path.is_absolute() or path.name != VM_DISK_NAME
+            or any(part in {".", ".."} for part in path.parts)
+            or str(path) != os.path.normpath(source)):
+        raise Denied("Unexpected QCOW2 source path")
+    for parent in (path.parent, *path.parent.parents):
+        info = parent.lstat()
+        if (not stat.S_ISDIR(info.st_mode) or info.st_uid != 0
+                or info.st_mode & 0o022):
+            raise Denied("Untrusted writable or redirected QCOW2 ancestor")
+    info = path.lstat()
+    if (not stat.S_ISREG(info.st_mode) or info.st_uid != 0
+            or info.st_mode & 0o222 or info.st_nlink != 1
+            or not 0 < info.st_size <= MAX_VM_DISK_BYTES):
+        raise Denied("QCOW2 must be a root-owned, nonwritable regular snapshot")
+    return path
+
+
+def _measure_vm_disk(vm: dict, *, docker: Callable[..., object]) -> dict[str, object]:
+    """Hash root-owned immutable-by-nonroot snapshot with inode/time checks."""
+    path = _verified_vm_disk_path(vm)
+    if not hasattr(os, "O_NOFOLLOW"):
+        raise Denied("Kernel no-follow open unavailable")
+    started = time.monotonic()
+    try:
+        fd = os.open(str(path), os.O_RDONLY | os.O_NOFOLLOW | getattr(os, "O_CLOEXEC", 0))
+        with os.fdopen(fd, "rb") as stream:
+            before = os.fstat(stream.fileno())
+            current = path.lstat()
+            fields = ("st_dev", "st_ino", "st_size", "st_mtime_ns", "st_ctime_ns")
+            if any(getattr(before, field) != getattr(current, field) for field in fields):
+                raise Denied("QCOW2 replaced before hash")
+            if stream.read(4) != b"QFI\xfb":
+                raise Denied("QCOW2 magic mismatch")
+            stream.seek(0)
+            digest = hashlib.sha256()
+            while block := stream.read(2 * 1024 * 1024):
+                digest.update(block)
+                if time.monotonic() - started > MAX_VM_DISK_SECONDS:
+                    raise Denied("Bounded QCOW2 hashing timeout")
+            after = os.fstat(stream.fileno())
+            current = path.lstat()
+    except (OSError, ValueError) as exc:
+        raise Denied("QCOW2 cannot be measured") from exc
+    if (any(getattr(before, f) != getattr(after, f)
+            or getattr(before, f) != getattr(current, f) for f in fields)
+            or before.st_mode & 0o222 or before.st_uid != 0):
+        raise Denied("QCOW2 changed during hash")
+    run_id = (vm.get("Config") or {}).get("Labels", {}).get(RUN_LABEL)
+    vm_id = vm["Id"]
+    refreshed = _get_vm(run_id, vm_id, docker)
+    if (refreshed.get("Mounts") != vm.get("Mounts")
+            or _verified_vm_disk_path(refreshed) != path):
+        raise Denied("VM mount changed during QCOW2 hashing")
+    return {"schema": DISK_SCHEMA, "run_id": run_id, "vm_id": vm_id,
+            "sha256": digest.hexdigest(), "bytes": before.st_size,
+            "source": str(path), "dev": before.st_dev, "ino": before.st_ino}
+
+
 def _trusted_gateway_address(requested: str, run_id: str, vm_id: str, vm: dict,
                              docker: Callable[..., object]) -> bool:
     internal = _get_network(NETWORK, run_id, vm_id, vm, docker)
@@ -245,6 +323,8 @@ def execute(data: dict[str, object], *, docker: Callable[..., object] = docker_j
         return [_get_network(target, run_id, vm_id, vm, docker)]
     if op == "inspect_volume":
         return [_get_volume(run_id, vm, docker)]
+    if op == "measure_vm_disk":
+        return _measure_vm_disk(vm, docker=docker)
     if op != "probe":
         raise Denied("Unapproved Docker operation")
     # Network probes may share the AURA VM namespace or the run-owned

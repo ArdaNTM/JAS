@@ -45,7 +45,8 @@ REMOTE_USER = "aura-transport"
 REMOTE_COMMAND = "aura-osworld-transport-v1"
 _HEX32 = re.compile(r"[0-9a-f]{32}\Z")
 _HEX64 = re.compile(r"[0-9a-f]{64}\Z")
-_ALLOWED = frozenset({"inspect_container", "inspect_gateway", "inspect_network", "inspect_volume", "probe"})
+_ALLOWED = frozenset({"inspect_container", "inspect_gateway", "inspect_network", "inspect_volume", "measure_vm_disk", "probe"})
+DISK_SCHEMA = "aura.osworld.vm-disk-measurement.v1"
 MAX_REQUEST = 1400
 
 
@@ -70,6 +71,7 @@ def make_request(operation: str, target: str, *, run_id: str, vm_id: str,
         "inspect_gateway": {network_audit.GATEWAY_PREFIX + run_id},
         "inspect_network": {network_audit.NETWORK_NAME, network_audit.INGRESS_PREFIX + run_id},
         "inspect_volume": {network_audit.STORAGE_VOLUME_PREFIX + run_id},
+        "measure_vm_disk": {vm_id},
         "probe": {vm_id},
     }
     # The dual-homed relay is a separate container whose full ID is learned
@@ -133,6 +135,18 @@ def parse_response(raw: bytes, *, nonce: str, operation: str) -> object:
                 or type(result["name"]) is not str or type(result["errno"]) is not int
                 or type(result["blocked"]) is not bool):
             raise BrokerDenied("Invalid probe response")
+    elif operation == "measure_vm_disk":
+        if (type(result) is not dict or set(result) != {
+                "schema", "run_id", "vm_id", "sha256", "bytes", "source", "dev", "ino"}
+                or result["schema"] != DISK_SCHEMA
+                or type(result["run_id"]) is not str or _HEX32.fullmatch(result["run_id"]) is None
+                or type(result["vm_id"]) is not str or _HEX64.fullmatch(result["vm_id"]) is None
+                or type(result["sha256"]) is not str or _HEX64.fullmatch(result["sha256"]) is None
+                or type(result["source"]) is not str or not result["source"].startswith("/")
+                or type(result["bytes"]) is not int or not 0 < result["bytes"] <= 128 * 1024 ** 3
+                or type(result["dev"]) is not int or result["dev"] < 0
+                or type(result["ino"]) is not int or result["ino"] <= 0):
+            raise BrokerDenied("Invalid root-owned VM disk measurement")
     elif type(result) is not list or len(result) != 1 or type(result[0]) is not dict:
         raise BrokerDenied("Invalid inspect response")
     return result
@@ -223,7 +237,7 @@ class UbuntuBrokerSshTransport:
         try:
             result = self._runner(
                 _ssh_argv(), input=raw, shell=False, check=False,
-                capture_output=True, timeout=READ_TIMEOUT if operation != "probe" else PROBE_TIMEOUT,
+                capture_output=True, timeout=180 if operation == "measure_vm_disk" else (PROBE_TIMEOUT if operation == "probe" else READ_TIMEOUT),
                 env=_trusted_env(),
             )
         except (OSError, subprocess.TimeoutExpired) as exc:
@@ -248,6 +262,18 @@ class UbuntuDockerAuditBackend(DockerAuditBackend):
         self._run_id = run_id
         self._vm_id = vm_id
         self._gateway_id: str | None = None
+
+    def measure_disk(self) -> dict[str, object]:
+        proof = self._transport.exchange(
+            "measure_vm_disk", self._vm_id, run_id=self._run_id, vm_id=self._vm_id,
+        )
+        if (type(proof) is not dict or proof.get("schema") != DISK_SCHEMA
+                or proof.get("run_id") != self._run_id
+                or proof.get("vm_id") != self._vm_id
+                or type(proof.get("sha256")) is not str
+                or _HEX64.fullmatch(proof["sha256"]) is None):
+            raise BrokerDenied("VM disk proof does not match the pinned run")
+        return proof
 
     def _invoke(self, args: list[str], *, timeout: int) -> SimpleNamespace:
         if type(args) is not list or any(type(x) is not str for x in args):

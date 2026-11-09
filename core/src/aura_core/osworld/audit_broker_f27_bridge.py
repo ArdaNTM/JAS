@@ -25,6 +25,9 @@ from .audit_broker_ubuntu_transport import (
 from .audit_broker_windows import current_process_sid
 from . import network_audit
 
+_DISK_SCHEMA = "aura.osworld.vm-disk-measurement.v1"
+_DISK_KEYS = {"schema", "run_id", "vm_id", "sha256", "bytes", "source", "dev", "ino"}
+
 LEDGER = STATE_ROOT / "f27-nonces.sqlite3"
 RESPONSE_SCHEMA = "aura.osworld.f27-unsigned-observation.v1"
 _DENIED = b'{"status":"ISOLATION_BLOCKED","signed":false}'
@@ -90,6 +93,21 @@ class DurableWindowsNonceStore:
             raise BrokerDenied("Windows durable replay ledger unavailable") from exc
 
 
+def _require_measured_disk(value: object, approved: ApprovedActivation) -> dict[str, object]:
+    from .audit_broker_protocol import _HEX64
+    if (type(value) is not dict or set(value) != _DISK_KEYS
+            or value["schema"] != _DISK_SCHEMA
+            or value["run_id"] != approved.run_id or value["vm_id"] != approved.vm_id
+            or type(value["sha256"]) is not str or _HEX64.fullmatch(value["sha256"]) is None
+            or value["sha256"] != approved.vm_disk_sha256
+            or type(value["source"]) is not str or not value["source"].startswith("/")
+            or type(value["bytes"]) is not int or value["bytes"] <= 0
+            or type(value["dev"]) is not int or value["dev"] < 0
+            or type(value["ino"]) is not int or value["ino"] <= 0):
+        raise BrokerDenied("Signed disk hash not independently verified by Ubuntu root")
+    return value
+
+
 def inspect_approved_run(
     raw: bytes, peer_sid: str, approved: ApprovedActivation,
     *, claim_nonce: Callable[[str], bool],
@@ -119,6 +137,7 @@ def inspect_approved_run(
     backend = backend_factory(
         transport=transport, run_id=approved.run_id, vm_id=approved.vm_id,
     )
+    first_disk = _require_measured_disk(backend.measure_disk(), approved)
     call_docker = backend.policy_inspect
     boot, ports, gateway = network_audit.inspect_topology(
         request.container_id,
@@ -165,6 +184,9 @@ def inspect_approved_run(
         raise BrokerDenied("Incomplete or failed negative network isolation checks")
     if type(ports) is not dict:
         raise BrokerDenied("Malformed port observation")
+    last_disk = _require_measured_disk(backend.measure_disk(), approved)
+    if last_disk != first_disk:
+        raise BrokerDenied("Disk source/inode/hash changed during audit")
     # Explicit UNSIGNED status: the broker does not issue an isolation receipt.
     output = {
         "schema": RESPONSE_SCHEMA,
