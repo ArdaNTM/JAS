@@ -2,7 +2,7 @@
 
 The operator Ed25519 private key MUST remain OFF the AURA host. The raw
 32-byte public key is trusted ONLY because an independent Windows operator
-sealed D:\AURA\Trust\DockerBroker\keys. A JSON mode flip alone cannot grant
+sealed D:\\AURA\\Trust\\DockerBroker\\keys. A JSON mode flip alone cannot grant
 an audit: all code/runtime bytes, identities, host pin and exact VM/run must
 be bound by the signature and protected Windows ACLs.
 
