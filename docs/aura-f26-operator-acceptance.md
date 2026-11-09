@@ -99,3 +99,33 @@ parent directory. If this gate blocks, **do not remove broad ACLs by
 trial-and-error**: review parent and child permissions and adjust the host
 layout via an independent Windows administrator without disrupting the
 Agent's working repository. The gate is read-only and never changes ACLs.
+
+
+## Turkish Windows / effective ancestor ACLs
+
+The operator verifier intentionally uses \`FileSystemSecurity.GetAccessRules(...,
+SecurityIdentifier)\` rather than \`IdentityReference.Translate()\` so that
+unmapped localized account names cannot crash SID processing or be silently
+ignored. A non-trusted SID with an *effective* dangerous ACE is rejected.
+
+\`D:\` is a volume root: \`Authenticated Users\` (S-1-5-11) having
+\`Modify\` on that root does **not by itself** prove the ability to rename
+the protected \`D:\AURA\` child, and that general right is not blocked.
+However, \`DELETE_CHILD\` or modification of the root's DACL/owner is
+blocked. An inherit-only ACE does not authorize operations on its
+containing directory. On \`D:\AURA\` and \`D:\AURA\Trust\`,
+effective \`DELETE\` / \`DELETE_CHILD\` / \`WRITE_DAC\` /
+\`WRITE_OWNER\` are blocked, because an untrusted principal could
+rename/delete the ancestor or grant itself more access. On
+\`D:\AURA\Trust\`, untrusted write rights are blocked too.
+
+**Do not fix the root failure by granting more rights or by skipping
+S-1-5-11**; inspect the effective SID-native ACEs and their
+\`PropagationFlags\`. An inherited \`Modify\` ACE on \`D:\AURA\`
+may represent an actual security boundary violation even when the
+child \`DockerBroker\` DACL is protected. Use a separate Windows
+administrator to plan any targeted ACL change; keep \`D:\AURA\JAS\`
+developer access functional and preserve backups.
+
+This gate remains an offline candidate check; SCM activation and SSH
+routing are deliberately unsupported by this script.
