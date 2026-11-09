@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "F2.7-offline-review-candidate",
   "status": "review-candidate",
-  "generated_at": "2026-11-09T22:25:00Z",
-  "git_commit": "38b7ff42263cb51b252cf3a89769ec5a157e2ff9",
+  "generated_at": "2026-11-09T22:48:00Z",
+  "git_commit": "de328af65b42212e25359ded4f245f5e6820b3fe",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:86fe1f4043914194d2aec876459d722e9c3b6de67a0141fab0009eba3af81655",
+  "release_digest": "sha256:517b08c1ea08ddf7eeebb7ddef89c17622be92b3e027654fbc6f9f69d493450c",
   "file_count": 360,
   "files": [
     {
@@ -1426,7 +1426,7 @@
     },
     {
       "path": "docs/aura-f27-operator-acceptance.md",
-      "sha256": "63504b47b90aabd4021d6a54aad6fed4589be3c20128baeaf4fa052358b7095a"
+      "sha256": "f506258cb4eaa98d710d00dd1af60f087063de4b6760ba6d7cbc4f25ebba088b"
     },
     {
       "path": "release-manifest.f26.json",
@@ -1434,7 +1434,7 @@
     },
     {
       "path": "scripts/Invoke-AuraF27BuildRuntime.ps1",
-      "sha256": "51edf67975c031c8ed400ff13d8ea2c5a273d7a733a2fc4da4acc360e6077730"
+      "sha256": "b3cd00bc3eaedcac980d6f9ffefe03ea8534596ba8138ff60c5e7b4a111f1475"
     },
     {
       "path": "scripts/Invoke-AuraF27OfflinePromotion.ps1",
