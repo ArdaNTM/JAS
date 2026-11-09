@@ -113,7 +113,7 @@ if ($SelfTest) {
 
 $Principal = [Security.Principal.WindowsPrincipal]::new(
     [Security.Principal.WindowsIdentity]::GetCurrent())
-Assert-True $Principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator) 'Elevated independent operator required'
+Assert-True ($Principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) 'Elevated independent operator required'
 Assert-True ($TrustRoot -ceq 'D:\AURA\Trust\DockerBroker') 'Unapproved trust root'
 Assert-True ($Source -ceq 'D:\AURA\JAS\artifacts\aura-f26-runtime-38c42d1') 'Unapproved artifact root'
 $Broker = Get-LocalUser -Name AuraDockerBroker -ErrorAction Stop
@@ -145,7 +145,7 @@ foreach ($Row in $Rows) {
     Assert-Relative $Relative
     $Hash = [string]$Row.sha256
     Assert-True ($Hash -cmatch '^[0-9a-f]{64}$') "Invalid runtime SHA: $Relative"
-    Assert-True $Index.Add($Relative.Replace('\','/')) "Duplicate runtime path: $Relative"
+    Assert-True ($Index.Add($Relative.Replace('\','/'))) "Duplicate runtime path: $Relative"
     $File = Join-Path (Join-Path $Source 'bin') $Relative.Replace('/', '\')
     Assert-Sha $File $Hash
     $Items.Add([PSCustomObject]@{ Path = $Relative; Sha = $Hash })
@@ -175,10 +175,12 @@ try {
         $Parent = Split-Path -Parent $Path
         $Parts = $Entry.Path.Replace('\', '/').Split('/')
         $Cursor = $Stage
-        foreach ($Part in $Parts[0..($Parts.Count-2)]) {
-            $Cursor = Join-Path $Cursor $Part
-            if (-not (Test-Path -LiteralPath $Cursor)) {
-                [IO.Directory]::CreateDirectory($Cursor, $DirAcl) | Out-Null
+        if ($Parts.Count -gt 1) {
+            foreach ($Part in $Parts[0..($Parts.Count-2)]) {
+                $Cursor = Join-Path $Cursor $Part
+                if (-not (Test-Path -LiteralPath $Cursor)) {
+                    [IO.Directory]::CreateDirectory($Cursor, $DirAcl) | Out-Null
+                }
             }
         }
         $From = Join-Path (Join-Path $Source 'bin') $Entry.Path.Replace('/', '\')
