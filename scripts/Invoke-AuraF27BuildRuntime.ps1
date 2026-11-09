@@ -92,6 +92,31 @@ function VerifyAcl([string]$Path,[string]$BrokerSid,[bool]$OperatorOnly){
  }
  Check ($Seen.Count -eq $Expected.Count) "Incomplete ACL $Path"
 }
+# The existing independently managed operator root is NOT a runtime directory.
+# Its BUILTIN\Users ACE may have read-only rights. Never rewrite that ACL;
+# strictly deny any mutation-capable right or any other unexpected principal.
+function Test-OperatorUsersReadOnly([string]$Sid,[int]$Rights){
+ $Allowed=$RX -bor $Sync
+ return ($Sid -ceq 'S-1-5-32-545' -and ($Rights -band (-bnot $Allowed)) -eq 0)
+}
+function VerifyOperatorRoot([string]$Path){
+ DirectoryGuard $Path
+ $Acl=Get-Acl -LiteralPath $Path
+ $Seen=[collections.generic.HashSet[string]]::new([StringComparer]::Ordinal)
+ foreach($Ace in $Acl.GetAccessRules($true,$true,[Security.Principal.SecurityIdentifier])){
+  $Sid=$Ace.IdentityReference.Value
+  Check ($Ace.AccessControlType -eq 'Allow' -and -not $Ace.IsInherited -and
+   $Seen.Add($Sid)) "Unexpected/inherited/duplicate operator root ACE $Path ($Sid)"
+  $Rights=[int]$Ace.FileSystemRights
+  if($Sid -ceq $Admin.Value -or $Sid -ceq $System.Value){
+   Check (($Rights -band $Full) -eq $Full) "SYSTEM/Admin lacks FullControl on $Path"
+  }else {
+   Check (Test-OperatorUsersReadOnly $Sid $Rights) "Untrusted operator root ACE $Path ($Sid; rights=$Rights)"
+  }
+ }
+ Check ($Seen.Contains($Admin.Value) -and $Seen.Contains($System.Value)) "Missing SYSTEM/Admin ACE on $Path"
+ Check ($Seen.Count -ge 2 -and $Seen.Count -le 3) "Unexpected operator root ACL count $Path"
+}
 function Seal([string]$Path,[string]$BrokerSid,[bool]$OperatorOnly){
  NoLink $Path
  $Dir=(Get-Item -LiteralPath $Path -Force).PSIsContainer
@@ -137,6 +162,21 @@ if($SelfTest){
   $Denied=$false;try{Relative $Bad}catch{$Denied=$true};Check $Denied "Path traversal accepted $Bad"
  }
  Check ($EvidenceSha.Length -eq 64) 'Truncated baseline SHA'
+ # Root is a different security tier from sealed runtime/receipt files.
+ # Read/Execute (+ optional Synchronize) is safe; no Write/Delete/DAC/Owner.
+ Check (Test-OperatorUsersReadOnly 'S-1-5-32-545' $RX) 'Read-only Users ACE rejected'
+ Check (Test-OperatorUsersReadOnly 'S-1-5-32-545' ($RX -bor $Sync)) 'Read-only Users + SYNCHRONIZE rejected'
+ foreach($Bad in @(
+  [int][Security.AccessControl.FileSystemRights]::WriteData,
+  [int][Security.AccessControl.FileSystemRights]::AppendData,
+  [int][Security.AccessControl.FileSystemRights]::Delete,
+  [int][Security.AccessControl.FileSystemRights]::DeleteSubdirectoriesAndFiles,
+  [int][Security.AccessControl.FileSystemRights]::ChangePermissions,
+  [int][Security.AccessControl.FileSystemRights]::TakeOwnership
+ )){
+  Check (-not (Test-OperatorUsersReadOnly 'S-1-5-32-545' ($RX -bor $Sync -bor $Bad))) "Mutating Users ACE accepted ($Bad)"
+ }
+ Check (-not (Test-OperatorUsersReadOnly 'S-1-5-11' $RX)) 'Unexpected untrusted operator ACE accepted'
  Write-Host 'PASS: F2.7 offline runtime build static selftest'
  Write-Host 'NO CHANGE: protected bin, SCM, policy, Windows identities and Ubuntu VM'
  exit 0
@@ -154,7 +194,7 @@ foreach($Rel in @('policy\service.json','policy\operator-approval.json','keys\op
 }
 $BrokerSid=$Broker.SID.Value
 foreach($D in @($Trust,$Bin,$Base,$OperatorRoot)){DirectoryGuard $D}
-VerifyAcl $OperatorRoot $Broker.SID.Value $true
+VerifyOperatorRoot $OperatorRoot
 $Target=Join-Path $Bin ('f27-'+$Short)
 $Proof=Join-Path $OperatorRoot ('F27-build-'+$Short)
 Check (-not (Test-Path -LiteralPath $Target)) 'F2.7 target already exists'
