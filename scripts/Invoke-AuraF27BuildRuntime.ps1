@@ -258,8 +258,8 @@ foreach($Row in $Rows){
 VerifyTree $Base $Index $BrokerSid
 Write-Host 'PASS: Protected F2.6 baseline 9028-file inventory and ACL'
 if($CleanupStale){
- # Only the previously reviewed 3df2158 commit is accepted for this
- # interrupted stage: no branch fallback, no wildcard cleanup, no new fetch.
+ # Only two explicitly reviewed stage/commit pairs are allowed for
+ # interrupted host builds; no branch fallback, wildcard cleanup or fetch.
  $KnownOld=$SourceCommit -ceq '3df215826216131ea82826fa3b491ecd97f8625b' -and
    $StaleStageName -ceq '.f27-staging-3921783feff1470e9ed927898fe815d0'
  $KnownNew=$SourceCommit -ceq '3f518d003bded08e93908b8f47747f9dc6e6a260' -and

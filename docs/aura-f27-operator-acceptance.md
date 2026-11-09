@@ -104,3 +104,35 @@ never bypass it with a wildcard or broad recursive delete.
 Only after exact cleanup PASS, use the new reviewed commit's `-Build` mode
 to produce its own separate F2.7 runtime directory and SHA-256 inventory.
 The old `f26-38c42d1` baseline and operator root remain unchanged.
+
+## 2026-11-09 — Import verifier must NEVER be treated as a runtime overlay
+
+A host-reported F2.7 retry at pinned `3f518d003bded08e93908b8f47747f9dc6e6a260`
+passed the SHA/ACL-protected 9,028-file F2.6 copy, but
+`[IO.File]::Copy` failed with `DirectoryNotFoundException` referencing
+the **staging root itself**, not a missing nested subdirectory.
+Root cause: the archive contains **17** source files (16 runtime overlays
+plus `scripts/verify_f27_runtime_imports.py`), but the loop copied all
+17 using `$Overlay[$Key]`. The verifier has no runtime destination,
+so its empty mapped path resolved to the root directory.
+
+The corrected builder uses separate `$OverlayPaths` (16 destinations)
+and `$Paths` (17 Git archive/verification sources). For every overlay,
+it checks non-empty explicit destination, no traversal/ADS, containment
+within the staging directory, correct parent-path resolution, and
+existing sealed parent directories created using the restrictive
+SYSTEM/Admin + Broker RX DACL **before** `[IO.File]::Copy`.
+Top-level service script and nested package parents are both checked.
+The verifier remains in the separately protected operator evidence
+directory, never copied as a runtime module.
+
+For the new failed stage only, use the reviewed builder's
+`-CleanupStale -StaleStageName .f27-staging-05a452e270324f82982a2055f032c282
+-SourceCommit 3f518d003bded08e93908b8f47747f9dc6e6a260`.
+Cleanup validates exact stage/commit pairing, 9,028 baseline SHA hashes,
+all 16 source overlay SHA values, exact 9,044-file (unless an overlay
+overlaps the baseline; index count is authoritative) sealed stage,
+per-item owners/ACLs and absence of reparse paths before removing only
+the nominated staging directory. If any check fails, do not manually
+delete or weaken ACLs. The previous failed build's evidence remains
+intact; the new build uses a **different commit-keyed proof directory**.
