@@ -2,19 +2,19 @@
   "schema": "aura.release-lock.v2",
   "version": "F2.7-offline-review-candidate",
   "status": "review-candidate",
-  "generated_at": "2026-11-09T22:48:00Z",
-  "git_commit": "de328af65b42212e25359ded4f245f5e6820b3fe",
+  "generated_at": "2026-11-09T23:21:00Z",
+  "git_commit": "ebc72fc88050433ba14a136c1aa8a66a604fccc5",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:517b08c1ea08ddf7eeebb7ddef89c17622be92b3e027654fbc6f9f69d493450c",
-  "file_count": 360,
+  "release_digest": "sha256:b966cc68a4040658b7215b3003149351b02bab345a726b36c702460c938a0ea8",
+  "file_count": 361,
   "files": [
     {
       "path": ".gitattributes",
-      "sha256": "61cb0e3cb33cfb86cf7270d1aed033f4727659a571d258c569e6cdae7deff039"
+      "sha256": "81e7f861928e093d02849ea196a61af8114640dea784fbf5482c4f5ec6694d22"
     },
     {
       "path": ".github/workflows/aura-f27-offline.yml",
-      "sha256": "04c3e8657d548d2c7db85d1844a4e3cb40541f4454e79b8b31e163c7a205073b"
+      "sha256": "b75314abf3ccd7bfda38a66d93cb31e3194d71aeefb4d6ddc2c23639c5349a45"
     },
     {
       "path": ".github/workflows/aura-osworld-secure-live.yml",
@@ -226,7 +226,7 @@
     },
     {
       "path": "core/scripts/generate_final_lock.py",
-      "sha256": "2e403245753be6c6355359bbda5de33ed980bab73dddda7f195bfb0c015754cd"
+      "sha256": "329172837eae6c9f86374d3d9e3ba50c0748d2db2eb24f09a225f4ff378c9d70"
     },
     {
       "path": "core/scripts/hardware_stage_c_acceptance.py",
@@ -1426,7 +1426,7 @@
     },
     {
       "path": "docs/aura-f27-operator-acceptance.md",
-      "sha256": "f506258cb4eaa98d710d00dd1af60f087063de4b6760ba6d7cbc4f25ebba088b"
+      "sha256": "2718f48a95c7bc4bfbedb3d689332669553d5d49697a153fe3a466fe44891a48"
     },
     {
       "path": "release-manifest.f26.json",
@@ -1439,6 +1439,10 @@
     {
       "path": "scripts/Invoke-AuraF27OfflinePromotion.ps1",
       "sha256": "03ebcb6a17a78f89b2ac87419acb3743752c45fe8b97e011057b9d5cdf7330cd"
+    },
+    {
+      "path": "scripts/Test-AuraF27NativeRuntimeToken.ps1",
+      "sha256": "2141516578abed522eb5f52e42d8f0c21878c5f7f1fb9bf098fe9002cf872e24"
     },
     {
       "path": "scripts/Test-AuraF27SealedRuntimeToken.ps1",
