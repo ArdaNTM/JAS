@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "F2.7-offline-review-candidate",
   "status": "review-candidate",
-  "generated_at": "2026-11-09T21:05:00Z",
-  "git_commit": "63b67ffd02009daa13c9e65220962bf26c015a7e",
+  "generated_at": "2026-11-09T21:13:00Z",
+  "git_commit": "5c72cfe161d9a82acb55629cb03b53970300346a",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:f806e9e838049d6147fe4dc2d689d2265ea9cd190ca6b9438871505fa34d9569",
+  "release_digest": "sha256:c651e44c5597d022cbaff0f2742243694b6925219b93c307ebb015fef98bff19",
   "file_count": 359,
   "files": [
     {
@@ -1434,7 +1434,7 @@
     },
     {
       "path": "scripts/Invoke-AuraF27BuildRuntime.ps1",
-      "sha256": "a2b2481630dff1840d2b317d064d6262c56caaae90f0ac06cdff46e790b5bfa6"
+      "sha256": "3682f350e8482e98d986426bb2085f19b819b31523f9df683fad75e9cb879943"
     },
     {
       "path": "scripts/Invoke-AuraF27OfflinePromotion.ps1",
