@@ -1,7 +1,7 @@
 #requires -Version 5.1
 # Inactive F2.7 runtime build. Never installs SCM, keys or audit_only policy.
 [CmdletBinding()]
-param([switch]$SelfTest,[switch]$Build,[string]$SourceCommit)
+param([switch]$SelfTest,[switch]$Build,[switch]$CleanupStale,[string]$StaleStageName,[string]$SourceCommit)
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
 $Repo='D:\AURA\JAS'
@@ -162,6 +162,9 @@ if($SelfTest){
   $Denied=$false;try{Relative $Bad}catch{$Denied=$true};Check $Denied "Path traversal accepted $Bad"
  }
  Check ($EvidenceSha.Length -eq 64) 'Truncated baseline SHA'
+ Check ('.f27-staging-3921783feff1470e9ed927898fe815d0' -cmatch '^\.f27-staging-[0-9a-f]{32}$') 'Rejected exact stale stage name'
+ Check ('..\wrong' -cnotmatch '^\.f27-staging-[0-9a-f]{32}$') 'Accepted traversal stale stage name'
+ Check ($null -eq $PSBoundParameters['Build'] -or -not $PSBoundParameters['Build']) 'SelfTest cannot build runtime'
  # Root is a different security tier from sealed runtime/receipt files.
  # Read/Execute (+ optional Synchronize) is safe; no Write/Delete/DAC/Owner.
  Check (Test-OperatorUsersReadOnly 'S-1-5-32-545' $RX) 'Read-only Users ACE rejected'
@@ -181,7 +184,9 @@ if($SelfTest){
  Write-Host 'NO CHANGE: protected bin, SCM, policy, Windows identities and Ubuntu VM'
  exit 0
 }
-Check $Build 'Explicit -Build required'
+Check ($Build -xor $CleanupStale) 'Specify exactly one of -Build or -CleanupStale'
+Check (-not $CleanupStale -or $StaleStageName -cmatch '^\.f27-staging-[0-9a-f]{32}$') 'Invalid exact F2.7 stale staging directory name'
+Check ($CleanupStale -or [string]::IsNullOrWhiteSpace($StaleStageName)) 'Stale name forbidden without -CleanupStale'
 Check ($SourceCommit -cmatch '^[0-9a-f]{40}$') 'Pinned 40hex reviewed commit required'
 $Short=$SourceCommit.Substring(0,12)
 $Principal=[Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())
@@ -198,9 +203,14 @@ VerifyOperatorRoot $OperatorRoot
 $Target=Join-Path $Bin ('f27-'+$Short)
 $Proof=Join-Path $OperatorRoot ('F27-build-'+$Short)
 Check (-not (Test-Path -LiteralPath $Target)) 'F2.7 target already exists'
-Check (-not (Test-Path -LiteralPath $Proof)) 'F2.7 evidence directory already exists'
-[IO.Directory]::CreateDirectory($Proof,(CanonicalAcl $true $BrokerSid $true))|Out-Null
-Seal $Proof $BrokerSid $true
+if($CleanupStale){
+ Check (Test-Path -LiteralPath $Proof) 'Pinned prior build evidence absent'
+ VerifyAcl $Proof $BrokerSid $true
+}else{
+ Check (-not (Test-Path -LiteralPath $Proof)) 'F2.7 evidence directory already exists'
+ [IO.Directory]::CreateDirectory($Proof,(CanonicalAcl $true $BrokerSid $true))|Out-Null
+ Seal $Proof $BrokerSid $true
+}
 Sha $Evidence $EvidenceSha
 $Raw=ConvertFrom-Json -InputObject (Get-Content -LiteralPath $Evidence -Raw -Encoding UTF8)
 $Rows=if($Raw -is [array]){@($Raw)}elseif($null -ne $Raw.files -and $Raw.files -is [array]){@($Raw.files)}else{throw 'STOP: Invalid base inventory schema'}
@@ -216,19 +226,34 @@ foreach($Row in $Rows){
 }
 VerifyTree $Base $Index $BrokerSid
 Write-Host 'PASS: Protected F2.6 baseline 9028-file inventory and ACL'
-& $Git -C $Repo fetch --no-tags --no-recurse-submodules 'https://github.com/ArdaNTM/JAS.git' 'refs/heads/feat/f27-scm-ubuntu-live-audit'
-Check ($LASTEXITCODE -eq 0) 'Git fetch failed'
-$Fetched=(& $Git -C $Repo rev-parse 'FETCH_HEAD^{commit}').Trim()
-Check ($Fetched -ceq $SourceCommit) 'Git HEAD differs from pinned commit'
+if($CleanupStale){
+ # Only the previously reviewed 3df2158 commit is accepted for this
+ # interrupted stage: no branch fallback, no wildcard cleanup, no new fetch.
+ Check ($SourceCommit -ceq '3df215826216131ea82826fa3b491ecd97f8625b') 'Cleanup pin must match failed 3df2158 run'
+ $CommitExists=(& $Git -C $Repo rev-parse ($SourceCommit+'^{commit}')).Trim()
+ Check ($LASTEXITCODE -eq 0 -and $CommitExists -ceq $SourceCommit) 'Pinned stale source commit absent'
+}else{
+ & $Git -C $Repo fetch --no-tags --no-recurse-submodules 'https://github.com/ArdaNTM/JAS.git' 'refs/heads/feat/f27-scm-ubuntu-live-audit'
+ Check ($LASTEXITCODE -eq 0) 'Git fetch failed'
+ $Fetched=(& $Git -C $Repo rev-parse 'FETCH_HEAD^{commit}').Trim()
+ Check ($Fetched -ceq $SourceCommit) 'Git HEAD differs from pinned commit'
+}
 $Zip=Join-Path $Proof 'f27-source.zip'
 $Paths=@($Overlay.Keys|ForEach-Object{[string]$_})
-& $Git -C $Repo archive --format=zip "--output=$Zip" $SourceCommit @Paths
-Check ($LASTEXITCODE -eq 0) 'Git archive failed'
-$Extracted=Join-Path $Proof 'source'
-Expand-Archive -LiteralPath $Zip -DestinationPath $Extracted -ErrorAction Stop
+if(-not $CleanupStale){
+ $Paths += 'scripts/verify_f27_runtime_imports.py'
+ & $Git -C $Repo archive --format=zip "--output=$Zip" $SourceCommit @Paths
+ Check ($LASTEXITCODE -eq 0) 'Git archive failed'
+ $Extracted=Join-Path $Proof 'source'
+ Expand-Archive -LiteralPath $Zip -DestinationPath $Extracted -ErrorAction Stop
+}else {
+ $Extracted=Join-Path $Proof 'source'
+ Check (Test-Path -LiteralPath $Zip) 'Pinned original Git archive missing'
+ Check (Test-Path -LiteralPath $Extracted) 'Pinned extracted source missing'
+}
 $OverlaySha=[collections.generic.Dictionary[string,string]]::new([StringComparer]::OrdinalIgnoreCase)
-Check (@(Get-ChildItem -LiteralPath $Extracted -Recurse -File -Force).Count -eq $Overlay.Count) 'Unexpected files in Git source archive'
-foreach($Node in @(Get-ChildItem -LiteralPath $Extracted -Recurse -Force)){NoLink $Node.FullName}
+Check (@(Get-ChildItem -LiteralPath $Extracted -Recurse -File -Force -ErrorAction Stop).Count -eq $Paths.Count) 'Unexpected files in Git source archive'
+foreach($Node in @(Get-ChildItem -LiteralPath $Extracted -Recurse -Force -ErrorAction Stop)){NoLink $Node.FullName}
 foreach($Key in $Paths){
  $From=Join-Path $Extracted $Key.Replace('/','\')
  NoLink $From
@@ -239,6 +264,29 @@ foreach($Key in $Paths){
  $OverlaySha.Add($Key,(Get-FileHash -LiteralPath $From -Algorithm SHA256).Hash.ToLowerInvariant())
 }
 Write-Host 'PASS: Pinned 16-file F2.7 SCM/SSH source closure'
+if($CleanupStale){
+ # Only delete a fully inventory-matched, sealed, interrupted stage.
+ # The 16 F2.7 source bytes have just been reverified against the old
+ # commit tree; the old 9028-file baseline was rehashed in VerifyTree.
+ foreach($Key in $Overlay.Keys){
+  $DestName=[string]$Overlay[$Key]
+  $Index[$DestName]=$OverlaySha[$Key]
+ }
+ $Stage=Join-Path $Bin $StaleStageName
+ Check (-not (Test-Path -LiteralPath $Target)) 'Previous final target unexpectedly exists'
+ VerifyTree $Stage $Index $BrokerSid
+ Remove-Item -LiteralPath $Stage -Recurse -Force -ErrorAction Stop
+ Check (-not (Test-Path -LiteralPath $Stage)) 'Interrupted stage not removed'
+ Write-Host "PASS: Verified F2.7 interrupted stage removed: $Stage" -ForegroundColor Green
+ Write-Host 'NO CHANGE: F2.6 candidate, future F2.7 target, SCM, Ubuntu, policy, keys'
+ exit 0
+}
+$VerifierFrom=Join-Path $Extracted 'scripts\verify_f27_runtime_imports.py'
+$Verifier=Join-Path $Proof 'verify_f27_runtime_imports.py'
+Check (-not (Test-Path -LiteralPath $Verifier)) 'Verifier already present'
+[IO.File]::Copy($VerifierFrom,$Verifier,$false)
+Seal $Verifier $BrokerSid $true
+Sha $Verifier $OverlaySha['scripts/verify_f27_runtime_imports.py']
 $Stage=Join-Path $Bin ('.f27-staging-'+[guid]::NewGuid().ToString('N'))
 [IO.Directory]::CreateDirectory($Stage,(CanonicalAcl $true $BrokerSid $false))|Out-Null
 try {
@@ -262,25 +310,8 @@ try {
  }
  VerifyTree $Stage $Index $BrokerSid
  $Python=Join-Path $Stage 'python.exe'
- $Code=@'
-import importlib, importlib.util, pathlib, sys
-root=pathlib.Path(sys.executable).resolve().parent
-sys.path.insert(0,str(root))
-for name in ("cryptography","win32api","win32service","aura_core.osworld.audit_broker_f27_activation","aura_core.osworld.audit_broker_f27_bridge","aura_core.osworld.audit_broker_ubuntu_transport","aura_core.osworld.audit_broker_scm_identity"):
-    mod=importlib.import_module(name)
-    if name.startswith("aura_core.") and not pathlib.Path(mod.__file__).resolve().is_relative_to(root):
-        raise SystemExit("STOP: module outside trusted runtime")
-entry = root / "aura_docker_broker_service.py"
-spec = importlib.util.spec_from_file_location("aura_f27_scm_entry", entry)
-if spec is None or spec.loader is None:
-    raise SystemExit("STOP: Windows SCM entry module cannot be loaded")
-mod = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(mod)
-if not hasattr(mod, "AuraDockerBrokerService"):
-    raise SystemExit("STOP: Windows SCM service class is missing")
-print("PASS: F2.7 isolated Python and SCM import closure")
-'@
- & $Python -I -B -c $Code
+ # Pass a pinned, protected .py file, never Windows PowerShell -c text.
+ & $Python -I -B $Verifier
  Check ($LASTEXITCODE -eq 0) 'F2.7 isolated Python import failure'
  $Entries=@(foreach($Item in @($Index.GetEnumerator()|Sort-Object Key)){
   [PSCustomObject][ordered]@{path=$Item.Key.Replace('\','/');sha256=$Item.Value}
