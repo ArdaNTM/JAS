@@ -2,19 +2,19 @@
   "schema": "aura.release-lock.v2",
   "version": "F2.7-offline-review-candidate",
   "status": "review-candidate",
-  "generated_at": "2026-11-09T20:48:00Z",
-  "git_commit": "39b33d27ad354512579236e0ecd0aa5769d31888",
+  "generated_at": "2026-11-09T21:05:00Z",
+  "git_commit": "63b67ffd02009daa13c9e65220962bf26c015a7e",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:cb31f8347f7814e3671cd87ef6ffd26bc38114955371e45455f4c6db8aa7fdb4",
-  "file_count": 358,
+  "release_digest": "sha256:f806e9e838049d6147fe4dc2d689d2265ea9cd190ca6b9438871505fa34d9569",
+  "file_count": 359,
   "files": [
     {
       "path": ".gitattributes",
-      "sha256": "b9bbc2a0e798b86fd1e71ca213328457b6986bc50786b01674b3c969281856d7"
+      "sha256": "12c3949b501b0235864c6be915e6db69dd4cc04da4af6c1cd202f35d22103913"
     },
     {
       "path": ".github/workflows/aura-f27-offline.yml",
-      "sha256": "69c8b8fa97307fe53562edb7727f2e6dc9a84d67f3cdb7bf4fcc248483c5ac69"
+      "sha256": "919d6e13d6439760a896bbd721ae9376279db35ef26fceda9a7e84d5371a9e10"
     },
     {
       "path": ".github/workflows/aura-osworld-secure-live.yml",
@@ -226,7 +226,7 @@
     },
     {
       "path": "core/scripts/generate_final_lock.py",
-      "sha256": "c1e896a250ae317d34347e7ea7453a0d2ab1e194e39f687e266f4e034989f391"
+      "sha256": "f430561c9c81346aab20cd4762cd50b75e611363703920e8b7f348eb066a2be1"
     },
     {
       "path": "core/scripts/hardware_stage_c_acceptance.py",
@@ -1426,11 +1426,15 @@
     },
     {
       "path": "docs/aura-f27-operator-acceptance.md",
-      "sha256": "bda076affffab445f84ed24c927ba85938a6be8e721bbee180eb2874d0412e44"
+      "sha256": "3efe7b554dd49a8e9224c410f4bec38459723f0d1baab9b2b3416af75b99ef5e"
     },
     {
       "path": "release-manifest.f26.json",
       "sha256": "4d7372b67957ca44352232f27ae5f57aa527705dd41bd604fab85916af44c63a"
+    },
+    {
+      "path": "scripts/Invoke-AuraF27BuildRuntime.ps1",
+      "sha256": "a2b2481630dff1840d2b317d064d6262c56caaae90f0ac06cdff46e790b5bfa6"
     },
     {
       "path": "scripts/Invoke-AuraF27OfflinePromotion.ps1",
