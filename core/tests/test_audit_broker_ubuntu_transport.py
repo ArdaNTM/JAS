@@ -335,7 +335,7 @@ class RootDiskMeasurementTests(unittest.TestCase):
                 "result": self.good}
         self.assertEqual(host.parse_response(json.dumps(base).encode(),
                                               nonce=NONCE, operation="measure_vm_disk"), self.good)
-        for change in ({"sha256": "BAD"}, {"vm_id": "f"*64},
+        for change in ({"sha256": "BAD"}, {"vm_id": "INVALID"},
                        {"source": "C:/x"}, {"bytes": False},
                        {"dev": -1}, {"ino": 0}, {"unexpected": 1}):
             envelope = dict(base, result={**self.good, **change})
@@ -365,6 +365,7 @@ class RootDiskMeasurementTests(unittest.TestCase):
             with self.assertRaises(policy.Denied):
                 policy._verified_vm_disk_path(dict(original, Mounts=[mount, mount]))
 
+    @unittest.skipUnless(os.name == "posix", "Root QCOW2 FD hashing is Linux-only")
     def test_digest_is_computed_over_actual_file_bytes(self):
         with TemporaryDirectory() as folder:
             path = Path(folder) / policy.VM_DISK_NAME
