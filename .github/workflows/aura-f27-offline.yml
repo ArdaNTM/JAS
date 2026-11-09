@@ -1,0 +1,54 @@
+name: AURA F2.7 Offline Security Contracts
+on:
+  pull_request:
+    paths:
+      - "core/src/aura_core/osworld/audit_broker_f27_**"
+      - "core/src/aura_core/osworld/audit_broker_ubuntu_transport.py"
+      - "core/scripts/aura_docker_broker_service.py"
+      - "core/tests/test_audit_broker_f27_**"
+      - "scripts/Invoke-AuraF27OfflinePromotion.ps1"
+      - ".github/workflows/aura-f27-offline.yml"
+      - "release-manifest.final.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  linux-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Frozen dependencies
+        working-directory: core
+        run: uv sync --frozen --group dev
+      - name: Approval, replay, SCM bridge, peer credential and topology regressions
+        working-directory: core
+        run: |
+          uv run --frozen python -m pytest -q tests/test_audit_broker_f27_bridge.py tests/test_audit_broker_f27_activation.py tests/test_audit_broker_ubuntu_transport.py tests/test_audit_broker_service.py
+          uv run --frozen python -m compileall -q src/aura_core/osworld scripts/aura_docker_broker_service.py
+  windows-contracts:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Frozen dependencies
+        working-directory: core
+        run: uv sync --frozen --group dev
+      - name: Windows contracts and PowerShell 5.1 inactive promotion smoke
+        shell: pwsh
+        run: |
+          Push-Location core
+          uv run --frozen python -m pytest -q tests/test_audit_broker_f27_bridge.py tests/test_audit_broker_f27_activation.py tests/test_audit_broker_ubuntu_transport.py tests/test_audit_broker_service.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Pop-Location
+          & "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/Invoke-AuraF27OfflinePromotion.ps1 -SelfTest
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Write-Host "PASS: Offline-only F2.7 contracts; no SCM install or Ubuntu live run"

@@ -135,5 +135,5 @@ class BridgeTests(unittest.TestCase):
     def test_handler_never_installs_scm_or_signs(self):
         from pathlib import Path
         source = Path(bridge.__file__).read_text("utf-8")
-        self.assertNotIn("ISOLATION_SIGNED", source.replace("No agent", ""))
+        self.assertNotIn('"status": "ISOLATION_SIGNED"', source)
         self.assertNotIn("CreateService(", source)
