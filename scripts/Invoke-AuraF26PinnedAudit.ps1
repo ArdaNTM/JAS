@@ -223,7 +223,8 @@ function Assert-PinnedFileHash([string]$Path, [string]$Expected) {
 }
 
 function Assert-DeniedFileOpen([string]$Path, [IO.FileAccess]$Access) {
-    Assert-Condition (Test-Path -LiteralPath $Path -PathType Leaf) "Test target missing: $Path"
+    # Do not use Test-Path: an inaccessible protected file can look missing.
+    # File.Open is the decisive OS access check. Missing/IO errors fail closed.
     $Handle = $null
     try {
         $Handle = [IO.File]::Open($Path, [IO.FileMode]::Open, $Access, [IO.FileShare]::ReadWrite)
@@ -283,6 +284,11 @@ if ($SelfTest) {
         $NoInherit, $NoPropagate, $Allow
     )
     Assert-Condition (-not (Test-AncestorRuleUnsafe 'D:\AURA' $AdminFull 'S-1-5-21-1-2-3-4')) 'Trusted Administrators ACE must be allowed'
+    $MissingPath = Join-Path $env:TEMP ('aura-f26-nonexistent-' + [guid]::NewGuid().ToString('N') + '.bin')
+    $MissingDenied = $false
+    try { Assert-DeniedFileOpen $MissingPath ([IO.FileAccess]::Read) }
+    catch [IO.FileNotFoundException] { $MissingDenied = $true }
+    Assert-Condition $MissingDenied 'Missing file must not count as permission denial'
     Write-Host 'PASS: F2.6 operator verifier static self-tests'
     exit 0
 }
