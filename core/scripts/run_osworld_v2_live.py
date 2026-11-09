@@ -136,7 +136,18 @@ def _guard_signed_network(
         raise IsolationDenied("Network topology or loopback mapping changed after audit")
 
 
+def validate_smoke_observation_window(smoke: bool, seconds: int) -> int:
+    """Fail closed outside the only operator-authorized boot-only path."""
+    if (type(smoke) is not bool or type(seconds) is not int
+            or seconds < 0 or seconds > 900 or (seconds > 0 and not smoke)):
+        raise PermissionError("Smoke observation window requires bounded --smoke")
+    return seconds
+
+
 async def run(args: argparse.Namespace) -> dict:
+    hold_seconds = validate_smoke_observation_window(
+        args.smoke, getattr(args, "smoke_hold_seconds", 0),
+    )
     if not args.allow_real_vm:
         raise PermissionError("Explicit --allow-real-vm operator consent required")
     if not args.smoke:
@@ -222,6 +233,16 @@ async def run(args: argparse.Namespace) -> dict:
             "note": "An isolated network is necessary but not sufficient for verified egress policy.",
         }, indent=2), file=sys.stderr, flush=True)
         if args.smoke:
+            if hold_seconds:
+                print(json.dumps({
+                    "phase": "F27_UNSIGNED_BOOT_ONLY_OBSERVATION",
+                    "run_id": bridge._run_id,
+                    "vm_id": boot.container_id,
+                    "vm_sha256": boot.vm_sha256,
+                    "hold_seconds": hold_seconds,
+                    "note": "No benchmark actions, signer, SCM, or broker activation.",
+                }, sort_keys=True), file=sys.stderr, flush=True)
+                await asyncio.sleep(hold_seconds)
             return {
                 "status": "VM_BOOT_ONLY",
                 "kvm_mode": bridge.kvm_mode,
@@ -308,6 +329,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--smoke", action="store_true",
                         help="KVM=N, boot only; no model, task, owner or receipt")
     parser.add_argument("--allow-real-vm", action="store_true")
+    parser.add_argument("--smoke-hold-seconds", type=int, default=0,
+                        help="Operator-only boot observation window: 0..900s; never scores or runs tasks")
     args = parser.parse_args(argv)
     try:
         result = asyncio.run(run(args))

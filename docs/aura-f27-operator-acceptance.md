@@ -191,3 +191,19 @@ promotion, independent file/ACL/token reacceptance, independent Ubuntu
 root-helper update, valid OSWorld run evidence and fresh off-host signature.
 No SCM service, SSH key install, policy enablement, socket enablement or
 ISOLATION_SIGNED approval happens in this offline commit.
+
+## F2.7 operator observation window — boot only, NOT a benchmark score
+
+For an independent test, \`core/scripts/run_osworld_v2_live.py\` accepts
+\`--allow-real-vm --smoke --smoke-hold-seconds 600\` (0..900 seconds).
+It is **operator only**, with a pinned official upstream OSWorld v2.1 Git tag,
+Python 3.12 venv, actual QCOW2 image and independently provisioned restricted
+Docker network. It prints the real 32-hex run_id and full 64-hex VM container
+ID, then keeps the boot-only worker active for read-only Docker metadata and
+trusted root-only disk-hash observation; finalizer safely closes the exact
+run. No benchmark task is executed, no scoring, no Agent access or signed
+isolation receipt is produced.
+
+Non-smoke benchmark mode remains **blocked at F2.5** until an independently
+reviewed broker-owned VM lifecycle executor replaces direct agent Docker.
+No \`--smoke-hold-seconds\` flag may enable non-smoke tasks.

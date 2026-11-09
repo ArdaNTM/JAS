@@ -906,3 +906,17 @@ def test_official_v21_evaluate_has_no_logger_argument():
             )
             assert result.score == 1.0
     asyncio.run(run())
+
+
+@pytest.mark.parametrize(("smoke", "seconds", "accepted"), [
+    (True, 0, True), (True, 60, True), (True, 900, True),
+    (True, -1, False), (True, 901, False), (False, 60, False),
+    (False, 0, True), (True, True, False), ("true", 5, False),
+])
+def test_f27_boot_only_smoke_hold_bounded_and_no_live_task(smoke, seconds, accepted):
+    runner = _script("run_osworld_v2_live")
+    if accepted:
+        assert runner.validate_smoke_observation_window(smoke, seconds) == seconds
+    else:
+        with pytest.raises(PermissionError):
+            runner.validate_smoke_observation_window(smoke, seconds)

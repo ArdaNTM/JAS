@@ -4,6 +4,8 @@ on:
     paths:
       - "core/src/aura_core/osworld/audit_broker_f27_**"
       - "core/scripts/aura_ubuntu_broker_policy.py"
+      - "core/scripts/run_osworld_v2_live.py"
+      - "core/tests/test_osworld_secure_live.py"
       - "core/scripts/aura_ubuntu_broker_helper.py"
       - "core/scripts/aura_ubuntu_broker_forced_command.py"
       - "core/tests/test_audit_broker_ubuntu_transport.py"
