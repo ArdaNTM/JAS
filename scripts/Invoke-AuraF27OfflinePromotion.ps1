@@ -9,6 +9,8 @@ Read and review this script from an independently verified pinned Git commit.
 param(
     [switch]$Promote,
     [switch]$SelfTest,
+    [switch]$CleanupStale,
+    [string]$StaleStageName,
     [string]$Source = 'D:\AURA\JAS\artifacts\aura-f26-runtime-38c42d1',
     [string]$TrustRoot = 'D:\AURA\Trust\DockerBroker'
 )
@@ -67,6 +69,15 @@ function New-ProtectedAcl([bool]$Directory, [string]$BrokerSid) {
     }
     return $Acl
 }
+function Test-BrokerReadExecuteOnly([int]$Rights) {
+    # NTFS/.NET can add SYNCHRONIZE to FileSystemRights.ReadAndExecute
+    # when the ACL is materialized. It does NOT grant write/delete/admin.
+    $ReadExecute = [int][Security.AccessControl.FileSystemRights]::ReadAndExecute
+    $Synchronize = [int][Security.AccessControl.FileSystemRights]::Synchronize
+    $Allowed = $ReadExecute -bor $Synchronize
+    return ((($Rights -band (-bnot $Allowed)) -eq 0) -and
+            (($Rights -band $ReadExecute) -eq $ReadExecute))
+}
 function Assert-SealedAcl([string]$Path, [string]$BrokerSid) {
     Assert-NoLink $Path
     $Acl = Get-Acl -LiteralPath $Path -ErrorAction Stop
@@ -80,8 +91,7 @@ function Assert-SealedAcl([string]$Path, [string]$BrokerSid) {
             $Sid -in $Expected -and $Saw.Add($Sid)) "Untrusted or duplicate ACE: $Path ($Sid)"
         $Rights = [int]$Ace.FileSystemRights
         if ($Sid -ceq $BrokerSid) {
-            $Allowed = [int][Security.AccessControl.FileSystemRights]::ReadAndExecute
-            Assert-True (($Rights -band (-bnot $Allowed)) -eq 0) "Broker has unexpected rights: $Path"
+            Assert-True (Test-BrokerReadExecuteOnly $Rights) "Broker has unexpected rights: $Path (actual=$Rights)"
         } else {
             Assert-True (($Rights -band [int][Security.AccessControl.FileSystemRights]::FullControl) -eq
                 [int][Security.AccessControl.FileSystemRights]::FullControl) "SYSTEM/Admin not full: $Path"
@@ -107,6 +117,22 @@ if ($SelfTest) {
     Assert-True ($ExpectedProvenanceSha.Length -eq 64 -and
         $ExpectedInventorySha.Length -eq 64 -and
         $ExpectedScriptsSha.Length -eq 64) 'Truncated inventory hash'
+    $ReadExecute = [int][Security.AccessControl.FileSystemRights]::ReadAndExecute
+    $Synchronize = [int][Security.AccessControl.FileSystemRights]::Synchronize
+    $WithSync = $ReadExecute -bor $Synchronize
+    Assert-True (Test-BrokerReadExecuteOnly $ReadExecute) 'ReadAndExecute must be allowed'
+    Assert-True (Test-BrokerReadExecuteOnly $WithSync) 'ReadAndExecute + SYNCHRONIZE must be allowed'
+    foreach ($Forbidden in @(
+        [int][Security.AccessControl.FileSystemRights]::WriteData,
+        [int][Security.AccessControl.FileSystemRights]::Delete,
+        [int][Security.AccessControl.FileSystemRights]::ChangePermissions,
+        [int][Security.AccessControl.FileSystemRights]::TakeOwnership
+    )) {
+        Assert-True (-not (Test-BrokerReadExecuteOnly ($WithSync -bor $Forbidden))) 'Broker elevated ACE must be refused'
+    }
+    Assert-True (-not (Test-BrokerReadExecuteOnly $Synchronize)) 'SYNCHRONIZE without RX is insufficient'
+    Assert-True ('.f26-staging-4229b3b53b634532b5363fd70b883cfa' -cmatch '^\.f26-staging-[0-9a-f]{32}$') 'Staging name pattern'
+    Assert-True ('..\unsafe' -cnotmatch '^\.f26-staging-[0-9a-f]{32}$') 'Path traversal staging name should fail'
     Write-Host 'PASS: F2.7 offline promotion self-test'
     exit 0
 }
@@ -114,6 +140,8 @@ if ($SelfTest) {
 $Principal = [Security.Principal.WindowsPrincipal]::new(
     [Security.Principal.WindowsIdentity]::GetCurrent())
 Assert-True ($Principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) 'Elevated independent operator required'
+Assert-True (-not ($CleanupStale -and $Promote)) 'Cleanup and promotion must be separate commands'
+Assert-True ($CleanupStale -or [string]::IsNullOrWhiteSpace($StaleStageName)) 'Stale stage name provided without explicit -CleanupStale'
 Assert-True ($TrustRoot -ceq 'D:\AURA\Trust\DockerBroker') 'Unapproved trust root'
 Assert-True ($Source -ceq 'D:\AURA\JAS\artifacts\aura-f26-runtime-38c42d1') 'Unapproved artifact root'
 $Broker = Get-LocalUser -Name AuraDockerBroker -ErrorAction Stop
@@ -156,6 +184,48 @@ foreach ($File in @(Get-ChildItem -LiteralPath (Join-Path $Source 'bin') -Recurs
     Assert-NoLink $File.FullName
 }
 Write-Host 'PASS: Source runtime 9028 SHA-256 and no reparse points' -ForegroundColor Green
+
+# Explicit cleanup only for a known failed, incomplete F2.6 stage.
+# A partial stage is deleted ONLY if every file is in the trusted source
+# inventory, has the same SHA-256 and has sealed SYSTEM/Admin/Broker RX ACLs.
+# No broad bin cleanup; no wildcard deletion; never touches production bin.
+if ($CleanupStale) {
+    Assert-True ($StaleStageName -cmatch '^\.f26-staging-[0-9a-f]{32}$') 'Stale stage name must be a single 32-hex F2.6 staging folder'
+    $Bin = Join-Path $TrustRoot 'bin'
+    $Stage = Join-Path $Bin $StaleStageName
+    $Final = Join-Path $Bin 'f26-38c42d1'
+    Assert-True (-not (Test-Path -LiteralPath $Final)) 'Final target exists; do not remove prior stage'
+    $StageItem = Get-Item -LiteralPath $Stage -Force -ErrorAction Stop
+    Assert-True $StageItem.PSIsContainer 'Expected a single stale directory'
+    Assert-SealedAcl $Stage $BrokerSid
+
+    $Known = [collections.generic.Dictionary[string,string]]::new(
+        [StringComparer]::OrdinalIgnoreCase
+    )
+    foreach ($Entry in $Items) {
+        $Known.Add($Entry.Path.Replace('\','/'), $Entry.Sha)
+    }
+    $StaleFiles = @(Get-ChildItem -LiteralPath $Stage -Recurse -File -Force -ErrorAction Stop)
+    Assert-True ($StaleFiles.Count -ge 1 -and $StaleFiles.Count -le 9028) 'Unexpected stale stage file count'
+    $RootPrefix = $Stage.TrimEnd('\') + '\'
+    foreach ($File in $StaleFiles) {
+        Assert-True ($File.FullName.StartsWith($RootPrefix, [StringComparison]::OrdinalIgnoreCase)) 'Stale file escaped stage root'
+        $Relative = $File.FullName.Substring($RootPrefix.Length).Replace('\','/')
+        Assert-True ($Known.ContainsKey($Relative)) "Unrecognized stale file: $Relative"
+        Assert-Sha $File.FullName $Known[$Relative]
+        Assert-SealedAcl $File.FullName $BrokerSid
+    }
+    foreach ($Dir in @(Get-ChildItem -LiteralPath $Stage -Recurse -Directory -Force -ErrorAction Stop)) {
+        Assert-SealedAcl $Dir.FullName $BrokerSid
+        $Relative = $Dir.FullName.Substring($RootPrefix.Length).Replace('\','/')
+        Assert-True (@($Known.Keys | Where-Object { $_.StartsWith($Relative + '/', [StringComparison]::OrdinalIgnoreCase) }).Count -gt 0) "Unrecognized stale directory: $Relative"
+    }
+    Remove-Item -LiteralPath $Stage -Recurse -Force -ErrorAction Stop
+    Assert-True (-not (Test-Path -LiteralPath $Stage)) 'Stale stage not fully removed'
+    Write-Host "PASS: Independently verified stale stage removed: $Stage" -ForegroundColor Green
+    Write-Host 'NO CHANGE: Production bin target, SCM, service policy and Broker state'
+    exit 0
+}
 if (-not $Promote) {
     Write-Host 'VERIFIED_ONLY: add -Promote to seal an inactive F2.6 candidate; never activates SCM'
     exit 0
