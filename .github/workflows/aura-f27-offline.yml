@@ -8,6 +8,7 @@ on:
       - "core/tests/test_audit_broker_f27_**"
       - "scripts/Invoke-AuraF27OfflinePromotion.ps1"
       - "scripts/Test-AuraF27SealedRuntimeToken.ps1"
+      - "scripts/Invoke-AuraF27BuildRuntime.ps1"
       - "docs/aura-f27-operator-acceptance.md"
       - ".github/workflows/aura-f27-offline.yml"
       - "release-manifest.final.json"
@@ -54,5 +55,7 @@ jobs:
           & "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/Invoke-AuraF27OfflinePromotion.ps1 -SelfTest
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/Test-AuraF27SealedRuntimeToken.ps1 -SelfTest
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/Invoke-AuraF27BuildRuntime.ps1 -SelfTest
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Write-Host "PASS: Offline-only F2.7 contracts; no SCM install or Ubuntu live run"

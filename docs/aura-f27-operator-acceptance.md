@@ -37,3 +37,39 @@ Use -Mode Auditor in the separate Auditor session. No File.Open handle may succe
 The Windows adapter now has a *gated* branch: deny_only is the default, and audit_only is accepted only after a fresh Ed25519 signature by an OFF-HOST operator key, exact policy/Windows SID/run/VM/disk/runtime-inventory/SSH host-key hash binding, expiry within 15 minutes, sealed file and complete runtime checks, real SCM logon identity, and a durable Windows approval nonce. Requests require an actual authenticated Auditor named-pipe token and an atomic Windows request nonce. Ubuntu requires pinned forced SSH, unprivileged aura-transport, SO_PEERCRED root-helper Unix socket, an independent Linux durable nonce, strict Docker resource/run ownership and fixed negative network probes. Successful measurements are UNSIGNED observations, never ISOLATION_SIGNED.
 
 Do NOT activate based on GitHub CI alone. Before SCM installation/activation: produce a new signed F2.7 runtime release, verify actual Windows and Ubuntu identities, correct protected replay database schema/ACLs, verify known-host fingerprint out of band from Ubuntu console, test wrong SID/approval/signature/nonce/run/VM/host-key/negative probes, collect independent operator attestation and plan rollback. No credentials or signing private keys belong in the repository or logs. Leave AuraDockerBroker disabled, SCM absent, service.json absent, deny_only until these tests are complete and independently approved.
+
+## F2.7: separate, sealed inactive runtime build (new release candidate)
+
+The host-reported protected **F2.6** baseline and Agent/Auditor negative-access tests
+were PASS. Its `f26-38c42d1` directory remains immutable and is NEVER overlaid.
+
+A new, independently reviewed, operator-only script
+`scripts/Invoke-AuraF27BuildRuntime.ps1` builds F2.7 from the same 9,028
+F2.6 Python binaries **after** rehashing all 9,028 against the independently
+pinned F2.6 inventory. It overlays exactly 16 explicitly allowlisted Git
+files: the SCM adapter, the F2.7 Ed25519 approval/bridge/SSH modules and
+the strict dependency closure. Every source is verified against a reviewed
+40-character commit via `git archive` and `git hash-object`.
+
+The builder requires `-Build -SourceCommit <reviewed-40-character-Git-sha>`
+and may only be run from a protected operator copy whose Git blob has been
+verified before elevation. `-SelfTest` is safe in CI, requiring no host.
+It builds a **new**, non-overwriting `D:\AURA\Trust\DockerBroker\bin\f27-<sha12>`
+candidate through a protected `.f27-staging-* ` directory; verifies
+full per-file SHA-256 and persisted NTFS ACL with SYSTEM/Admin Full Control,
+Broker Read/Execute and NO Agent/Auditor, then checks isolated Python 3.13
+imports before same-volume promotion. The runtime SHA-256 inventory and
+receipt are stored in independently protected
+`C:\Program Files\AURA-F26-Operator\F27-build-<sha12>`, OUTSIDE the code
+tree (no self-referential manifests). New runtime file count is based on
+the original 9,028 plus the explicit overlay, accounting for overlaps:
+do NOT assume exactly 9,044 until the verified host build reports it.
+
+Host acceptance requires the verified on-disk candidate manifest, the
+relocated import check, a new real-token Agent/Auditor denial test for this
+**F2.7** target, and separate independent review of signer/SCM/SSH.
+No production policy is written or activated by this build; no keys, SSH
+credentials, nonce ledger, service installation, Docker operations or
+`ISOLATION_SIGNED` receipt are created. Keep `AuraDockerBroker` disabled
+and `deny_only` enforced. A GitHub CI selftest is NOT a complete host
+promotion or end-to-end audit.
