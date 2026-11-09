@@ -88,3 +88,14 @@ production runtime after independent operator packaging acceptance.
 
 **Never interpret hosted CI success or a PASS of an offline hash check
 as full Windows operator acceptance.**
+
+## Ancestor delete-child security gate
+
+Before treating any protected Broker child path as immutable, the operator
+verifies `D:\`, `D:\AURA` and `D:\AURA\Trust` against non-administrator
+write/delete and `DELETE_CHILD` rights. Protecting only
+`DockerBroker\bin` is insufficient if an Agent can replace/rename its
+parent directory. If this gate blocks, **do not remove broad ACLs by
+trial-and-error**: review parent and child permissions and adjust the host
+layout via an independent Windows administrator without disrupting the
+Agent's working repository. The gate is read-only and never changes ACLs.
