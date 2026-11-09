@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "F2.7-offline-review-candidate",
   "status": "review-candidate",
-  "generated_at": "2026-11-09T23:45:00Z",
-  "git_commit": "925b6243078544ede5920aa8dde9ba49f8096ce6",
+  "generated_at": "2026-11-09T23:58:00Z",
+  "git_commit": "7298152d0e6b3dc84fe15d64fe4735c1b8bfab99",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:3c14ecf26bb9e92664b3f89e996654e38b71921ed91b49134517e3fab05c9201",
+  "release_digest": "sha256:9f8d01c934cf31d2ae8fd00a09abd65dccb5b8208b1b81e8da341649725d8393",
   "file_count": 361,
   "files": [
     {
@@ -14,7 +14,7 @@
     },
     {
       "path": ".github/workflows/aura-f27-offline.yml",
-      "sha256": "4000b3d17b6b1ff2ca3018f3f0d2cd7b07e4b45926ad83f37d1a9f2974283c4a"
+      "sha256": "298be9c8dfe35cea0539eec06f281e82c396b0ab69659f4167c7ed5f44d35169"
     },
     {
       "path": ".github/workflows/aura-osworld-secure-live.yml",
@@ -274,7 +274,7 @@
     },
     {
       "path": "core/scripts/run_osworld_v2_live.py",
-      "sha256": "26ae6254b4c78611a30d62bcbcd195b76d062c2c49889ff25b536f616a9c7865"
+      "sha256": "b5bab18732098b885224a6c1fd9dabc4428794c6148b52023efc43d7e3ecf40f"
     },
     {
       "path": "core/scripts/start_owner_control_plane.py",
@@ -1410,7 +1410,7 @@
     },
     {
       "path": "core/tests/test_osworld_secure_live.py",
-      "sha256": "a9226fc4799f92f5b3923038b9c46b1d7bb2efc83b33707077758ddcf7e3a35b"
+      "sha256": "adb8da871f2f09e521bfa6a22b83348af231648902e0ab2ebafeb68d8a55ea1e"
     },
     {
       "path": "core/tests/test_owner_enrollment.py",
@@ -1426,7 +1426,7 @@
     },
     {
       "path": "docs/aura-f27-operator-acceptance.md",
-      "sha256": "b114a7afc5e82caead3ffb04692a2bc0c4275cdc6400dfddc083aad2e2fe707b"
+      "sha256": "25fa266e21f4b4f5b8837c6d26eaedcf6a6ce65c964d465761eb76a3ded50e5b"
     },
     {
       "path": "release-manifest.f26.json",
