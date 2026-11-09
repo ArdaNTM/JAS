@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "F2.7-offline-review-candidate",
   "status": "review-candidate",
-  "generated_at": "2026-11-09T18:40:00Z",
-  "git_commit": "362e7e63f66d5f2cbc68a3e1a5ab7cc3d890fc0e",
+  "generated_at": "2026-11-09T18:47:00Z",
+  "git_commit": "b0c8986df01ca2df795cde771ba2f21e9db27c71",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:89a271192d1e5597ab7aa929598cdd8dff0f30d4c45b844b209b478287f818c2",
+  "release_digest": "sha256:99a544f556cd0970679fcdb406e37fb741a74e9cd53b6c61134cba5b1a188bf4",
   "file_count": 358,
   "files": [
     {
@@ -18,7 +18,7 @@
     },
     {
       "path": ".github/workflows/aura-osworld-secure-live.yml",
-      "sha256": "4c49f794a0055b0f02c8f70cf3250a6c0d450e2453cc4c93daf80b573613dbff"
+      "sha256": "1723db4a9fd27a4a68b5daf7f58452c1d9e35a1b5886b98f10c6769d7461ef1f"
     },
     {
       "path": ".github/workflows/aura-physical-trust-acceptance.yml",
