@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "F2.7-offline-review-candidate",
   "status": "review-candidate",
-  "generated_at": "2026-11-09T23:58:00Z",
-  "git_commit": "7298152d0e6b3dc84fe15d64fe4735c1b8bfab99",
+  "generated_at": "2026-11-10T00:13:00Z",
+  "git_commit": "c5c001c7ca96df9172d8ae9b9a09ac04e7cab33b",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:9f8d01c934cf31d2ae8fd00a09abd65dccb5b8208b1b81e8da341649725d8393",
+  "release_digest": "sha256:3c2d94fcb33b87f6358409a9863d11eba89b74f2c221f4e3740908083070bba0",
   "file_count": 361,
   "files": [
     {
@@ -274,7 +274,7 @@
     },
     {
       "path": "core/scripts/run_osworld_v2_live.py",
-      "sha256": "b5bab18732098b885224a6c1fd9dabc4428794c6148b52023efc43d7e3ecf40f"
+      "sha256": "cf86008ff93f6adcf8a09e09ddd8c9abaa8d76dd35c524bae7872ea0817f18dc"
     },
     {
       "path": "core/scripts/start_owner_control_plane.py",
