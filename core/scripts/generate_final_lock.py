@@ -90,6 +90,12 @@ def files_to_hash() -> list[Path]:
         ROOT / "core" / "scripts" / "aura_ubuntu_broker_policy.py",
         ROOT / "core" / "scripts" / "aura_ubuntu_broker_helper.py",
         ROOT / "core" / "tests" / "test_audit_broker_ubuntu_transport.py",
+        # F2.7: independent operator activation, replay and offline promotion.
+        ROOT / "core" / "tests" / "test_audit_broker_f27_activation.py",
+        ROOT / "core" / "tests" / "test_audit_broker_f27_bridge.py",
+        ROOT / "scripts" / "Invoke-AuraF27OfflinePromotion.ps1",
+        ROOT / ".github" / "workflows" / "aura-f27-offline.yml",
+        ROOT / "release-manifest.f26.json",
         ROOT / "core" / "scripts" / "inspect_osworld_docker_boundary.py",
         ROOT / "core" / "scripts" / "aura_docker_broker_service.py",
         ROOT / "core" / "scripts" / "physical_webauthn_probe.py",
