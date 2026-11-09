@@ -73,3 +73,34 @@ credentials, nonce ledger, service installation, Docker operations or
 `ISOLATION_SIGNED` receipt are created. Keep `AuraDockerBroker` disabled
 and `deny_only` enforced. A GitHub CI selftest is NOT a complete host
 promotion or end-to-end audit.
+
+## 2026-11-09 — Windows native `python -c` quote-loss remediation
+
+In the first real F2.7 Build, 9,028 source files plus 16 pinned overlay sources
+were copied and sealed, but Windows PowerShell 5.1 stripped quotes from
+embedded Python `-c` source and the isolated import step failed with
+`SyntaxError` before any final target was promoted.
+
+The updated builder executes a **separate immutable Git-reviewed Python file**
+`scripts/verify_f27_runtime_imports.py`, first verifying its Git blob,
+copying it into the protected operator evidence directory, sealing its ACL
+and hashing it. The sealed staged Python then executes
+`python.exe -I -B <sealed-operator-proof>/verify_f27_runtime_imports.py`.
+No inline `-c` Python is passed through PowerShell or copied into the runtime.
+Linux/Windows CI run Python's syntax compiler on the exact verifier bytes.
+
+**Only the previously failed staging folder**
+`.f27-staging-3921783feff1470e9ed927898fe815d0` may be cleaned by invoking
+`-CleanupStale -StaleStageName .f27-staging-3921783feff1470e9ed927898fe815d0`
+with `-SourceCommit 3df215826216131ea82826fa3b491ecd97f8625b`.
+This operation uses pinned old Git source objects and protected old build
+proof, verifies baseline 9,028 file SHA-256 and all original 16 overlay
+source blobs, then verifies the **entire staged file inventory, every ACL,
+and every reparse-point exclusion** before deleting exactly that folder.
+It does not modify the old `F27-build-3df215826216` evidence or any
+successful runtime. If an unexpected file or ACL is found, cleanup stops;
+never bypass it with a wildcard or broad recursive delete.
+
+Only after exact cleanup PASS, use the new reviewed commit's `-Build` mode
+to produce its own separate F2.7 runtime directory and SHA-256 inventory.
+The old `f26-38c42d1` baseline and operator root remain unchanged.

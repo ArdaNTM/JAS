@@ -9,6 +9,7 @@ on:
       - "scripts/Invoke-AuraF27OfflinePromotion.ps1"
       - "scripts/Test-AuraF27SealedRuntimeToken.ps1"
       - "scripts/Invoke-AuraF27BuildRuntime.ps1"
+      - "scripts/verify_f27_runtime_imports.py"
       - "docs/aura-f27-operator-acceptance.md"
       - ".github/workflows/aura-f27-offline.yml"
       - "release-manifest.final.json"
@@ -28,6 +29,8 @@ jobs:
       - name: Frozen dependencies
         working-directory: core
         run: uv sync --frozen --group dev
+      - name: Compile exact F2.7 Python import verifier
+        run: python -m py_compile scripts/verify_f27_runtime_imports.py
       - name: Approval, replay, SCM bridge, peer credential and topology regressions
         working-directory: core
         run: |
@@ -45,6 +48,11 @@ jobs:
       - name: Frozen dependencies
         working-directory: core
         run: uv sync --frozen --group dev
+      - name: Compile exact F2.7 Python import verifier on Windows
+        shell: pwsh
+        run: |
+          python -m py_compile scripts/verify_f27_runtime_imports.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Windows contracts and PowerShell 5.1 inactive promotion smoke
         shell: pwsh
         run: |
