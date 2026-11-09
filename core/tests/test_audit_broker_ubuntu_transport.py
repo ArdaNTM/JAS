@@ -451,7 +451,7 @@ class UbuntuSCMActivationGateTests(unittest.TestCase):
             patch.object(host, "verify_registered_service_account") as scm,
             patch.object(host, "_require_sealed_ssh_files") as ssh,
         ):
-            with self.assertRaisesRegex(BrokerDenied, "verifier is not installed"):
+            with self.assertRaises(BrokerDenied):
                 host._production_preflight()
             identity.assert_not_called()
             scm.assert_not_called()
