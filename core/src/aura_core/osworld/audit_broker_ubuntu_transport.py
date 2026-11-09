@@ -1,7 +1,8 @@
-"""INACTIVE F2.6 Ubuntu audit transport, isolated from Windows Docker Desktop.
+"""F2.7 gated Ubuntu audit transport, isolated from Windows Docker Desktop.
 
-No SCM route calls this module. It requires an independently approved future
-audit_only service policy; the shipped deny_only parser cannot activate it.
+Only the independently signed Windows operator-approved audit_only route can
+invoke SSH. The F2.1 public policy parser remains deny_only and cannot
+activate remote SSH through a JSON mode change alone.
 The remote root helper verifies Linux SO_PEERCRED, nonce and exact run/VM
 ownership before every Docker inspect/probe. Agent input never controls SSH or
 Docker executable, host, user, command, image, mount or arbitrary arguments.
@@ -184,21 +185,21 @@ def _ssh_argv() -> list[str]:
 
 
 def require_operator_approved_ubuntu_activation(policy: BrokerServicePolicy) -> None:
-    """Explicit F2.6 activation seam; no independently approved verifier exists.
-
-    A fabricated audit_only dataclass or a modified JSON file is insufficient.
-    This function must be replaced only with an independently reviewed, real
-    operator approval/attestation verifier; it cannot be toggled by the Agent.
-    """
+    """Validate the signed, sealed operator grant on EVERY SSH exchange."""
     if type(policy) is not BrokerServicePolicy or policy.mode != "audit_only":
-        raise BrokerDenied("Ubuntu audit activation requires a reviewed audit-only policy")
-    raise BrokerDenied("Independent operator approval verifier is not installed")
+        raise BrokerDenied("Ubuntu SSH requires explicitly approved audit_only")
+    from .audit_broker_f27_activation import load_operator_approved_activation
+    approved = load_operator_approved_activation(verify_inventory=False)
+    if approved.policy != policy:
+        raise BrokerDenied("Operator approval does not bind this runtime policy")
 
 
 def _production_preflight() -> None:
-    """No real SSH call is authorized by the shipped deny_only SCM policy."""
+    """The real Windows SCM token and signed operator grant gate SSH."""
     verify_trusted_runtime(source_file=Path(__file__), python_executable=Path(os.sys.executable))
-    policy = load_service_policy()
+    from .audit_broker_f27_activation import load_operator_approved_activation
+    approved = load_operator_approved_activation(verify_inventory=False)
+    policy = approved.policy
     require_operator_approved_ubuntu_activation(policy)
     validate_service_identity(policy, actual_sid=current_process_sid())
     verify_registered_service_account(policy)
