@@ -217,9 +217,63 @@ function Check-SourceLock {
     Write-Host 'PASS: 38c42d1 source and 349-file release lock'
 }
 
+function Get-ContentSHA256([byte[]]$Bytes) {
+    $Hasher = [Security.Cryptography.SHA256]::Create()
+    try {
+        return [BitConverter]::ToString($Hasher.ComputeHash($Bytes)).Replace('-', '').ToLowerInvariant()
+    }
+    finally { $Hasher.Dispose() }
+}
+
 function Assert-PinnedFileHash([string]$Path, [string]$Expected) {
+    $Item = Get-Item -LiteralPath $Path -Force -ErrorAction Stop
+    Assert-Condition (-not $Item.PSIsContainer -and
+        ($Item.Attributes -band [IO.FileAttributes]::ReparsePoint) -eq 0) "Pinned evidence path is not a regular file: $Path"
     $Actual = (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
-    Assert-Condition ($Actual -ceq $Expected) "Pinned evidence hash mismatch: $Path"
+    if ($Actual -ceq $Expected) { return }
+    Write-Warning "F2.6 PINNED EVIDENCE MISMATCH: $Path"
+    Write-Warning "Expected SHA256: $Expected"
+    Write-Warning "Observed SHA256: $Actual"
+    Write-Warning "Observed byte count: $($Item.Length)"
+    Write-Warning "Observed LastWriteTimeUtc: $($Item.LastWriteTimeUtc.ToString('o'))"
+
+    if ($Item.Name -ceq 'provenance.json' -and $Item.Length -le 1048576) {
+        # Diagnostic only: never silently repin or rewrite evidence.
+        try {
+            $Raw = [IO.File]::ReadAllBytes($Item.FullName)
+            $Utf8 = [Text.UTF8Encoding]::new($false, $true)
+            $Text = $Utf8.GetString($Raw)
+            $CRLF = [string][char]13 + [char]10
+            $LF = [string][char]10
+            $Candidates = [ordered]@{
+                utf8_without_bom = $Text.TrimStart([char]0xFEFF)
+                lf_newlines = $Text.TrimStart([char]0xFEFF).Replace($CRLF, $LF)
+                crlf_newlines = $Text.TrimStart([char]0xFEFF).Replace($CRLF, $LF).Replace($LF, $CRLF)
+            }
+            $Matches = @()
+            foreach ($Name in $Candidates.Keys) {
+                $Candidate = [Text.Encoding]::UTF8.GetBytes([string]$Candidates[$Name])
+                if ((Get-ContentSHA256 $Candidate) -ceq $Expected) {
+                    $Matches += $Name
+                }
+            }
+            if ($Matches.Count -gt 0) {
+                Write-Warning "ENCODING_ONLY_CANDIDATE: $($Matches -join ', '); independent byte review still required"
+            }
+            else {
+                Write-Warning 'NO_SIMPLE_ENCODING_MATCH: do not repin unreviewed provenance bytes'
+            }
+            $Doc = ConvertFrom-Json -InputObject $Text
+            if ($null -ne $Doc -and $Doc -is [pscustomobject]) {
+                $Names = @($Doc.PSObject.Properties | ForEach-Object Name)
+                Write-Warning "Provenance top-level JSON keys (not values): $($Names -join ', ')"
+            }
+        }
+        catch {
+            Write-Warning "Provenance UTF-8/JSON diagnostic could not be completed: $($_.Exception.GetType().Name)"
+        }
+    }
+    throw "STOP: Pinned evidence hash mismatch: $Path; no silent hash replacement permitted"
 }
 
 function Assert-DeniedFileOpen([string]$Path, [IO.FileAccess]$Access) {
@@ -289,6 +343,15 @@ if ($SelfTest) {
     try { Assert-DeniedFileOpen $MissingPath ([IO.FileAccess]::Read) }
     catch [IO.FileNotFoundException] { $MissingDenied = $true }
     Assert-Condition $MissingDenied 'Missing file must not count as permission denial'
+    $Probe = [IO.Path]::GetTempFileName()
+    try {
+        [IO.File]::WriteAllBytes($Probe, [Text.Encoding]::UTF8.GetBytes('aura-provenance-mismatch-test'))
+        $Denied = $false
+        try { Assert-PinnedFileHash $Probe ('0' * 64) }
+        catch { $Denied = $_.Exception.Message.Contains('Pinned evidence hash mismatch') }
+        Assert-Condition $Denied 'Unpinned evidence file must fail closed'
+    }
+    finally { Remove-Item -LiteralPath $Probe -Force -ErrorAction SilentlyContinue }
     Write-Host 'PASS: F2.6 operator verifier static self-tests'
     exit 0
 }
