@@ -142,6 +142,22 @@ function ParentDirs([string]$Root,[string]$Relative,[string]$BrokerSid){
   }
  }
 }
+function ValidateOverlayDestination([string]$Stage,[string]$Key,[string]$BrokerSid){
+ Check ($Overlay.Contains($Key)) "Non-overlay source used as runtime destination: $Key"
+ $Relative=[string]$Overlay[$Key]
+ Check (-not [string]::IsNullOrWhiteSpace($Relative)) "Empty runtime relative target for $Key"
+ Relative $Relative
+ $StageRoot=[IO.Path]::GetFullPath($Stage).TrimEnd('\')+'\'
+ $Target=[IO.Path]::GetFullPath((Join-Path $Stage $Relative.Replace('/','\')))
+ Check ($Target.StartsWith($StageRoot,[StringComparison]::OrdinalIgnoreCase)) "Destination escaped staging root: $Key"
+ $Parent=[IO.Path]::GetDirectoryName($Target)
+ Check (-not [string]::IsNullOrWhiteSpace($Parent) -and
+   $Parent.StartsWith($StageRoot,[StringComparison]::OrdinalIgnoreCase)) "Invalid destination parent for $Key"
+ ParentDirs $Stage $Relative $BrokerSid
+ Check ([IO.Directory]::Exists($Parent)) "Parent directory was not created for $Key"
+ VerifyAcl $Parent $BrokerSid $false
+ return $Target
+}
 function VerifyTree([string]$Root,[collections.generic.Dictionary[string,string]]$Index,[string]$BrokerSid){
  VerifyAcl $Root $BrokerSid $false
  $Files=@(Get-ChildItem -LiteralPath $Root -Recurse -File -Force -ErrorAction Stop)
@@ -163,6 +179,18 @@ if($SelfTest){
  }
  Check ($EvidenceSha.Length -eq 64) 'Truncated baseline SHA'
  Check ('.f27-staging-3921783feff1470e9ed927898fe815d0' -cmatch '^\.f27-staging-[0-9a-f]{32}$') 'Rejected exact stale stage name'
+ Check ('.f27-staging-05a452e270324f82982a2055f032c282' -cmatch '^\.f27-staging-[0-9a-f]{32}$') 'Rejected new failed stage name'
+ Check ($Overlay.Count -eq 16) 'Runtime overlay count changed'
+ $ArchivePaths=@($Overlay.Keys|ForEach-Object{[string]$_})
+ $ArchivePaths+= 'scripts/verify_f27_runtime_imports.py'
+ Check ($ArchivePaths.Count -eq 17 -and
+    $ArchivePaths[-1] -notin @($Overlay.Keys)) 'Import-only verifier accidentally entered runtime overlay'
+ foreach($Source in $Overlay.Keys) {
+  $Relative=[string]$Overlay[$Source]
+  Check (-not [string]::IsNullOrWhiteSpace($Relative)) "Empty overlay target: $Source"
+  Relative $Relative
+ }
+ Check (-not $Overlay.Contains('scripts/verify_f27_runtime_imports.py')) 'Python verifier must never be copied as a runtime overlay'
  Check ('..\wrong' -cnotmatch '^\.f27-staging-[0-9a-f]{32}$') 'Accepted traversal stale stage name'
  Check ($null -eq $PSBoundParameters['Build'] -or -not $PSBoundParameters['Build']) 'SelfTest cannot build runtime'
  # Root is a different security tier from sealed runtime/receipt files.
@@ -229,7 +257,11 @@ Write-Host 'PASS: Protected F2.6 baseline 9028-file inventory and ACL'
 if($CleanupStale){
  # Only the previously reviewed 3df2158 commit is accepted for this
  # interrupted stage: no branch fallback, no wildcard cleanup, no new fetch.
- Check ($SourceCommit -ceq '3df215826216131ea82826fa3b491ecd97f8625b') 'Cleanup pin must match failed 3df2158 run'
+ $KnownOld=$SourceCommit -ceq '3df215826216131ea82826fa3b491ecd97f8625b' -and
+   $StaleStageName -ceq '.f27-staging-3921783feff1470e9ed927898fe815d0'
+ $KnownNew=$SourceCommit -ceq '3f518d003bded08e93908b8f47747f9dc6e6a260' -and
+   $StaleStageName -ceq '.f27-staging-05a452e270324f82982a2055f032c282'
+ Check ($KnownOld -or $KnownNew) 'Stale stage/commit pair is not explicitly approved'
  $CommitExists=(& $Git -C $Repo rev-parse ($SourceCommit+'^{commit}')).Trim()
  Check ($LASTEXITCODE -eq 0 -and $CommitExists -ceq $SourceCommit) 'Pinned stale source commit absent'
 }else{
@@ -239,9 +271,13 @@ if($CleanupStale){
  Check ($Fetched -ceq $SourceCommit) 'Git HEAD differs from pinned commit'
 }
 $Zip=Join-Path $Proof 'f27-source.zip'
-$Paths=@($Overlay.Keys|ForEach-Object{[string]$_})
-if(-not $CleanupStale){
+$OverlayPaths=@($Overlay.Keys|ForEach-Object{[string]$_})
+$Paths=@($OverlayPaths)
+# Verifier belongs to source archive only; never to the runtime overlay.
+if(-not $CleanupStale -or $SourceCommit -ceq '3f518d003bded08e93908b8f47747f9dc6e6a260'){
  $Paths += 'scripts/verify_f27_runtime_imports.py'
+}
+if(-not $CleanupStale){
  & $Git -C $Repo archive --format=zip "--output=$Zip" $SourceCommit @Paths
  Check ($LASTEXITCODE -eq 0) 'Git archive failed'
  $Extracted=Join-Path $Proof 'source'
@@ -268,8 +304,11 @@ if($CleanupStale){
  # Only delete a fully inventory-matched, sealed, interrupted stage.
  # The 16 F2.7 source bytes have just been reverified against the old
  # commit tree; the old 9028-file baseline was rehashed in VerifyTree.
- foreach($Key in $Overlay.Keys){
+ foreach($Key in $OverlayPaths){
+  Check ($Overlay.Contains($Key)) "Missing original overlay mapping: $Key"
   $DestName=[string]$Overlay[$Key]
+  Relative $DestName
+  Check ($OverlaySha.ContainsKey($Key)) "Missing archived overlay SHA: $Key"
   $Index[$DestName]=$OverlaySha[$Key]
  }
  $Stage=Join-Path $Bin $StaleStageName
@@ -299,15 +338,21 @@ try {
   Sha $Dst $Item.Value
  }
  Write-Host 'PASS: F2.6 runtime bytes copied to new F2.7 protected staging'
- foreach($Key in $Paths){
+ # Explicitly iterate ONLY the 16 overlay entries; the seventeenth
+ # Git source is an operator-only Python import verifier.
+ Check ($OverlayPaths.Count -eq 16) 'Runtime overlay entry count mismatch'
+ foreach($Key in $OverlayPaths){
+  Check ($OverlaySha.ContainsKey($Key)) "Overlay source not pinned: $Key"
   $DestName=[string]$Overlay[$Key]
-  $Dst=Join-Path $Stage $DestName.Replace('/','\')
-  ParentDirs $Stage $DestName $BrokerSid
-  [IO.File]::Copy((Join-Path $Extracted $Key.Replace('/','\')),$Dst,$true)
+  $Dst=ValidateOverlayDestination $Stage $Key $BrokerSid
+  $From=Join-Path $Extracted $Key.Replace('/','\')
+  Sha $From $OverlaySha[$Key]
+  [IO.File]::Copy($From,$Dst,$true)
   Seal $Dst $BrokerSid $false
   Sha $Dst $OverlaySha[$Key]
   $Index[$DestName]=$OverlaySha[$Key]
  }
+ Write-Host 'PASS: 16 F2.7 overlay files copied to verified parent directories'
  VerifyTree $Stage $Index $BrokerSid
  $Python=Join-Path $Stage 'python.exe'
  # Pass a pinned, protected .py file, never Windows PowerShell -c text.
