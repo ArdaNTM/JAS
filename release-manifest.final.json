@@ -1,20 +1,24 @@
 {
   "schema": "aura.release-lock.v2",
-  "version": "1.0.0-final",
+  "version": "F2.7-offline-review-candidate",
   "status": "review-candidate",
-  "generated_at": "2026-11-07T15:25:00.254Z",
-  "git_commit": "2a8adb8d57c1cc2053d3de09fd561d72c3411c79",
+  "generated_at": "2026-11-10T00:13:00Z",
+  "git_commit": "c5c001c7ca96df9172d8ae9b9a09ac04e7cab33b",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:3c75ed20803ed60d786e3b2da64f70c90cef4490be4831e3e27e829b220b0ccd",
-  "file_count": 349,
+  "release_digest": "sha256:3c2d94fcb33b87f6358409a9863d11eba89b74f2c221f4e3740908083070bba0",
+  "file_count": 361,
   "files": [
     {
       "path": ".gitattributes",
-      "sha256": "39e199665cd36c2251cf7ef460379eafe94c8682030f016d03e03eb6ba9dc602"
+      "sha256": "81e7f861928e093d02849ea196a61af8114640dea784fbf5482c4f5ec6694d22"
+    },
+    {
+      "path": ".github/workflows/aura-f27-offline.yml",
+      "sha256": "298be9c8dfe35cea0539eec06f281e82c396b0ab69659f4167c7ed5f44d35169"
     },
     {
       "path": ".github/workflows/aura-osworld-secure-live.yml",
-      "sha256": "4c49f794a0055b0f02c8f70cf3250a6c0d450e2453cc4c93daf80b573613dbff"
+      "sha256": "1723db4a9fd27a4a68b5daf7f58452c1d9e35a1b5886b98f10c6769d7461ef1f"
     },
     {
       "path": ".github/workflows/aura-physical-trust-acceptance.yml",
@@ -198,19 +202,19 @@
     },
     {
       "path": "core/scripts/aura_docker_broker_service.py",
-      "sha256": "4812d0ec38ea5ed2ba6506d2f1a020c178f54f292c50d2a2048f6f7697af8930"
+      "sha256": "bf96177fbc4f5ff79de5b22b84240f5ca153dec8108f1fc584f28101c86edc9d"
     },
     {
       "path": "core/scripts/aura_ubuntu_broker_forced_command.py",
-      "sha256": "0b5c21b0c4d8ca04be34b887e2b697a5619ddebbf070fc77a983819133f3c318"
+      "sha256": "5f778b6ed8a5ca79990c644b614491f5bad3a800c276c49a6b3cb10886cdd86a"
     },
     {
       "path": "core/scripts/aura_ubuntu_broker_helper.py",
-      "sha256": "e64b40d2b1678d87980d94f681a4659951faee1bcfb4f35d2e182ade55996ff1"
+      "sha256": "33992f121455e57d53995d80013c90b93bc5dfa487cdec5e8ce24838be134ff8"
     },
     {
       "path": "core/scripts/aura_ubuntu_broker_policy.py",
-      "sha256": "5129105d1c7e3252b76c6029fcb9fc202e49800736a565bc24e44d28cfd03a2d"
+      "sha256": "f14f093031a4797b043f84efbac09b58f8595eb282b851ecaa71502aabb25e61"
     },
     {
       "path": "core/scripts/enroll_local_owner.py",
@@ -222,7 +226,7 @@
     },
     {
       "path": "core/scripts/generate_final_lock.py",
-      "sha256": "b6e1ae2b477e3fe205856475d707390df528623a10a276b5c64006bf4e12e196"
+      "sha256": "329172837eae6c9f86374d3d9e3ba50c0748d2db2eb24f09a225f4ff378c9d70"
     },
     {
       "path": "core/scripts/hardware_stage_c_acceptance.py",
@@ -270,7 +274,7 @@
     },
     {
       "path": "core/scripts/run_osworld_v2_live.py",
-      "sha256": "26ae6254b4c78611a30d62bcbcd195b76d062c2c49889ff25b536f616a9c7865"
+      "sha256": "cf86008ff93f6adcf8a09e09ddd8c9abaa8d76dd35c524bae7872ea0817f18dc"
     },
     {
       "path": "core/scripts/start_owner_control_plane.py",
@@ -1105,6 +1109,14 @@
       "sha256": "aea3473738141a41b8207d8bd2e621adffc71616b282717e864517b58ecbbb24"
     },
     {
+      "path": "core/src/aura_core/osworld/audit_broker_f27_activation.py",
+      "sha256": "ea94a189a416a760a84be9368059d10b99ab6ce47ece07355c1c9007f02cec63"
+    },
+    {
+      "path": "core/src/aura_core/osworld/audit_broker_f27_bridge.py",
+      "sha256": "9c9812e402461c75f883dfb7f61dc5d91508fc12a630edcd967e782ecbf8cd40"
+    },
+    {
       "path": "core/src/aura_core/osworld/audit_broker_host_runtime.py",
       "sha256": "98877e23b3203a98f8c7e27794290f621b3a0de8fce16cf649b703769e6c3ec2"
     },
@@ -1138,7 +1150,7 @@
     },
     {
       "path": "core/src/aura_core/osworld/audit_broker_ubuntu_transport.py",
-      "sha256": "adb37ce9187bda7e84304bba0d923a7300e02fc89f28f411279631a4836fd9ab"
+      "sha256": "d9cd3129156e0c40234ceb8e2e5dae17bee090164cd41f2a14f0884d3b4a8da1"
     },
     {
       "path": "core/src/aura_core/osworld/audit_broker_vm_executor.py",
@@ -1361,6 +1373,14 @@
       "sha256": "0b97a5e929a9fb3ec144b7f326128efed885d47a1134054f7af3ffbf8840a990"
     },
     {
+      "path": "core/tests/test_audit_broker_f27_activation.py",
+      "sha256": "3279738c4a9751e86543f04435887b1407d9d9df8b148a7d305b672f543d83b8"
+    },
+    {
+      "path": "core/tests/test_audit_broker_f27_bridge.py",
+      "sha256": "e37ee44f8b7ff22a10c54243d180eb3cc588e8c59bfc03c71d344b6e82e79979"
+    },
+    {
       "path": "core/tests/test_audit_broker_host_runtime.py",
       "sha256": "0de093be0cd19d1cc934873e0b6adae8284da1ad9e36b29e422d0849f35b4e72"
     },
@@ -1382,7 +1402,7 @@
     },
     {
       "path": "core/tests/test_audit_broker_ubuntu_transport.py",
-      "sha256": "f4e1de025e48c3e3441ab4fb700a084cec9a5ad5a8b4e1f27c1a974cf6f5e67f"
+      "sha256": "b12093284e1da509528397d60ab0b01206758e1f813db8a5099a02b89d97602f"
     },
     {
       "path": "core/tests/test_audit_broker_vm_executor.py",
@@ -1390,7 +1410,7 @@
     },
     {
       "path": "core/tests/test_osworld_secure_live.py",
-      "sha256": "a9226fc4799f92f5b3923038b9c46b1d7bb2efc83b33707077758ddcf7e3a35b"
+      "sha256": "adb8da871f2f09e521bfa6a22b83348af231648902e0ab2ebafeb68d8a55ea1e"
     },
     {
       "path": "core/tests/test_owner_enrollment.py",
@@ -1403,7 +1423,35 @@
     {
       "path": "core/uv.lock",
       "sha256": "fdf4f2b50a539388370ebfa27fb07aa6ed6106097074bfa1f23fc7c4f0d288ab"
+    },
+    {
+      "path": "docs/aura-f27-operator-acceptance.md",
+      "sha256": "25fa266e21f4b4f5b8837c6d26eaedcf6a6ce65c964d465761eb76a3ded50e5b"
+    },
+    {
+      "path": "release-manifest.f26.json",
+      "sha256": "4d7372b67957ca44352232f27ae5f57aa527705dd41bd604fab85916af44c63a"
+    },
+    {
+      "path": "scripts/Invoke-AuraF27BuildRuntime.ps1",
+      "sha256": "b3cd00bc3eaedcac980d6f9ffefe03ea8534596ba8138ff60c5e7b4a111f1475"
+    },
+    {
+      "path": "scripts/Invoke-AuraF27OfflinePromotion.ps1",
+      "sha256": "03ebcb6a17a78f89b2ac87419acb3743752c45fe8b97e011057b9d5cdf7330cd"
+    },
+    {
+      "path": "scripts/Test-AuraF27NativeRuntimeToken.ps1",
+      "sha256": "2141516578abed522eb5f52e42d8f0c21878c5f7f1fb9bf098fe9002cf872e24"
+    },
+    {
+      "path": "scripts/Test-AuraF27SealedRuntimeToken.ps1",
+      "sha256": "0d59a2fc48b5cd87b51cd98b6706e8fec4b0139e6bc564a60765dedeb0c72da2"
+    },
+    {
+      "path": "scripts/verify_f27_runtime_imports.py",
+      "sha256": "ed6fa7cccf2ee2c59f95b8f1370fccf1daf5b0d4512638a995191482cc6cd427"
     }
   ],
-  "governance": "JAS-Framework"
+  "governance": "F2.7 Draft — no SCM activation or signing"
 }

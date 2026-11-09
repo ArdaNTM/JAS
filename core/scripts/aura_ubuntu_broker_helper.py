@@ -128,7 +128,7 @@ def handle_connection(connection: socket.socket, *, store: DurableNonceStore,
     """Reply once or close without output. Never return Python/Docker errors."""
     if type(expected_uid) is not int or expected_uid <= 0 or _peer_uid(connection) != expected_uid:
         raise policy.Denied("Unauthorized Unix-socket peer")
-    connection.settimeout(40)
+    connection.settimeout(180)
     raw = bytearray()
     while chunk := connection.recv(min(4096, policy.MAX_REQUEST + 1 - len(raw))):
         raw.extend(chunk)

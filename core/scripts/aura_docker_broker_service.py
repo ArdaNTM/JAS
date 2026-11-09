@@ -43,25 +43,39 @@ if os.name == "nt":
             # Ubuntu deny-only requires real SID and sealed runtime, not a
             # Windows Docker Desktop pipe. Fail before creating any IPC.
             # assertion fails. Catching here does not authorize continuation.
+            # Deny-only is the default. A signed F2.7 operator approval is
+            # mandatory before constructing a live SSH transport. Failure
+            # never falls back to an unauthenticated live mode.
             try:
-                policy = preflight_ubuntu_deny_only_service()
-                # SCM registration must match this real process token. A
-                # policy JSON SID by itself is not Windows account evidence.
                 from aura_core.osworld.audit_broker_scm_identity import (
                     verify_registered_service_account,
                 )
-                verify_registered_service_account(policy)
+                try:
+                    policy = preflight_ubuntu_deny_only_service()
+                except BrokerDenied:
+                    from aura_core.osworld.audit_broker_f27_activation import (
+                        load_operator_approved_activation,
+                    )
+                    from aura_core.osworld.audit_broker_f27_bridge import (
+                        serve_approved_request_once,
+                    )
+                    approved = load_operator_approved_activation(verify_inventory=True)
+                    verify_registered_service_account(approved.policy)
+                    operation = lambda: serve_approved_request_once(approved)
+                else:
+                    verify_registered_service_account(policy)
+                    operation = lambda: serve_denied_request_once(policy)
             except Exception:
                 return
-            # An SCM stop must remain responsive even if ConnectNamedPipe
-            # blocks. Only one deny-only request is handled in this stage.
+            # A single authenticated message, service stop stays responsive.
+            # No unsigned report is ever elevated to ISOLATION_SIGNED.
             from threading import Thread
             def one_request():
                 try:
-                    serve_denied_request_once(policy)
+                    operation()
                 finally:
                     win32event.SetEvent(self._stop_event)
-            Thread(target=one_request, name="aura-broker-deny-only", daemon=True).start()
+            Thread(target=one_request, name="aura-broker-one-shot", daemon=True).start()
             win32event.WaitForSingleObject(self._stop_event, win32event.INFINITE)
 
 

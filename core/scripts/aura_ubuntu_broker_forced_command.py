@@ -30,7 +30,7 @@ def main() -> int:
         if not 1 <= len(raw) <= MAX_REQUEST:
             return 2
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as conn:
-            conn.settimeout(40)
+            conn.settimeout(180)
             conn.connect(SOCKET_PATH)
             conn.sendall(raw)
             conn.shutdown(socket.SHUT_WR)

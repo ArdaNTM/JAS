@@ -42,6 +42,7 @@ jobs:
           uv run --frozen python -m compileall -q scripts/osworld_secure_worker.py scripts/attest_osworld_network.py scripts/run_osworld_v2_live.py scripts/aura_ubuntu_broker_forced_command.py scripts/aura_ubuntu_broker_policy.py scripts/aura_ubuntu_broker_helper.py src/aura_core/osworld
           uv run --frozen python scripts/verify_final_lock.py
   offline-windows:
+    needs: offline-linux
     runs-on: windows-latest
     timeout-minutes: 20
     steps:
