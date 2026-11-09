@@ -8,6 +8,7 @@ root helper through the fixed SSH forced command. No agent-provided command.
 """
 from __future__ import annotations
 
+from contextlib import closing
 import json
 import os
 from pathlib import Path
@@ -52,13 +53,13 @@ class DurableWindowsNonceStore:
         self.path = path
         self.enforce_host = enforce_host
         if not enforce_host:
-            with self._connection() as db:
+            with closing(self._connection()) as db:
                 db.execute("CREATE TABLE IF NOT EXISTS consumed ("
                            "nonce TEXT PRIMARY KEY, kind TEXT NOT NULL,"
                            "seen_at INTEGER NOT NULL)")
                 db.commit()
         else:
-            with self._connection() as db:
+            with closing(self._connection()) as db:
                 found = db.execute(
                     "SELECT name FROM sqlite_master WHERE type='table' AND name='consumed'"
                 ).fetchone()
@@ -77,7 +78,7 @@ class DurableWindowsNonceStore:
                 or kind not in ("operator", "request")):
             raise BrokerDenied("Invalid Windows replay nonce")
         try:
-            with self._connection() as db:
+            with closing(self._connection()) as db:
                 db.execute("BEGIN IMMEDIATE")
                 accepted = db.execute(
                     "INSERT OR IGNORE INTO consumed (nonce,kind,seen_at) VALUES (?,?,?)",
