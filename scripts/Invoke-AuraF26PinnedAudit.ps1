@@ -107,23 +107,50 @@ function Check-Inventory(
     Write-Host "PASS: $Count inventoried files: $Directory"
 }
 
-function Assert-TrustedAncestors([string]$BrokerSid) {
-    # A protected child can still be renamed/deleted via DELETE_CHILD rights
-    # on an ancestor. Audit effective allow rights up to the drive root.
-    $Unsafe = [int][Security.AccessControl.FileSystemRights]::Write -bor
-              [int][Security.AccessControl.FileSystemRights]::Delete -bor
-              [int][Security.AccessControl.FileSystemRights]::DeleteSubdirectoriesAndFiles -bor
+function Test-AncestorRuleUnsafe(
+    [string]$Path,
+    [Security.AccessControl.FileSystemAccessRule]$Ace,
+    [string]$BrokerSid
+) {
+    if ($Ace.AccessControlType -ne [Security.AccessControl.AccessControlType]::Allow) {
+        return $false
+    }
+    if (($Ace.PropagationFlags -band [Security.AccessControl.PropagationFlags]::InheritOnly) -ne 0) {
+        # An INHERIT_ONLY entry is not effective on this directory.
+        return $false
+    }
+    $Sid = $Ace.IdentityReference.Value
+    if ($Sid -in @($AdminSid, $SystemSid)) { return $false }
+    # The Broker's identity is NOT a trusted mutator of ancestors.
+    $Danger = [int][Security.AccessControl.FileSystemRights]::DeleteSubdirectoriesAndFiles -bor
               [int][Security.AccessControl.FileSystemRights]::ChangePermissions -bor
               [int][Security.AccessControl.FileSystemRights]::TakeOwnership
+    if ($Path -cne 'D:\') {
+        # A non-root ancestor can itself be renamed with DELETE on that object.
+        $Danger = $Danger -bor [int][Security.AccessControl.FileSystemRights]::Delete
+    }
+    if ($Path -cEq 'D:\AURA\Trust') {
+        # The immediate protected trust parent must not admit untrusted writes.
+        $Danger = $Danger -bor [int][Security.AccessControl.FileSystemRights]::Write
+    }
+    return (([int]$Ace.FileSystemRights -band $Danger) -ne 0)
+}
+
+function Assert-TrustedAncestors([string]$BrokerSid) {
+    # Only effective ancestor rights capable of replacing/renaming the
+    # protected branch are relevant. Broad D:\ Modify alone cannot delete
+    # a protected D:\AURA child unless DELETE_CHILD is granted on D:\.
+    # Non-root DELETE (rename) and WRITE_DAC/WRITE_OWNER are still blocked.
     foreach ($Parent in @('D:\', 'D:\AURA', 'D:\AURA\Trust')) {
+        $Item = Get-Item -LiteralPath $Parent -Force -ErrorAction Stop
+        Assert-Condition (($Item.Attributes -band [IO.FileAttributes]::ReparsePoint) -eq 0) "Reparse-point ancestor: $Parent"
         $Acl = Get-Acl -LiteralPath $Parent
         $Owner = $Acl.GetOwner([Security.Principal.SecurityIdentifier]).Value
         Assert-Condition ($Owner -in @($AdminSid, $SystemSid)) "Untrusted ancestor owner: $Parent"
-        foreach ($Ace in $Acl.Access) {
-            if ($Ace.AccessControlType -ne 'Allow') { continue }
-            $Sid = $Ace.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value
-            if ($Sid -notin @($AdminSid, $SystemSid, $BrokerSid)) {
-                Assert-Condition (([int]$Ace.FileSystemRights -band $Unsafe) -eq 0) "Untrusted ancestor allows mutation or delete-child: $Parent ($Sid)"
+        $Rules = $Acl.GetAccessRules($true, $true, [Security.Principal.SecurityIdentifier])
+        foreach ($Ace in $Rules) {
+            if (Test-AncestorRuleUnsafe $Parent $Ace $BrokerSid) {
+                throw "STOP: Untrusted ancestor has effective DELETE/DELETE_CHILD/DACL/owner/write rights: $Parent ($($Ace.IdentityReference.Value)); mask=$([int]$Ace.FileSystemRights); propagation=$($Ace.PropagationFlags)"
             }
         }
     }
@@ -142,8 +169,8 @@ function Assert-ProtectedAcl([string]$FilePath, [string]$BrokerSid) {
                        [int][Security.AccessControl.FileSystemRights]::ChangePermissions -bor
                        [int][Security.AccessControl.FileSystemRights]::TakeOwnership -bor
                        [int][Security.AccessControl.FileSystemRights]::DeleteSubdirectoriesAndFiles
-    foreach ($Ace in $Acl.Access) {
-        $Sid = $Ace.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value
+    foreach ($Ace in $Acl.GetAccessRules($true, $true, [Security.Principal.SecurityIdentifier])) {
+        $Sid = $Ace.IdentityReference.Value
         Assert-Condition ($Sid -in $Allowed -and -not $Ace.IsInherited -and
             $Ace.AccessControlType -eq 'Allow') "Unexpected NTFS ACE: $FilePath"
         if ($Sid -ceq $BrokerSid) {
@@ -229,6 +256,33 @@ if ($SelfTest) {
         Assert-Condition (@(Read-Entries $Scratch).Count -eq 1) 'Object JSON enumeration broken'
     }
     finally { Remove-Item -LiteralPath $Scratch -Force -ErrorAction SilentlyContinue }
+    $Everyone = [Security.Principal.SecurityIdentifier]::new('S-1-5-11')
+    $Admin = [Security.Principal.SecurityIdentifier]::new($AdminSid)
+    $NoInherit = [Security.AccessControl.InheritanceFlags]::None
+    $NoPropagate = [Security.AccessControl.PropagationFlags]::None
+    $Allow = [Security.AccessControl.AccessControlType]::Allow
+    $Modify = [Security.AccessControl.FileSystemAccessRule]::new(
+        $Everyone, [Security.AccessControl.FileSystemRights]::Modify,
+        $NoInherit, $NoPropagate, $Allow
+    )
+    Assert-Condition (-not (Test-AncestorRuleUnsafe 'D:\' $Modify 'S-1-5-21-1-2-3-4')) 'Root Modify alone must not fail protected-child boundary'
+    Assert-Condition (Test-AncestorRuleUnsafe 'D:\AURA' $Modify 'S-1-5-21-1-2-3-4') 'Nonroot Modify/DELETE must fail closed'
+    $DeleteChild = [Security.AccessControl.FileSystemAccessRule]::new(
+        $Everyone, [Security.AccessControl.FileSystemRights]::DeleteSubdirectoriesAndFiles,
+        $NoInherit, $NoPropagate, $Allow
+    )
+    Assert-Condition (Test-AncestorRuleUnsafe 'D:\' $DeleteChild 'S-1-5-21-1-2-3-4') 'Root DELETE_CHILD must fail closed'
+    $InheritOnly = [Security.AccessControl.FileSystemAccessRule]::new(
+        $Everyone, [Security.AccessControl.FileSystemRights]::FullControl,
+        [Security.AccessControl.InheritanceFlags]::ContainerInherit,
+        [Security.AccessControl.PropagationFlags]::InheritOnly, $Allow
+    )
+    Assert-Condition (-not (Test-AncestorRuleUnsafe 'D:\AURA' $InheritOnly 'S-1-5-21-1-2-3-4')) 'Inherit-only ACE must not be treated as effective on parent'
+    $AdminFull = [Security.AccessControl.FileSystemAccessRule]::new(
+        $Admin, [Security.AccessControl.FileSystemRights]::FullControl,
+        $NoInherit, $NoPropagate, $Allow
+    )
+    Assert-Condition (-not (Test-AncestorRuleUnsafe 'D:\AURA' $AdminFull 'S-1-5-21-1-2-3-4')) 'Trusted Administrators ACE must be allowed'
     Write-Host 'PASS: F2.6 operator verifier static self-tests'
     exit 0
 }
