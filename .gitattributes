@@ -31,3 +31,4 @@ release-manifest.f26.json text eol=lf
 docs/aura-f27-operator-acceptance.md text eol=lf
 scripts/Invoke-AuraF27BuildRuntime.ps1 text eol=lf
 scripts/verify_f27_runtime_imports.py text eol=lf
+scripts/Test-AuraF27NativeRuntimeToken.ps1 text eol=lf

@@ -8,6 +8,7 @@ on:
       - "core/tests/test_audit_broker_f27_**"
       - "scripts/Invoke-AuraF27OfflinePromotion.ps1"
       - "scripts/Test-AuraF27SealedRuntimeToken.ps1"
+      - "scripts/Test-AuraF27NativeRuntimeToken.ps1"
       - "scripts/Invoke-AuraF27BuildRuntime.ps1"
       - "scripts/verify_f27_runtime_imports.py"
       - "docs/aura-f27-operator-acceptance.md"
@@ -63,6 +64,8 @@ jobs:
           & "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/Invoke-AuraF27OfflinePromotion.ps1 -SelfTest
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/Test-AuraF27SealedRuntimeToken.ps1 -SelfTest
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/Test-AuraF27NativeRuntimeToken.ps1 -SelfTest
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/Invoke-AuraF27BuildRuntime.ps1 -SelfTest
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

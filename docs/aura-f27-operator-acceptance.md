@@ -136,3 +136,28 @@ per-item owners/ACLs and absence of reparse paths before removing only
 the nominated staging directory. If any check fails, do not manually
 delete or weaken ACLs. The previous failed build's evidence remains
 intact; the new build uses a **different commit-keyed proof directory**.
+
+## F2.7 production-candidate native Windows token probe
+
+The independently reviewed, read-only `scripts/Test-AuraF27NativeRuntimeToken.ps1`
+checks the exact, *already built* 9,044-file candidate
+`D:\AURA\Trust\DockerBroker\bin\f27-26ffdba485cc`, with manifest SHA-256
+`d9eb33c8ec0c494aec1039919699d4362e5222684048b160589b5bf88adcf21d`.
+The original F2.6 negative-access probe is NOT valid for new F2.7 acceptance.
+Independent Administrator must first verify the exact receipt and every one
+of the 9,044 file digests (with protected paths/no reparse and sealed DACLs)
+from operator-only evidence `C:\Program Files\AURA-F26-Operator\F27-build-26ffdba485cc`, and confirm the exact three runtime target files
+(`python.exe`, `python3.dll`, `DLLs/_asyncio.pyd`) are in the manifest.
+A separately published, independently blob-verified, Admin-owned read-only
+runner must allow ONLY the local `AuraAgent` and `AuraAuditor` accounts to
+read and execute the probe. Run once with separate real Windows logon tokens,
+passing individually checked SIDs, capture outputs and require exactly six
+denied Read/Write handles per identity, plus exit zero and matching token SID.
+Never grant the Agent or Auditor runtime read access to make the probe run.
+
+**F2.7 standalone import test and negative token probes are not an Ed25519
+operator approval**, do not create `service.json`, trusted public keys,
+`operator-approval.json` or `f27-nonces.sqlite3`, do not enable the Broker
+or start Ubuntu units at this stage. The independent signer must be off-host,
+with exact 9,044-file manifest bytes, approved service policy, SSH known_hosts
+bytes, run/VM and disk hash claims bound and reviewed separately. PR stays Draft.

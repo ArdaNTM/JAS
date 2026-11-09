@@ -95,6 +95,7 @@ def files_to_hash() -> list[Path]:
         ROOT / "core" / "tests" / "test_audit_broker_f27_bridge.py",
         ROOT / "scripts" / "Invoke-AuraF27OfflinePromotion.ps1",
         ROOT / "scripts" / "Test-AuraF27SealedRuntimeToken.ps1",
+        ROOT / "scripts" / "Test-AuraF27NativeRuntimeToken.ps1",
         ROOT / "scripts" / "Invoke-AuraF27BuildRuntime.ps1",
         ROOT / "scripts" / "verify_f27_runtime_imports.py",
         ROOT / "docs" / "aura-f27-operator-acceptance.md",
