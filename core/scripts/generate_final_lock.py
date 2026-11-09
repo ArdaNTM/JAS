@@ -94,6 +94,8 @@ def files_to_hash() -> list[Path]:
         ROOT / "core" / "tests" / "test_audit_broker_f27_activation.py",
         ROOT / "core" / "tests" / "test_audit_broker_f27_bridge.py",
         ROOT / "scripts" / "Invoke-AuraF27OfflinePromotion.ps1",
+        ROOT / "scripts" / "Test-AuraF27SealedRuntimeToken.ps1",
+        ROOT / "docs" / "aura-f27-operator-acceptance.md",
         ROOT / ".github" / "workflows" / "aura-f27-offline.yml",
         ROOT / "release-manifest.f26.json",
         ROOT / "core" / "scripts" / "inspect_osworld_docker_boundary.py",

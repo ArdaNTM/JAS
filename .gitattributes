@@ -23,3 +23,8 @@ core/uv.lock text eol=lf
 # Preserve native Windows batch semantics, where applicable.
 *.bat text eol=crlf
 *.cmd text eol=crlf
+
+# F2.7 release-critical Windows script and historical JSON bytes.
+scripts/Invoke-AuraF27OfflinePromotion.ps1 text eol=lf
+scripts/Test-AuraF27SealedRuntimeToken.ps1 text eol=lf
+release-manifest.f26.json text eol=lf
