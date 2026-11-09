@@ -99,6 +99,63 @@ function Assert-SealedAcl([string]$Path, [string]$BrokerSid) {
     }
     Assert-True ($Saw.Count -eq 3) "Missing ACL principal: $Path"
 }
+function Assert-StaleAcl([string]$Path, [string]$BrokerSid) {
+    # Cleanup validation for an interrupted copy. Unlike FINAL acceptance,
+    # inherited ACEs are permitted only if every *effective* principal and
+    # right is already within the trusted SYSTEM/Admin/Broker allowlist.
+    # Never interpret an inherited ACE as evidence of a sealed final file.
+    Assert-NoLink $Path
+    $Acl = Get-Acl -LiteralPath $Path -ErrorAction Stop
+    Assert-True ($Acl.GetOwner([Security.Principal.SecurityIdentifier]).Value -ceq $AdminSid.Value) "Unsafe stale owner: $Path"
+    $Expected = @($SystemSid.Value, $AdminSid.Value, $BrokerSid)
+    $Saw = [collections.generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    foreach ($Ace in $Acl.GetAccessRules($true, $true, [Security.Principal.SecurityIdentifier])) {
+        $Sid = $Ace.IdentityReference.Value
+        Assert-True ($Ace.AccessControlType -eq 'Allow' -and $Sid -in $Expected) "Untrusted stale ACE: $Path ($Sid)"
+        $Rights = [int]$Ace.FileSystemRights
+        if ($Sid -ceq $BrokerSid) {
+            Assert-True (Test-BrokerReadExecuteOnly $Rights) "Untrusted stale Broker ACE: $Path ($Rights)"
+        } else {
+            Assert-True (($Rights -band [int][Security.AccessControl.FileSystemRights]::FullControl) -eq
+                [int][Security.AccessControl.FileSystemRights]::FullControl) "Trusted stale admin/system ACE lacks FullControl: $Path"
+        }
+        [void]$Saw.Add($Sid)
+    }
+    Assert-True ($Saw.Count -eq 3) "Missing trusted stale principal: $Path"
+}
+
+function Set-SealedAcl([string]$Path, [string]$BrokerSid) {
+    # Use the ACTUAL persisted DACL. Setting a newly constructed FileSecurity
+    # onto an inherited file may fail to persist AreAccessRulesProtected.
+    # Explicitly remove inherited ACEs before writing the 3 canonical ACEs.
+    Assert-NoLink $Path
+    $Item = Get-Item -LiteralPath $Path -Force -ErrorAction Stop
+    $Acl = Get-Acl -LiteralPath $Path -ErrorAction Stop
+    $Acl.SetAccessRuleProtection($true, $false)
+    $Existing = @($Acl.GetAccessRules($true, $true, [Security.Principal.SecurityIdentifier]))
+    foreach ($Ace in $Existing) {
+        $Acl.PurgeAccessRules($Ace.IdentityReference)
+    }
+    $Acl.SetOwner($AdminSid)
+    $Inheritance = if ($Item.PSIsContainer) {
+        [Security.AccessControl.InheritanceFlags]'ContainerInherit, ObjectInherit'
+    } else {
+        [Security.AccessControl.InheritanceFlags]::None
+    }
+    foreach ($Rule in @(
+        [PSCustomObject]@{ Sid = $SystemSid; Rights = [Security.AccessControl.FileSystemRights]::FullControl },
+        [PSCustomObject]@{ Sid = $AdminSid; Rights = [Security.AccessControl.FileSystemRights]::FullControl },
+        [PSCustomObject]@{ Sid = [Security.Principal.SecurityIdentifier]::new($BrokerSid); Rights = [Security.AccessControl.FileSystemRights]::ReadAndExecute }
+    )) {
+        $Acl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new(
+            $Rule.Sid, $Rule.Rights, $Inheritance,
+            [Security.AccessControl.PropagationFlags]::None,
+            [Security.AccessControl.AccessControlType]::Allow
+        ))
+    }
+    Set-Acl -LiteralPath $Path -AclObject $Acl -ErrorAction Stop
+    Assert-SealedAcl $Path $BrokerSid
+}
 function Read-Inventory([string]$Path) {
     $Parsed = ConvertFrom-Json -InputObject (Get-Content -LiteralPath $Path -Raw -Encoding UTF8)
     if ($Parsed -is [array]) { return $Parsed }
@@ -133,6 +190,12 @@ if ($SelfTest) {
     Assert-True (-not (Test-BrokerReadExecuteOnly $Synchronize)) 'SYNCHRONIZE without RX is insufficient'
     Assert-True ('.f26-staging-4229b3b53b634532b5363fd70b883cfa' -cmatch '^\.f26-staging-[0-9a-f]{32}$') 'Staging name pattern'
     Assert-True ('..\unsafe' -cnotmatch '^\.f26-staging-[0-9a-f]{32}$') 'Path traversal staging name should fail'
+    # Unit regression: unprotected/inherited DACL must be recognized as
+    # distinct from sealed, canonical DACL before a promotion can PASS.
+    $Synthetic = [Security.AccessControl.FileSecurity]::new()
+    $Synthetic.SetAccessRuleProtection($true, $false)
+    Assert-True $Synthetic.AreAccessRulesProtected 'Synthetic DACL protection failed'
+    Assert-True (-not $Synthetic.Access) 'Synthetic DACL should begin without ACEs'
     Write-Host 'PASS: F2.7 offline promotion self-test'
     exit 0
 }
@@ -197,7 +260,7 @@ if ($CleanupStale) {
     Assert-True (-not (Test-Path -LiteralPath $Final)) 'Final target exists; do not remove prior stage'
     $StageItem = Get-Item -LiteralPath $Stage -Force -ErrorAction Stop
     Assert-True $StageItem.PSIsContainer 'Expected a single stale directory'
-    Assert-SealedAcl $Stage $BrokerSid
+    Assert-StaleAcl $Stage $BrokerSid
 
     $Known = [collections.generic.Dictionary[string,string]]::new(
         [StringComparer]::OrdinalIgnoreCase
@@ -213,10 +276,10 @@ if ($CleanupStale) {
         $Relative = $File.FullName.Substring($RootPrefix.Length).Replace('\','/')
         Assert-True ($Known.ContainsKey($Relative)) "Unrecognized stale file: $Relative"
         Assert-Sha $File.FullName $Known[$Relative]
-        Assert-SealedAcl $File.FullName $BrokerSid
+        Assert-StaleAcl $File.FullName $BrokerSid
     }
     foreach ($Dir in @(Get-ChildItem -LiteralPath $Stage -Recurse -Directory -Force -ErrorAction Stop)) {
-        Assert-SealedAcl $Dir.FullName $BrokerSid
+        Assert-StaleAcl $Dir.FullName $BrokerSid
         $Relative = $Dir.FullName.Substring($RootPrefix.Length).Replace('\','/')
         Assert-True (@($Known.Keys | Where-Object { $_.StartsWith($Relative + '/', [StringComparison]::OrdinalIgnoreCase) }).Count -gt 0) "Unrecognized stale directory: $Relative"
     }
@@ -240,6 +303,7 @@ $DirAcl = New-ProtectedAcl $true $BrokerSid
 $FileAcl = New-ProtectedAcl $false $BrokerSid
 [IO.Directory]::CreateDirectory($Stage, $DirAcl) | Out-Null
 try {
+    Set-SealedAcl $Stage $BrokerSid
     foreach ($Entry in $Items) {
         $Path = Join-Path $Stage $Entry.Path.Replace('/', '\')
         $Parent = Split-Path -Parent $Path
@@ -250,14 +314,17 @@ try {
                 $Cursor = Join-Path $Cursor $Part
                 if (-not (Test-Path -LiteralPath $Cursor)) {
                     [IO.Directory]::CreateDirectory($Cursor, $DirAcl) | Out-Null
+                    Set-SealedAcl $Cursor $BrokerSid
                 }
             }
         }
         $From = Join-Path (Join-Path $Source 'bin') $Entry.Path.Replace('/', '\')
         [IO.File]::Copy($From, $Path, $false)
         [IO.File]::SetAccessControl($Path, $FileAcl)
+        # Windows NTFS can restore inheritance on copied files. Seal
+        # the on-disk DACL and verify AreAccessRulesProtected explicitly.
+        Set-SealedAcl $Path $BrokerSid
         Assert-Sha $Path $Entry.Sha
-        Assert-SealedAcl $Path $BrokerSid
     }
     foreach ($Directory in @(Get-Item -LiteralPath $Stage) +
             @(Get-ChildItem -LiteralPath $Stage -Recurse -Directory -Force)) {
