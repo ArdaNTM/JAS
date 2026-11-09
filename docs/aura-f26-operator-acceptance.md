@@ -30,7 +30,7 @@ Never run a mutable copy from \`D:\AURA\JAS\scripts\` elevated.
 Under a separate real administrator token on the target Windows host:
 
 \`\`\`powershell
-& 'D:\AURA\Trust\OperatorReviewed\Invoke-AuraF26PinnedAudit.ps1' -Mode Operator
+& 'C:\Program Files\AURA-F26-Operator\scripts\Invoke-AuraF26PinnedAudit.ps1' -Mode Operator
 \`\`\`
 
 The operator check re-verifies the exact pinned source commit, the
@@ -52,8 +52,8 @@ record each test under a real distinct user account, with that account's
 known Windows user SID from the OS:
 
 \`\`\`powershell
-& 'D:\AURA\Trust\OperatorReviewed\Invoke-AuraF26PinnedAudit.ps1' -Mode Agent -ExpectedSid 'S-1-5-21-...'
-& 'D:\AURA\Trust\OperatorReviewed\Invoke-AuraF26PinnedAudit.ps1' -Mode Auditor -ExpectedSid 'S-1-5-21-...'
+& 'C:\Program Files\AURA-F26-Operator\scripts\Invoke-AuraF26PinnedAudit.ps1' -Mode Agent -ExpectedSid 'S-1-5-21-...'
+& 'C:\Program Files\AURA-F26-Operator\scripts\Invoke-AuraF26PinnedAudit.ps1' -Mode Auditor -ExpectedSid 'S-1-5-21-...'
 \`\`\`
 
 Do not run these commands from the administrator's token. They check
