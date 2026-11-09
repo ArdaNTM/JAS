@@ -107,6 +107,28 @@ function Check-Inventory(
     Write-Host "PASS: $Count inventoried files: $Directory"
 }
 
+function Assert-TrustedAncestors([string]$BrokerSid) {
+    # A protected child can still be renamed/deleted via DELETE_CHILD rights
+    # on an ancestor. Audit effective allow rights up to the drive root.
+    $Unsafe = [int][Security.AccessControl.FileSystemRights]::Write -bor
+              [int][Security.AccessControl.FileSystemRights]::Delete -bor
+              [int][Security.AccessControl.FileSystemRights]::DeleteSubdirectoriesAndFiles -bor
+              [int][Security.AccessControl.FileSystemRights]::ChangePermissions -bor
+              [int][Security.AccessControl.FileSystemRights]::TakeOwnership
+    foreach ($Parent in @('D:\', 'D:\AURA', 'D:\AURA\Trust')) {
+        $Acl = Get-Acl -LiteralPath $Parent
+        $Owner = $Acl.GetOwner([Security.Principal.SecurityIdentifier]).Value
+        Assert-Condition ($Owner -in @($AdminSid, $SystemSid)) "Untrusted ancestor owner: $Parent"
+        foreach ($Ace in $Acl.Access) {
+            if ($Ace.AccessControlType -ne 'Allow') { continue }
+            $Sid = $Ace.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value
+            if ($Sid -notin @($AdminSid, $SystemSid, $BrokerSid)) {
+                Assert-Condition (([int]$Ace.FileSystemRights -band $Unsafe) -eq 0) "Untrusted ancestor allows mutation or delete-child: $Parent ($Sid)"
+            }
+        }
+    }
+}
+
 function Assert-ProtectedAcl([string]$FilePath, [string]$BrokerSid) {
     $Item = Get-Item -LiteralPath $FilePath -Force -ErrorAction Stop
     Assert-Condition (($Item.Attributes -band [IO.FileAttributes]::ReparsePoint) -eq 0) "Reparse point: $FilePath"
@@ -235,6 +257,7 @@ if ($Mode -in @('Agent', 'Auditor')) {
 $Identity = [Security.Principal.WindowsIdentity]::GetCurrent()
 $Principal = [Security.Principal.WindowsPrincipal]::new($Identity)
 Assert-Condition ($Principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) 'Elevated independent operator token required'
+Assert-TrustedAncestors $BrokerSid
 foreach ($Path in @($TrustRoot, (Join-Path $TrustRoot 'bin'), $StageRoot,
     (Join-Path $StageRoot 'payload'))) {
     Assert-ProtectedAcl $Path $BrokerSid
