@@ -51,12 +51,12 @@ function Assert-NoReparse([string]$Directory) {
 function Read-Entries([string]$ManifestFile) {
     $Document = ConvertFrom-Json -InputObject (Get-Content -LiteralPath $ManifestFile -Raw -Encoding UTF8)
     if ($null -eq $Document) { throw "STOP: Null JSON inventory" }
-    if ($Document -is [array]) { return ,$Document }
+    if ($Document -is [array]) { return $Document }
     foreach ($Property in @('files', 'entries', 'items', 'inventory')) {
         if ($null -ne $Document.PSObject.Properties[$Property]) {
             $Value = $Document.$Property
             Assert-Condition ($Value -is [array]) "Inventory $Property is not an array"
-            return ,$Value
+            return $Value
         }
     }
     throw "STOP: Unsupported inventory JSON shape: $ManifestFile"
@@ -141,7 +141,7 @@ function Assert-SafetyState {
 function Check-SourceLock {
     $Git = 'C:\Program Files\Git\cmd\git.exe'
     Assert-Condition (Test-Path -LiteralPath $Git -PathType Leaf) 'Pinned Git executable missing'
-    $Resolved = @(& $Git -C $Repo rev-parse "$SourceCommit^" 2>$null)
+    $Resolved = @(& $Git -C $Repo rev-parse ($SourceCommit + "^{commit}") 2>$null)
     Assert-Condition ($LASTEXITCODE -eq 0 -and @($Resolved).Count -eq 1 -and $Resolved[0].Trim() -ceq $SourceCommit) 'Pinned Git commit missing'
     $Manifest = Join-Path $StageRoot 'snapshot\release-manifest.final.json'
     $Document = ConvertFrom-Json -InputObject (Get-Content -LiteralPath $Manifest -Raw -Encoding UTF8)
@@ -197,6 +197,16 @@ if ($SelfTest) {
     $TestJson = $Doc | ConvertTo-Json -Depth 3
     $Parsed = ConvertFrom-Json -InputObject $TestJson
     Assert-Condition (@($Parsed.files).Count -eq 1) 'PowerShell 5.1 JSON array handling broke'
+    $Scratch = [IO.Path]::GetTempFileName()
+    try {
+        '[{"path":"one.py","sha256":"' + ('a' * 64) + '"},{"path":"two.py","sha256":"' + ('b' * 64) + '"}]' |
+            Set-Content -LiteralPath $Scratch -Encoding Ascii
+        Assert-Condition (@(Read-Entries $Scratch).Count -eq 2) 'Array JSON enumeration broken'
+        '{"files":[{"path":"one.py","sha256":"' + ('a' * 64) + '"}]}' |
+            Set-Content -LiteralPath $Scratch -Encoding Ascii
+        Assert-Condition (@(Read-Entries $Scratch).Count -eq 1) 'Object JSON enumeration broken'
+    }
+    finally { Remove-Item -LiteralPath $Scratch -Force -ErrorAction SilentlyContinue }
     Write-Host 'PASS: F2.6 operator verifier static self-tests'
     exit 0
 }
