@@ -152,7 +152,8 @@ function ValidateOverlayDestination([string]$Stage,[string]$Key,[string]$BrokerS
  Check ($Target.StartsWith($StageRoot,[StringComparison]::OrdinalIgnoreCase)) "Destination escaped staging root: $Key"
  $Parent=[IO.Path]::GetDirectoryName($Target)
  Check (-not [string]::IsNullOrWhiteSpace($Parent) -and
-   $Parent.StartsWith($StageRoot,[StringComparison]::OrdinalIgnoreCase)) "Invalid destination parent for $Key"
+   ($Parent -ceq $StageRoot.TrimEnd('\') -or
+    $Parent.StartsWith($StageRoot,[StringComparison]::OrdinalIgnoreCase))) "Invalid destination parent for $Key"
  ParentDirs $Stage $Relative $BrokerSid
  Check ([IO.Directory]::Exists($Parent)) "Parent directory was not created for $Key"
  VerifyAcl $Parent $BrokerSid $false
@@ -181,6 +182,8 @@ if($SelfTest){
  Check ('.f27-staging-3921783feff1470e9ed927898fe815d0' -cmatch '^\.f27-staging-[0-9a-f]{32}$') 'Rejected exact stale stage name'
  Check ('.f27-staging-05a452e270324f82982a2055f032c282' -cmatch '^\.f27-staging-[0-9a-f]{32}$') 'Rejected new failed stage name'
  Check ($Overlay.Count -eq 16) 'Runtime overlay count changed'
+ Check ([IO.Path]::GetDirectoryName('D:\sandbox\root_module.py') -ceq 'D:\sandbox') 'Root-level target parent regression'
+ Check ([IO.Path]::GetDirectoryName('D:\sandbox\aura_core\osworld\module.py') -ceq 'D:\sandbox\aura_core\osworld') 'Nested target parent regression'
  $ArchivePaths=@($Overlay.Keys|ForEach-Object{[string]$_})
  $ArchivePaths+= 'scripts/verify_f27_runtime_imports.py'
  Check ($ArchivePaths.Count -eq 17 -and
