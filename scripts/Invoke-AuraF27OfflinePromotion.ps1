@@ -195,7 +195,26 @@ if ($SelfTest) {
     $Synthetic = [Security.AccessControl.FileSecurity]::new()
     $Synthetic.SetAccessRuleProtection($true, $false)
     Assert-True $Synthetic.AreAccessRulesProtected 'Synthetic DACL protection failed'
-    Assert-True (-not $Synthetic.Access) 'Synthetic DACL should begin without ACEs'
+    Assert-True (@($Synthetic.GetAccessRules(
+        $true, $true, [Security.Principal.SecurityIdentifier])).Count -eq 0) 'Synthetic DACL should begin without ACEs'
+    # Persistence regression against actual Windows NTFS, rather than only
+    # an in-memory FileSecurity object. No elevated rights are needed.
+    $Probe = Join-Path ([IO.Path]::GetTempPath()) ('aura-f27-acl-' + [guid]::NewGuid().ToString('N') + '.tmp')
+    try {
+        [IO.File]::WriteAllBytes($Probe, [byte[]]@(65))
+        $ProbeAcl = Get-Acl -LiteralPath $Probe
+        $ProbeAcl.SetAccessRuleProtection($true, $false)
+        $ProbeSid = [Security.Principal.WindowsIdentity]::GetCurrent().User
+        $ProbeAcl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new(
+            $ProbeSid,
+            [Security.AccessControl.FileSystemRights]::FullControl,
+            [Security.AccessControl.AccessControlType]::Allow
+        ))
+        Set-Acl -LiteralPath $Probe -AclObject $ProbeAcl -ErrorAction Stop
+        $Persisted = Get-Acl -LiteralPath $Probe
+        Assert-True $Persisted.AreAccessRulesProtected 'Persisted ACL inheritance flag lost'
+    }
+    finally { Remove-Item -LiteralPath $Probe -Force -ErrorAction SilentlyContinue }
     Write-Host 'PASS: F2.7 offline promotion self-test'
     exit 0
 }
