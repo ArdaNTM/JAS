@@ -161,3 +161,33 @@ operator approval**, do not create `service.json`, trusted public keys,
 or start Ubuntu units at this stage. The independent signer must be off-host,
 with exact 9,044-file manifest bytes, approved service policy, SSH known_hosts
 bytes, run/VM and disk hash claims bound and reviewed separately. PR stays Draft.
+
+## F2.7 P0: root-owned measured QCOW2 disk and signed hash binding
+
+The previous Windows bridge accepted an Ed25519-signed disk SHA-256 claim
+without computing the current Ubuntu host QCOW2 digest. This is a live
+activation P0 blocker. The current offline candidate adds the exact
+\`measure_vm_disk\` SSH/root-helper operation, permitted only for the signed
+run's full VM ID. The root helper verifies a unique \`/System.qcow2\` read-only
+bind, Docker labels/image/network, root-controlled *non-writable* path
+ancestors and root-owned read-only QCOW2 snapshot. It hashes the actual file
+with kernel no-follow flags and checks fd inode, size, timestamps and Docker
+mount metadata before/after the read. It returns only bounded SHA-256/source/
+device/inode/size metadata, never an arbitrary file-read response.
+
+The Windows SCM bridge requires matching trusted measurements before
+the network probes AND after all probes, both matching the signed disk
+hash and each other. A changed source, mutated disk, wrong run/VM,
+writable mount, symlink, or concurrent file metadata mutation denies.
+The Linux root helper is in the trusted computing base. This does not
+defeat a compromised root account or prove absolute concurrent immutability;
+operator must use an independently provisioned stable, root-owned QCOW2
+snapshot under directories writable only by root.
+
+**NOT DEPLOYED**: The old sealed 9,044-file F2.7 runtime remains unchanged,
+and the inactive Ubuntu installed helper remains at its previous reviewed
+version. Any future live acceptance requires a NEW Windows sealed runtime
+promotion, independent file/ACL/token reacceptance, independent Ubuntu
+root-helper update, valid OSWorld run evidence and fresh off-host signature.
+No SCM service, SSH key install, policy enablement, socket enablement or
+ISOLATION_SIGNED approval happens in this offline commit.

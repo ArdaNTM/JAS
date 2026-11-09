@@ -3,6 +3,10 @@ on:
   pull_request:
     paths:
       - "core/src/aura_core/osworld/audit_broker_f27_**"
+      - "core/scripts/aura_ubuntu_broker_policy.py"
+      - "core/scripts/aura_ubuntu_broker_helper.py"
+      - "core/scripts/aura_ubuntu_broker_forced_command.py"
+      - "core/tests/test_audit_broker_ubuntu_transport.py"
       - "core/src/aura_core/osworld/audit_broker_ubuntu_transport.py"
       - "core/scripts/aura_docker_broker_service.py"
       - "core/tests/test_audit_broker_f27_**"

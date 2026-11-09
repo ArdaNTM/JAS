@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
 import errno
+import hashlib
 import importlib.util
 import json
 import os
@@ -301,6 +302,93 @@ class OwnershipTests(unittest.TestCase):
         for item in ("--privileged", "--mount", "--volume", "--network=host"):
             self.assertNotIn(item, cmd)
 
+
+
+class RootDiskMeasurementTests(unittest.TestCase):
+    """Disk proof never takes a caller-chosen Docker path or arbitrary run."""
+
+    def setUp(self):
+        self.docker = FakeDocker()
+        self.good = {
+            "schema": policy.DISK_SCHEMA, "run_id": RUN, "vm_id": VM,
+            "sha256": "d"*64, "bytes": 4096,
+            "source": "/var/lib/aura-images/osworld-v2-ubuntu-x86.qcow2",
+            "dev": 2, "ino": 3,
+        }
+
+    def test_pinned_request_target_and_server_policy(self):
+        raw = request("measure_vm_disk", VM)
+        parsed = policy.parse_request(raw, now=NOW)
+        self.assertEqual(parsed["operation"], "measure_vm_disk")
+        with patch.object(policy, "_measure_vm_disk", return_value=self.good) as measure:
+            self.assertEqual(policy.execute(parsed, docker=self.docker), self.good)
+        measure.assert_called_once()
+        with self.assertRaises(BrokerDenied):
+            request("measure_vm_disk", "f"*64)
+        broken = dict(parsed, target="f"*64)
+        with self.assertRaises(policy.Denied):
+            policy.parse_request(json.dumps(broken).encode(), now=NOW)
+
+    def test_response_schema_enforces_exact_bound_disk_claims(self):
+        base = {"schema": policy.RESPONSE_SCHEMA,
+                "operation": "measure_vm_disk", "nonce": NONCE,
+                "result": self.good}
+        self.assertEqual(host.parse_response(json.dumps(base).encode(),
+                                              nonce=NONCE, operation="measure_vm_disk"), self.good)
+        for change in ({"sha256": "BAD"}, {"vm_id": "f"*64},
+                       {"source": "C:/x"}, {"bytes": False},
+                       {"dev": -1}, {"ino": 0}, {"unexpected": 1}):
+            envelope = dict(base, result={**self.good, **change})
+            with self.subTest(change=change), self.assertRaises(BrokerDenied):
+                host.parse_response(json.dumps(envelope).encode(),
+                                    nonce=NONCE, operation="measure_vm_disk")
+
+    def test_untrusted_or_writable_disk_mount_rejected(self):
+        with TemporaryDirectory() as folder:
+            path = Path(folder) / policy.VM_DISK_NAME
+            path.write_bytes(b"QFI\xfb" + b"\x00"*64)
+            original = dict(self.docker.vm)
+            mount = {"Destination": "/System.qcow2", "Type": "bind",
+                     "RW": False, "Source": str(path)}
+            for bad in (
+                dict(mount, RW=True),
+                dict(mount, Type="volume"),
+                dict(mount, Source="/etc/passwd"),
+                dict(mount, Destination="/System.qcow2-other"),
+            ):
+                vm = dict(original, Mounts=[bad])
+                with self.subTest(mount=bad), self.assertRaises(policy.Denied):
+                    policy._verified_vm_disk_path(vm)
+            # Writable /tmp ancestry is never accepted, even for RO binds.
+            with self.assertRaises(policy.Denied):
+                policy._verified_vm_disk_path(dict(original, Mounts=[mount]))
+            with self.assertRaises(policy.Denied):
+                policy._verified_vm_disk_path(dict(original, Mounts=[mount, mount]))
+
+    def test_digest_is_computed_over_actual_file_bytes(self):
+        with TemporaryDirectory() as folder:
+            path = Path(folder) / policy.VM_DISK_NAME
+            raw = b"QFI\xfb" + b"\x00" * 8192 + b"actual bytes"
+            path.write_bytes(raw)
+            path.chmod(0o444)
+            original_fstat = os.fstat
+            original_lstat = Path.lstat
+            def root_stat(info):
+                return SimpleNamespace(
+                    st_dev=info.st_dev, st_ino=info.st_ino,
+                    st_size=info.st_size, st_mtime_ns=info.st_mtime_ns,
+                    st_ctime_ns=info.st_ctime_ns, st_mode=info.st_mode, st_uid=0,
+                )
+            with (
+                patch.object(policy, "_verified_vm_disk_path", return_value=path),
+                patch.object(policy.os, "fstat", side_effect=lambda fd: root_stat(original_fstat(fd))),
+                patch.object(policy.Path, "lstat", side_effect=lambda *args: root_stat(original_lstat(path))),
+            ):
+                measurement = policy._measure_vm_disk(self.docker.vm, docker=self.docker)
+            self.assertEqual(measurement["sha256"], hashlib.sha256(raw).hexdigest())
+            self.assertEqual(measurement["bytes"], len(raw))
+            self.assertEqual(measurement["vm_id"], VM)
+            path.chmod(0o644)
 
 class PersistentReplayTests(unittest.TestCase):
     def setUp(self):

@@ -72,6 +72,13 @@ class BridgeTests(unittest.TestCase):
             "IPAM": {"Config": [{"Gateway": "172.19.0.1"}]}
         }]
         self.backend.fixed_probe.return_value = True
+        self.disk_proof = {
+            "schema": "aura.osworld.vm-disk-measurement.v1",
+            "run_id": RUN, "vm_id": VM, "sha256": "d"*64,
+            "bytes": 8192, "source": "/var/lib/aura-images/osworld-v2-ubuntu-x86.qcow2",
+            "dev": 1, "ino": 2,
+        }
+        self.backend.measure_disk.return_value = dict(self.disk_proof)
         self.factory = Mock(return_value=self.backend)
 
     def call(self, raw=None, sid=AUDITOR, activation=None, epoch=NOW):
@@ -102,6 +109,32 @@ class BridgeTests(unittest.TestCase):
         self.assertNotIn(b"ISOLATION_SIGNED", body)
         self.claim.assert_called_once_with(NONCE)
         self.factory.assert_called_once_with(transport=self.trans, run_id=RUN, vm_id=VM)
+        self.assertEqual(self.backend.measure_disk.call_count, 2)
+
+    def test_root_measurement_must_match_signed_vm_disk(self):
+        for forged in (
+            dict(self.disk_proof, sha256="f"*64),
+            dict(self.disk_proof, run_id="f"*32),
+            dict(self.disk_proof, vm_id="f"*64),
+            dict(self.disk_proof, source="C:/malicious"),
+            None,
+        ):
+            self.backend.measure_disk.return_value = forged
+            with self.subTest(proof=forged), self.assertRaises(BrokerDenied):
+                self.call()
+        self.backend.policy_inspect.assert_not_called()
+
+    def test_post_measurement_rejects_swapped_disk_and_mutation(self):
+        for changed in (
+            dict(self.disk_proof, sha256="f"*64),
+            dict(self.disk_proof, source="/var/lib/aura-images/other.qcow2"),
+            dict(self.disk_proof, ino=91),
+            dict(self.disk_proof, bytes=8193),
+        ):
+            self.backend.measure_disk.side_effect = [dict(self.disk_proof), changed]
+            with self.subTest(post=changed), self.assertRaises(BrokerDenied):
+                self.call()
+            self.backend.measure_disk.reset_mock(side_effect=True)
 
     def test_wrong_agent_or_vm_never_claims_nonce_or_uses_ssh(self):
         for raw, sid in [
