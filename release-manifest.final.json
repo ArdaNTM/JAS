@@ -2,19 +2,19 @@
   "schema": "aura.release-lock.v2",
   "version": "F2.7-offline-review-candidate",
   "status": "review-candidate",
-  "generated_at": "2026-11-09T18:30:00Z",
-  "git_commit": "c9da8d3becaa117364f7144720cb27c427a90bee",
+  "generated_at": "2026-11-09T18:40:00Z",
+  "git_commit": "362e7e63f66d5f2cbc68a3e1a5ab7cc3d890fc0e",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:09ac1ca7191b9342a1fed282eeee30090388b591cfcc6cc86ced7abe0bf613fc",
-  "file_count": 356,
+  "release_digest": "sha256:89a271192d1e5597ab7aa929598cdd8dff0f30d4c45b844b209b478287f818c2",
+  "file_count": 358,
   "files": [
     {
       "path": ".gitattributes",
-      "sha256": "39e199665cd36c2251cf7ef460379eafe94c8682030f016d03e03eb6ba9dc602"
+      "sha256": "b9bbc2a0e798b86fd1e71ca213328457b6986bc50786b01674b3c969281856d7"
     },
     {
       "path": ".github/workflows/aura-f27-offline.yml",
-      "sha256": "970ebc1ab60079774c870c075bbb6fb36153cdd4e442537ecf30f3bc4cc93c91"
+      "sha256": "69c8b8fa97307fe53562edb7727f2e6dc9a84d67f3cdb7bf4fcc248483c5ac69"
     },
     {
       "path": ".github/workflows/aura-osworld-secure-live.yml",
@@ -226,7 +226,7 @@
     },
     {
       "path": "core/scripts/generate_final_lock.py",
-      "sha256": "290ba8378bd3e5d9ed047b163eb114265b1151c0ff86dc606b3b250fa4bbf513"
+      "sha256": "c1e896a250ae317d34347e7ea7453a0d2ab1e194e39f687e266f4e034989f391"
     },
     {
       "path": "core/scripts/hardware_stage_c_acceptance.py",
@@ -1425,12 +1425,20 @@
       "sha256": "fdf4f2b50a539388370ebfa27fb07aa6ed6106097074bfa1f23fc7c4f0d288ab"
     },
     {
+      "path": "docs/aura-f27-operator-acceptance.md",
+      "sha256": "bda076affffab445f84ed24c927ba85938a6be8e721bbee180eb2874d0412e44"
+    },
+    {
       "path": "release-manifest.f26.json",
       "sha256": "4d7372b67957ca44352232f27ae5f57aa527705dd41bd604fab85916af44c63a"
     },
     {
       "path": "scripts/Invoke-AuraF27OfflinePromotion.ps1",
       "sha256": "d5d5c10f988c494a69cb682bac5159cbbd1f5ed4173a6b085c0d34489560b097"
+    },
+    {
+      "path": "scripts/Test-AuraF27SealedRuntimeToken.ps1",
+      "sha256": "97c9bd8896577cde2575b0bbd13d74a446071a592ef7568c97322cf4b2dbc94f"
     }
   ],
   "governance": "F2.7 Draft — no SCM activation or signing"
