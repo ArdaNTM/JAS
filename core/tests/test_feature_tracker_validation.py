@@ -67,3 +67,25 @@ def test_rejects_implicit_bool_as_feature_id():
     doc["features"][0]["id"] = True
     with pytest.raises(ValueError, match="feature"):
         module.validate(doc)
+
+
+def test_rejects_missing_required_design_or_license_fields():
+    doc = load()
+    doc["features"][0].pop("license_terms")
+    with pytest.raises(ValueError, match="unexpected fields"):
+        module.validate(doc)
+
+
+def test_completed_feature_must_have_security_and_acceptance_evidence():
+    doc = load()
+    item = doc["features"][0]
+    item["status"] = "COMPLETED"
+    item["assessment"] = "VERIFIED"
+    item["test_results"] = "PASS"
+    item["acceptance"] = "PASS"
+    item["commit"] = "1" * 40
+    item["pull_request"] = "https://github.com/ArdaNTM/JAS/pull/66"
+    item["code_paths"] = ["core/src/example.py"]
+    item["test_commands"] = ["pytest"]
+    with pytest.raises(ValueError, match="without evidence"):
+        module.validate(doc)

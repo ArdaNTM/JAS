@@ -9,3 +9,9 @@
 - Added negative-path tests: missing entries, duplicated IDs, unproven completion, invalid dependencies, dependency cycles and bool IDs.
 - Tests: **not yet run at the time of first commit**. Check this PR's GitHub Actions results before changing this line or marking acceptance complete.
 - No production runtime module, service policy, credentials, SCM or permission settings are changed.
+
+## 2026-11-15 — First Core feature candidate
+
+- Draft PR #65: `https://github.com/ArdaNTM/JAS/pull/65` contains engineering ledger and acceptance validator. Initial CI completed successfully.
+- Draft PR #66: `https://github.com/ArdaNTM/JAS/pull/66` adds feature #8 review-only, scoped literal fact conflict candidates. Commit `ab933abcce477155993fc933b1c89daeca307565`, Core Assurance PASS (600 passed, 6 skipped), release lock PASS.
+- Feature #8 **is not COMPLETED**: no human-approved resolution, UI integration or end-to-end ownership review. No PR merged.

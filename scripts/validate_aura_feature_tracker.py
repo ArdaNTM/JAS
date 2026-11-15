@@ -23,10 +23,15 @@ FIELDS = {
     "security_review", "acceptance", "commit", "pull_request", "blockers",
     "technical_goal", "user_capability", "integration", "hardware_requirements",
     "license_review", "local_offline", "notes",
+    "existing_jas_state", "proposed_technology", "license_terms",
+    "commercial_terms", "integration_test_criteria", "unit_test_criteria",
+    "security_test_criteria", "acceptance_criteria", "performance_requirements",
+    "complexity", "known_limitations", "missing_components", "official_links",
+    "alternatives",
 }
 LIST_FIELDS = {
     "dependencies", "code_paths", "documentation_paths", "test_commands",
-    "blockers",
+    "blockers", "missing_components", "official_links", "alternatives",
 }
 TEXT_FIELDS = FIELDS - LIST_FIELDS - {"id", "phase"}
 
