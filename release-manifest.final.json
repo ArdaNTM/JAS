@@ -5,7 +5,7 @@
   "generated_at": "2026-10-31T00:45:29.771Z",
   "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:f3f48986857ba196785518bcb4f1de2eff307a2037c554dc783d6010ede2c335",
+  "release_digest": "sha256:abe9ca66c41c9ba1ae6fe1fdd0c20bec1cb0cbb2fb623f81e1dde6b3e1b271e8",
   "file_count": 234,
   "files": [
     {
@@ -694,7 +694,7 @@
     },
     {
       "path": "core/src/aura_core/memory/conversation_review.py",
-      "sha256": "85867db7a3af64b86b56964cf65502432490e52fce1d75ba6073b21a712011a1"
+      "sha256": "862a10fa495631b5ce2866b5d1337c4efccec7d8e9dee1e434feae5c5069c790"
     },
     {
       "path": "core/src/aura_core/memory/embeddings.py",
