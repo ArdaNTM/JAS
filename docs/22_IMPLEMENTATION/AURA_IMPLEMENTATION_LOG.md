@@ -81,3 +81,10 @@ All eight reported Core Assurance PASS and release lock PASS on the exact heads 
 - PR #89 `dc98aede3a3791b43544bb3122461ede2d8f42cd`: offline read-only UTC/all-day ICS VEVENT view (#109), Core Assurance **605 passed, 6 skipped**, Final Release Lock PASS, Remote Persistence PASS.
 - PR #85 actually provides swarm preflight (#58), not DOCX extraction. DOCX extraction was completed separately in PR #87 (#39).
 - Both new PRs remain Draft and unmerged. No auto-sync to `main`, no capability/Owner privilege changes.
+
+## 2026-11-15 — Recovery, experimental design and physics slices
+
+- PR #90 `3279fe5238f532ad21ee0bd919da970c401408ce`: bounded, principal-labelled offline backup ZIP integrity validation (#105). Initial Core CI detected a misclassified PermissionError; final head fixes this and passes Core Assurance 609 passed, 6 skipped / Release Lock and Remote Persistence.
+- PR #91 `e7b08362dad84727d33a405065b860e80af25977`: hypothesis wording and randomized simulated trial allocations (#65/#72); Core Assurance 609 passed, 6 skipped; Final Release Lock and Persistence PASS.
+- PR #92 `bb650fa3cc6c68607e89b3724ba943dd46f4719b`: offline RK4 1D physics/engineering numeric approximation (#68/#71); Core Assurance 612 passed, 6 skipped; Final Release Lock and Persistence PASS.
+- All three PRs are Draft, independent of F2.7 #64; neither signed backup authenticity nor experimental/physical truth is claimed.

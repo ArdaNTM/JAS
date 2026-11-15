@@ -39,3 +39,10 @@ After **explicit Owner merge approval**, integrate in dependency order, rebase e
 - PR #88 only analyzes already-authorized Python source text; AST callsite matches are heuristic and do not prove a system safe. No GitHub management rights, publishing, self-editing or autonomous fixes granted.
 - PR #89 only processes already-authorized UTC/all-day calendar text. Recurrence/TZID/VALARM/attachments fail closed, so do not present it as a full calendar or enable automatic reminders.
 - Both have separate release manifest states generated against old `main`. Regenerate combined manifests and rerun all assurance gates after explicit Owner merge approval.
+
+## PR #90–#92 acceptance and architecture gaps
+
+- #90 SHA-256 manifest detects corruption only: no independent signature, encryption, authenticated identity receipt, durable isolated storage or restore drill. Do not use it as production secret backup.
+- #91 hypotheses are templates from user-specified assumptions; simulated allocations are not ethical approval, real participant enrollment or validated scientific findings.
+- #92 RK4 toy-model output is a numerical approximation, not a calibrated/safety-certified physics/engineering solver. Hardware/physical/convergence verification remains false.
+- As with the earlier independent PRs, integrating these separately generated release manifests requires sequential reconciliation and full CI after explicit Owner review. Never merge automatically.

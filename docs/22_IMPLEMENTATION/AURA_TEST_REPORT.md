@@ -88,3 +88,13 @@ Real DOCX input was created as in-memory OOXML fixtures; no production-host/file
 | [#89](https://github.com/ArdaNTM/JAS/pull/89) | `dc98aede3a37` | [605 passed, 6 skipped; Release Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43766833934) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43766833912) |
 
 These are per-branch isolated runs; they are not additive. Static Python inspection does not execute user code or certify security. ICS parsing does not authenticate calendar providers or support recurring/TZID expansion.
+
+## Verified current GitHub Actions — PRs #90–#92
+
+| PR | Exact head commit | Core Assurance and Final Release Lock | Remote Persistence |
+| --- | --- | --- | --- |
+| [#90](https://github.com/ArdaNTM/JAS/pull/90) | `3279fe5238f5` | [609 passed / 6 skipped, Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43767731030) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43767731049) |
+| [#91](https://github.com/ArdaNTM/JAS/pull/91) | `e7b08362dad8` | [609 passed / 6 skipped, Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43767935571) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43767935585) |
+| [#92](https://github.com/ArdaNTM/JAS/pull/92) | `bb650fa3cc6c` | [612 passed / 6 skipped, Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43768319906) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43768319983) |
+
+Counts belong to separate PR branch runs and do not add up to a cumulative integrated test count. All remain PARTIAL and no production or physical verification is inferred.

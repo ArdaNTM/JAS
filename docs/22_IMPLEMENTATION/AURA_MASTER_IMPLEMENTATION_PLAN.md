@@ -56,3 +56,13 @@ PR #88 contributes offline Python architecture/Markdown API documentation
 (#109). All have Core Assurance/Release Lock/Persistence PASS on individual
 heads. Features remain TESTING/PARTIAL_VERIFIED, not COMPLETED.
 No automatic merge or F2.7 activation is authorized.
+
+## Latest verified development checkpoint (2026-11-15)
+
+PR #90 implements a partial offline backup integrity envelope (#105);
+PR #91 partial hypothesis/scientific study design (#65/#72);
+PR #92 partial bounded RK4 mass–spring–damper simulation (#68/#71).
+All current heads have Core Assurance, Remote Persistence and Release Lock PASS.
+No feature marked COMPLETED; no production hardware or Owner acceptance.
+Continue with independent reviewable branches and preserve JAS Kernel/
+PermissionEngine/MCP Gateway/Owner boundaries.
