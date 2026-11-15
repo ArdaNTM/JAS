@@ -58,3 +58,8 @@ After **explicit Owner merge approval**, integrate in dependency order, rebase e
 - #95 event observations are untrusted; Gateway decision replies are not independent tool execution/Owner approval receipts. A one-shot Markdown report is NOT automatic reporting/scheduling.
 - #96 STL is deterministic closed geometry but is not material/printable/structurally certified. No production printer/robot control is enabled.
 - Both add their own release-manifest changes against a common main; integration must reconcile source inventory and re-run locks/tests sequentially after explicit Owner approval.
+
+## PR #97 acceptance gap
+
+- A topological plan is not an execution authorization. Claimed completed nodes are not signed outcome receipts. Independent verification, principal-scoped persistence, Owner decisions and actual task dispatch are required.
+- The PR has an independent complete Final Release Lock manifest against old `main`; combined integration must recalculate and re-test after Owner-approved merge order.

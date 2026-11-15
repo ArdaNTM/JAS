@@ -100,3 +100,10 @@ All eight reported Core Assurance PASS and release lock PASS on the exact heads 
 - PR #95 commit `4963b5b85b8ad627e357f15da2cdd45f2529a0d6`: redacted exact-principal/task Swarm KernelEvent status projection and one-shot Markdown summary (#98/#117), Core Assurance 602 passed/6 skipped, Release Lock PASS, Remote Persistence PASS.
 - PR #96 commit `5721ec91e06b793bd3edb4bf8a8ce49f63a0a206`: closed oriented box/cylinder geometry, numeric volume checks, actual binary STL bytes (#70/#74/#114), Core Assurance 607 passed/6 skipped, Release Lock PASS, Remote Persistence PASS.
 - Neither creates new MCP authority, proves tool success or enables manufacturing hardware. Both remain Draft, not merged.
+
+## 2026-11-15 — Dependency-safe long-term goal plan (#10/#62)
+
+- PR #97 commit `1e2980c164575f7e5f366920a816176cec783d06`: validates complete goal DAG before considering unverified completion claims; yields deterministic readiness waves and optimistic duration estimates, but never executes tasks.
+- [AURA Core Assurance](https://github.com/ArdaNTM/JAS/actions/runs/43771769354): 608 passed / 6 skipped, Release Lock PASS.
+- [Remote Persistence Integration](https://github.com/ArdaNTM/JAS/actions/runs/43771769447): PASS.
+- Both feature #10 and #62 remain TESTING/PARTIAL. No PR merged, no new tool authority.

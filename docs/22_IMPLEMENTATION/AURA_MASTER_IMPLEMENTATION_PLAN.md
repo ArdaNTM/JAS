@@ -81,3 +81,10 @@ PR #96 supports bounded offline box/cylinder prototyping (#70/#74/#114)
 and real STL binary serialization; it does not control 3D hardware.
 Both have Core Assurance, Persistence and Release Lock PASS on their own
 heads. No PR is auto-merged, no feature promoted to COMPLETED.
+
+## Latest continuation checkpoint
+
+PR #97 adds real bounded offline goal-DAG planning (#10/#62), Core
+Assurance, Remote Persistence and Final Release Lock PASS. It neither
+deploys an autonomous agent nor changes any authorization boundary.
+No feature marked COMPLETED; main unchanged and all new PRs Draft.

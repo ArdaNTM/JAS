@@ -116,3 +116,11 @@ Independent PR heads, not combined/cumulative or real-provider acceptance.
 | [#96](https://github.com/ArdaNTM/JAS/pull/96) | `5721ec91e06b` | [607 passed, 6 skipped; Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43771211785) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43771211803) |
 
 These independent CI executions are not combined; no hardware, Owner or signed audit acceptance is inferred.
+
+## PR #97 exact-head CI evidence
+
+| PR | Commit | Core Assurance | Remote Persistence |
+| --- | --- | --- | --- |
+| [#97](https://github.com/ArdaNTM/JAS/pull/97) | `1e2980c16457` | [608 passed / 6 skipped; Release Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43771769354) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43771769447) |
+
+No distributed task execution, Owner approval, real hardware or actual goal achievement is inferred.
