@@ -5,7 +5,7 @@
   "generated_at": "2026-10-31T00:45:29.771Z",
   "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
+  "release_digest": "sha256:d3ff11bc81a90761799f4c0bc068f8c0cb528d7f670a2d9a4de8bf42f55dfc06",
   "file_count": 233,
   "files": [
     {
@@ -206,7 +206,7 @@
     },
     {
       "path": "core/src/aura_core/application/context_synthesizer.py",
-      "sha256": "216819109af92575f5053251a039dc4192d2adb79cb7720f97f85b185174b19e"
+      "sha256": "268e607c7ed4ce787a28a4cb121c60862fe66919731b9d441d7c60a3e7f73a39"
     },
     {
       "path": "core/src/aura_core/application/cross_capability_reasoning.py",
