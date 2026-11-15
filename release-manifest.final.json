@@ -5,8 +5,8 @@
   "generated_at": "2026-10-31T00:45:29.771Z",
   "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
-  "file_count": 233,
+  "release_digest": "sha256:5292fa533f0a14d8bc9ecc231bbc3f9f02fa46ea8d903ca87f30946e23f53219",
+  "file_count": 234,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -271,6 +271,10 @@
     {
       "path": "core/src/aura_core/application/live_events.py",
       "sha256": "51d23fe8f540b5781a1962f96594cd3e6b85ce600334d612c504ba2ec0bd23f0"
+    },
+    {
+      "path": "core/src/aura_core/application/offline_code_quality.py",
+      "sha256": "1c35544d611287cd826eee1c3f43a1458cafdadb80c0d7c3bb5f96f68e7e9408"
     },
     {
       "path": "core/src/aura_core/application/ollama_completion.py",
