@@ -72,12 +72,23 @@ def test_conflict_review_is_strictly_read_only_and_scoped(tmp_path):
     store.remember(
         principal_id="other", kind="fact", content="Charlie", tags=("fact:alias",),
     )
-    previous = store.recall(principal_id="owner")
+    with store._connect() as db:
+        before = db.execute(
+            "SELECT memory_id, last_accessed_at FROM episodic_memory "
+            "WHERE principal_id = 'owner' ORDER BY memory_id"
+        ).fetchall()
+        before = [tuple(row) for row in before]
     assert len(store.find_conflict_candidates(principal_id="owner")) == 1
     assert store.find_conflict_candidates(principal_id="other") == []
     assert store.count(principal_id="owner") == 2
-    assert store.recall(principal_id="owner") == previous
-    assert older.memory_id in [x.memory_id for x in previous]
+    with store._connect() as db:
+        after = db.execute(
+            "SELECT memory_id, last_accessed_at FROM episodic_memory "
+            "WHERE principal_id = 'owner' ORDER BY memory_id"
+        ).fetchall()
+        after = [tuple(row) for row in after]
+    assert after == before
+    assert older.memory_id in [memory_id for memory_id, _ in before]
 
 
 @pytest.mark.parametrize("options", [
