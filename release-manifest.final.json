@@ -5,8 +5,8 @@
   "generated_at": "2026-10-31T00:45:29.771Z",
   "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
-  "file_count": 233,
+  "release_digest": "sha256:e91a85532d4d17ea2ad922ff431df270762aecfb89dc8b44c581ddb5d1613984",
+  "file_count": 234,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -347,6 +347,10 @@
     {
       "path": "core/src/aura_core/application/service.py",
       "sha256": "ad5f2173820f2b4fc14e92acea7f0a4eb1ae8253398f4bfb22f3760f60f4d2fc"
+    },
+    {
+      "path": "core/src/aura_core/application/specialist_performance.py",
+      "sha256": "c395f42db816c2b4e37f8288303ebdff46952f6ac9ec246e32d7a25cefe40ac8"
     },
     {
       "path": "core/src/aura_core/application/speech_api.py",
