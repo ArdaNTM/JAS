@@ -43,3 +43,21 @@
 | #75 | `67a6a57bc2e2` | 620 passed, 6 skipped; release lock PASS | [Actions](https://github.com/ArdaNTM/JAS/actions/runs/43751913526) |
 
 All documented PR heads passed their Core Assurance workflow and release-lock verifier. Each has a separate Remote Persistence Integration workflow (successful at the time of this update). Test counts are **per isolated branch**, not cumulative; unmerged code from other branches is not in each run. No physical/hardware testing or production merge is inferred.
+
+## Verified GitHub Actions — follow-up PRs #76–#83
+
+Each entry records Core Assurance success, full pytest and Final Release Lock on the PR's independent head. These are **not cumulative test counts**.
+
+| PR | Actions | Core result |
+| --- | --- | --- |
+| #76 | [Core Assurance](https://github.com/ArdaNTM/JAS/actions/runs/43752921155) | PASS |
+| #77 | [Core Assurance](https://github.com/ArdaNTM/JAS/actions/runs/43753417472) | PASS |
+| #78 | [Core Assurance](https://github.com/ArdaNTM/JAS/actions/runs/43753581818) | PASS |
+| #79 | [Core Assurance](https://github.com/ArdaNTM/JAS/actions/runs/43753780847) | PASS |
+| #80 | [Core Assurance](https://github.com/ArdaNTM/JAS/actions/runs/43754154784) | PASS |
+| #81 | [Core Assurance](https://github.com/ArdaNTM/JAS/actions/runs/43754964413) | PASS |
+| #82 | [Core Assurance](https://github.com/ArdaNTM/JAS/actions/runs/43755206129) | PASS |
+| #83 | [Core Assurance](https://github.com/ArdaNTM/JAS/actions/runs/43755492865) | PASS |
+
+Detailed observed counts: #77 606 passed/6 skipped, #79 602/6, #80 603/6, #81 603/6, #82 603/6, #83 610/6. #76 and #78 CI success verified; count omitted when not separately extracted.
+No real physical hardware attestation, external API validity or production release is inferred.

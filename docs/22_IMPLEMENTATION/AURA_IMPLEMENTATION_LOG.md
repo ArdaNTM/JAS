@@ -47,3 +47,15 @@ Additional independently scoped PRs were created on branches from `main` (no mer
 - #75: bounded descriptive statistics + simple linear models — commit `67a6a57bc2e25040861afbd60eb370a2d471920e`; 620 passed, 6 skipped.
 
 All eight reported Core Assurance PASS and release lock PASS on the exact heads above. Remote Persistence Integration PR workflows were also verified successful. No hardware/physical-device acceptance, owner-signed merger or production promotion is claimed. Feature acceptance status remains TESTING.
+
+## 2026-11-15 — Additional independent research, telemetry and diagnostics slices
+
+- #76: offline CSV analysis (#111), CI PASS.
+- #77: publication/source keyed literal comparison (#37), CI PASS.
+- #78: existing CrossCapabilitySynthesizer cross-provider comparison (#37), CI PASS; complementary but requires contract consolidation with #77.
+- #79: recurring failure review (#12), CI PASS.
+- #80: metadata-only diagnostics (#30), CI PASS.
+- #81: RSS/Atom offline feed update detection (#41), CI PASS.
+- #82: DOI citation reconciliation and bibliography (#38/#40), CI PASS.
+- #83: bounded p95 runtime performance summary (#48/#56), CI PASS.
+- No PR merged. Main remains at original baseline; F2.7 PR #64 untouched. All these are PARTIAL/TESTING, not COMPLETE.

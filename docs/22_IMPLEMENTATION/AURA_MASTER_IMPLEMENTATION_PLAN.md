@@ -32,3 +32,11 @@ Status `COMPLETED` requires a reviewed commit, PR, executable tests, security re
 ## Near-term handoff
 
 Current work is a **real validator** and an explicitly unverified 117-entry tracking ledger, not implementation of all 117 capabilities. Current candidates: #8, #29 and new partial implementations #2, #3, #4, #5, #9, #15, #36, #42, #44, #67, #73 across open PRs #66–#75. Every candidate is partial pending independent acceptance, integration and owner merge approval. Continue by current code dependencies rather than treating the numbered phases as stopping points. Keep PR #64 Draft until independent live acceptance.
+
+## Latest implementation continuation checkpoint (2026-11-15)
+
+Additional scoped partial features tracked: #12, #30, #37, #38, #40,
+#41, #48, #56 and #111 via PRs #76–#83. Repository main and F2.7 security
+authority are unchanged. Next dependency review should select one
+non-overlapping existing JAS capability boundary, implement real tests, and
+avoid introducing a new tool authority or auto-merging PRs.
