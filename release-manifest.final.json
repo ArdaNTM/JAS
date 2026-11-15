@@ -5,8 +5,8 @@
   "generated_at": "2026-10-31T00:45:29.771Z",
   "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
-  "file_count": 233,
+  "release_digest": "sha256:d59df1eab853546c2354e71ebda2a1b50e4a083d4471b41f7f5acfd49b5e5ba4",
+  "file_count": 234,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -779,6 +779,10 @@
     {
       "path": "core/src/aura_core/persistence/__init__.py",
       "sha256": "b39a6a6501945d7017c12c2eec3880c88c1787f21bdf086e49929c911031d932"
+    },
+    {
+      "path": "core/src/aura_core/persistence/offline_backup.py",
+      "sha256": "4fd0c2648a7c1d00cdcefcac63222fa6e6074979cce45de6947b9f0a6b776d49"
     },
     {
       "path": "core/src/aura_core/persistence/postgres.py",
