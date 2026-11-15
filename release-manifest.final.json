@@ -5,7 +5,7 @@
   "generated_at": "2026-10-31T00:45:29.771Z",
   "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:daaaf199e81c3b801ddd2ce32253ec1fac8c6ec6d6281bc61b9070cb2aa93817",
+  "release_digest": "sha256:d59df1eab853546c2354e71ebda2a1b50e4a083d4471b41f7f5acfd49b5e5ba4",
   "file_count": 234,
   "files": [
     {
@@ -782,7 +782,7 @@
     },
     {
       "path": "core/src/aura_core/persistence/offline_backup.py",
-      "sha256": "8ba551d03ddfb308faa9293c2a60386b89239ff20331e431e34ea1ea8f688a60"
+      "sha256": "4fd0c2648a7c1d00cdcefcac63222fa6e6074979cce45de6947b9f0a6b776d49"
     },
     {
       "path": "core/src/aura_core/persistence/postgres.py",
