@@ -47,3 +47,12 @@ Additional reviewable partials: #115 offline vocabulary persistence (PR #84),
 #58 all-steps swarm preflight (PR #85), #6/#102 bounded untrusted
 context synthesis (PR #86). All required CI checks passed on reported heads.
 No feature was promoted to COMPLETED and no automatic merging is authorized.
+
+## Latest independently reviewable slices
+
+PR #87 contains secure DOCX text extraction (#39).
+PR #88 contributes offline Python architecture/Markdown API documentation
+(#47/#53). PR #89 contributes offline, read-only ICS calendar observations
+(#109). All have Core Assurance/Release Lock/Persistence PASS on individual
+heads. Features remain TESTING/PARTIAL_VERIFIED, not COMPLETED.
+No automatic merge or F2.7 activation is authorized.

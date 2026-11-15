@@ -79,3 +79,12 @@ Remote Persistence PR workflows: #84 run 43756314100 PASS; #85 run 43756823780 P
 | [#87](https://github.com/ArdaNTM/JAS/pull/87) | `97d39e6c5736` | [PASS 611 passed / 6 skipped; Final Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43765869144) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43765869141) |
 
 Real DOCX input was created as in-memory OOXML fixtures; no production-host/file authorization or hardware acceptance was run. Benchmarks and test counts from independent PR branches are not additive.
+
+## Verified GitHub Actions — PR #88 and #89
+
+| PR | Exact head commit | Core result | Remote Persistence |
+| --- | --- | --- | --- |
+| [#88](https://github.com/ArdaNTM/JAS/pull/88) | `03657e6f9d67` | [614 passed, 6 skipped; Release Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43766456114) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43766456072) |
+| [#89](https://github.com/ArdaNTM/JAS/pull/89) | `dc98aede3a37` | [605 passed, 6 skipped; Release Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43766833934) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43766833912) |
+
+These are per-branch isolated runs; they are not additive. Static Python inspection does not execute user code or certify security. ICS parsing does not authenticate calendar providers or support recurring/TZID expansion.

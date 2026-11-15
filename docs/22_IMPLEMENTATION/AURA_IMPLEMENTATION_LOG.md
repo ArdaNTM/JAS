@@ -74,3 +74,10 @@ All eight reported Core Assurance PASS and release lock PASS on the exact heads 
 - [AURA Core Assurance](https://github.com/ArdaNTM/JAS/actions/runs/43765869144) PASS (611 passed, 6 skipped; release lock PASS).
 - [Remote Persistence Integration](https://github.com/ArdaNTM/JAS/actions/runs/43765869141) PASS.
 - Feature #39 remains TESTING; no PDF/OCR, live Owner authorization or full document analysis accepted. No PR merged.
+
+## 2026-11-15 — Code inspection, documentation and calendar view slices
+
+- PR #88 `03657e6f9d67ebe85807b52b1dccef21a9a076ed`: Python AST-only architecture analysis and API Markdown renderer (#47/#53), Core Assurance **614 passed, 6 skipped**, Final Release Lock PASS, Remote Persistence PASS.
+- PR #89 `dc98aede3a3791b43544bb3122461ede2d8f42cd`: offline read-only UTC/all-day ICS VEVENT view (#109), Core Assurance **605 passed, 6 skipped**, Final Release Lock PASS, Remote Persistence PASS.
+- PR #85 actually provides swarm preflight (#58), not DOCX extraction. DOCX extraction was completed separately in PR #87 (#39).
+- Both new PRs remain Draft and unmerged. No auto-sync to `main`, no capability/Owner privilege changes.

@@ -33,3 +33,9 @@ After **explicit Owner merge approval**, integrate in dependency order, rebase e
 - #87 is text-only and receives preauthorized bytes, but does not itself authenticate a principal. Do not expose it as a direct unapproved filesystem/MCP tool.
 - PDF/OCR, external linked content, tracked changes, complex DOCX layout, full document-corpus testing and end-to-end UI are outstanding.
 - #87 modifies the separately calculated complete release manifest; integration with the other independent PRs requires review, regenerated manifest, and a fresh CI run after explicit Owner merge approval.
+
+## New partial feature limits for #88 and #89
+
+- PR #88 only analyzes already-authorized Python source text; AST callsite matches are heuristic and do not prove a system safe. No GitHub management rights, publishing, self-editing or autonomous fixes granted.
+- PR #89 only processes already-authorized UTC/all-day calendar text. Recurrence/TZID/VALARM/attachments fail closed, so do not present it as a full calendar or enable automatic reminders.
+- Both have separate release manifest states generated against old `main`. Regenerate combined manifests and rerun all assurance gates after explicit Owner merge approval.
