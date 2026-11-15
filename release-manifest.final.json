@@ -5,7 +5,7 @@
   "generated_at": "2026-10-31T00:45:29.771Z",
   "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
+  "release_digest": "sha256:8f5e962cc9d30e1e5ea4bb7ef479a3f1dd2b31262de4c1f7e71b06c5324f55e9",
   "file_count": 233,
   "files": [
     {
@@ -282,7 +282,7 @@
     },
     {
       "path": "core/src/aura_core/application/persona_policy.py",
-      "sha256": "a4e234c1330d627c0719f1a6016b856827e486a0e7e3c6a7ecea9492f24ab125"
+      "sha256": "5606546d3c646a84006d70ec8c12f882016e588b54b5f6faf3194595a27f066a"
     },
     {
       "path": "core/src/aura_core/application/postgresql_episodic_memory.py",
