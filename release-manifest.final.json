@@ -5,8 +5,8 @@
   "generated_at": "2026-10-31T00:45:29.771Z",
   "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
-  "file_count": 233,
+  "release_digest": "sha256:16c801d09501c1b4c0b69945c7df5b98a4b6a92104ffc727f256ca1abef00bd9",
+  "file_count": 234,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -263,6 +263,10 @@
     {
       "path": "core/src/aura_core/application/jarvis_intelligence.py",
       "sha256": "6db13a924ada4a57b4df83427e47eea227e0d5cb935614075f936688a9fcb4a5"
+    },
+    {
+      "path": "core/src/aura_core/application/language_learning.py",
+      "sha256": "95c56bd98ac97bb58b2fea43919178b2a62eb857790ed68f32852f826368137c"
     },
     {
       "path": "core/src/aura_core/application/live_api.py",
