@@ -1600,7 +1600,7 @@
       "hardware_requirements": "No real hardware measured by this PR.",
       "license_review": "NOT_REVIEWED",
       "local_offline": "PARTIAL_VERIFIED",
-      "notes": "PR #78 has successful Core Assurance and release-lock checks (CI PASS); physical hardware, E2E and Owner acceptance remain unverified.",
+      "notes": "PR #78 has successful Core Assurance and release-lock checks (CI PASS); physical hardware, E2E and Owner acceptance remain unverified. PR #78: 603 passed, 6 skipped in 9.92s.",
       "existing_jas_state": "PR #78 extends existing CrossCapabilitySynthesizer; complementary independent publication-level PR #77 exists.",
       "proposed_technology": "Python standard library and existing JAS components",
       "license_terms": "No new external dependency; overall license compliance pending review",
@@ -4613,10 +4613,11 @@
         99
       ],
       "code_paths": [
-        "core/src/aura_core/application/local_tabular_analysis.py"
+        "core/src/aura_core/data_analysis/__init__.py",
+        "core/src/aura_core/data_analysis/tabular.py"
       ],
       "documentation_paths": [
-        "docs/15_BACKEND/LOCAL_TABULAR_ANALYSIS_IMPLEMENTATION.md"
+        "docs/local-tabular-analysis.md"
       ],
       "test_commands": [
         "cd core && uv run pytest -q core/tests/test_local_tabular_analysis.py",
@@ -4635,7 +4636,7 @@
       "hardware_requirements": "No real hardware measured by this PR.",
       "license_review": "NOT_REVIEWED",
       "local_offline": "PARTIAL_VERIFIED",
-      "notes": "PR #76 has successful Core Assurance and release-lock checks (CI PASS); physical hardware, E2E and Owner acceptance remain unverified.",
+      "notes": "PR #76 has successful Core Assurance and release-lock checks (CI PASS); physical hardware, E2E and Owner acceptance remain unverified. 606 passed, 6 skipped in 6.28s.",
       "existing_jas_state": "PR #76 adds local CSV aggregation; does not create a full data analysis service.",
       "proposed_technology": "Python standard library and existing JAS components",
       "license_terms": "No new external dependency; overall license compliance pending review",
