@@ -211,6 +211,8 @@ def verify_backup_bundle(
                     raise ValueError("invalid backup size")
                 if path.casefold() not in known:
                     raise ValueError("backup manifest references missing entry")
+                if known[path.casefold()].filename != path:
+                    raise ValueError("backup manifest path case mismatch")
                 actual = read(path, _MAX_FILE)
                 if len(actual) != size or _digest(actual) != digest:
                     raise ValueError("backup integrity mismatch")
