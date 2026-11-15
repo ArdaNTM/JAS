@@ -92,7 +92,7 @@ def test_bounded_queue_full_rejected_without_partial_append():
     {"text": ""},
     {"text": "\x00payload"},
     {"text": "x" * 2049},
-    {"text": "ç" * 2048},
+    {"text": "€" * 1500},
     {"text": "\ud800"},
 ])
 def test_invalid_role_identity_or_message_rejected(values):
