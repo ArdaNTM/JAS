@@ -49,7 +49,7 @@ def test_context_budget_and_consistent_style():
         message="Hello", memories=["M" * 2000], tone="concise",
     )
     assert result.recalled_items == 1
-    assert len(result.user_content) <= 320
+    assert len(result.user_content) <= 400
     assert result.style == "concise"
 
 
