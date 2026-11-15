@@ -5,7 +5,7 @@
   "generated_at": "2026-10-31T00:45:29.771Z",
   "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
+  "release_digest": "sha256:4656a8c0ab5ac886755027c5aa921fba1a69b220eb4e7e927163717c98d03f08",
   "file_count": 233,
   "files": [
     {
@@ -362,7 +362,7 @@
     },
     {
       "path": "core/src/aura_core/application/task_memory.py",
-      "sha256": "3e1e8d9554564b83eed84888db47b3de4f9275f34935dd6ba326085195fd7575"
+      "sha256": "d3585352e4ffa080e80e813c267ccc68c52b944b714e5ac027b6185881016cdd"
     },
     {
       "path": "core/src/aura_core/application/task_state_machine.py",
@@ -702,7 +702,7 @@
     },
     {
       "path": "core/src/aura_core/memory/hierarchical_memory.py",
-      "sha256": "98764da792f5440a7e63da07183901df93ec46d664a71581f3c088fb1143035f"
+      "sha256": "9875ff55a07d3e8f118b22293237ccf2dcfbf416845e11b014bfd9a5de5af23e"
     },
     {
       "path": "core/src/aura_core/memory/local_embeddings.py",
