@@ -24,6 +24,18 @@ class DiagnosticSnapshot:
     warnings: tuple[str, ...]
 
 
+@dataclass(frozen=True, slots=True)
+class DiagnosticFinding:
+    """Aggregate, non-sensitive diagnostic recommendation, never an action."""
+
+    code: str
+    severity: str
+    affected_count: int
+    recommendation: str
+    can_execute: bool = False
+    authorization_checked: bool = False
+
+
 class DiagnosticsService:
     """Read-only Kernel inspection and verification service."""
 
@@ -122,6 +134,60 @@ class DiagnosticsService:
         )
         self._publish(snapshot)
         return snapshot
+
+    @staticmethod
+    def diagnose(snapshot: DiagnosticSnapshot) -> tuple[DiagnosticFinding, ...]:
+        """Analyze an existing snapshot without publishing events or making changes.
+
+        Results deliberately omit service IDs, configuration, endpoint URLs,
+        credentials and raw audit records. This cannot authorize remediation.
+        """
+        if type(snapshot) is not DiagnosticSnapshot:
+            raise ValueError("DiagnosticSnapshot is required")
+        denied = snapshot.authorization.get("deny_total", 0)
+        if type(denied) is not int or denied < 0:
+            raise ValueError("invalid authorization aggregate")
+        ids = {
+            item["service_id"] for item in snapshot.health
+            if type(item) is dict and type(item.get("service_id")) is str
+        }
+        missing_count = sum(
+            type(item) is dict and item.get("service_id") not in ids
+            for item in snapshot.services
+        )
+        unhealthy_count = sum(
+            type(item) is dict and item.get("state") != HealthState.HEALTHY
+            for item in snapshot.health
+        )
+        unavailable_count = sum(
+            type(item) is dict and (
+                item.get("available") is not True or item.get("healthy") is not True
+            )
+            for item in snapshot.capabilities
+        )
+        # All messages and codes are fixed constants, not untrusted input.
+        findings: list[DiagnosticFinding] = []
+        if missing_count:
+            findings.append(DiagnosticFinding(
+                "missing_health_reports", "warning", missing_count,
+                "Review service health instrumentation before relying on availability.",
+            ))
+        if unhealthy_count:
+            findings.append(DiagnosticFinding(
+                "unhealthy_services", "warning", unhealthy_count,
+                "Inspect health reports; do not restart privileged services automatically.",
+            ))
+        if unavailable_count:
+            findings.append(DiagnosticFinding(
+                "unavailable_capabilities", "warning", unavailable_count,
+                "Verify provider health and capability registration before use.",
+            ))
+        if denied:
+            findings.append(DiagnosticFinding(
+                "authorization_denials_observed", "info", denied,
+                "Review permission audit metadata; never bypass a denied policy.",
+            ))
+        return tuple(findings)
 
     def _publish(self, snapshot: DiagnosticSnapshot) -> None:
         self._event_bus.publish(
