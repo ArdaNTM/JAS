@@ -95,5 +95,5 @@ def test_unsupported_png_mode_and_type_confused_inputs():
 
 def test_unsupported_or_malformed_wav_rejected():
     malformed = b"RIFF" + b"\x00" * 4 + b"WAVE" + b"broken-data" * 10
-    with pytest.raises((ValueError, EOFError, wave.Error)):
+    with pytest.raises(ValueError, match="invalid WAV header"):
         inspect_media_header(malformed)
