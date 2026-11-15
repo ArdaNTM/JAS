@@ -130,3 +130,15 @@ def test_checksum_is_not_signature_or_owner_receipt():
     assert result.authenticity_verified is False
     assert result.authorization_checked is False
     assert result.restored is False
+
+
+def test_backup_member_case_change_cannot_override_manifest_identity():
+    bundle = make_backup_bundle({"file.txt": b"data"}, principal_id="owner")
+    out = io.BytesIO()
+    with zipfile.ZipFile(io.BytesIO(bundle), "r") as original:
+        with zipfile.ZipFile(out, "w") as archive:
+            for item in original.infolist():
+                path = "FILE.TXT" if item.filename == "file.txt" else item.filename
+                archive.writestr(path, original.read(item.filename))
+    with pytest.raises(ValueError, match="case mismatch"):
+        verify_backup_bundle(out.getvalue(), principal_id="owner")
