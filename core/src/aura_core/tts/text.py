@@ -7,10 +7,19 @@ from __future__ import annotations
 
 import html
 import re
+import unicodedata
 
 
 def clean_for_speech(source: str) -> str:
     text = source[:16000]
+    # Decode bounded nested HTML escapes *before* filtering markup and URLs:
+    # escaped links must not bypass presentation-only speech sanitization.
+    for _ in range(2):
+        text = html.unescape(text)
+    text = "".join(ch for ch in text if unicodedata.category(ch) != "Cf")
+    text = re.sub(
+        r"(?is)<(?P<tag>script|style)[^>]*>.*?</(?P=tag)>", " ", text
+    )
     text = re.sub(r"```[\s\S]*?```", " ", text)
     text = re.sub(r"!?\[([^\]]*)\]\(\s*(?:https?://|www\.)[^)]*\)", r"\1", text, flags=re.I)
     text = re.sub(r"(?<!\w)(?:https?://|www\.)[^\s<>{}\[\]\"']+", " ", text, flags=re.I)
@@ -21,7 +30,6 @@ def clean_for_speech(source: str) -> str:
     text = re.sub(r"(?<!\w)\*([^*\n]+)\*(?!\w)|(?<!\w)_([^_\n]+)_(?!\w)", lambda m: m[1] or m[2], text)
     text = re.sub(r"`([^`]+)`", r"\1", text)
     text = re.sub(r"<[^>]*>", " ", text)
-    text = html.unescape(text)
     text = re.sub(r"\[\^?\d+\]|\[kaynak\s*\d+\]", " ", text, flags=re.I)
     text = re.sub(r"[*#`~_]+", " ", text)
     text = re.sub(r"\s+([,.!?;:])", r"\1", text)
