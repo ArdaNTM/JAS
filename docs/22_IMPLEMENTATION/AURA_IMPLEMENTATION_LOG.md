@@ -33,3 +33,17 @@
 - PR #67 commit `517aacecf257435b4085261642ac1cc5b5f0bf02`: Core Assurance PASS, 605 passed and 6 skipped, release lock PASS; persistence integration PASS.
 - Features #8 and #29 remain TESTING/PARTIAL_VERIFIED, not COMPLETED.
 - Operator owner approval required before any merge; F2.7 PR #64 remains draft and untouched.
+
+## 2026-11-15 — Expanded eight-PR engineering iteration
+
+Additional independently scoped PRs were created on branches from `main` (no merges):
+- #68: scoped task memory erasure — commit `8aef48301a6ded514a10b055c4074e38b247a5e2`; 600 passed, 6 skipped.
+- #69: authorized research source provenance — commit `c8d2b859b9adc70ae135543fb16c5a8ecdadcca9`; 613 passed, 6 skipped.
+- #70: read-only task status projection — commit `82a01dc3ec231f63c867441010e319aff8b34493`; 602 passed, 6 skipped.
+- #71: principal-scoped GraphRAG fact deletion — commit `e8b7db8beef8608e7b5544a4a18d482f66531aa7`; 599 passed, 6 skipped.
+- #72: fail-closed persona/initiative types and hours — commit `fb76d221381ec6304758d063e387f20ec8f98650`; 613 passed, 6 skipped.
+- #73: escaped URL/script text-to-speech sanitization — commit `a1568cdcf248e6f6992fa5e0355e032a84394f86`; 600 passed, 6 skipped. Initial regression caught and fixed.
+- #74: consented offline research archive with retrieval integrity — commit `e297f62a6bcc7d7eecc98f66a27e36b3002f917b`; 601 passed, 6 skipped.
+- #75: bounded descriptive statistics + simple linear models — commit `67a6a57bc2e25040861afbd60eb370a2d471920e`; 620 passed, 6 skipped.
+
+All eight reported Core Assurance PASS and release lock PASS on the exact heads above. Remote Persistence Integration PR workflows were also verified successful. No hardware/physical-device acceptance, owner-signed merger or production promotion is claimed. Feature acceptance status remains TESTING.

@@ -28,3 +28,18 @@
 - [PR #67 AURA Core Assurance](https://github.com/ArdaNTM/JAS/actions/runs/43747432323): **success** — 605 passed, 6 skipped; release lock `sha256:8e6d62146366aaf0416e2ef8fa3696289c54c713b16ff11b7a98548da60b6484` PASS.
 - [PR #67 Remote Persistence Integration](https://github.com/ArdaNTM/JAS/actions/runs/43747432309): **success**.
 - No physical-host disk accuracy test, system service activation, or production rollout in PR #67.
+
+## Verified CI evidence for continuation PRs #68–#75
+
+| PR | Head commit | Core result | Core CI link |
+| --- | --- | --- | --- |
+| #68 | `8aef48301a6d` | 600 passed, 6 skipped; release lock PASS | [Actions](https://github.com/ArdaNTM/JAS/actions/runs/43749348883) |
+| #69 | `c8d2b859b9ad` | 613 passed, 6 skipped; release lock PASS | [Actions](https://github.com/ArdaNTM/JAS/actions/runs/43749688578) |
+| #70 | `82a01dc3ec23` | 602 passed, 6 skipped; release lock PASS | [Actions](https://github.com/ArdaNTM/JAS/actions/runs/43749934249) |
+| #71 | `e8b7db8beef8` | 599 passed, 6 skipped; release lock PASS | [Actions](https://github.com/ArdaNTM/JAS/actions/runs/43750327501) |
+| #72 | `fb76d221381e` | 613 passed, 6 skipped; release lock PASS | [Actions](https://github.com/ArdaNTM/JAS/actions/runs/43750536172) |
+| #73 | `a1568cdcf248` | 600 passed, 6 skipped; release lock PASS | [Actions](https://github.com/ArdaNTM/JAS/actions/runs/43750908801) |
+| #74 | `e297f62a6bcc` | 601 passed, 6 skipped; release lock PASS | [Actions](https://github.com/ArdaNTM/JAS/actions/runs/43751487746) |
+| #75 | `67a6a57bc2e2` | 620 passed, 6 skipped; release lock PASS | [Actions](https://github.com/ArdaNTM/JAS/actions/runs/43751913526) |
+
+All documented PR heads passed their Core Assurance workflow and release-lock verifier. Each has a separate Remote Persistence Integration workflow (successful at the time of this update). Test counts are **per isolated branch**, not cumulative; unmerged code from other branches is not in each run. No physical/hardware testing or production merge is inferred.

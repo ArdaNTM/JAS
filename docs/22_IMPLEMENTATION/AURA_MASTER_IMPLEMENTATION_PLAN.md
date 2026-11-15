@@ -31,4 +31,4 @@ Status `COMPLETED` requires a reviewed commit, PR, executable tests, security re
 
 ## Near-term handoff
 
-Current work is a **real validator** and an explicitly unverified 117-entry tracking ledger, not implementation of all 117 capabilities. Current candidates: feature #8 scoped conflict review (draft PR #66, CI PASS) and feature #29 advisory disk telemetry (draft PR #67, CI PASS). Next scope depends on independent review of those slices and should target feature #9 privacy-aware correction/forget or feature #36 source provenance, without bypassing existing JAS authorization. Keep PR #64 Draft until independent live acceptance.
+Current work is a **real validator** and an explicitly unverified 117-entry tracking ledger, not implementation of all 117 capabilities. Current candidates: #8, #29 and new partial implementations #2, #3, #4, #5, #9, #15, #36, #42, #44, #67, #73 across open PRs #66–#75. Every candidate is partial pending independent acceptance, integration and owner merge approval. Continue by current code dependencies rather than treating the numbered phases as stopping points. Keep PR #64 Draft until independent live acceptance.

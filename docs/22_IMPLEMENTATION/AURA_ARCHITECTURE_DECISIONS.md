@@ -9,3 +9,11 @@ Rationale: JAS already has a Kernel, registries, PermissionEngine and MCP Gatewa
 Status semantics: `NOT_STARTED` reflects that **this program has not established feature acceptance evidence**. It is not a claim that JAS lacks that function. `assessment=NOT_ASSESSED` distinguishes existing-but-unverified code. Never mark `COMPLETED` based solely on a PR being opened.
 
 Release governance: no merge without owner approval; draft F2.7 remains draft. Security/physical-hardware results require separate evidence.
+
+## ADR-ENG-002 — 2026-11-15: Branch-specific release-lock inventory must be regenerated after authorized integration
+
+Each independent feature PR uses the JAS deterministic source lock and tests its *own* current source set. The `release-manifest.final.json` file is intentionally shared; its aggregate hash cannot simply be cherry-picked from several branches. Never auto-resolve it or disable the verifier. An owner-approved merge requires re-evaluating the combined source inventory, recomputing all selected hashes, running final lock verification and full CI on the integrated tree. Open PRs remain review-only and `main` stays unchanged.
+
+## ADR-ENG-003 — 2026-11-15: Storage confirmation is not authenticated authorization
+
+Flags such as `confirmed=True` or `consented=True` in low-level local stores are only fail-closed preconditions, not Owner signatures or principal validation. Do not expose destructive storage methods as model tools without a separately reviewed, authenticated PermissionEngine/MCP Gateway + human approval workflow.
