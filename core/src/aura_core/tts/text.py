@@ -18,7 +18,7 @@ def clean_for_speech(source: str) -> str:
         text = html.unescape(text)
     text = "".join(ch for ch in text if unicodedata.category(ch) != "Cf")
     text = re.sub(
-        r"(?is)<(script|style)[^>]*>.*?</\\1>", " ", text
+        r"(?is)<(?P<tag>script|style)[^>]*>.*?</(?P=tag)>", " ", text
     )
     text = re.sub(r"```[\s\S]*?```", " ", text)
     text = re.sub(r"!?\[([^\]]*)\]\(\s*(?:https?://|www\.)[^)]*\)", r"\1", text, flags=re.I)

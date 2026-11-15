@@ -5,7 +5,7 @@
   "generated_at": "2026-10-31T00:45:29.771Z",
   "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:81e542219d5707caab2cf5b36b7ebbf8283bb7fa0a50dc4c726ef4a578e8116e",
+  "release_digest": "sha256:0499da19df8097ea855171a4388304dcaac49d871acaa54d94ae0fbe9df29493",
   "file_count": 233,
   "files": [
     {
@@ -934,7 +934,7 @@
     },
     {
       "path": "core/src/aura_core/tts/text.py",
-      "sha256": "5f1fe0935528d35928886a51ac61deb8689875c8a3b397121b0e7096cf10e18e"
+      "sha256": "35c5aae1acda6c42c6b20833866ee226b3ceaadc8c0a73920f6a3a2d3c5c113b"
     },
     {
       "path": "core/uv.lock",
