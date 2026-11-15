@@ -65,6 +65,23 @@ class SQLiteGraphStore:
         object = _require_text(object, "object", 2000)
         return await asyncio.to_thread(self._insert, principal_id, subject, predicate, object)
 
+    def _delete(self, principal_id: str, fact_id: str) -> bool:
+        with self._lock, self._connect() as db:
+            return db.execute(
+                "DELETE FROM aura_graph_edges WHERE principal_id=? AND fact_id=?",
+                (principal_id, fact_id),
+            ).rowcount == 1
+
+    async def delete_fact(
+        self, *, principal_id: str, fact_id: str, confirmed: bool = False
+    ) -> bool:
+        """Storage-only erasure; caller must authenticate and approve."""
+        principal = _require_text(principal_id, "principal_id", 256)
+        key = _require_text(fact_id, "fact_id", 64)
+        if confirmed is not True:
+            raise PermissionError("explicit graph deletion confirmation required")
+        return await asyncio.to_thread(self._delete, principal, key)
+
     def _query(self, principal_id, subject, limit, depth):
         result = []
         frontier, seen = [subject], {subject}
@@ -130,6 +147,22 @@ class PostgreSQLGraphStore:
                 fact_id, principal_id, subject, predicate, object)
                 VALUES(:id,:principal,:subject,:predicate,:object)"""), values)
         return values["id"]
+
+    async def delete_fact(
+        self, *, principal_id: str, fact_id: str, confirmed: bool = False
+    ) -> bool:
+        """Principal-scoped deletion without any new MCP/Owner authority."""
+        principal = _require_text(principal_id, "principal_id", 256)
+        key = _require_text(fact_id, "fact_id", 64)
+        if confirmed is not True:
+            raise PermissionError("explicit graph deletion confirmation required")
+        async with self._engine.begin() as conn:
+            result = await conn.execute(
+                text("DELETE FROM aura_graph_edges "
+                     "WHERE principal_id=:principal AND fact_id=:id"),
+                {"principal": principal, "id": key},
+            )
+        return result.rowcount == 1
 
     async def query(self, *, principal_id, subject, limit=20, depth=1):
         principal = _require_text(principal_id, "principal_id", 256)
