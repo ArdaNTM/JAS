@@ -20,3 +20,10 @@
 
 - Feature #8 draft PR #66: exact principal scope preserved without trimming (prevents unintended normalization); regression test added and CI PASS.
 - Tracker validator: COMPLETED now requires licensing review, hardware applicability evidence, security test criteria, no missing components and existing test/commit/PR evidence. This gate changes no runtime permissions.
+
+## 2026-11-15 — Feature #29 initial host telemetry extension
+
+- Draft PR #67: `https://github.com/ArdaNTM/JAS/pull/67` on `feat/aura-disk-health-telemetry`, commit `517aacecf257435b4085261642ac1cc5b5f0bf02`.
+- Added advisory disk percent/free bytes to existing `SystemTelemetry`; no deletion or physical sensor claim. Core CI pending at tracker update.
+- Acceptance tracker explicitly records feature #29 in TESTING, while #8 remains TESTING; neither is COMPLETE.
+- Tracker now becomes a mandatory read-only standard-library CI gate whenever `docs/22_IMPLEMENTATION/**` changes.
