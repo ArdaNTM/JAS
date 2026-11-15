@@ -280,6 +280,70 @@ class EpisodicMemoryStore:
                 results.append(item)
         return results
 
+    def find_conflict_candidates(
+        self, *, principal_id: str, limit: int = 20, scan_limit: int = 500
+    ) -> list[dict[str, Any]]:
+        """Find *potential* conflicting facts for a human review, without mutation.
+
+        Only memories explicitly marked with a single fact:<key> tag are compared.
+        Different literal content for one key is a review candidate, NOT proof
+        of a semantic contradiction. Returned text is untrusted data.
+        """
+        if type(principal_id) is not str or not principal_id.strip():
+            raise ValueError("principal_id is required")
+        if type(limit) is not int or not 1 <= limit <= 50:
+            raise ValueError("limit must be between 1 and 50")
+        if type(scan_limit) is not int or not 2 <= scan_limit <= 1000:
+            raise ValueError("scan_limit must be between 2 and 1000")
+
+        # Do not use recall_related: that query updates last_accessed_at.
+        # This review is intentionally read-only, bounded and principal-scoped.
+        with self._connect() as db:
+            rows = db.execute(
+                """SELECT memory_id, content, tags_json
+                   FROM episodic_memory
+                   WHERE principal_id = ? AND kind = 'fact'
+                   ORDER BY created_at DESC, rowid DESC LIMIT ?""",
+                (principal_id, scan_limit),
+            ).fetchall()
+
+        newest: dict[str, sqlite3.Row] = {}
+        reported: set[str] = set()
+        results: list[dict[str, Any]] = []
+        for row in rows:
+            tags = json.loads(row["tags_json"])
+            if not isinstance(tags, list):
+                continue
+            keys = [
+                tag[5:] for tag in tags
+                if isinstance(tag, str) and tag.startswith("fact:")
+                and re.fullmatch(r"[a-z0-9][a-z0-9_.-]{0,47}", tag[5:])
+            ]
+            if len(keys) != 1:
+                continue
+            key = keys[0]
+            if key in reported:
+                continue
+            if key not in newest:
+                newest[key] = row
+                continue
+            current = newest[key]
+            if current["content"].strip().casefold() == row["content"].strip().casefold():
+                continue
+            results.append({
+                "fact_key": key,
+                "newest_memory_id": current["memory_id"],
+                "older_memory_id": row["memory_id"],
+                "newest_preview": current["content"][:160],
+                "older_preview": row["content"][:160],
+                "status": "NEEDS_HUMAN_REVIEW",
+                "untrusted": True,
+            })
+            reported.add(key)
+            if len(results) >= limit:
+                break
+        return results
+
     def forget(self, *, principal_id: str, memory_id: str) -> bool:
         with self._connect() as db:
             cursor = db.execute(
