@@ -5,7 +5,7 @@
   "generated_at": "2026-10-31T00:45:29.771Z",
   "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
+  "release_digest": "sha256:1f6a54fd37cf32a4c6a46d6c40fa575c503ca713f089f68e416947d731a21291",
   "file_count": 233,
   "files": [
     {
@@ -210,7 +210,7 @@
     },
     {
       "path": "core/src/aura_core/application/cross_capability_reasoning.py",
-      "sha256": "ae0b9a2d925f6e20b27b50aa0e904d53a5362da368497125c009935bbb40f5f9"
+      "sha256": "3fb333132162a4fcc91270c51dcfa774f803efcf392af69ed6b546cac6fe8fb4"
     },
     {
       "path": "core/src/aura_core/application/diagnostics_api.py",
