@@ -95,6 +95,29 @@ def plan_goal_steps(
     for step in steps:
         if any(dep not in normalized for dep in step.dependencies):
             raise ValueError("missing referenced dependency")
+    # Validate the entire graph *before* claimed completion can remove
+    # nodes. Otherwise a caller could conceal a cycle by claiming every
+    # member of that cycle as already completed.
+    all_incoming = {
+        key: len(step.dependencies) for key, step in normalized.items()
+    }
+    all_children: dict[str, set[str]] = {key: set() for key in normalized}
+    for step in normalized.values():
+        for dependency in step.dependencies:
+            all_children[dependency].add(step.step_id)
+    queue = sorted(key for key, count in all_incoming.items() if count == 0)
+    visited = 0
+    while queue:
+        node = queue.pop(0)
+        visited += 1
+        for child in sorted(all_children[node]):
+            all_incoming[child] -= 1
+            if all_incoming[child] == 0:
+                queue.append(child)
+        queue.sort()
+    if visited != len(normalized):
+        raise ValueError("goal dependency cycle detected")
+
     complete = set()
     for step_id in claimed_completed:
         if type(step_id) is not str or step_id not in normalized or step_id in complete:
