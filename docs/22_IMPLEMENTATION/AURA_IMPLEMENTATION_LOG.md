@@ -115,3 +115,11 @@ All eight reported Core Assurance PASS and release lock PASS on the exact heads 
 - PR #100 `1c04ffb4bc585d56d9517014b449e57e6ad6cc8a`: offline literal literature screening and material-range comparison (#66/#69), **617 passed / 6 skipped**, release lock PASS, Remote Persistence PASS. No live papers fetched.
 - PR #101 `a01f8512232b9ab6dd739ef00825c4352eb332f8`: preconditioned in-memory multi-file patch/rollback preview (#34/#52), **606 passed / 6 skipped**, release lock PASS, Remote Persistence PASS. No files or Git commits modified by runtime.
 - All are independent Draft PRs against unchanged main. NO auto merge, no F2.7 activation, no COMPLETED acceptance.
+
+### Tracking validator correction — 2026-11-16
+
+The #98–#101 ledger update initially produced a **cycle** between #58
+(Swarm manager, which already depends on #59 messaging) and #59 (new mailbox).
+Removed only the redundant #59 → #58 edge; #59 now depends on #57, #99,
+#100 and #103. Implementation code/PRs remained unchanged. No tracker
+`COMPLETED` status was added. CI must be rechecked on this new ledger head.
