@@ -117,6 +117,67 @@ class SelfAdaptationEngine:
         return tuple(dict(item) for item in self._observations)
 
 
+    def repeated_failure_reviews(
+        self, *, min_occurrences: int = 2, limit: int = 10
+    ) -> tuple[dict[str, Any], ...]:
+        """Summarize known failure classes for review, never auto-execute fixes.
+
+        Unknown/free-form errors and task identifiers are deliberately excluded
+        from returned data; observations remain bounded to the last 500 events.
+        Distinct task identities prevent duplicate reports inflating evidence.
+        """
+        if type(min_occurrences) is not int or not 2 <= min_occurrences <= 500:
+            raise ValueError("min_occurrences must be 2..500")
+        if type(limit) is not int or not 1 <= limit <= 20:
+            raise ValueError("limit must be 1..20")
+        rules: dict[str, tuple[str | None, str]] = {
+            "timeout": (
+                "retry_transient_transport_once",
+                "Review repeated timeouts and verify transport is transient.",
+            ),
+            "transport_error": (
+                "retry_transient_transport_once",
+                "Review transport health before considering a bounded retry.",
+            ),
+            "provider_unavailable": (
+                "prefer_healthier_registered_provider",
+                "Inspect registered provider health and available alternatives.",
+            ),
+            "validation_error": (
+                None, "Review schema/input validation; never bypass validation.",
+            ),
+            "authorization_denied": (
+                None, "Review the denial with the Owner; never bypass policy.",
+            ),
+        }
+        by_class: dict[str, set[str]] = {key: set() for key in rules}
+        for item in self._observations:
+            if item["outcome"] != "failed":
+                continue
+            failure_class = item["failure_class"]
+            task_id = item["task_id"]
+            if failure_class in by_class and task_id:
+                by_class[failure_class].add(task_id)
+        reviews: list[dict[str, Any]] = []
+        for failure_class, tasks in by_class.items():
+            if len(tasks) < min_occurrences:
+                continue
+            strategy, hint = rules[failure_class]
+            reviews.append({
+                "failure_class": failure_class,
+                "unique_failed_tasks": len(tasks),
+                "suggested_strategy": strategy,
+                "review_hint": hint,
+                "requires_owner_review": True,
+                "can_execute": False,
+                "untrusted_observations": True,
+            })
+        reviews.sort(
+            key=lambda item: (-item["unique_failed_tasks"], item["failure_class"])
+        )
+        return tuple(reviews[:limit])
+
+
 class InitiativeEngine:
     """Projects allow-listed events into deduplicated, non-executing suggestions."""
 
