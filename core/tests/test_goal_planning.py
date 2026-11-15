@@ -100,3 +100,12 @@ def test_100_step_limit_and_boolean_input():
         project(steps=tuple(GoalStep(f"s{i}", "X") for i in range(101)))
     with pytest.raises(ValueError):
         project(steps=(object(),))
+
+
+def test_claimed_completion_cannot_hide_a_cycle():
+    cyclic = (
+        GoalStep("a", "A", ("b",)),
+        GoalStep("b", "B", ("a",)),
+    )
+    with pytest.raises(ValueError, match="cycle"):
+        project(steps=cyclic, completed=("a", "b"))
