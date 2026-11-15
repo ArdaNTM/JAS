@@ -88,3 +88,9 @@ All eight reported Core Assurance PASS and release lock PASS on the exact heads 
 - PR #91 `e7b08362dad84727d33a405065b860e80af25977`: hypothesis wording and randomized simulated trial allocations (#65/#72); Core Assurance 609 passed, 6 skipped; Final Release Lock and Persistence PASS.
 - PR #92 `bb650fa3cc6c68607e89b3724ba943dd46f4719b`: offline RK4 1D physics/engineering numeric approximation (#68/#71); Core Assurance 612 passed, 6 skipped; Final Release Lock and Persistence PASS.
 - All three PRs are Draft, independent of F2.7 #64; neither signed backup authenticity nor experimental/physical truth is claimed.
+
+## 2026-11-15 — Offline email and media inspection
+
+- PR #93 commit `4f51ca9976d3ba5e676a76e313fb2435175fa1ee` provides read-only bounded MIME text preview and attachment metadata (#108). Core Assurance PASS 602 passed/6 skipped, release lock PASS, Remote Persistence PASS.
+- PR #94 commit `4c4a63553188f88bd8b1df3b446437704f2aa3d7` provides PNG/GIF/WAV header-only bounded metadata inspection (#110). Core Assurance PASS 607 passed/6 skipped, release lock PASS, Remote Persistence PASS.
+- Both remain Draft, not merged, not privileged and not production media/mail integrations.

@@ -66,3 +66,10 @@ All current heads have Core Assurance, Remote Persistence and Release Lock PASS.
 No feature marked COMPLETED; no production hardware or Owner acceptance.
 Continue with independent reviewable branches and preserve JAS Kernel/
 PermissionEngine/MCP Gateway/Owner boundaries.
+
+## Additional scoped partials
+
+PR #93: offline MIME read-only preview (#108). PR #94: PNG/GIF/WAV
+header-only media inspection (#110). Both validated via Core Assurance,
+Remote Persistence and release lock on their independent PR heads.
+No Owner or physical acceptance, no direct main mutation or auto-merge.

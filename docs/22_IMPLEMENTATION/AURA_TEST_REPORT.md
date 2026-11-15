@@ -98,3 +98,12 @@ These are per-branch isolated runs; they are not additive. Static Python inspect
 | [#92](https://github.com/ArdaNTM/JAS/pull/92) | `bb650fa3cc6c` | [612 passed / 6 skipped, Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43768319906) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43768319983) |
 
 Counts belong to separate PR branch runs and do not add up to a cumulative integrated test count. All remain PARTIAL and no production or physical verification is inferred.
+
+## Verified GitHub Actions — PRs #93 and #94
+
+| PR | Exact head | Full Core Assurance and Release Lock | Remote Persistence |
+| --- | --- | --- | --- |
+| [#93](https://github.com/ArdaNTM/JAS/pull/93) | `4f51ca9976d3` | [602 passed, 6 skipped; Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43770040681) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43770040680) |
+| [#94](https://github.com/ArdaNTM/JAS/pull/94) | `4c4a63553188` | [607 passed, 6 skipped; Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43770389240) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43770389219) |
+
+Independent PR heads, not combined/cumulative or real-provider acceptance.

@@ -46,3 +46,9 @@ After **explicit Owner merge approval**, integrate in dependency order, rebase e
 - #91 hypotheses are templates from user-specified assumptions; simulated allocations are not ethical approval, real participant enrollment or validated scientific findings.
 - #92 RK4 toy-model output is a numerical approximation, not a calibrated/safety-certified physics/engineering solver. Hardware/physical/convergence verification remains false.
 - As with the earlier independent PRs, integrating these separately generated release manifests requires sequential reconciliation and full CI after explicit Owner review. Never merge automatically.
+
+## PR #93–#94 trust boundaries
+
+- #93 email MIME parser does not read an actual inbox, authorize recipients or actions, authenticate senders, execute HTML, scan malware, or open attachments.
+- #94 PNG/GIF/WAV header validation is not full-file structural validity nor render safety; no parser may treat a recognized header as authorization.
+- Both branches have independent main-baseline release digests. Integration must recalculate the combined manifest, run full tests and obtain Owner approval before merge.
