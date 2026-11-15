@@ -5,8 +5,8 @@
   "generated_at": "2026-10-31T00:45:29.771Z",
   "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
-  "file_count": 233,
+  "release_digest": "sha256:50c2e1a8c1de9d050d70db58fab68ef125b52ca16b8726abb01c5f8f57b491b5",
+  "file_count": 234,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -283,6 +283,10 @@
     {
       "path": "core/src/aura_core/application/persona_policy.py",
       "sha256": "a4e234c1330d627c0719f1a6016b856827e486a0e7e3c6a7ecea9492f24ab125"
+    },
+    {
+      "path": "core/src/aura_core/application/physics_simulation.py",
+      "sha256": "6e398e73d4cc93e8e17fd9af9feb8fcc9ed3b98bc8e11dff84b58c09778c7a36"
     },
     {
       "path": "core/src/aura_core/application/postgresql_episodic_memory.py",
