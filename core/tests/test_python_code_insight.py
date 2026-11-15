@@ -103,8 +103,9 @@ def test_public_symbol_and_ast_budgets():
     source = "\n".join(f"def public_{i}(): pass" for i in range(10))
     with pytest.raises(ValueError, match="symbol budget"):
         inspect_python_source(source, module_id="safe", max_symbols=5)
+    expanded = "\n".join(f"def function_{i}(): pass" for i in range(150))
     with pytest.raises(ValueError, match="node budget"):
-        inspect_python_source(source, module_id="safe", max_ast_nodes=100)
+        inspect_python_source(expanded, module_id="safe", max_ast_nodes=100)
 
 
 @pytest.mark.parametrize("kwargs", [
