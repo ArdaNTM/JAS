@@ -5,8 +5,8 @@
   "generated_at": "2026-10-31T00:45:29.771Z",
   "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
-  "file_count": 233,
+  "release_digest": "sha256:42066857ffe4dba485c7b7a53f9ea4c139b6eb6e30204fabd58f91bb8d2e4217",
+  "file_count": 234,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -255,6 +255,10 @@
     {
       "path": "core/src/aura_core/application/hud_api.py",
       "sha256": "36f37052df95ac7433f0a0c75d66d8acb3e7091d5a5b24fc2fa8a63edafce1cb"
+    },
+    {
+      "path": "core/src/aura_core/application/ics_calendar.py",
+      "sha256": "79713c86351897dd9af9463f97ba96b0a95a1004b8cf2e36052eb451d1ed1902"
     },
     {
       "path": "core/src/aura_core/application/jarvis_api.py",
