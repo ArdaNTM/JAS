@@ -5,7 +5,7 @@
   "generated_at": "2026-10-31T00:45:29.771Z",
   "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:3fc2ac0544222ab14fd01a4ed94d2003caefd91a457ee5d6306e8d907956ba7f",
+  "release_digest": "sha256:920749184a69c025a65a1a3006b1934d23e08c8331390c5a34c97855afb75a49",
   "file_count": 234,
   "files": [
     {
@@ -834,7 +834,7 @@
     },
     {
       "path": "core/src/aura_core/research/archive.py",
-      "sha256": "e2b3f5ac95d4671cbcb76fb418cb11062ed2dd592d92e0b2f2c366f8d99112e2"
+      "sha256": "1793e2b96962dbcf4ee8a4042bbe3faeef3b28afbc429498ad7c69e7cb780731"
     },
     {
       "path": "core/src/aura_core/research/config.py",

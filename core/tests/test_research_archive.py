@@ -92,3 +92,28 @@ def test_bad_principal_fails_before_storage(tmp_path, principal):
         archive.archive_fetch_result(
             principal_id=principal, response=response(), consented=True,
         )
+
+
+def test_archive_detects_changed_content_without_returning_it(tmp_path):
+    import sqlite3
+    path = tmp_path / "research.db"
+    archive = SQLiteResearchArchive(path)
+    item = archive.archive_fetch_result(
+        principal_id="owner", response=response(), consented=True,
+    )
+    with sqlite3.connect(path) as db:
+        db.execute(
+            "UPDATE research_snapshots SET content='tampered' WHERE archive_id=?",
+            (item["archive_id"],),
+        )
+    with pytest.raises(ValueError, match="integrity mismatch"):
+        archive.get(principal_id="owner", archive_id=item["archive_id"])
+
+
+def test_archive_content_limit_is_enforced(tmp_path):
+    archive = SQLiteResearchArchive(tmp_path / "research.db", max_chars=4)
+    with pytest.raises(ValueError, match="limit"):
+        archive.archive_fetch_result(
+            principal_id="owner", response=response(content="12345"),
+            consented=True,
+        )

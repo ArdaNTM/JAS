@@ -137,6 +137,13 @@ class SQLiteResearchArchive:
             ).fetchone()
         if row is None:
             return None
+        stored_content = row["content"]
+        expected_digest = row["content_sha256"]
+        if (not isinstance(stored_content, str)
+                or not isinstance(expected_digest, str)
+                or hashlib.sha256(stored_content.encode("utf-8")).hexdigest()
+                != expected_digest):
+            raise ValueError("research snapshot integrity mismatch")
         return {
             "archive_id": row["archive_id"],
             "url": row["url"],

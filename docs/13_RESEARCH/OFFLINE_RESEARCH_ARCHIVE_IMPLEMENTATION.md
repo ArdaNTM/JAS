@@ -7,3 +7,5 @@ Stored snapshots are scoped by the exact principal, content SHA-256 and a determ
 **Security limits:** Boolean flags are defensive requirements, not proof of Owner approval or authentication. A trusted caller must verify the principal and consent before archiving/deleting. The SQLite file is not encrypted by this feature. Backups, WAL, external caches, Qdrant, PostgreSQL and physically secure deletion are out of scope. The URL is merely metadata from a previous provider response, not an SSRF-safe fetch target; never reuse it as authorization. Other file formats (PDF/DOCX) and a user-facing archive browser are not implemented.
 
 Test: `cd core && uv run pytest -q tests/test_research_archive.py`; full Core CI and deterministic release-lock verifier. This is a working offline persistence primitive, not feature #42/#44 completion.
+
+Reading a snapshot recomputes its SHA-256 and refuses mismatched stored content. This detects accidental single-field corruption; **it is not a signed attestation** and cannot detect an attacker replacing both content and digest.
