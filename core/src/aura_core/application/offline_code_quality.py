@@ -173,7 +173,7 @@ def generate_pytest_contracts(
         except (TypeError, ValueError, RecursionError, OverflowError) as exc:
             raise ValueError("unserializable test contract") from exc
         encoded.append((function, args_json, kwargs_json, expected_json))
-    params = ",\n".join(
+    params = "\n".join(
         "    (" + ", ".join(repr(value) for value in row) + "),"
         for row in encoded
     )
