@@ -5,8 +5,8 @@
   "generated_at": "2026-10-31T00:45:29.771Z",
   "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
-  "file_count": 233,
+  "release_digest": "sha256:f56e64ec93348b228eb6bc8b57f7c84e8b2fd93a5d725a0c42ecfc5a1ec57d84",
+  "file_count": 234,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -837,8 +837,12 @@
       "sha256": "2e32a4aefeddc5af516726d22e5c4a83e39367bbd654c99ff3a88474cbfd6769"
     },
     {
+      "path": "core/src/aura_core/research/evidence.py",
+      "sha256": "783d1306a877e96713c8def1c89c7d9d4b6ba6f8eaa3bb6e531c925d81a07d9b"
+    },
+    {
       "path": "core/src/aura_core/research/mcp_source.py",
-      "sha256": "131fb5fdaf97a866b235714bee83667b053bfc1ea0590e51b73fbcf7be33022b"
+      "sha256": "f6c9f81d009f0c5cc675b7d7986bf4fe2028b2b630e7e5ce0d6e44617bfe86f4"
     },
     {
       "path": "core/src/aura_core/research/provider_bootstrap.py",
