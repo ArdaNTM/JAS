@@ -1,0 +1,34 @@
+# AURA 117-feature implementation program
+
+Status: **INITIAL AUDIT / NOT A PRODUCTION RELEASE** (2026-11-15).
+
+JAS and its existing architecture remain authoritative. Baseline: `main` commit `b1ffe6f534ced0d329dae273a4b949a634cb8bfa`. Existing F2.7 draft PR #64 is **not merged** and must not be represented as production-ready; no SCM or broker privilege expansion is authorized by this program.
+
+## Architecture invariant
+
+`Kernel → registries → PermissionEngine → MCP Gateway → provider`.
+
+No independent alternative authority system, unapproved tool execution, self-granted permissions, or automatic security-kernel mutations. Existing memory, task, voice, HUD and OSWorld components must be assessed before adding duplicates.
+
+## Execution dependencies
+
+- Phase 0: verify existing JAS modules, tests, CI and PR graph; maintain truthful evidence ledger.
+- Phase 1: permission boundaries, durable scoped memory, task/goals, local/offline operations and observability; security controls remain mandatory throughout all phases.
+- Phase 2: voice/KWS/ASR/TTS, interruption and multilingual speech.
+- Phase 3: governed computer interaction; no direct unapproved filesystem, shell or UI access.
+- Phase 4: source-aware local web/academic research and document processing.
+- Phase 5: coding and multiple specialist agents under an independent verifier.
+- Phase 6: vision and HUD; permissions for screen/camera; keep local inputs local by default.
+- Phase 7: numerical science, CAD and reproducible research; real lab hardware requires approval.
+- Phase 8: smart home/robot/sensors with device-specific identity, emergency stop and human approval.
+- Phase 9: calendar, email, media, reporting, games and integrated acceptance.
+
+Phase ordering is provisional and reflects the user-supplied objectives, not an already-verified dependency graph. Update it only with reviewed code evidence.
+
+## Acceptance definition
+
+Status `COMPLETED` requires a reviewed commit, PR, executable tests, security result and acceptance evidence. CI, simulation and real-hardware acceptance are distinct; network isolation and benchmark scores must never be inferred from boot-only smoke.
+
+## Near-term handoff
+
+Current work is a **real validator** and an explicitly unverified 117-entry tracking ledger, not implementation of all 117 capabilities. Next candidate: scoped, review-only memory contradiction suggestions (feature 8), after detailed source and threat-model review. Keep PR #64 Draft until independent live acceptance.
