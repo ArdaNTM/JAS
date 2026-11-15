@@ -5,7 +5,7 @@
   "generated_at": "2026-10-31T00:45:29.771Z",
   "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
+  "release_digest": "sha256:5be8e15d924b96f7ec472711ca8671f31acd87f174a313cd0a3ec20f3889dd52",
   "file_count": 233,
   "files": [
     {
@@ -498,7 +498,7 @@
     },
     {
       "path": "core/src/aura_core/kernel/diagnostics.py",
-      "sha256": "3567c4d96f42cf3001d327a739ff3275b230ffc7e625b97868346937ce27000e"
+      "sha256": "558d2696bb022a7bed3477cad7999ab87618340485d7db84de5329d224708ab2"
     },
     {
       "path": "core/src/aura_core/kernel/events.py",
