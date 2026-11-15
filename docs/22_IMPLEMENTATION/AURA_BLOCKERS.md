@@ -20,3 +20,10 @@ After **explicit Owner merge approval**, integrate in dependency order, rebase e
 - PR #76–#83 each re-lock independent main-baseline source inventories; aggregate release manifests **must be regenerated in integration order after explicit Owner merge approval**. Do not take an arbitrary side of conflicts.
 - Offline feed parsing and citation normalization do **not** authenticate external sources or grant network access. Repeated-failure, diagnostics and telemetry summaries do **not** authorize execution or prove improvement.
 - All affected features remain TESTING; no real security/Owner acceptance.
+
+## Further integration blockers for PRs #84–#86
+
+- Vocabulary review #84 needs authenticated principal/Owner boundaries before exposure; `confirmed=True` is not authorization and SQLite is unencrypted.
+- Swarm admission #85 validates all steps before calls, but does not substitute for PermissionEngine/Owner authorization, verified outcomes or rollback for authorized partially executed plans.
+- Context hardening #86 does not guarantee injection-free model behavior; hostile input testing requires actual model/tool-routing conditions.
+- These branches each have separately generated Final Release Lock manifests; integration must recompute and retest after explicit merge approval.

@@ -61,3 +61,13 @@ Each entry records Core Assurance success, full pytest and Final Release Lock on
 
 Detailed observed counts: #77 606 passed/6 skipped, #79 602/6, #80 603/6, #81 603/6, #82 603/6, #83 610/6. #76 and #78 CI success verified; count omitted when not separately extracted.
 No real physical hardware attestation, external API validity or production release is inferred.
+
+## Verified Core Assurance — PRs #84–#86
+
+| PR | Exact head | Full Core test result | Core actions |
+| --- | --- | --- | --- |
+| #84 | `6533e49a915b` | 606 passed, 6 skipped; Release Lock PASS | https://github.com/ArdaNTM/JAS/actions/runs/43756314062 |
+| #85 | `923118435ca0` | 601 passed, 6 skipped; Release Lock PASS | https://github.com/ArdaNTM/JAS/actions/runs/43756823784 |
+| #86 | `a4a156b42ae8` | 605 passed, 6 skipped; Release Lock PASS | https://github.com/ArdaNTM/JAS/actions/runs/43757162780 |
+
+Remote Persistence PR workflows: #84 run 43756314100 PASS; #85 run 43756823780 PASS; #86 run 43757162764 PASS. These test counts are independent branches, NOT cumulative. No hardware/real-owner acceptance.

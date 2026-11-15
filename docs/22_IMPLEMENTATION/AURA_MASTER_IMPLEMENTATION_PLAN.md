@@ -40,3 +40,10 @@ Additional scoped partial features tracked: #12, #30, #37, #38, #40,
 authority are unchanged. Next dependency review should select one
 non-overlapping existing JAS capability boundary, implement real tests, and
 avoid introducing a new tool authority or auto-merging PRs.
+
+## Latest scope checkpoint
+
+Additional reviewable partials: #115 offline vocabulary persistence (PR #84),
+#58 all-steps swarm preflight (PR #85), #6/#102 bounded untrusted
+context synthesis (PR #86). All required CI checks passed on reported heads.
+No feature was promoted to COMPLETED and no automatic merging is authorized.

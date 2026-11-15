@@ -59,3 +59,10 @@ All eight reported Core Assurance PASS and release lock PASS on the exact heads 
 - #82: DOI citation reconciliation and bibliography (#38/#40), CI PASS.
 - #83: bounded p95 runtime performance summary (#48/#56), CI PASS.
 - No PR merged. Main remains at original baseline; F2.7 PR #64 untouched. All these are PARTIAL/TESTING, not COMPLETE.
+
+## 2026-11-15 — Scope-aware learning and agent input admission
+
+- PR #84 commit `6533e49a915bdf1d43b3e3cf6eb192d676b9bcc2`: SQLite offline vocabulary review; feature #115, Core Assurance PASS (606 passed, 6 skipped), Remote Persistence PASS. No authenticated UI or encrypted store.
+- PR #85 commit `923118435ca046383f098c51c4c14916a351cb70`: validates entire SwarmOrchestrator plan before MCP tool/event side effects; feature #58, Core Assurance PASS (601 passed, 6 skipped), Remote Persistence PASS.
+- PR #86 commit `a4a156b42ae8f8ecfa7aff37604386f05f170dd1`: ContextSynthesizer input bounds and untrusted object safety; features #6/#102, Core Assurance PASS (605 passed, 6 skipped), Remote Persistence PASS.
+- All are independently scoped PRs against `main`, none merged, no F2.7 security activation or new Owner grants.
