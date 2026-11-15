@@ -15,3 +15,8 @@
 - Draft PR #65: `https://github.com/ArdaNTM/JAS/pull/65` contains engineering ledger and acceptance validator. Initial CI completed successfully.
 - Draft PR #66: `https://github.com/ArdaNTM/JAS/pull/66` adds feature #8 review-only, scoped literal fact conflict candidates. Commit `ab933abcce477155993fc933b1c89daeca307565`, Core Assurance PASS (600 passed, 6 skipped), release lock PASS.
 - Feature #8 **is not COMPLETED**: no human-approved resolution, UI integration or end-to-end ownership review. No PR merged.
+
+## 2026-11-15 — Exact principal scope and evidence gates
+
+- Feature #8 draft PR #66: exact principal scope preserved without trimming (prevents unintended normalization); regression test added and CI PASS.
+- Tracker validator: COMPLETED now requires licensing review, hardware applicability evidence, security test criteria, no missing components and existing test/commit/PR evidence. This gate changes no runtime permissions.

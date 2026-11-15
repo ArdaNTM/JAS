@@ -89,3 +89,22 @@ def test_completed_feature_must_have_security_and_acceptance_evidence():
     item["test_commands"] = ["pytest"]
     with pytest.raises(ValueError, match="without evidence"):
         module.validate(doc)
+
+
+def test_completed_requires_license_hardware_and_explicit_criteria():
+    doc = load()
+    item = doc["features"][0]
+    item.update({
+        "status": "COMPLETED", "assessment": "VERIFIED",
+        "acceptance": "PASS", "test_results": "PASS", "security_review": "PASS",
+        "commit": "1" * 40,
+        "pull_request": "https://github.com/ArdaNTM/JAS/pull/66",
+        "code_paths": ["core/src/example.py"], "test_commands": ["pytest"],
+        "technical_goal": "A specific goal", "acceptance_criteria": "A passed check",
+        "security_test_criteria": "No unauthorized dispatch",
+    })
+    with pytest.raises(ValueError, match="without evidence"):
+        module.validate(doc)
+    item["license_review"] = "PASS"
+    item["hardware_review"] = "NOT_APPLICABLE"
+    module.validate(doc)

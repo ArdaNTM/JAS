@@ -43,7 +43,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 2,
@@ -81,7 +82,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 3,
@@ -119,7 +121,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 4,
@@ -157,7 +160,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 5,
@@ -195,7 +199,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 6,
@@ -233,7 +238,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 7,
@@ -271,7 +277,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 8,
@@ -294,7 +301,7 @@
       "test_results": "PASS",
       "security_review": "NOT_REVIEWED",
       "acceptance": "NOT_VERIFIED",
-      "commit": "ab933abcce477155993fc933b1c89daeca307565",
+      "commit": "028a293616d77cbed810dd20e8a3626e0285f7bf",
       "pull_request": "https://github.com/ArdaNTM/JAS/pull/66",
       "blockers": [],
       "technical_goal": "Report scoped, explicitly keyed literal fact discrepancies without modifying memories.",
@@ -303,7 +310,7 @@
       "hardware_requirements": "",
       "license_review": "NOT_REVIEWED",
       "local_offline": "PARTIAL_VERIFIED",
-      "notes": "Draft PR #66 CI Core Assurance: 600 passed, 6 skipped; release-lock PASS. Independent human acceptance/security review remains pending.",
+      "notes": "Draft PR #66 latest commit 028a293: 601 passed, 6 skipped; Core Release Lock PASS. Scope isolation regression added, feature not end-to-end accepted.",
       "existing_jas_state": "Existing scoped EpisodicMemoryStore persists fact records; new review-only candidate helper is under draft PR #66, not merged.",
       "proposed_technology": "Existing SQLite and Python standard library; no new external runtime dependency",
       "license_terms": "NOT_ASSESSED",
@@ -321,7 +328,8 @@
         "UI review and independent acceptance"
       ],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 9,
@@ -359,7 +367,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 10,
@@ -397,7 +406,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 11,
@@ -435,7 +445,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 12,
@@ -473,7 +484,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 13,
@@ -511,7 +523,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 14,
@@ -549,7 +562,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 15,
@@ -587,7 +601,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 16,
@@ -625,7 +640,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 17,
@@ -663,7 +679,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 18,
@@ -701,7 +718,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 19,
@@ -739,7 +757,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 20,
@@ -777,7 +796,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 21,
@@ -815,7 +835,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 22,
@@ -853,7 +874,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 23,
@@ -891,7 +913,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 24,
@@ -929,7 +952,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 25,
@@ -967,7 +991,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 26,
@@ -1005,7 +1030,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 27,
@@ -1043,7 +1069,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 28,
@@ -1081,7 +1108,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 29,
@@ -1119,7 +1147,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 30,
@@ -1157,7 +1186,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 31,
@@ -1195,7 +1225,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 32,
@@ -1233,7 +1264,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 33,
@@ -1271,7 +1303,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 34,
@@ -1309,7 +1342,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 35,
@@ -1347,7 +1381,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 36,
@@ -1385,7 +1420,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 37,
@@ -1423,7 +1459,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 38,
@@ -1461,7 +1498,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 39,
@@ -1499,7 +1537,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 40,
@@ -1537,7 +1576,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 41,
@@ -1575,7 +1615,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 42,
@@ -1613,7 +1654,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 43,
@@ -1651,7 +1693,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 44,
@@ -1689,7 +1732,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 45,
@@ -1727,7 +1771,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 46,
@@ -1765,7 +1810,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 47,
@@ -1803,7 +1849,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 48,
@@ -1841,7 +1888,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 49,
@@ -1879,7 +1927,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 50,
@@ -1917,7 +1966,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 51,
@@ -1955,7 +2005,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 52,
@@ -1993,7 +2044,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 53,
@@ -2031,7 +2083,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 54,
@@ -2069,7 +2122,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 55,
@@ -2107,7 +2161,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 56,
@@ -2145,7 +2200,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 57,
@@ -2183,7 +2239,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 58,
@@ -2221,7 +2278,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 59,
@@ -2259,7 +2317,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 60,
@@ -2297,7 +2356,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 61,
@@ -2335,7 +2395,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 62,
@@ -2373,7 +2434,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 63,
@@ -2411,7 +2473,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 64,
@@ -2449,7 +2512,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 65,
@@ -2487,7 +2551,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 66,
@@ -2525,7 +2590,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 67,
@@ -2563,7 +2629,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 68,
@@ -2601,7 +2668,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 69,
@@ -2639,7 +2707,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 70,
@@ -2677,7 +2746,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 71,
@@ -2715,7 +2785,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 72,
@@ -2753,7 +2824,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 73,
@@ -2791,7 +2863,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 74,
@@ -2829,7 +2902,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 75,
@@ -2867,7 +2941,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 76,
@@ -2905,7 +2980,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 77,
@@ -2943,7 +3019,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 78,
@@ -2981,7 +3058,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 79,
@@ -3019,7 +3097,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 80,
@@ -3057,7 +3136,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 81,
@@ -3095,7 +3175,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 82,
@@ -3133,7 +3214,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 83,
@@ -3171,7 +3253,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 84,
@@ -3209,7 +3292,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 85,
@@ -3247,7 +3331,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 86,
@@ -3285,7 +3370,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 87,
@@ -3323,7 +3409,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 88,
@@ -3361,7 +3448,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 89,
@@ -3399,7 +3487,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 90,
@@ -3437,7 +3526,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 91,
@@ -3475,7 +3565,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 92,
@@ -3513,7 +3604,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 93,
@@ -3551,7 +3643,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 94,
@@ -3589,7 +3682,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 95,
@@ -3627,7 +3721,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 96,
@@ -3665,7 +3760,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 97,
@@ -3703,7 +3799,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 98,
@@ -3741,7 +3838,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 99,
@@ -3781,7 +3879,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 100,
@@ -3819,7 +3918,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 101,
@@ -3857,7 +3957,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 102,
@@ -3895,7 +3996,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 103,
@@ -3933,7 +4035,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 104,
@@ -3971,7 +4074,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 105,
@@ -4009,7 +4113,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 106,
@@ -4047,7 +4152,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 107,
@@ -4085,7 +4191,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 108,
@@ -4123,7 +4230,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 109,
@@ -4161,7 +4269,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 110,
@@ -4199,7 +4308,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 111,
@@ -4237,7 +4347,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 112,
@@ -4275,7 +4386,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 113,
@@ -4313,7 +4425,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 114,
@@ -4351,7 +4464,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 115,
@@ -4389,7 +4503,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 116,
@@ -4427,7 +4542,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     },
     {
       "id": 117,
@@ -4465,7 +4581,8 @@
       "known_limitations": "NOT_ASSESSED",
       "missing_components": [],
       "official_links": [],
-      "alternatives": []
+      "alternatives": [],
+      "hardware_review": "NOT_REVIEWED"
     }
   ]
 }

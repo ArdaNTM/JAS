@@ -26,7 +26,7 @@ FIELDS = {
     "existing_jas_state", "proposed_technology", "license_terms",
     "commercial_terms", "integration_test_criteria", "unit_test_criteria",
     "security_test_criteria", "acceptance_criteria", "performance_requirements",
-    "complexity", "known_limitations", "missing_components", "official_links",
+    "complexity", "known_limitations", "hardware_review", "missing_components", "official_links",
     "alternatives",
 }
 LIST_FIELDS = {
@@ -90,6 +90,12 @@ def validate(data: object) -> None:
                      and bool(record["test_commands"])
                      and bool(record["code_paths"])
                      and not record["blockers"]
+                     and not record["missing_components"]
+                     and record["license_review"] in {"PASS", "NOT_APPLICABLE"}
+                     and record["hardware_review"] in {"PASS", "NOT_APPLICABLE"}
+                     and record["technical_goal"] not in {"", "NOT_ASSESSED"}
+                     and record["acceptance_criteria"] not in {"", "NOT_ASSESSED"}
+                     and record["security_test_criteria"] not in {"", "NOT_ASSESSED"}
                      and re.fullmatch(r"[0-9a-f]{40}", record["commit"]) is not None
                      and re.fullmatch(
                          r"https://github[.]com/ArdaNTM/JAS/pull/[1-9][0-9]*",
