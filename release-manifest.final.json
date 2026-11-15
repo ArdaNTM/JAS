@@ -5,8 +5,8 @@
   "generated_at": "2026-10-31T00:45:29.771Z",
   "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
-  "file_count": 233,
+  "release_digest": "sha256:920749184a69c025a65a1a3006b1934d23e08c8331390c5a34c97855afb75a49",
+  "file_count": 234,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -831,6 +831,10 @@
     {
       "path": "core/src/aura_core/research/__init__.py",
       "sha256": "6039fd945f1b37727336c7bb8b6aadcf9cca2e45503b3839ecdf97c7de3ecbf1"
+    },
+    {
+      "path": "core/src/aura_core/research/archive.py",
+      "sha256": "1793e2b96962dbcf4ee8a4042bbe3faeef3b28afbc429498ad7c69e7cb780731"
     },
     {
       "path": "core/src/aura_core/research/config.py",
