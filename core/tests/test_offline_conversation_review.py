@@ -137,3 +137,15 @@ def test_volatile_clear_is_explicit_and_scope_aware_not_backup_erase():
 def test_invalid_scope_identity_is_rejected(invalid):
     with pytest.raises(ValueError):
         OfflineConversationReview(principal_id=invalid, conversation_id="chat-1")
+
+
+def test_default_history_limit_is_clamped_to_configured_retention():
+    journal = review(max_turns=1, max_chars=128)
+    add(journal, "t1", "first")
+    add(journal, "t2", "second")
+    view = journal.history(principal_id="alice", conversation_id="chat-1")
+    assert [item.turn_id for item in view.turns] == ["t2"]
+    with pytest.raises(ValueError):
+        journal.history(principal_id="alice", conversation_id="chat-1", limit=True)
+    with pytest.raises(ValueError):
+        journal.history(principal_id="alice", conversation_id="chat-1", limit=129)
