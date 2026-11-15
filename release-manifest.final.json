@@ -5,7 +5,7 @@
   "generated_at": "2026-10-31T00:45:29.771Z",
   "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
+  "release_digest": "sha256:8e6d62146366aaf0416e2ef8fa3696289c54c713b16ff11b7a98548da60b6484",
   "file_count": 233,
   "files": [
     {
@@ -358,7 +358,7 @@
     },
     {
       "path": "core/src/aura_core/application/system_telemetry.py",
-      "sha256": "c82f49330890aef9228d1c1c3e481155cffbaa457b6fa3bcf9224008161c2667"
+      "sha256": "0bd9090e24d4ca76a4458fe275874c4d75a27ff68da8ce7e9e9d2c208ccf0505"
     },
     {
       "path": "core/src/aura_core/application/task_memory.py",
