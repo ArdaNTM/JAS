@@ -219,6 +219,10 @@ def verify_backup_bundle(
                 files.append(BackupEntry(path, digest, size))
             if recorded != set(known) - {_MANIFEST}:
                 raise ValueError("backup contains unrecorded members")
+    except PermissionError:
+        # Cross-principal scope denial is intentional: never disguise it as a
+        # corrupt ZIP or silently recover by ignoring the requested identity.
+        raise
     except (zipfile.BadZipFile, EOFError, RuntimeError, OSError) as exc:
         raise ValueError("invalid backup ZIP envelope") from exc
     return BackupInspection(
