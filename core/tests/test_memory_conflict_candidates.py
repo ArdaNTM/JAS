@@ -101,3 +101,15 @@ def test_bad_boundaries_fail_closed(tmp_path, options):
     store = EpisodicMemoryStore(tmp_path / "mem.sqlite")
     with pytest.raises(ValueError):
         store.find_conflict_candidates(**options)
+
+
+def test_principal_scope_identity_is_not_normalized_across_accounts(tmp_path):
+    store = EpisodicMemoryStore(tmp_path / "mem.sqlite")
+    store.remember(
+        principal_id="owner ", kind="fact", content="A", tags=("fact:alias",),
+    )
+    store.remember(
+        principal_id="owner ", kind="fact", content="B", tags=("fact:alias",),
+    )
+    assert len(store.find_conflict_candidates(principal_id="owner ")) == 1
+    assert store.find_conflict_candidates(principal_id="owner") == []

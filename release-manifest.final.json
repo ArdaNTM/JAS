@@ -5,7 +5,7 @@
   "generated_at": "2026-10-31T00:45:29.771Z",
   "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:26f6a93a648b0c670719b99868d38bca697873fc43c92287ef7686f5d897a1a6",
+  "release_digest": "sha256:e1d5a10f35682d664a926119ec5581960eaa4a2085d3e66a67845b2e05477af5",
   "file_count": 233,
   "files": [
     {
@@ -222,7 +222,7 @@
     },
     {
       "path": "core/src/aura_core/application/episodic_memory.py",
-      "sha256": "ad436067945b87442ccc0276609381e89b680d0fa4793afc91790901cf92fab8"
+      "sha256": "96ca2844a67b8617c69bedfdf9c3e3ffbdbd53c01c87103d3c0fce9377841f08"
     },
     {
       "path": "core/src/aura_core/application/event_bridge.py",

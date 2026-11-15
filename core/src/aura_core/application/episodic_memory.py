@@ -304,7 +304,7 @@ class EpisodicMemoryStore:
                    FROM episodic_memory
                    WHERE principal_id = ? AND kind = 'fact'
                    ORDER BY created_at DESC, rowid DESC LIMIT ?""",
-                (principal_id.strip(), scan_limit),
+                (principal_id, scan_limit),
             ).fetchall()
 
         newest: dict[str, sqlite3.Row] = {}
