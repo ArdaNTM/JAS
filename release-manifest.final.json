@@ -5,7 +5,7 @@
   "generated_at": "2026-10-31T00:45:29.771Z",
   "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
+  "release_digest": "sha256:d263b8d05537fe781d2462bae22c9b274846684b37ef6d38d958c6c2417c11ba",
   "file_count": 233,
   "files": [
     {
@@ -262,7 +262,7 @@
     },
     {
       "path": "core/src/aura_core/application/jarvis_intelligence.py",
-      "sha256": "6db13a924ada4a57b4df83427e47eea227e0d5cb935614075f936688a9fcb4a5"
+      "sha256": "55a7e6fc6864bc1c361216226276d308c0e4214b91fd25f6696f74d6c603b0c4"
     },
     {
       "path": "core/src/aura_core/application/live_api.py",
