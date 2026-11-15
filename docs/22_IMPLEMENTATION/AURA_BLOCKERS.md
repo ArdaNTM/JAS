@@ -52,3 +52,9 @@ After **explicit Owner merge approval**, integrate in dependency order, rebase e
 - #93 email MIME parser does not read an actual inbox, authorize recipients or actions, authenticate senders, execute HTML, scan malware, or open attachments.
 - #94 PNG/GIF/WAV header validation is not full-file structural validity nor render safety; no parser may treat a recognized header as authorization.
 - Both branches have independent main-baseline release digests. Integration must recalculate the combined manifest, run full tests and obtain Owner approval before merge.
+
+## Further PR #95–#96 integration limits
+
+- #95 event observations are untrusted; Gateway decision replies are not independent tool execution/Owner approval receipts. A one-shot Markdown report is NOT automatic reporting/scheduling.
+- #96 STL is deterministic closed geometry but is not material/printable/structurally certified. No production printer/robot control is enabled.
+- Both add their own release-manifest changes against a common main; integration must reconcile source inventory and re-run locks/tests sequentially after explicit Owner approval.

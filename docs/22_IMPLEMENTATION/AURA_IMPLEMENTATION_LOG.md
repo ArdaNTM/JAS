@@ -94,3 +94,9 @@ All eight reported Core Assurance PASS and release lock PASS on the exact heads 
 - PR #93 commit `4f51ca9976d3ba5e676a76e313fb2435175fa1ee` provides read-only bounded MIME text preview and attachment metadata (#108). Core Assurance PASS 602 passed/6 skipped, release lock PASS, Remote Persistence PASS.
 - PR #94 commit `4c4a63553188f88bd8b1df3b446437704f2aa3d7` provides PNG/GIF/WAV header-only bounded metadata inspection (#110). Core Assurance PASS 607 passed/6 skipped, release lock PASS, Remote Persistence PASS.
 - Both remain Draft, not merged, not privileged and not production media/mail integrations.
+
+## 2026-11-15 — Scoped action history and parametric mesh previews
+
+- PR #95 commit `4963b5b85b8ad627e357f15da2cdd45f2529a0d6`: redacted exact-principal/task Swarm KernelEvent status projection and one-shot Markdown summary (#98/#117), Core Assurance 602 passed/6 skipped, Release Lock PASS, Remote Persistence PASS.
+- PR #96 commit `5721ec91e06b793bd3edb4bf8a8ce49f63a0a206`: closed oriented box/cylinder geometry, numeric volume checks, actual binary STL bytes (#70/#74/#114), Core Assurance 607 passed/6 skipped, Release Lock PASS, Remote Persistence PASS.
+- Neither creates new MCP authority, proves tool success or enables manufacturing hardware. Both remain Draft, not merged.

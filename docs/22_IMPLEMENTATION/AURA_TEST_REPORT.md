@@ -107,3 +107,12 @@ Counts belong to separate PR branch runs and do not add up to a cumulative integ
 | [#94](https://github.com/ArdaNTM/JAS/pull/94) | `4c4a63553188` | [607 passed, 6 skipped; Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43770389240) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43770389219) |
 
 Independent PR heads, not combined/cumulative or real-provider acceptance.
+
+## Verified GitHub Actions — PR #95–#96
+
+| PR | Exact head | Full Core Assurance and Release Lock | Remote Persistence |
+| --- | --- | --- | --- |
+| [#95](https://github.com/ArdaNTM/JAS/pull/95) | `4963b5b85b8a` | [602 passed, 6 skipped; Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43770863374) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43770863380) |
+| [#96](https://github.com/ArdaNTM/JAS/pull/96) | `5721ec91e06b` | [607 passed, 6 skipped; Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43771211785) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43771211803) |
+
+These independent CI executions are not combined; no hardware, Owner or signed audit acceptance is inferred.

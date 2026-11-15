@@ -73,3 +73,11 @@ PR #93: offline MIME read-only preview (#108). PR #94: PNG/GIF/WAV
 header-only media inspection (#110). Both validated via Core Assurance,
 Remote Persistence and release lock on their independent PR heads.
 No Owner or physical acceptance, no direct main mutation or auto-merge.
+
+## Latest independent engineering packages
+
+PR #95 supports only scoped read-only action event explanations (#98/#117).
+PR #96 supports bounded offline box/cylinder prototyping (#70/#74/#114)
+and real STL binary serialization; it does not control 3D hardware.
+Both have Core Assurance, Persistence and Release Lock PASS on their own
+heads. No PR is auto-merged, no feature promoted to COMPLETED.
