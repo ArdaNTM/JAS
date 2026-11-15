@@ -115,9 +115,11 @@ class OfflineConversationReview:
         limit: int = 20,
     ) -> ConversationView:
         self._scope(principal_id=principal_id, conversation_id=conversation_id)
-        if type(limit) is not int or not 1 <= limit <= self.max_turns:
+        if type(limit) is not int or not 1 <= limit <= 128:
             raise ValueError("invalid history limit")
-        turns = tuple(self._turns[-limit:])
+        # The public default must work even for smaller configured buffers;
+        # requesting extra history never bypasses the configured retention cap.
+        turns = tuple(self._turns[-min(limit, self.max_turns):])
         return ConversationView(
             turns=turns,
             principal_fingerprint=hashlib.sha256(
