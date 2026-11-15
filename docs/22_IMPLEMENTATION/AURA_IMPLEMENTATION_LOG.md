@@ -66,3 +66,11 @@ All eight reported Core Assurance PASS and release lock PASS on the exact heads 
 - PR #85 commit `923118435ca046383f098c51c4c14916a351cb70`: validates entire SwarmOrchestrator plan before MCP tool/event side effects; feature #58, Core Assurance PASS (601 passed, 6 skipped), Remote Persistence PASS.
 - PR #86 commit `a4a156b42ae8f8ecfa7aff37604386f05f170dd1`: ContextSynthesizer input bounds and untrusted object safety; features #6/#102, Core Assurance PASS (605 passed, 6 skipped), Remote Persistence PASS.
 - All are independently scoped PRs against `main`, none merged, no F2.7 security activation or new Owner grants.
+
+## 2026-11-15 — Safe DOCX parsing (#39 partial)
+
+- Opened draft PR #87 at commit `97d39e6c5736bcf3dc0fe232aaf20a0f5848ef3c` on `feat/aura-offline-docx-text-extractor`, based on unchanged `main`.
+- Reuses JAS filesystem package and accepts already-authorized bytes only. ZIP/XXE/path/macro/external-link defenses tested.
+- [AURA Core Assurance](https://github.com/ArdaNTM/JAS/actions/runs/43765869144) PASS (611 passed, 6 skipped; release lock PASS).
+- [Remote Persistence Integration](https://github.com/ArdaNTM/JAS/actions/runs/43765869141) PASS.
+- Feature #39 remains TESTING; no PDF/OCR, live Owner authorization or full document analysis accepted. No PR merged.

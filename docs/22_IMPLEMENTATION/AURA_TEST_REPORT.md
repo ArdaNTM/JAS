@@ -71,3 +71,11 @@ No real physical hardware attestation, external API validity or production relea
 | #86 | `a4a156b42ae8` | 605 passed, 6 skipped; Release Lock PASS | https://github.com/ArdaNTM/JAS/actions/runs/43757162780 |
 
 Remote Persistence PR workflows: #84 run 43756314100 PASS; #85 run 43756823780 PASS; #86 run 43757162764 PASS. These test counts are independent branches, NOT cumulative. No hardware/real-owner acceptance.
+
+## PR #87 DOCX extraction verified on exact branch head
+
+| PR | Head | Core Assurance | Remote Persistence |
+| --- | --- | --- | --- |
+| [#87](https://github.com/ArdaNTM/JAS/pull/87) | `97d39e6c5736` | [PASS 611 passed / 6 skipped; Final Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43765869144) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43765869141) |
+
+Real DOCX input was created as in-memory OOXML fixtures; no production-host/file authorization or hardware acceptance was run. Benchmarks and test counts from independent PR branches are not additive.

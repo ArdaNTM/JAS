@@ -27,3 +27,9 @@ After **explicit Owner merge approval**, integrate in dependency order, rebase e
 - Swarm admission #85 validates all steps before calls, but does not substitute for PermissionEngine/Owner authorization, verified outcomes or rollback for authorized partially executed plans.
 - Context hardening #86 does not guarantee injection-free model behavior; hostile input testing requires actual model/tool-routing conditions.
 - These branches each have separately generated Final Release Lock manifests; integration must recompute and retest after explicit merge approval.
+
+## DOCX extraction acceptance and release-lock integration
+
+- #87 is text-only and receives preauthorized bytes, but does not itself authenticate a principal. Do not expose it as a direct unapproved filesystem/MCP tool.
+- PDF/OCR, external linked content, tracked changes, complex DOCX layout, full document-corpus testing and end-to-end UI are outstanding.
+- #87 modifies the separately calculated complete release manifest; integration with the other independent PRs requires review, regenerated manifest, and a fresh CI run after explicit Owner merge approval.
