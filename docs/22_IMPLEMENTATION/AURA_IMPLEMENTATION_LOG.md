@@ -107,3 +107,11 @@ All eight reported Core Assurance PASS and release lock PASS on the exact heads 
 - [AURA Core Assurance](https://github.com/ArdaNTM/JAS/actions/runs/43771769354): 608 passed / 6 skipped, Release Lock PASS.
 - [Remote Persistence Integration](https://github.com/ArdaNTM/JAS/actions/runs/43771769447): PASS.
 - Both feature #10 and #62 remain TESTING/PARTIAL. No PR merged, no new tool authority.
+
+## 2026-11-16 — Conversation memory, agent data transport and research/undo slices
+
+- PR #98 `f77b68f25c1615831b039541891bf28ee4c86834`: exact-scoped ephemeral transcript history and untrusted explicit memory proposal review (#7/#21). Initial Core CI exposed default-history-limit issue; corrected, **607 passed / 6 skipped**, release lock PASS, Remote Persistence PASS.
+- PR #99 `6a089da4702444f1411110e323bc2490d1564029`: role-bound data-only specialist mailbox (#59). Initial negative UTF-8 boundary test corrected, **606 passed / 6 skipped**, release lock PASS, Remote Persistence PASS.
+- PR #100 `1c04ffb4bc585d56d9517014b449e57e6ad6cc8a`: offline literal literature screening and material-range comparison (#66/#69), **617 passed / 6 skipped**, release lock PASS, Remote Persistence PASS. No live papers fetched.
+- PR #101 `a01f8512232b9ab6dd739ef00825c4352eb332f8`: preconditioned in-memory multi-file patch/rollback preview (#34/#52), **606 passed / 6 skipped**, release lock PASS, Remote Persistence PASS. No files or Git commits modified by runtime.
+- All are independent Draft PRs against unchanged main. NO auto merge, no F2.7 activation, no COMPLETED acceptance.

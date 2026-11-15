@@ -88,3 +88,12 @@ PR #97 adds real bounded offline goal-DAG planning (#10/#62), Core
 Assurance, Remote Persistence and Final Release Lock PASS. It neither
 deploys an autonomous agent nor changes any authorization boundary.
 No feature marked COMPLETED; main unchanged and all new PRs Draft.
+
+## Next continuation checkpoint — 2026-11-16
+
+Current independent partial components: #98 conversation-memory proposal review
+(#7/#21), #99 specialist mailbox (#59), #100 scientific citation/material
+evidence screening (#66/#69), #101 in-memory reversible transaction preview
+(#34/#52). All exact-head Core Assurance, Persistence and Release Lock
+workflow runs PASS. These seven feature IDs remain TESTING/PARTIAL_VERIFIED;
+neither Owner acceptance nor physical execution is implied. No auto merge.

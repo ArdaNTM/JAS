@@ -63,3 +63,11 @@ After **explicit Owner merge approval**, integrate in dependency order, rebase e
 
 - A topological plan is not an execution authorization. Claimed completed nodes are not signed outcome receipts. Independent verification, principal-scoped persistence, Owner decisions and actual task dispatch are required.
 - The PR has an independent complete Final Release Lock manifest against old `main`; combined integration must recalculate and re-test after Owner-approved merge order.
+
+## New reviewable PRs #98–#101: outstanding production gates
+
+- #98 speaker labels are not authenticated identities and `remember:` text is never Owner-approved or persisted. Volatile erasure is not persistent/backups erasure.
+- #99 role identifiers are caller-supplied, not signed agents; data-only in-process queue does not provide cross-process delivery or permission.
+- #100 DOI shape does not establish actual published source authenticity; material property ranges are unverified claims and no physical material suitability proof exists.
+- #101 patch/undo transactions only calculate in-memory content; they do not read/write files, perform Git operations, guarantee atomic disk rollback or grant Owner authority.
+- Every PR has its own Final Release Lock manifest. An actual integration sequence must reconcile source inventory and re-run full CI under explicit Owner approval; #64 remains Draft.
