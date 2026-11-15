@@ -81,7 +81,8 @@ def test_numerical_stiffness_duration_and_sample_budgets():
         ))
     with pytest.raises(ValueError, match="duration"):
         simulate_mass_spring_damper(**dict(
-            BASE, spring_n_per_m=0.0, steps=20001,
+            BASE, spring_n_per_m=0.0, time_step_seconds=0.1,
+            steps=20000, output_stride=100,
         ))
     with pytest.raises(ValueError, match="sample budget"):
         simulate_mass_spring_damper(**dict(
