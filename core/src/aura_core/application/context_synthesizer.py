@@ -25,6 +25,8 @@ class ContextSynthesizer:
     """Builds bounded context; recalled content is explicitly untrusted data."""
 
     def __init__(self, *, max_memory_chars: int = 4000, max_research_chars: int = 12000) -> None:
+        if type(max_memory_chars) is not int or type(max_research_chars) is not int:
+            raise ValueError("context budgets must be integer values")
         self.max_memory_chars = max(256, min(max_memory_chars, 12000))
         self.max_research_chars = max(512, min(max_research_chars, 24000))
 
@@ -36,12 +38,25 @@ class ContextSynthesizer:
         research_context: str = "",
         tone: str = "adaptive",
     ) -> SynthesizedContext:
-        if tone not in {"adaptive", "concise", "warm", "formal", "light"}:
+        # All external evidence stays in the USER context, never policy.
+        # Do not call __str__ on untrusted provider objects.
+        if type(message) is not str or not message.strip() or len(message) > 32768:
+            raise ValueError("bounded nonempty message required")
+        if type(research_context) is not str or len(research_context) > 128000:
+            raise ValueError("bounded research text required")
+        if type(tone) is not str or tone not in {"adaptive", "concise", "warm", "formal", "light"}:
             tone = "adaptive"
+        try:
+            memory_iter = iter(memories)
+        except TypeError as exc:
+            raise ValueError("memories must be iterable") from exc
         memory_lines: list[str] = []
         used = 0
-        for item in memories:
-            clean = str(item).strip()
+        from itertools import islice
+        for item in islice(memory_iter, 128):
+            if type(item) is not str:
+                continue
+            clean = item.strip()
             if not clean:
                 continue
             remaining = self.max_memory_chars - used
