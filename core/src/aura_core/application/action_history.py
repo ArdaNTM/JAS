@@ -6,11 +6,13 @@ actually executed. Caller must authenticate scope before passing events.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 from typing import Sequence
 
 from aura_core.kernel.events import KernelEvent
 from aura_core.kernel.permissions import AuthorizationDecision
 
+_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,199}\Z", re.ASCII)
 _EVENT_TYPES = frozenset({"SwarmStepRequested", "SwarmStepCompleted"})
 _DECISIONS = frozenset(decision.value for decision in AuthorizationDecision)
 
@@ -41,9 +43,7 @@ class ActionHistoryReport:
 
 def _identity(value: str) -> str:
     if (
-        type(value) is not str or not 1 <= len(value) <= 200
-        or value != value.strip()
-        or any(ord(char) < 32 for char in value)
+        type(value) is not str or not _ID.fullmatch(value)
     ):
         raise ValueError("invalid exact event identity")
     return value
