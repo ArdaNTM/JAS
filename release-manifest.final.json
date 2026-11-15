@@ -5,8 +5,8 @@
   "generated_at": "2026-10-31T00:45:29.771Z",
   "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
-  "file_count": 233,
+  "release_digest": "sha256:17f902b85a9f3ed6d01f3f7678649014892667a77c322cfb90fba02f29c5151c",
+  "file_count": 234,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -243,6 +243,10 @@
     {
       "path": "core/src/aura_core/application/full_duplex_session.py",
       "sha256": "84f0876d87770b6767266b9b6e6e0c13ac0c10dabacfa9cdc2da1edbec84d4e4"
+    },
+    {
+      "path": "core/src/aura_core/application/goal_planning.py",
+      "sha256": "47688cc202420e57532fda788b6a7e02a05526dab1f6a76e9bb2c544c7e7d1aa"
     },
     {
       "path": "core/src/aura_core/application/governed_autonomous_loop.py",
