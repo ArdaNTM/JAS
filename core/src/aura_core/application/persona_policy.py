@@ -24,6 +24,15 @@ class PersonaPolicy:
     allow_unsolicited_followups: bool = False
 
     def __post_init__(self) -> None:
+        for field_name in (
+            "humor_intensity", "initiative_threshold", "daily_suggestion_budget",
+            "quiet_hours_start", "quiet_hours_end",
+        ):
+            if type(getattr(self, field_name)) is not int:
+                raise ValueError(f"{field_name} must be an integer")
+        for field_name in ("initiative_enabled", "allow_unsolicited_followups"):
+            if type(getattr(self, field_name)) is not bool:
+                raise ValueError(f"{field_name} must be a boolean")
         if self.tone not in {"professional", "warm", "witty", "dry_sarcastic"}:
             raise ValueError("unsupported persona tone")
         if self.language not in {"auto", "tr", "en"}:
@@ -70,6 +79,15 @@ class PersonaPolicy:
         user_opted_in: bool, action_is_authorized: bool,
     ) -> bool:
         """Pure gate for proposing—not executing—an initiative."""
+        # Untrusted clock/threshold inputs must never be implicitly converted
+        # (e.g. -1 -> 23, True -> 1, or "9" -> 9).
+        if (type(signal_strength) is not int or type(local_hour) is not int
+                or type(suggestions_today) is not int
+                or type(user_opted_in) is not bool
+                or type(action_is_authorized) is not bool):
+            return False
+        if not 0 <= local_hour <= 23 or suggestions_today < 0:
+            return False
         if not self.initiative_enabled or not user_opted_in:
             return False
         if not action_is_authorized or not 1 <= signal_strength <= 5:
@@ -78,7 +96,7 @@ class PersonaPolicy:
             return False
         if suggestions_today >= self.daily_suggestion_budget:
             return False
-        hour = int(local_hour) % 24
+        hour = local_hour
         if self.quiet_hours_start == self.quiet_hours_end:
             quiet = False
         elif self.quiet_hours_start < self.quiet_hours_end:
