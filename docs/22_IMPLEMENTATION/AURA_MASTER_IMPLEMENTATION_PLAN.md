@@ -105,3 +105,10 @@ PR #103: read-only specialist response metrics (#63).
 PR #104: static code red flags and explicit runnable pytest generation (#46/#50).
 All exact heads Core Assurance, Remote Persistence and Release Lock PASS.
 None is fully authorized/accepted or marked COMPLETED; no merge.
+
+## PR #105 continuation note
+
+Adds actual Core CapabilityRegistry health-based specialist **selection**
+(#57/#64), but no specialist execution, tool capability, high-risk
+authority or new registration. Exact-head CI and Release Lock PASS.
+All newly tracked entries remain TESTING/PARTIAL_VERIFIED.

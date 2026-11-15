@@ -145,3 +145,11 @@ Each branch is tested separately against old main; counts are not cumulative or 
 | [#104](https://github.com/ArdaNTM/JAS/pull/104) | `1c3a201ba4db` | [615 passed, 6 skipped; Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43776008643) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43776008617) |
 
 The runs are independent branch checks, not an integrated combined acceptance.
+
+## PR #105 independently verified exact-head CI
+
+| PR | Commit | Core Assurance + Release Lock | Remote Persistence |
+| --- | --- | --- | --- |
+| [#105](https://github.com/ArdaNTM/JAS/pull/105) | `6fa9f155a757` | [603 passed, 6 skipped; Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43776433513) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43776433459) |
+
+Registry health-state unit integration is not a signed Owner or real-world agent acceptance.

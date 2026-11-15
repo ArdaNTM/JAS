@@ -130,3 +130,9 @@ Removed only the redundant #59 → #58 edge; #59 now depends on #57, #99,
 - PR #103 `e5f4432142d0da302c4398e6e95a4a514af87205`: exact-scope specialist KernelEvent Gateway-response p50/p95 and failure/pending counters (#63), Core Assurance **605 passed / 6 skipped**, Final Release Lock PASS, Remote Persistence PASS. No independent clock or external tool success evidence.
 - PR #104 `1c3a201ba4dbdc4dc66f36698e0e53abf77357ac`: AST-only bug-review candidates and real parameterized pytest generation (#46/#50), Core Assurance **615 passed / 6 skipped**, Final Release Lock PASS, Remote Persistence PASS. Generated tests must be reviewed and sandbox-authorized before execution.
 - All Draft against unchanged `main`; no auto merge, F2.7 SCM activation or new capability/Owner permissions.
+
+## 2026-11-16 — Registry-aware specialist selection (#57/#64)
+
+- Draft PR #105 at `6fa9f155a7571556eb3eb34e1a14c68cfb9d764d` selects only existing coder/researcher specialist descriptors tied to available/healthy Core CapabilityRegistry provider records. Core Assurance **603 passed / 6 skipped**, Final Release Lock PASS, Remote Persistence PASS.
+- High/critical risk requests/providers are refused; no new profile identity is authenticated, no capability or policy added, no tool invoked.
+- Complete feature DAG was rechecked before updating. No main merge, no feature COMPLETED.

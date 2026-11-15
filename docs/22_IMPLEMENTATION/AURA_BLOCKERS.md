@@ -78,3 +78,9 @@ After **explicit Owner merge approval**, integrate in dependency order, rebase e
 - #103 calculates latency between untrusted in-memory KernelEvents; no trusted clock or proof of actual tool success/performance certification.
 - #104 generates runnable pytest code from user-supplied contracts; test execution must pass authenticated Owner/Gateway and isolated sandbox approval. CI runs only known controlled test modules; no automatic fixes, repository edits or deployment are enabled.
 - Each branch has a separate complete Release Lock manifest; reconciliation and fresh full CI are mandatory after explicit review and any eventual merges.
+
+## PR #105 remaining trust boundaries
+
+- Specialist profiles are caller-supplied, not authenticated identities. The registry validates provider registration/availability, **not** authorization. Actual task execution still needs Owner/PermissionEngine/MCP Gateway checks.
+- This does not create or evolve new skills, agents or registered capabilities, nor permit privileged actions. Features #57/#64 remain partial.
+- Its own Final Release Lock manifest differs from other open PRs; any combined merge requires reconciled inventory, fresh full CI and explicit security/Owner acceptance.
