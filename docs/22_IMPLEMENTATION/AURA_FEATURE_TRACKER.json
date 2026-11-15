@@ -1129,7 +1129,7 @@
         "cd core && uv run pytest -q",
         "cd core && uv run python scripts/verify_final_lock.py"
       ],
-      "test_results": "NOT_RUN",
+      "test_results": "PASS",
       "security_review": "NOT_REVIEWED",
       "acceptance": "NOT_VERIFIED",
       "commit": "517aacecf257435b4085261642ac1cc5b5f0bf02",
@@ -1141,7 +1141,7 @@
       "hardware_requirements": "Real host disk with optional psutil; test fakes cannot establish hardware acceptance.",
       "license_review": "NOT_REVIEWED",
       "local_offline": "PARTIAL_VERIFIED",
-      "notes": "Draft PR #67 created, CI pending. Feature #29 not COMPLETE or hardware verified.",
+      "notes": "Draft PR #67 CI: 605 passed, 6 skipped; release-lock PASS (source-only). Real hardware integration and security review pending; feature not completed.",
       "existing_jas_state": "SystemTelemetry exists on main; disk metrics introduced in draft PR #67, not merged.",
       "proposed_technology": "Existing optional psutil and Python standard library",
       "license_terms": "NOT_ASSESSED",

@@ -22,3 +22,9 @@
 
 - Added `python ../scripts/validate_aura_feature_tracker.py` to Core Assurance CI; documentation and validator edits now trigger the workflow.
 - PR #67 disk telemetry feature is in test; do not claim real-hardware PASS from synthetic psutil probes.
+
+## Verified telemetry feature CI
+
+- [PR #67 AURA Core Assurance](https://github.com/ArdaNTM/JAS/actions/runs/43747432323): **success** — 605 passed, 6 skipped; release lock `sha256:8e6d62146366aaf0416e2ef8fa3696289c54c713b16ff11b7a98548da60b6484` PASS.
+- [PR #67 Remote Persistence Integration](https://github.com/ArdaNTM/JAS/actions/runs/43747432309): **success**.
+- No physical-host disk accuracy test, system service activation, or production rollout in PR #67.
