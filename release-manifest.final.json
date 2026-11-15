@@ -5,8 +5,8 @@
   "generated_at": "2026-10-31T00:45:29.771Z",
   "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
-  "file_count": 233,
+  "release_digest": "sha256:8c084b41aa122c01dd4ae843160e1c9b3b37c009294a7482dd1fe686bba7120c",
+  "file_count": 234,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -843,6 +843,10 @@
     {
       "path": "core/src/aura_core/research/provider_bootstrap.py",
       "sha256": "b29ec4ce38cec4f0231d324915d9116071334b63a9968467aa57902d7bc3577e"
+    },
+    {
+      "path": "core/src/aura_core/research/scientific_triage.py",
+      "sha256": "89b4c23bfa1a03f0a191338d8c30c1bcb85b53209f703c30302b6a7efb5a1dfd"
     },
     {
       "path": "core/src/aura_core/runtime/__init__.py",
