@@ -123,3 +123,10 @@ The #98–#101 ledger update initially produced a **cycle** between #58
 Removed only the redundant #59 → #58 edge; #59 now depends on #57, #99,
 #100 and #103. Implementation code/PRs remained unchanged. No tracker
 `COMPLETED` status was added. CI must be rechecked on this new ledger head.
+
+## 2026-11-16 — Scientific journal, specialist metrics and code quality
+
+- PR #102 `0c65a0409616f8adeca7f50eb6544de4b69d343e`: existing SQLiteEpisodicMemory-backed scientific journal (#11/#76); Core Assurance **605 passed / 6 skipped**, Final Release Lock PASS, Remote Persistence PASS. Plaintext at rest; locally confirmed does not prove Owner authorization.
+- PR #103 `e5f4432142d0da302c4398e6e95a4a514af87205`: exact-scope specialist KernelEvent Gateway-response p50/p95 and failure/pending counters (#63), Core Assurance **605 passed / 6 skipped**, Final Release Lock PASS, Remote Persistence PASS. No independent clock or external tool success evidence.
+- PR #104 `1c3a201ba4dbdc4dc66f36698e0e53abf77357ac`: AST-only bug-review candidates and real parameterized pytest generation (#46/#50), Core Assurance **615 passed / 6 skipped**, Final Release Lock PASS, Remote Persistence PASS. Generated tests must be reviewed and sandbox-authorized before execution.
+- All Draft against unchanged `main`; no auto merge, F2.7 SCM activation or new capability/Owner permissions.

@@ -71,3 +71,10 @@ After **explicit Owner merge approval**, integrate in dependency order, rebase e
 - #100 DOI shape does not establish actual published source authenticity; material property ranges are unverified claims and no physical material suitability proof exists.
 - #101 patch/undo transactions only calculate in-memory content; they do not read/write files, perform Git operations, guarantee atomic disk rollback or grant Owner authority.
 - Every PR has its own Final Release Lock manifest. An actual integration sequence must reconcile source inventory and re-run full CI under explicit Owner approval; #64 remains Draft.
+
+## New scoped implementation gaps — PRs #102–#104
+
+- #102 really stores local SQLite notes but has plaintext storage, unverified DOI/speaker source, no authenticated Owner receipt, no WAL/backup erasure, no independent scientific discovery acceptance.
+- #103 calculates latency between untrusted in-memory KernelEvents; no trusted clock or proof of actual tool success/performance certification.
+- #104 generates runnable pytest code from user-supplied contracts; test execution must pass authenticated Owner/Gateway and isolated sandbox approval. CI runs only known controlled test modules; no automatic fixes, repository edits or deployment are enabled.
+- Each branch has a separate complete Release Lock manifest; reconciliation and fresh full CI are mandatory after explicit review and any eventual merges.

@@ -97,3 +97,11 @@ evidence screening (#66/#69), #101 in-memory reversible transaction preview
 (#34/#52). All exact-head Core Assurance, Persistence and Release Lock
 workflow runs PASS. These seven feature IDs remain TESTING/PARTIAL_VERIFIED;
 neither Owner acceptance nor physical execution is implied. No auto merge.
+
+## Continuing partial features (2026-11-16)
+
+PR #102: scoped offline SQLite scientific notes (#11/#76).
+PR #103: read-only specialist response metrics (#63).
+PR #104: static code red flags and explicit runnable pytest generation (#46/#50).
+All exact heads Core Assurance, Remote Persistence and Release Lock PASS.
+None is fully authorized/accepted or marked COMPLETED; no merge.

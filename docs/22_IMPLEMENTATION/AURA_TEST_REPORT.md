@@ -135,3 +135,13 @@ No distributed task execution, Owner approval, real hardware or actual goal achi
 | [#101](https://github.com/ArdaNTM/JAS/pull/101) | `a01f8512232b` | [606 passed, 6 skipped; Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43774776859) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43774776881) |
 
 Each branch is tested separately against old main; counts are not cumulative or integrated. There is no real Owner, model, signed execution, lab or hardware acceptance.
+
+## Latest exact-head verified GitHub Actions — PR #102–#104
+
+| PR | Head | Core Assurance / Final Release Lock | Remote Persistence |
+| --- | --- | --- | --- |
+| [#102](https://github.com/ArdaNTM/JAS/pull/102) | `0c65a0409616` | [605 passed, 6 skipped; Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43775435288) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43775435294) |
+| [#103](https://github.com/ArdaNTM/JAS/pull/103) | `e5f4432142d0` | [605 passed, 6 skipped; Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43775656063) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43775656036) |
+| [#104](https://github.com/ArdaNTM/JAS/pull/104) | `1c3a201ba4db` | [615 passed, 6 skipped; Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43776008643) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43776008617) |
+
+The runs are independent branch checks, not an integrated combined acceptance.
