@@ -88,12 +88,15 @@ def inspect_media_header(
     elif payload.startswith(b"RIFF") and payload[8:12] == b"WAVE":
         if len(payload) < 44:
             raise ValueError("truncated WAV header")
-        with wave.open(io.BytesIO(payload), "rb") as handle:
-            channels = handle.getnchannels()
-            sample_rate = handle.getframerate()
-            sample_width = handle.getsampwidth()
-            frames = handle.getnframes()
-            comp_type = handle.getcomptype()
+        try:
+            with wave.open(io.BytesIO(payload), "rb") as handle:
+                channels = handle.getnchannels()
+                sample_rate = handle.getframerate()
+                sample_width = handle.getsampwidth()
+                frames = handle.getnframes()
+                comp_type = handle.getcomptype()
+        except (wave.Error, EOFError, OSError) as exc:
+            raise ValueError("invalid WAV header") from exc
         if (
             not 1 <= channels <= 8 or not 8000 <= sample_rate <= 384000
             or not 1 <= sample_width <= 4 or not 0 <= frames <= 10_000_000
