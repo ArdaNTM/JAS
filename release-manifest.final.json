@@ -5,8 +5,8 @@
   "generated_at": "2026-10-31T00:45:29.771Z",
   "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
-  "file_count": 233,
+  "release_digest": "sha256:2246496b86c204082e8e343cb0dc8f56a5e538ad29b76b6e2ac3c35cef350c39",
+  "file_count": 234,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -919,6 +919,10 @@
     {
       "path": "core/src/aura_core/telemetry/runtime_profiler.py",
       "sha256": "008072e960f9ff6514b36d3233e9aeb65ecdc80f5c07b68728cf70684c6102c7"
+    },
+    {
+      "path": "core/src/aura_core/telemetry/runtime_summary.py",
+      "sha256": "2b2b993bb722f5b53d4d8457aa0be38d24535d8f62df684ec2b746c6ae9b95cc"
     },
     {
       "path": "core/src/aura_core/tts/__init__.py",
