@@ -197,6 +197,54 @@ class TaskStateMachine:
             ).fetchall()
         return tuple(self._record(row) for row in rows)
 
+    def status_projection(
+        self, *, principal_id: str, limit: int = 20
+    ) -> dict[str, Any]:
+        """Read-only, bounded principal-scoped task progress for local UIs.
+
+        This does not schedule, execute, transition, or grant task authority.
+        Callers must authenticate the principal at the application boundary.
+        """
+        if type(principal_id) is not str or not principal_id.strip():
+            raise ValueError("principal_id is required")
+        if any(ord(ch) < 32 for ch in principal_id) or len(principal_id) > 256:
+            raise ValueError("invalid principal_id")
+        if type(limit) is not int or not 1 <= limit <= 50:
+            raise ValueError("limit must be between 1 and 50")
+        with self._lock:
+            grouped = self._connection.execute(
+                """SELECT state, COUNT(*) AS count FROM orchestration_tasks
+                   WHERE principal_id = ? GROUP BY state""",
+                (principal_id,),
+            ).fetchall()
+            latest = self._connection.execute(
+                """SELECT task_id, state, revision, updated_at,
+                          cancellation_requested
+                   FROM orchestration_tasks WHERE principal_id = ?
+                   ORDER BY updated_at DESC, task_id DESC LIMIT ?""",
+                (principal_id, limit),
+            ).fetchall()
+        counts = {state.value: 0 for state in TaskState}
+        for row in grouped:
+            counts[TaskState(row["state"]).value] = int(row["count"])
+        return {
+            "total": sum(counts.values()),
+            "counts": counts,
+            "recent": [
+                {
+                    "task_id": row["task_id"],
+                    "state": TaskState(row["state"]).value,
+                    "revision": int(row["revision"]),
+                    "updated_at": row["updated_at"],
+                    "cancellation_requested": bool(row["cancellation_requested"]),
+                    "untrusted": True,
+                }
+                for row in latest
+            ],
+            "read_only": True,
+            "authorization_checked": False,
+        }
+
     def transition(
         self,
         task_id: str,

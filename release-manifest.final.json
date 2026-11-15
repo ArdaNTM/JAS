@@ -5,7 +5,7 @@
   "generated_at": "2026-10-31T00:45:29.771Z",
   "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
+  "release_digest": "sha256:ba6aaa980c41730a6b99d71da0eab254cd588dc0f52ce13303c05a943f062fd7",
   "file_count": 233,
   "files": [
     {
@@ -366,7 +366,7 @@
     },
     {
       "path": "core/src/aura_core/application/task_state_machine.py",
-      "sha256": "efc5d39512ff3f7cfcb94ab8a8be740edb5f5cc77fa1480965ea7997a3205224"
+      "sha256": "9b71a5c4b755e69005c57c41ef281f2e363ca3da0d681be5461c17b7ca373b72"
     },
     {
       "path": "core/src/aura_core/application/tasks.py",
