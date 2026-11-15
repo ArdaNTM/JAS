@@ -5,8 +5,8 @@
   "generated_at": "2026-10-31T00:45:29.771Z",
   "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
-  "file_count": 233,
+  "release_digest": "sha256:cdb8d156b2fe45902026977fc3d3cecbc7613fd80e75fd6d770e5899d62abc14",
+  "file_count": 234,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -325,12 +325,12 @@
       "sha256": "6b0d021c3d22f96eac9c83e3be73b2f5dcd19eb1df06f59720b01758de7ee727"
     },
     {
-      "path": "core/src/aura_core/application/reflexion.py",
-      "sha256": "91bca907d904b7426712f1a134e90ba5781f5c46585d1f5265c4fc89124d9090"
-    },
-    {
       "path": "core/src/aura_core/application/reflexion_inference.py",
       "sha256": "2215a44162cdcc7ca3a8421386bb2dbdf94b0d772893c5339db6b0f9c471e05b"
+    },
+    {
+      "path": "core/src/aura_core/application/reflexion.py",
+      "sha256": "91bca907d904b7426712f1a134e90ba5781f5c46585d1f5265c4fc89124d9090"
     },
     {
       "path": "core/src/aura_core/application/sandbox_contract.py",
@@ -845,6 +845,10 @@
       "sha256": "b29ec4ce38cec4f0231d324915d9116071334b63a9968467aa57902d7bc3577e"
     },
     {
+      "path": "core/src/aura_core/research/source_comparison.py",
+      "sha256": "9fc8b197f15bbb213b0143383ce9e43f3d3d0cac0a1f5ccb8a482d6ef5791004"
+    },
+    {
       "path": "core/src/aura_core/runtime/__init__.py",
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
@@ -865,12 +869,12 @@
       "sha256": "a6d9ce74c609a8dc0b423685d50520a3b9b62c312cf6849cc9affd331e44d2ea"
     },
     {
-      "path": "core/src/aura_core/runtime/mock.py",
-      "sha256": "aa0d52fd04b3cb1190dd3e76b402fd7589363d6c7f938330c343640400f1e760"
-    },
-    {
       "path": "core/src/aura_core/runtime/mock_transport.py",
       "sha256": "3da4e35fb03a1f490668293bba9743f3e9f6522fb6e86065aacee7c2b9ce38c9"
+    },
+    {
+      "path": "core/src/aura_core/runtime/mock.py",
+      "sha256": "aa0d52fd04b3cb1190dd3e76b402fd7589363d6c7f938330c343640400f1e760"
     },
     {
       "path": "core/src/aura_core/runtime/ollama.py",
