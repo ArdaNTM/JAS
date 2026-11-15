@@ -5,8 +5,8 @@
   "generated_at": "2026-10-31T00:45:29.771Z",
   "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
-  "file_count": 233,
+  "release_digest": "sha256:702f8f12ce57251ab87d8b45778b964339e7f722290afc6aa29815f07dd55338",
+  "file_count": 234,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -155,6 +155,10 @@
     {
       "path": "core/src/aura_core/application/adaptive_orchestrator.py",
       "sha256": "dc0e68e557c94abeb435564827591ef869bd4fc393e33121df658cb912593fbe"
+    },
+    {
+      "path": "core/src/aura_core/application/agent_mailbox.py",
+      "sha256": "65229a0826a0b7fbf3cb393bba809f119f742967e163639e98556ab1601e564d"
     },
     {
       "path": "core/src/aura_core/application/api.py",
