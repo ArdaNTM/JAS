@@ -869,10 +869,10 @@
         "cd core && uv run pytest -q",
         "cd core && uv run python scripts/verify_final_lock.py"
       ],
-      "test_results": "PENDING: Draft PR #131 exact head 993677d010473a01ba0a677740d5ec22b99a0ae1; Core workflow queued at last observation. No test pass claimed.",
+      "test_results": "PENDING: first Core CI exposed ServiceCategory.SERVICE enum mismatch (599 passed, 1 failed, 6 skipped); corrected to ServiceCategory.CORE and refreshed source lock. Exact-head rerun queued.",
       "security_review": "NOT_REVIEWED",
       "acceptance": "NOT_VERIFIED",
-      "commit": "993677d010473a01ba0a677740d5ec22b99a0ae1",
+      "commit": "1ef3dc43818e13e74fe360ed1e7deedf6aad6415",
       "pull_request": "https://github.com/ArdaNTM/JAS/pull/131",
       "blockers": [
         "Core Assurance and final release-lock CI pending.",
@@ -886,7 +886,7 @@
       "hardware_requirements": "No hardware required for synthetic PCM tests; physical microphone and target-device validation not performed.",
       "license_review": "NOT_APPLICABLE: Python standard library only.",
       "local_offline": "NOT_VERIFIED",
-      "notes": "Draft PR #131 exact head 993677d010473a01ba0a677740d5ec22b99a0ae1; Core Assurance and release lock are pending. Implementation exists but no test pass or acceptance evidence is claimed.",
+      "notes": "Draft PR #131 exact head 1ef3dc43818e13e74fe360ed1e7deedf6aad6415; first CI failure fixed; exact-head Core Assurance and Remote Persistence reruns queued. No pass or acceptance claim.",
       "existing_jas_state": "JAS main already has FasterWhisperRecognizer and FullDuplexSessionManager; a dedicated local prosody measurement service was not previously established.",
       "proposed_technology": "Python standard-library wave parsing, bounded autocorrelation pitch estimation and existing Kernel EventBus/ServiceRegistry.",
       "license_terms": "Python standard library; no new dependency.",
