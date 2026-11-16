@@ -63,7 +63,7 @@ class VideoUnderstandingEvidence:
 def _kind(video: bytes, kind: str) -> str:
     if type(video) is not bytes or not 64 <= len(video) <= _MAX_VIDEO:
         raise ValueError("Expected bounded offline video bytes")
-    if kind not in _VALID_KINDS or not isinstance(kind, str):
+    if not isinstance(kind, str) or kind not in _VALID_KINDS:
         raise ValueError("Unsupported video container")
     if kind == "mp4" and video[4:8] != b"ftyp":
         raise ValueError("MP4 container signature does not match")
@@ -224,16 +224,17 @@ class GovernedVideoUnderstanding:
         self, gateway: MCPGateway,
         *,
         authenticated_principal_id: str,
-        image_understanding: GovernedImageUnderstanding,
     ) -> None:
         from aura_core.providers.ollama_vision_mcp import _validate_identity
-        if not isinstance(gateway, MCPGateway) or not isinstance(
-            image_understanding, GovernedImageUnderstanding
-        ):
-            raise TypeError("Gateway and separately governed image capability required")
-        self._gateway = gateway
+        if not isinstance(gateway, MCPGateway):
+            raise TypeError("Existing authoritative MCP Gateway is required")
         self._principal = _validate_identity(authenticated_principal_id)
-        self._image_understanding = image_understanding
+        self._gateway = gateway
+        # Bind both independent capability calls to the same authenticated
+        # principal and exact Gateway; cross-principal injection is impossible.
+        self._image_understanding = GovernedImageUnderstanding(
+            gateway, authenticated_principal_id=self._principal,
+        )
 
     async def summarize(
         self, video: bytes, *, kind: str,
