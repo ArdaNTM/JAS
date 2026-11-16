@@ -89,7 +89,7 @@ def plan_hud_layout(
                 or not 80 <= panel.width <= 720
                 or not 50 <= panel.height <= 480):
             raise HUDLayoutUnavailable("Invalid bounded panel dimensions")
-        if panel.anchor not in _ANCHORS:
+        if not isinstance(panel.anchor, str) or panel.anchor not in _ANCHORS:
             raise HUDLayoutUnavailable("Unsupported HUD anchor")
         if panel.display_id is not None and (
             not isinstance(panel.display_id, str) or panel.display_id not in displays
