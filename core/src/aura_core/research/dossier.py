@@ -40,6 +40,8 @@ class ResearchDossierPlan:
                    or q != q.strip() or any(ord(c) < 32 or ord(c) == 127 for c in q)
                    for q in queries):
                 raise ValueError("invalid research stage query")
+        object.__setattr__(self, "primary_queries", tuple(self.primary_queries))
+        object.__setattr__(self, "verification_queries", tuple(self.verification_queries))
         all_queries = self.primary_queries + self.verification_queries
         if len({q.casefold() for q in all_queries}) != len(all_queries):
             raise ValueError("verification and primary queries must be distinct")
