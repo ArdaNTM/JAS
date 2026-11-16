@@ -20,3 +20,7 @@ Tests instantiate real JAS ServiceRegistry, CapabilityRegistry, ProviderRegistry
 - No user-approved automations/physical control. All actions need a separate explicitly registered capability and Owner/Gateway policy, independent of this read-only state contract.
 - This PR must stay stacked on #128 until the upstream is explicitly Owner-approved, with a **combined** release-manifest lock and CI before integration. Feature #86 stays TESTING/PARTIAL_VERIFIED after exact-head tests, not COMPLETED.
 - No new external package/license.
+
+## Stacked rebase evidence (2026-11-16)
+
+After upstream PR #128 fixed a structured MCP `status=failed` negative-path bug (exact upstream HEAD `12a08718d42b4f26593b099a2b87152f86803a4d`), this Draft PR was rebased onto that verified parent. The stacked snapshot includes the same fail-closed `governed_home_inventory.py` source and an updated complete 235-source release lock. No PR merge occurred. Core/Persistence/Final Release Lock **must be rerun on this PR's current HEAD** before feature #86 can enter TESTING/PARTIAL_VERIFIED.
