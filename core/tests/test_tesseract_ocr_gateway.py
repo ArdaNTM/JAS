@@ -185,9 +185,11 @@ def test_ocr_process_timeout_is_killed_and_error_redacted(monkeypatch):
         return SlowProcess(calls)
     import aura_core.providers.tesseract_ocr_mcp as module
     monkeypatch.setattr(module.asyncio, "create_subprocess_exec", slow_exec)
-    with pytest.raises(OCRUnavailable, match="timed out") as err:
+    # The public Gateway facade intentionally redacts the subprocess timeout.
+    with pytest.raises(OCRUnavailable, match="Gateway is unavailable") as err:
         _read(reader)
     assert "SECRET_TOKEN" not in str(err.value)
+    assert "timed out" not in str(err.value)
     assert ("killed", True) in calls
 
 
