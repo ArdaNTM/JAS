@@ -227,3 +227,16 @@ CI evidence update: corrected PR #131 head `1ef3dc43818e13e74fe360ed1e7deedf6aad
 - Added a Windows-only read-only foreground window provider, exact-scope PermissionEngine authorization, ServiceRegistry/CapabilityRegistry registration and redacted EventBus metadata.
 - No screenshot, OCR, keyboard/mouse input, background polling or app control.
 - Draft PR: https://github.com/ArdaNTM/JAS/pull/132 (head `773a3e18d38fbf86930f2866ff345923db98bce5`). Exact-head CI and Windows runtime validation pending; status TESTING / NOT_ASSESSED.
+
+
+## 2026-11-16 — Feature #16 speaker diarization (Draft PR #133)
+
+- Added a local-only SpeechBrain embedding adapter that loads only a pre-provisioned model directory, plus bounded session-local cosine clustering.
+- Every request requires exact principal/capability/operation/session PermissionEngine ALLOW before inference; session ownership is checked before provider access.
+- No raw audio or embeddings are persisted; labels do not identify real people and are not linked across sessions.
+- Draft PR https://github.com/ArdaNTM/JAS/pull/133, head `473df7f9209c2bf720936352772b52b4471dd2fe`. Core and Remote Persistence CI are pending; acoustic/model/license validation remains outstanding.
+
+## 2026-11-16 — Feature #23 desktop awareness CI evidence
+
+- Draft PR #132 head `773a3e18d38fbf86930f2866ff345923db98bce5`: AURA Core Assurance PASS; AURA Remote Persistence Integration PASS.
+- Release lock and Core tests passed. Native Windows runtime/Owner acceptance remain outstanding; assessment is PARTIAL_VERIFIED, not COMPLETED.

@@ -87,3 +87,7 @@ Draft PR #130 6214d571cfa9b29505e58f71650ac791ef02530f, Core 43793662855 633/6, 
 - First PR #131 Core run: 599 passed, 1 failed, 6 skipped due to incorrect enum member; fixed and rerun is queued. Latest PR #131 head: `1ef3dc43818e13e74fe360ed1e7deedf6aad6415`.
 
 - Feature #23: Draft PR #132 `773a3e18d38fbf86930f2866ff345923db98bce5`, permission-gated Windows foreground metadata only; CI pending, tracker TESTING / NOT_ASSESSED.
+
+- Feature #16: Draft PR #133 `473df7f9209c2bf720936352772b52b4471dd2fe`; local session-only speaker diarization implemented; exact-head CI pending, assessment NOT_ASSESSED.
+- Feature #23: Draft PR #132 exact-head Core Assurance and Remote Persistence Integration both PASS; native Windows target validation remains outstanding; assessment PARTIAL_VERIFIED.
+- PR #65 current observed head `44969b28a72148a5302130003d628ce56aecdc18`: Core Assurance PASS including 117-ledger validator and Final Release Lock; Remote Persistence Integration PASS. PR remains open/unmerged.
