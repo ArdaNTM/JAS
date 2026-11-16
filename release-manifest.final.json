@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-10-31T00:45:29.771Z",
-  "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
+  "generated_at": "2026-11-16T01:57:33.831Z",
+  "git_commit": "b7fbcbe9d77616cb00ba7126ae83ba0bf1469623",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
-  "file_count": 233,
+  "release_digest": "sha256:81a90d964b5d34aff62076c6f718dd7fe274b90016b9601f86bbe724f95b6955",
+  "file_count": 234,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -155,6 +155,10 @@
     {
       "path": "core/src/aura_core/application/adaptive_orchestrator.py",
       "sha256": "dc0e68e557c94abeb435564827591ef869bd4fc393e33121df658cb912593fbe"
+    },
+    {
+      "path": "core/src/aura_core/application/ambient_signal.py",
+      "sha256": "e20933d5da35da098ef4403ac471824d83bc15de322b4b11978ae36d7547d689"
     },
     {
       "path": "core/src/aura_core/application/api.py",
