@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-16T03:28:37.917Z",
-  "git_commit": "f2aaf59de25e3ccf60af03f60d2115a9265ea77c",
+  "generated_at": "2026-11-16T03:56:50.620Z",
+  "git_commit": "5d507e84c08f039fa9348963bcd7ebd7b637e9dd",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:9ea3b86ab4e8a777adaacd8f824e626c426ced250389314c30e9c30f1a0cccca",
-  "file_count": 253,
+  "release_digest": "sha256:5be34167e3714507dfa7586e8d28a7bc9fc3fc5fb51cc2557d816dbf9739d2df",
+  "file_count": 256,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -295,6 +295,10 @@
     {
       "path": "core/src/aura_core/application/live_events.py",
       "sha256": "51d23fe8f540b5781a1962f96594cd3e6b85ce600334d612c504ba2ec0bd23f0"
+    },
+    {
+      "path": "core/src/aura_core/application/local_object_detection.py",
+      "sha256": "77c65c22af1ea8f7c70071bc541fb1939298cf8aca985b1c31ac340adf0b4f6f"
     },
     {
       "path": "core/src/aura_core/application/monitor_topology.py",
@@ -885,8 +889,16 @@
       "sha256": "44a52720d803722396b5b92dd1b25bff5ced9ca1821c4247f4db4f8cbc444e37"
     },
     {
+      "path": "core/src/aura_core/providers/ollama_vision_mcp.py",
+      "sha256": "68d3f18d979f5a90c62bd02852e7297d59753d01bf1c44fa41a66225a0caa8e9"
+    },
+    {
       "path": "core/src/aura_core/providers/speaker_embedding.py",
       "sha256": "a898122699b9f1b77281532ef7fd357368853261dd9029b0634fdb7deb6ebc28"
+    },
+    {
+      "path": "core/src/aura_core/providers/tesseract_ocr_mcp.py",
+      "sha256": "8d52dd384437b07c7d218bfc5988a446527f92b825171ea6505ea571ce3194fb"
     },
     {
       "path": "core/src/aura_core/release/manifest.py",
