@@ -40,7 +40,7 @@ def test_wrong_prefix_wrong_suffix_and_empty_credentials_denied(monkeypatch):
 
 def test_config_rejects_newlines_control_chars_and_padding(monkeypatch):
     for secret in (_STRONG + "\r", "\t" + _STRONG, _STRONG + " ", "a" * 31,
-                   "", "\ud800" + _STRONG):
+                   ""):
         monkeypatch.setenv("AURA_WS_SECRET", secret)
         _denied(secret)
 
@@ -65,3 +65,8 @@ def test_primary_one_time_websocket_ticket_manager_is_unchanged(monkeypatch):
     ticket = manager.issue()
     assert manager.verify(ticket.value) is True
     assert manager.verify(ticket.value) is False
+
+
+def test_invalid_unicode_configuration_denied_without_os_env_failure(monkeypatch):
+    monkeypatch.setattr("aura_core.security.auth.os.getenv", lambda _key: "\ud800" + _STRONG)
+    _denied(_STRONG)
