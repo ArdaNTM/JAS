@@ -300,6 +300,10 @@ class GovernedLocalCameraReader:
                 risk_level=RiskLevel.HIGH, tool_name=_TOOL,
                 arguments={"session_id": session_id}, session_id=session_id,
             ))
+        except CameraReadDenied:
+            # A lease revoked by the provider during device read is a
+            # security denial, not merely an unavailable camera.
+            raise
         except Exception as exc:
             raise CameraUnavailable("Local camera Gateway is unavailable") from exc
         if result.decision is not AuthorizationDecision.ALLOW:
