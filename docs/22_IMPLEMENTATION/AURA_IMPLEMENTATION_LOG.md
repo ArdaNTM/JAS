@@ -214,3 +214,6 @@ Draft PR #130 HEAD 6214d571cfa9b29505e58f71650ac791ef02530f, real CapabilityRegi
 - Draft PR: https://github.com/ArdaNTM/JAS/pull/131 (head `993677d010473a01ba0a677740d5ec22b99a0ae1`).
 - Exact-head Core CI was queued at last check; no test or release-lock success is claimed. Feature remains TESTING / NOT_ASSESSED until exact-head CI passes.
 - Remaining: root composition auto-wiring, non-WAV decode/resampling, real-audio and performance validation, multilingual calibration, UI/TTS adaptation and independent review.
+
+
+CI follow-up: first exact-head Core run for PR #131 reported 599 passed / 1 failed / 6 skipped. Failure was an invalid ServiceCategory.SERVICE reference; corrected to existing ServiceCategory.CORE and refreshed release-manifest.final.json. Corrected head `1ef3dc43818e13e74fe360ed1e7deedf6aad6415` rerun queued. Feature remains TESTING / NOT_ASSESSED.
