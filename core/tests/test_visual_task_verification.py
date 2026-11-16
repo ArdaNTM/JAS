@@ -2,11 +2,11 @@
 import asyncio
 import io
 import json
+import struct
+import zlib
 
 import httpx
 import pytest
-
-Image = pytest.importorskip("PIL.Image")
 
 from aura_core.application.visual_task_verification import (
     GovernedVisualTaskVerifier, LocalPixelChangeComparator,
@@ -27,10 +27,23 @@ from aura_core.mcp.gateway import MCPGateway
 
 
 def _png(color, *, size=(100, 60)):
-    im = Image.new("RGB", size, color=color)
-    buf = io.BytesIO()
-    im.save(buf, format="PNG")
-    return buf.getvalue()
+    """Create a real 8-bit RGB PNG with the stdlib, not a fake image signature."""
+    if isinstance(color, str):
+        color = {"white": (255, 255, 255), "black": (0, 0, 0), "red": (255, 0, 0)}[color]
+    width, height = size
+    def chunk(kind, data):
+        return (
+            struct.pack(">I", len(data)) + kind + data
+            + struct.pack(">I", zlib.crc32(kind + data))
+        )
+    raw = (b"\x00" + bytes(color) * width) * height
+    ihdr = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
+    return (
+        b"\x89PNG\r\n\x1a\n"
+        + chunk(b"IHDR", ihdr)
+        + chunk(b"IDAT", zlib.compress(raw))
+        + chunk(b"IEND", b"")
+    )
 
 
 _WHITE = _png("white")
@@ -175,6 +188,24 @@ def test_invalid_media_or_mismatched_capture_geometry_fails_closed(monkeypatch, 
     verifier, engine, called, *_ = _setup(monkeypatch)
     with pytest.raises((VisualVerificationUnavailable, ValueError)):
         _verify(verifier, after=bad)
+    assert called == []
+
+
+def test_png_crc_corruption_fails_closed_before_model(monkeypatch):
+    verifier, engine, called, *_ = _setup(monkeypatch)
+    corrupted = bytearray(_WHITE)
+    # Corrupt RGB payload without updating its PNG IDAT chunk CRC.
+    corrupted[-20] ^= 1
+    with pytest.raises(VisualVerificationUnavailable, match="CRC"):
+        _verify(verifier, after=bytes(corrupted))
+    assert called == []
+
+
+def test_lossless_png_without_pillow_is_real_and_rejects_truncated_stream(monkeypatch):
+    verifier, engine, called, *_ = _setup(monkeypatch)
+    assert verifier._comparator.compare(_WHITE, _BLACK).classification == "OBSERVED_DIFFERENCE"
+    with pytest.raises(VisualVerificationUnavailable):
+        verifier._comparator.compare(_WHITE, _BLACK[:-8])
     assert called == []
 
 
