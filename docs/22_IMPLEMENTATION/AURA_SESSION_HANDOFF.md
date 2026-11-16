@@ -79,7 +79,9 @@ Draft PR #130 6214d571cfa9b29505e58f71650ac791ef02530f, Core 43793662855 633/6, 
 ## Current handoff — 2026-11-16
 
 - PR #65 cycle-free 117-feature ledger remains a separate unmerged governance PR. Its prior exact-head CI/Release Lock evidence was green for commit `1c97b805dde19cd9696b890d3fa90344d9d1c3d2`; do not infer merge or production acceptance.
-- First implementation slice: feature #17 in Draft PR #131, branch `feat/voice-prosody-cues-17`, latest head `993677d010473a01ba0a677740d5ec22b99a0ae1`.
+- First implementation slice: feature #17 in Draft PR #131, branch `feat/voice-prosody-cues-17`, latest head `1ef3dc43818e13e74fe360ed1e7deedf6aad6415`.
 - Core check run `43794661539` was queued when last observed. Poll exact head before any acceptance status change.
 - Feature #17 is TESTING / NOT_ASSESSED until exact-head CI passes. PCM WAV acoustic delivery cues; no emotion, speaker identity, authentication or raw-audio persistence claims.
 - No PR merged; main unchanged; F2.7 PR #64 sealed security scope not touched.
+
+- First PR #131 Core run: 599 passed, 1 failed, 6 skipped due to incorrect enum member; fixed and rerun is queued. Latest PR #131 head: `1ef3dc43818e13e74fe360ed1e7deedf6aad6415`.
