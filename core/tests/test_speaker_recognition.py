@@ -17,6 +17,10 @@ class FakeEmbeddingProvider:
         return next(self.vectors)
 
 
+def service_registry_id(service):
+    return "aura.local:speaker-recognition:1.0.0"
+
+
 def build(*, vectors, allowed=True):
     bus = EventBus()
     services = ServiceRegistry(bus)
@@ -41,6 +45,7 @@ def build(*, vectors, allowed=True):
     while bus.snapshot()["queued_total"]:
         asyncio.run(bus.dispatch_once())
     assert providers.resolve("voice.speaker.local") is provider
+    assert providers.get("voice.speaker.local").definition.service_id == service_registry_id(service)
     return service, provider, bus
 
 
