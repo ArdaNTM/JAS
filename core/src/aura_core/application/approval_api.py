@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import inspect
 from typing import Literal
+from urllib.parse import quote
+from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from aura_core.security.http_auth import authenticated_principal
+from aura_core.kernel.permissions import AuthorizationDecision, AuthorizationRequest, RiskLevel
 from aura_core.enterprise.approval_store import (
     ApprovalConflict, ApprovalExpired, ApprovalStatus, InvalidApprovalTransition,
 )
@@ -23,6 +26,35 @@ async def _resolve(value):
     return await value if inspect.isawaitable(value) else value
 
 
+async def _review_allowed(request: Request, principal_id: str, record, operation: str) -> bool:
+    """Require an *existing* PermissionEngine allow policy for cross-principal review.
+
+    Approval records are not themselves authority. No implicit reviewer role,
+    header-supplied principal, or new capability registration is granted here.
+    The composition root must explicitly register the review capability and
+    install its narrow policy to enable any cross-principal review.
+    """
+    engine = getattr(request.app.state, "permission_engine", None)
+    if engine is None:
+        return False
+    try:
+        # Escape slashes so identity components cannot widen policy scopes.
+        target = "approval/" + quote(record.principal_id, safe="") + "/" + quote(record.approval_id, safe="")
+        auth = AuthorizationRequest(
+            request_id=f"approval-review:{uuid4()}",
+            principal_id=principal_id,
+            capability_id="approval.review",
+            operation_id=operation,
+            resource_scope=target,
+            risk_level=RiskLevel.HIGH,
+        )
+        decision = await _resolve(engine.authorize(auth))
+        return decision.decision is AuthorizationDecision.ALLOW
+    except Exception:
+        # Missing, malfunctioning, revoked or deferred policy fails closed.
+        return False
+
+
 @router.get("/api/approvals")
 async def pending_approvals(
     request: Request,
@@ -32,6 +64,10 @@ async def pending_approvals(
     if store is None:
         return []
     records = await _resolve(store.list_pending(limit=100))
+    visible = []
+    for record in records:
+        if record.principal_id == principal_id or await _review_allowed(request, principal_id, record, "approval.list"):
+            visible.append(record)
     return [
         {
             "approval_id": record.approval_id,
@@ -44,7 +80,7 @@ async def pending_approvals(
             "requested_at": record.requested_at,
             "expires_at": record.expires_at,
         }
-        for record in records
+        for record in visible
     ]
 
 
@@ -64,6 +100,8 @@ async def decide_approval(
             raise HTTPException(status_code=404, detail="Approval not found")
         if record.principal_id == principal_id:
             raise HTTPException(status_code=403, detail="A requester cannot approve their own request")
+        if not await _review_allowed(request, principal_id, record, "approval.decide"):
+            raise HTTPException(status_code=403, detail="Explicit reviewer authorization required")
         decision = ApprovalStatus.APPROVED if body.decision == "approved" else ApprovalStatus.DENIED
         updated = await _resolve(store.decide(
             approval_id,
