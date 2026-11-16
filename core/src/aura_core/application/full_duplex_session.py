@@ -214,14 +214,28 @@ class FullDuplexSessionManager:
         # A fresh incoming audio chunk interrupts ongoing speech immediately.
         await self.interrupt(reason="user_barge_in", keep_listening=True)
         async with self._lock:
+            # Closing/restarting the session while interrupt() awaited cannot
+            # resurrect a recognizer bound to the former session identity.
+            if self._session_id != session_id or self._state == "idle":
+                raise RuntimeError("Speech session ended before recognition started")
             self._state = "recognizing"
+            generation = self._generation
         try:
             transcript = (await self._recognizer.transcribe(audio, session_id=session_id)).strip()
-        except Exception:
+        except BaseException:
+            # Cancellation or a failing recognizer must not change a newer
+            # session's state or a newer active speech playback.
             async with self._lock:
-                self._state = "listening"
+                if (self._generation == generation
+                        and self._session_id == session_id
+                        and self._state == "recognizing"):
+                    self._state = "listening"
             raise
         async with self._lock:
+            if (self._generation != generation
+                    or self._session_id != session_id
+                    or self._state != "recognizing"):
+                raise RuntimeError("Speech recognition was superseded")
             self._transcript = transcript[:8000]
             self._state = "listening"
             self._emit("SpeechTranscript", {"characters": len(self._transcript)})
@@ -248,8 +262,15 @@ class FullDuplexSessionManager:
                     return
             await self._player.play(audio, session_id=session_id)
 
-        task = asyncio.create_task(playback())
         async with self._lock:
+            # Install the task under the same lock used by interrupt()/close().
+            # Otherwise a close between task creation and assignment misses
+            # cancellation and may leave an orphaned synthesize operation.
+            if (generation != self._generation
+                    or self._session_id != session_id
+                    or self._state != "speaking"):
+                raise RuntimeError("Speech playback was superseded")
+            task = asyncio.create_task(playback())
             self._playback = task
         try:
             await task
