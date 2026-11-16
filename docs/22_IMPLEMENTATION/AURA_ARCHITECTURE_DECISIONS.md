@@ -59,3 +59,6 @@ Trusted Core composition binds the authenticated principal; every read/write/for
 A read-only digest of existing PermissionEngine policies plus Service/Capability/Provider registry state may be HMAC-attested by an independent verifier. Optional wrapper can DENY on drift, but only existing MCPGateway authorizes/dispatches. No owner permission or kernel trust root is granted; all-path enforcement and protected signer remain future prerequisites.
 ## ADR-ENG-014 — personal knowledge must consume governed principal-bound storage
 Bounded personal hub queries use the existing GovernedEpisodicMemory PermissionEngine policy per query, fail closed on revocation and treat memory text as UNTRUSTED. No raw SQLite identity override, direct model execution or new tool authorization. Full encrypted multi-source integration requires Owner acceptance.
+
+## ADR-ENG-015 — voice session results require generation identity before mutation
+Speech transcription and playback tasks must never mutate a newer or closed FullDuplexSessionManager session. Record generation and session ID under the existing lock, discard late STT results and register playback tasks atomically with interrupt/close. Existing MCPGateway remains the only tool dispatch authority; no microphone consent, user authentication or hardware trust is inferred from race tests.

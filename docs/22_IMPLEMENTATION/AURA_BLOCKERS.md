@@ -123,3 +123,6 @@ PR #113 and #115 closed as duplicates, no merge. Combined source locks and separ
 #106 opt-in Core integrity digest/HMAC guard not installed globally; signer key not independently protected, replay possible, policy/provider snapshots non-atomic, not hardware immutable.
 #116 personal hub depends on unmerged #117, reads only SQLite episodic memory, has no full personal knowledge UX, encrypted storage or multi-source indexing. Separate Owner acceptance required.
 All feature PRs need explicit approved merges and recomputation of combined manifest; individual CI passes are not cumulative proof.
+
+## Feature #14 PR #120 remaining voice acceptance
+Async generation guard has passing isolated CI, but no real microphone, local recognizer weights, TTS latency/cross-device playback, Owner speech identity or full natural, privacy-preserving turn-taking deployment has been verified. Do not treat fake-recognizer tests as hardware evidence or mark COMPLETED.

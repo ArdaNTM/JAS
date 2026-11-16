@@ -48,3 +48,6 @@ PR #116 HEAD 2020122bd0e26934ce2fd722b22dfaf8e0bdbab2, #25 PARTIAL: Core run 437
 PR #118 HEAD cd1a98e195d5bf8961169dc490dabc62a8c98b1d: Core run 43786822015 605/6, Release Lock PASS, Persistence 43786822032 PASS, feature #106 PARTIAL (no hardware immutability or global wiring).
 PR #119 HEAD 2cace2cc4927963e3e9ccad917e65a91dddce08e: Core run 43787305752 619/6, Release Lock PASS, Persistence 43787305867 PASS, feature #116 PARTIAL, stacked on Draft #117; real SQLite principal scoping only.
 Tracker 45 NOT_STARTED / 70 TESTING / 2 RESEARCHING. No COMPLETED and no merges; pinned main b1ffe6f534ced0d329dae273a4b949a634cb8bfa unchanged. Next #14 voice concurrency if no active source conflicts; run exact-head CI before tracking. Never treat isolated SHA locks as combined acceptance.
+
+## Verified PR #120 handoff — 2026-11-16
+#120 Draft head 74aa91567bc561f3c884c19e3d6b00336e42f976: Core run 43788402100 597/6 + Final Release Lock PASS, Persistence run 43788402101 PASS; feature #14 TESTING/PARTIAL_VERIFIED with generation-aware STT/session race guard and atomic TTS task registration. Tracker 44 NOT_STARTED / 71 TESTING / 2 RESEARCHING, zero COMPLETED. No merges, pinned main b1ffe6f534ced0d329dae273a4b949a634cb8bfa unchanged. Further features require real code/test/lock and Owner/hardware acceptance.

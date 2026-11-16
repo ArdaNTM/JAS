@@ -212,3 +212,6 @@ Runs are isolated PR head checks, not merged integration or production/hardware 
 | #119 (2cace2cc4927) | 619 passed, 6 skipped (run 43787305752) | PASS sha256:713f7063f04f322f8ecafc9a5a3ddcb60504dab7bf3f7a1e57015343a5fba3ea | PASS (43787305867) |
 Run URLs: https://github.com/ArdaNTM/JAS/actions/runs/43786822015 and https://github.com/ArdaNTM/JAS/actions/runs/43787305752
 Neither run establishes hardware/Owner acceptance. #119 is stacked on unmerged #117.
+
+## Exact-head PR #120 Core and Release Lock
+PR #120 head 74aa91567bc561f3c884c19e3d6b00336e42f976 Core Assurance [run 43788402100](https://github.com/ArdaNTM/JAS/actions/runs/43788402100) 597 passed / 6 skipped, Release Lock PASS sha256:5258fbba7743aee83f74de39661cba4c2b2a7965f05770a916a3c4575bf596ca; Remote Persistence [run 43788402101](https://github.com/ArdaNTM/JAS/actions/runs/43788402101) PASS. Async fake-recognizer/player race fixtures, not real audio hardware proof.
