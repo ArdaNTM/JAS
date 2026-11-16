@@ -67,15 +67,20 @@ def _public_reference_url(value: object) -> str:
         raise ResearchMalformed("research URL is malformed") from exc
     if parts.scheme not in ("http", "https") or not host or not parts.netloc:
         raise ResearchMalformed("research URL must be HTTP(S)")
-    if parts.username or parts.password or port not in (None, 80, 443):
+    if "@" in parts.netloc or port not in (None, 80, 443):
         raise ResearchMalformed("research URL contains credentials or unusual port")
-    if host.casefold() in ("localhost",) or host.casefold().endswith((".localhost", ".local", ".internal", ".onion")):
+    canonical_host = host.casefold().rstrip(".")
+    if canonical_host == "localhost" or canonical_host.endswith((".localhost", ".local", ".internal", ".onion")):
         raise ResearchMalformed("research URL points to local resources")
     try:
-        parsed_ip = ipaddress.ip_address(host)
+        parsed_ip = ipaddress.ip_address(canonical_host)
     except ValueError:
-        if "." not in host or len(host) > 253:
+        if "." not in canonical_host or len(canonical_host) > 253:
             raise ResearchMalformed("research URL host is invalid")
+        # Reject numeric shorthand that URL clients may interpret as private IPs
+        # (e.g. 127.1) rather than an ordinary DNS hostname.
+        if all(ch in "0123456789." for ch in canonical_host):
+            raise ResearchMalformed("research URL host is ambiguous")
     else:
         if not parsed_ip.is_global:
             raise ResearchMalformed("research URL points to a non-public address")
