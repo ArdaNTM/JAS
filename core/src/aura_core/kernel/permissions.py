@@ -1,4 +1,6 @@
 from dataclasses import dataclass, field, replace
+import hashlib
+import json
 from datetime import UTC, datetime
 from enum import IntEnum, StrEnum
 from threading import RLock
@@ -266,6 +268,42 @@ class PermissionEngine:
             AuthorizationDecision.DENY,
             "No applicable explicit allow policy",
         )
+
+    def integrity_digest(self) -> str:
+        """Read-only, deterministic digest of current *effective policy inputs*.
+
+        This does not grant authority, sign a policy, or replace authorize().
+        An external signed registry baseline may use it to fail closed on
+        unexpected local policy/bundle changes between Gateway invocations.
+        """
+        with self._lock:
+            policies = tuple(self._policies.values())
+            bundle = self._policy_bundle
+        material = {
+            "bundle_digest": bundle.digest if bundle is not None else None,
+            "policies": [
+                {
+                    "policy_id": policy.policy_id,
+                    "policy_version": policy.policy_version,
+                    "principal_id": policy.principal_id,
+                    "capability_id": policy.capability_id,
+                    "operation_id": policy.operation_id,
+                    "resource_scope": policy.resource_scope,
+                    "authorization_level": int(policy.authorization_level),
+                    "decision": policy.decision.value,
+                    "priority": policy.priority,
+                    "expires_at": policy.expires_at.isoformat() if policy.expires_at else None,
+                    "revoked": policy.revoked,
+                    "conditions": dict(sorted(policy.conditions.items())),
+                }
+                for policy in sorted(policies, key=lambda item: item.policy_id)
+            ],
+        }
+        payload = json.dumps(
+            material, sort_keys=True, ensure_ascii=False,
+            separators=(",", ":"), allow_nan=False,
+        ).encode("utf-8")
+        return hashlib.sha256(payload).hexdigest()
 
     def audit_records(self) -> tuple[PermissionAuditRecord, ...]:
         with self._lock:
