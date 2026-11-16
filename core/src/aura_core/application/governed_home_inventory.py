@@ -73,6 +73,10 @@ def _parse(response: object) -> HomeInventory:
             payload = getattr(result, "structuredContent", None)
     if not isinstance(payload, dict):
         raise HomeInventoryInvalid("Home inventory must be structured")
+    # Errors may be inside MCP structured_content rather than the outer
+    # SDK envelope. They are never a successful empty device inventory.
+    if payload.get("status") == "failed" or payload.get("isError") is True:
+        raise HomeInventoryInvalid("Home inventory provider returned failure")
     devices = payload.get("devices")
     if not isinstance(devices, list) or len(devices) > 64:
         raise HomeInventoryInvalid("Home inventory exceeds bounded size")
