@@ -184,11 +184,13 @@ class FullDuplexSessionManager:
     def __init__(
         self, *, recognizer: SpeechRecognizer, synthesizer: SpeechSynthesizer,
         player: AudioPlayer, event_bus: EventBus | None = None,
+        prosody_analyzer: Any | None = None,
     ) -> None:
         self._recognizer = recognizer
         self._synthesizer = synthesizer
         self._player = player
         self._events = event_bus
+        self._prosody_analyzer = prosody_analyzer
         self._session_id: str | None = None
         self._state = "idle"
         self._transcript = ""
@@ -220,6 +222,35 @@ class FullDuplexSessionManager:
                 raise RuntimeError("Speech session ended before recognition started")
             self._state = "recognizing"
             generation = self._generation
+        if self._prosody_analyzer is not None:
+            try:
+                cues = await asyncio.to_thread(
+                    self._prosody_analyzer.analyze_consented_audio,
+                    audio,
+                    session_id=session_id,
+                )
+            except (ValueError, RuntimeError):
+                # Malformed prosody hints must not interrupt a valid STT session.
+                async with self._lock:
+                    if (self._generation == generation
+                            and self._session_id == session_id
+                            and self._state == "recognizing"):
+                        self._emit("SpeechProsodyAnalysisUnavailable", {})
+            else:
+                async with self._lock:
+                    # Advisory events must never leak from a closed/replaced session.
+                    if (self._generation == generation
+                            and self._session_id == session_id
+                            and self._state == "recognizing"):
+                        self._emit("SpeechProsodyAnalysisCompleted", {
+                            "delivery_style": cues.delivery_style,
+                            "confidence": cues.confidence,
+                        })
+            async with self._lock:
+                if (self._generation != generation
+                        or self._session_id != session_id
+                        or self._state != "recognizing"):
+                    raise RuntimeError("Speech recognition was superseded during prosody")
         try:
             transcript = (await self._recognizer.transcribe(audio, session_id=session_id)).strip()
         except BaseException:
