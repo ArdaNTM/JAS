@@ -217,3 +217,6 @@ Draft PR #130 HEAD 6214d571cfa9b29505e58f71650ac791ef02530f, real CapabilityRegi
 
 
 CI follow-up: first exact-head Core run for PR #131 reported 599 passed / 1 failed / 6 skipped. Failure was an invalid ServiceCategory.SERVICE reference; corrected to existing ServiceCategory.CORE and refreshed release-manifest.final.json. Corrected head `1ef3dc43818e13e74fe360ed1e7deedf6aad6415` rerun queued. Feature remains TESTING / NOT_ASSESSED.
+
+
+CI evidence update: corrected PR #131 head `1ef3dc43818e13e74fe360ed1e7deedf6aad6415` — Core Assurance PASS (600 passed, 6 skipped), bytecode compilation PASS, Final Release Lock PASS (`sha256:c5930ece97de538e8b4c87fa9f5fc27835bf479ebaaf19402c61c7c43b23cb98`). Remote Persistence Integration remains in progress. Feature remains partial; no end-to-end Owner acceptance.
