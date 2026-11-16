@@ -4713,40 +4713,65 @@
       "id": 101,
       "name": "Sandbox",
       "phase": 1,
-      "status": "NOT_STARTED",
-      "assessment": "NOT_ASSESSED",
-      "dependencies": [],
-      "code_paths": [],
-      "documentation_paths": [],
-      "test_commands": [],
-      "test_results": "NOT_RUN",
-      "security_review": "NOT_REVIEWED",
+      "status": "TESTING",
+      "assessment": "PARTIAL_VERIFIED",
+      "dependencies": [
+        99,
+        100
+      ],
+      "code_paths": [
+        "core/src/aura_core/application/sandbox_runner.py",
+        "core/src/aura_core/application/sandbox_contract.py"
+      ],
+      "documentation_paths": [
+        "docs/22_IMPLEMENTATION/AURA_SANDBOX_OUTPUT_SECURITY.md"
+      ],
+      "test_commands": [
+        "cd core && uv run pytest -q tests/test_sandbox_output_guard.py tests/test_sandbox_contract.py",
+        "cd core && uv run pytest -q tests",
+        "cd core && uv run python scripts/verify_final_lock.py"
+      ],
+      "test_results": "PASS: PR #110 exact HEAD 019b62e327b21bb3c1538cac7dafa3a2eab6ad78 Core Assurance 605 passed 6 skipped, Final Release Lock PASS; Remote Persistence PASS. Simulated Popen, not real Docker.",
+      "security_review": "PARTIAL_VERIFIED: combined lock-protected output byte budget, race-free post-reader classification, strict digest-pinned Docker image argv, denial before any subprocess, no host execution fallback.",
       "acceptance": "NOT_VERIFIED",
-      "commit": "",
-      "pull_request": "",
-      "blockers": [],
-      "technical_goal": "",
-      "user_capability": "",
-      "integration": "",
-      "hardware_requirements": "",
-      "license_review": "NOT_REVIEWED",
-      "local_offline": "NOT_VERIFIED",
-      "notes": "Existing JAS code may already provide part of this feature; audit required.",
-      "existing_jas_state": "NOT_ASSESSED",
-      "proposed_technology": "NOT_ASSESSED",
-      "license_terms": "NOT_ASSESSED",
-      "commercial_terms": "NOT_ASSESSED",
-      "integration_test_criteria": "NOT_ASSESSED",
-      "unit_test_criteria": "NOT_ASSESSED",
-      "security_test_criteria": "NOT_ASSESSED",
-      "acceptance_criteria": "NOT_ASSESSED",
-      "performance_requirements": "NOT_ASSESSED",
-      "complexity": "NOT_ASSESSED",
-      "known_limitations": "NOT_ASSESSED",
-      "missing_components": [],
-      "official_links": [],
-      "alternatives": [],
-      "hardware_review": "NOT_REVIEWED"
+      "commit": "019b62e327b21bb3c1538cac7dafa3a2eab6ad78",
+      "pull_request": "https://github.com/ArdaNTM/JAS/pull/110",
+      "blockers": [
+        "No live Docker host escape, cgroup, network isolation or supply-chain acceptance tests; fake-process simulation cannot prove physical isolation.",
+        "No end-to-end Owner/MCP Gateway integration acceptance or F2.7 hardware proof."
+      ],
+      "technical_goal": "Fail-closed Docker sandbox: enforce combined output cap after stream drains and reject malformed/option-like image references.",
+      "user_capability": "Authorized sandbox jobs return bounded output; quickly exiting oversized jobs cannot be reported completed.",
+      "integration": "Changes existing DockerPythonRunner only; maintains authorizer callback and bounded Docker isolation flags.",
+      "hardware_requirements": "Docker/cgroup/host isolation requires real hardware; simulated tests only.",
+      "license_review": "NOT_APPLICABLE: Python standard library only, no added dependencies.",
+      "local_offline": "PARTIAL_VERIFIED: fake-process tests offline, not Docker runtime.",
+      "notes": "Draft PR #110 isolated head lock and CI passed; no automatic merge or live Docker evidence.",
+      "existing_jas_state": "Existing DockerPythonRunner output streams each used full per-stream budget and determined status before joining drain threads; permissive image regex accepted option-like image strings.",
+      "proposed_technology": "Existing subprocess/threading/Docker image digest pin, one shared capture lock, strict argv grammar.",
+      "license_terms": "Existing JAS Python stdlib and Docker runtime dependencies only.",
+      "commercial_terms": "No new dependency license.",
+      "integration_test_criteria": "Actual authorized Docker launch under representative Windows/Ubuntu OSWorld isolation and resource limits, no host access, cleanup on timeout.",
+      "unit_test_criteria": "Output from concurrent pipes shares max byte budget, classified after threads join, normal/failed exits remain deterministic.",
+      "security_test_criteria": "Malicious image option strings, missing digest, nonauthorized jobs, stream overflow and exit-race must fail closed.",
+      "acceptance_criteria": "Validated live Docker escape/network/fs/process isolation and independently authorized Gateway job run under Owner-approved production trust.",
+      "performance_requirements": "Output buffer <=max_output_bytes shared streams, process max wall time and cgroup memory existing, no live benchmark.",
+      "complexity": "MEDIUM bounded runner fix; HIGH independent production runtime attestation.",
+      "known_limitations": "No Docker host/guest execution evidence; subprocess fake cannot model kernel or cgroup boundaries.",
+      "missing_components": [
+        "Real Docker OSWorld security acceptance",
+        "Container image provenance and sandbox escape tests",
+        "Owner/Gateway end-to-end isolated execution acceptance"
+      ],
+      "official_links": [
+        "https://docs.docker.com/engine/security/",
+        "https://docs.python.org/3/library/subprocess.html"
+      ],
+      "alternatives": [
+        "Rootless Podman with strict user namespaces",
+        "Firecracker microVM with externally verified policy"
+      ],
+      "hardware_review": "NOT_VERIFIED: no live Docker hardware acceptance."
     },
     {
       "id": 102,
@@ -4807,40 +4832,63 @@
       "id": 103,
       "name": "Kimlik doğrulama",
       "phase": 1,
-      "status": "NOT_STARTED",
-      "assessment": "NOT_ASSESSED",
-      "dependencies": [],
-      "code_paths": [],
-      "documentation_paths": [],
-      "test_commands": [],
-      "test_results": "NOT_RUN",
-      "security_review": "NOT_REVIEWED",
+      "status": "TESTING",
+      "assessment": "PARTIAL_VERIFIED",
+      "dependencies": [
+        99
+      ],
+      "code_paths": [
+        "core/src/aura_core/security/auth.py",
+        "core/src/aura_core/security/ws_ticket.py"
+      ],
+      "documentation_paths": [
+        "docs/22_IMPLEMENTATION/AURA_LEGACY_WS_AUTH_HARDENING.md"
+      ],
+      "test_commands": [
+        "cd core && uv run pytest -q tests/test_legacy_ws_auth.py",
+        "cd core && uv run pytest -q tests",
+        "cd core && uv run python scripts/verify_final_lock.py"
+      ],
+      "test_results": "PASS: PR #109 exact HEAD da5e2948079c36dcbf2e59ad47c5b6b11d7c3e90 Core Assurance 601 passed 6 skipped, Final Release Lock PASS; Remote Persistence PASS. Initial PR head lock mismatch was fixed before success.",
+      "security_review": "PARTIAL_VERIFIED: remove hard-coded fallback, explicit >=32-byte UTF-8 configured secret, bounded constant-time byte comparison; negative invalid/weak/missing credentials, Unicode, replay ticket tests.",
       "acceptance": "NOT_VERIFIED",
-      "commit": "",
-      "pull_request": "",
-      "blockers": [],
-      "technical_goal": "",
-      "user_capability": "",
-      "integration": "",
-      "hardware_requirements": "",
-      "license_review": "NOT_REVIEWED",
-      "local_offline": "NOT_VERIFIED",
-      "notes": "Existing JAS code may already provide part of this feature; audit required.",
-      "existing_jas_state": "NOT_ASSESSED",
-      "proposed_technology": "NOT_ASSESSED",
-      "license_terms": "NOT_ASSESSED",
-      "commercial_terms": "NOT_ASSESSED",
-      "integration_test_criteria": "NOT_ASSESSED",
-      "unit_test_criteria": "NOT_ASSESSED",
-      "security_test_criteria": "NOT_ASSESSED",
-      "acceptance_criteria": "NOT_ASSESSED",
-      "performance_requirements": "NOT_ASSESSED",
-      "complexity": "NOT_ASSESSED",
-      "known_limitations": "NOT_ASSESSED",
-      "missing_components": [],
-      "official_links": [],
-      "alternatives": [],
-      "hardware_review": "NOT_REVIEWED"
+      "commit": "da5e2948079c36dcbf2e59ad47c5b6b11d7c3e90",
+      "pull_request": "https://github.com/ArdaNTM/JAS/pull/109",
+      "blockers": [
+        "Legacy verification helper not proven active in current live WebSocket route; live WebSocketTicketManager already separate.",
+        "No Owner/device identity attestation, authenticated principal enrollment, rotation or deployment acceptance."
+      ],
+      "technical_goal": "Eliminate insecure default legacy WebSocket shared secret and fail closed on malformed or unconfigured credentials.",
+      "user_capability": "Legacy integration accepts only explicitly configured strong secret, without revealing secret in errors.",
+      "integration": "Existing compatibility verify_ws_token helper only; preserves modern one-time ticket manager.",
+      "hardware_requirements": "No hardware for helper; production device identity verification missing.",
+      "license_review": "NOT_APPLICABLE: Python standard-library hmac and existing FastAPI; no new package.",
+      "local_offline": "PARTIAL_VERIFIED: standalone credential comparison is local/offline.",
+      "notes": "Old CI failed Release Lock due to SHA preparation error, corrected and rerun PASS on exact head. Full identity and currently live ticket flow not changed. Draft/unmerged.",
+      "existing_jas_state": "Main contains an optional legacy AURA_WS_SECRET fallback equal to a public hard-coded example secret; separate modern WebSocketTicketManager already enforces single-use tickets.",
+      "proposed_technology": "Explicit strong environment credentials, Python hmac.compare_digest, existing WebSocketTicketManager unchanged.",
+      "license_terms": "PSF standard library and existing dependencies.",
+      "commercial_terms": "No new license.",
+      "integration_test_criteria": "Verified deployment of authenticated principal/device/Owner with credential rotation and active task WebSocket ownership checks.",
+      "unit_test_criteria": "Strong explicit token success, old default/missing/weak/wrong tokens denied and one-use modern ticket unchanged.",
+      "security_test_criteria": "No fallback credential, no whitespace/control/invalid-Unicode, constant-time byte comparison and no secret leakage.",
+      "acceptance_criteria": "Production owner/device identity assurance, secure credential bootstrap/rotation, explicit multi-principal isolation and authenticated Gateway identity verified.",
+      "performance_requirements": "Bound token up to 4096 chars; no latency benchmark.",
+      "complexity": "LOW legacy verifier hardening; HIGH complete trusted identity.",
+      "known_limitations": "Legacy helper may be unused in live route. No TOTP, WebAuthn, mTLS or Owner-attested session.",
+      "missing_components": [
+        "Production identity and credential lifecycle",
+        "Owner device-bound proof and real active route identity verification"
+      ],
+      "official_links": [
+        "https://docs.python.org/3/library/hmac.html",
+        "https://fastapi.tiangolo.com/advanced/websockets/"
+      ],
+      "alternatives": [
+        "Authenticated expiring one-time WebSocket ticket manager already present",
+        "Device-bound mTLS or WebAuthn for future Owner identity"
+      ],
+      "hardware_review": "NOT_APPLICABLE for helper tests; real devices unverified."
     },
     {
       "id": 104,

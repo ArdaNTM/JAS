@@ -29,3 +29,11 @@ Feature #112 isolated XLSX report generation takes already-authorized bounded da
 ## ADR-ENG-006 — 2026-11-16: approval list and decision are separately policy-governed
 
 Feature #100 security hardening uses current authenticated principal + existing Core PermissionEngine. Requester can see their pending records but cannot self-approve. Cross-principal enumeration and decisions require distinct explicit policy ALLOW with exact record scope; absent registry/policy is DENY. Approver identity is not authenticated merely by a client header; real Owner credential assurance and fully wired Gateway approval lifecycle remain acceptance gaps.
+
+## ADR-ENG-007 — legacy authentication must never have a shipped default secret
+
+Existing compatibility WebSocket credential comparison now requires explicitly configured strong secret and uses constant-time UTF-8 comparison. It deliberately does not change one-time WebSocket ticket ownership or create an Owner identity. Real device-bound principal authentication remains independent.
+
+## ADR-ENG-008 — sandbox output safety requires post-drain status and a combined budget
+
+DockerPythonRunner uses one capture byte budget over both pipes under a synchronization lock. A job must not be recorded as completed before reader threads finish and output overflow has been observed; invalid option-looking image references are denied before a container can start. Neither check substitutes for actual Docker/kernel isolation or Gateway authorization.

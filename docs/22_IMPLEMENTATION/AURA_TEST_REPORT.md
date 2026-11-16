@@ -170,3 +170,12 @@ Negative security tests: wrong signing key/scope, forged checkpoint MAC, record 
 | [#108](https://github.com/ArdaNTM/JAS/pull/108) | `46b1660bc95f` | [598 passed, 6 skipped; lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43780300467) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43780300516) |
 
 #107 isolated local 8-pass + openpyxl load validation is not CI. #108 Core tests include real PermissionEngine and registry, approval store, FastAPI TestClient checks. These runs are isolated branches, not cumulative acceptance or proof of trustworthy Owner identity.
+
+## PR #109–#110 exact-head evidence
+
+| PR | Head | Core and Final Release Lock | Persistence |
+| --- | --- | --- | --- |
+| [#109](https://github.com/ArdaNTM/JAS/pull/109) | `da5e2948079c` | [601 passed, 6 skipped; lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43781476118) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43781476157) |
+| [#110](https://github.com/ArdaNTM/JAS/pull/110) | `019b62e327b2` | [605 passed, 6 skipped; lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43781719023) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43781719040) |
+
+#109 initial head failed manifest byte digest (subsequently corrected); final CI PASS. #110 tests use a fake process, not real Docker; no physical isolation claims. Independent PR-head passes are not merged acceptance.

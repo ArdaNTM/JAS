@@ -23,3 +23,9 @@
 - #107 Draft `02f0ab2f242135b873e667710fe6ac29d4a198dc`: #112 partial XLSX, Core run 43779626496 PASS 600/6, release lock PASS, Persistence run 43779626363 PASS.
 - #108 Draft `46b1660bc95ff909cb5409f3b651c4030067d5ed`: #100 approval policy hardening, Core run 43780300467 PASS 598/6, release lock PASS, Persistence run 43780300516 PASS.
 - All feature PRs independent and unmerged; main b1ffe6f5... unchanged. Tracker **54 NOT_STARTED / 61 TESTING / 2 RESEARCHING**. No full acceptance. Next: strengthen authenticated identity (#103) only where existing JAS routes use it, and confirm owner trust pipeline; do not bypass authorized Gateway or F2.7 boundaries.
+
+## PR #109–#110 continuation (2026-11-16)
+
+- #109 Draft final head `da5e2948079c36dcbf2e59ad47c5b6b11d7c3e90`, Core run 43781476118 601/6 + Release Lock PASS, Persistence run 43781476157 PASS; #103 partial legacy credential safety only.
+- #110 Draft head `019b62e327b21bb3c1538cac7dafa3a2eab6ad78`, Core run 43781719023 605/6 + Release Lock PASS, Persistence run 43781719040 PASS; #101 partial Docker runner output and image validation; no hardware acceptance.
+- Tracker now **52 NOT_STARTED / 63 TESTING / 2 RESEARCHING**, zero COMPLETED. No merges, main b1ffe6f5... unchanged. #111 Kokoro voice profile work is underway; do not mark verified until latest exact HEAD CI passes, then synchronize tracker before session end.

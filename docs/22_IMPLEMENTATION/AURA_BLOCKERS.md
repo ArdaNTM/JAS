@@ -96,3 +96,9 @@ After **explicit Owner merge approval**, integrate in dependency order, rebase e
 - #107 generates safe OOXML in memory only. No user-authorized export/download/durable storage route, PDF/PPTX/DOCX, Office cross-client acceptance, or production data provenance. No new MCP authority.
 - #108 approval router security now rejects cross-principal disclosure/decision by default without existing PermissionEngine ALLOW. Its reviewed component may not be mounted by the production application; explicit capability/policies and actual Owner credential/identity acceptance are absent. Must not confuse bearer possession with independent operator authorization.
 - Both releases independently lock their main-based trees. Rebuild a combined source-lock manifest in approved integration order and rerun all CI before merge. Do not mark COMPLETED.
+
+## PR #109/#110 missing full acceptance
+
+- #103 legacy WebSocket helper has no static default secret now, but modern WebSocketTicketManager identity and Owner/device-trust acceptance are separate. No verified real production credentials or rotation.
+- #101 bounded Docker runtime output and digest-pinned image checks are simulated with fake subprocesses; real Docker/OSWorld cgroup, network, filesystem, image provenance, threat boundary and Owner end-to-end verification still pending. Do not treat fake tests as hardware proof.
+- PR #109 and #110 are Draft and remain independently source-locked off main. Approved merge requires rebased complete manifest, integrated CI and explicit human authorization.

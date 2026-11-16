@@ -136,3 +136,7 @@ The tracker dependency arrays for unassessed goals remain conservative; these gr
 - #112 bounded offline XLSX serializer implemented partially and tested on Draft PR #107; full document/presentation suite and authenticated export missing.
 - #100 explicit PermissionEngine-gated cross-principal approval views/decisions implemented partially and tested on Draft PR #108; no new implicit review authority. Real operator identity/policy composition/Owner acceptance missing.
 - Exact-head Core, Persistence and Release Lock PASS on each isolated PR, not a combined build. Tracker status **61 TESTING / 2 RESEARCHING / 54 NOT_STARTED**, zero COMPLETED. Continue priority review of identity (#103), core immutability (#106), sandbox (#101), secure memory (#104) and remaining phases without requiring any intermediate feature merge.
+
+## Additional security boundary continuation — #101 and #103
+
+Draft PR #109 closes the hardcoded legacy WS credential risk (#103 PARTIAL); Draft PR #110 fixes actual Docker runner output races and malformed image references (#101 PARTIAL). Both independently pass exact-head Core/Remote Persistence/Release Lock. Tracker counts **63 TESTING / 2 RESEARCHING / 52 NOT_STARTED** and zero COMPLETED. Continue voice #18 integration (PR #111 pending), then research #35 without direct fetch outside MCP Gateway, and remaining hardware-gated security #104/#106.
