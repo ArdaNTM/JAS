@@ -204,3 +204,13 @@ PR #128 initially failed one *real* negative test: nested MCP structured status=
 
 ## 2026-11-16 — PR #130 safe skill/workflow proposal (#49)
 Draft PR #130 HEAD 6214d571cfa9b29505e58f71650ac791ef02530f, real CapabilityRegistry and SkillValidator with disabled untrusted declarative candidates, no tool dispatch. Core Assurance 633 passed, 6 skipped (run 43793662855), Final Release Lock PASS, Persistence PASS (43793662847). No sandbox replay/Owner consent/production skill promotion. https://github.com/ArdaNTM/JAS/pull/130
+
+
+## 2026-11-16 — Feature #17 local prosody analysis (Draft PR #131)
+
+- Added bounded PCM WAV acoustic analysis (RMS/peak, pauses, voiced ratio and autocorrelation pitch) and metadata-only Kernel EventBus publication.
+- Registered the service through the existing ServiceRegistry and added optional FullDuplexSessionManager injection.
+- Added deterministic synthetic mono/stereo and session integration tests.
+- Draft PR: https://github.com/ArdaNTM/JAS/pull/131 (head `993677d010473a01ba0a677740d5ec22b99a0ae1`).
+- Exact-head Core CI was queued at last check; no test or release-lock success is claimed. Feature remains TESTING / PARTIAL_VERIFIED.
+- Remaining: root composition auto-wiring, non-WAV decode/resampling, real-audio and performance validation, multilingual calibration, UI/TTS adaptation and independent review.
