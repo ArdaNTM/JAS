@@ -84,12 +84,13 @@ def _bounded_text(value: str, name: str, max_chars: int) -> str:
 def _arguments(value: object) -> tuple[tuple[str, str | int | float | bool | None], ...]:
     if not isinstance(value, dict) or len(value) > 12:
         raise ValueError("Only bounded flat JSON-safe argument maps are accepted")
+    if any(not isinstance(key, str) or not _KEY.fullmatch(key) for key in value):
+        raise ValueError("Invalid argument key")
     out = []
     for key, item in sorted(value.items()):
-        if not isinstance(key, str) or not _KEY.fullmatch(key):
-            raise ValueError("Invalid argument key")
         if isinstance(item, str):
-            if len(item) > 256 or any(ord(c) < 32 or ord(c) == 127 or 0xD800 <= ord(c) <= 0xDFFF for c in item):
+            if (len(item) > 256 or "${" in item or "{{" in item or "}}" in item
+                    or any(ord(c) < 32 or ord(c) == 127 or 0xD800 <= ord(c) <= 0xDFFF for c in item)):
                 raise ValueError("Invalid argument text")
         elif item is None or type(item) in (bool, int):
             if type(item) is int and abs(item) > 999_999_999_999:
