@@ -178,6 +178,9 @@ def test_ocr_process_timeout_is_killed_and_error_redacted(monkeypatch):
     )
     provider._timeout_seconds = 0.001
     class SlowProcess(_FakeProcess):
+        # A real running subprocess has returncode=None until termination.
+        returncode = None
+
         async def communicate(self, payload):
             await asyncio.sleep(1)
             return b"SECRET_TOKEN", b""
