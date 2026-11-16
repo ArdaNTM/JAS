@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-10-31T00:45:29.771Z",
-  "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
+  "generated_at": "2026-11-16T02:29:52.648Z",
+  "git_commit": "3db9ed142a0d6de5695208af9a11535d4d5fd3e5",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
-  "file_count": 233,
+  "release_digest": "sha256:cfc508ab7888e7ec095145e0e30a86eb3c6923a9e6a9db74495d88f4cd674df4",
+  "file_count": 234,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -247,6 +247,10 @@
     {
       "path": "core/src/aura_core/application/governed_autonomous_loop.py",
       "sha256": "f511b4d57d78d4a2b8c85e7fa039283251158415add66e3777d1091d760e923a"
+    },
+    {
+      "path": "core/src/aura_core/application/governed_home_inventory.py",
+      "sha256": "101b3719ae20fc242859d435f2abb9e3f3f06fb0247ace4db93fa92d250f387c"
     },
     {
       "path": "core/src/aura_core/application/health_api.py",
