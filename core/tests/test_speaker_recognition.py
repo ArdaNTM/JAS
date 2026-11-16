@@ -28,13 +28,14 @@ def build(*, vectors, allowed=True):
         similarity_threshold=0.9,
     )
     if allowed:
-        for operation in (SpeakerRecognitionService.OPERATION_ID, "voice.speaker.session.close"):
-            permissions.add_policy(PermissionPolicy(
-                policy_id=f"speaker:{operation}", policy_version="1",
-                principal_id="local-user", capability_id=SpeakerRecognitionService.CAPABILITY_ID,
-                operation_id=operation, resource_scope="voice:session:session-1",
-                authorization_level=AuthorizationLevel.READ, decision=AuthorizationDecision.ALLOW,
-            ))
+        for session_id in ("session-1", "session-2"):
+            for operation in (SpeakerRecognitionService.OPERATION_ID, "voice.speaker.session.close"):
+                permissions.add_policy(PermissionPolicy(
+                    policy_id=f"speaker:{session_id}:{operation}", policy_version="1",
+                    principal_id="local-user", capability_id=SpeakerRecognitionService.CAPABILITY_ID,
+                    operation_id=operation, resource_scope=f"voice:session:{session_id}",
+                    authorization_level=AuthorizationLevel.READ, decision=AuthorizationDecision.ALLOW,
+                ))
     while bus.snapshot()["queued_total"]:
         asyncio.run(bus.dispatch_once())
     return service, provider, bus
