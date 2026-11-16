@@ -60,46 +60,163 @@ class VisualTaskEvidence:
     authorized_actuation: bool = False
 
 
+_PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
+
+
+def _dimensions(width: int, height: int) -> None:
+    if (
+        type(width) is not int or type(height) is not int
+        or not 1 <= width <= 4096 or not 1 <= height <= 4096
+        or width * height > _MAX_PIXELS
+    ):
+        raise VisualVerificationUnavailable("Image geometry exceeds safe bound")
+
+
+def _scaled_dimensions(width: int, height: int) -> tuple[int, int]:
+    factor = min(1.0, 320 / max(width, height))
+    return max(1, int(width * factor)), max(1, int(height * factor))
+
+
+def _decode_png_rgb(image: bytes):
+    """Bounded 8-bit noninterlaced PNG RGB/gray/RGBA decoder using stdlib.
+
+    No Pillow is required for the common screenshot PNG path. CRC, zlib
+    expansion, PNG scanline filters and output dimensions are checked.
+    """
+    import struct
+    import zlib
+
+    if not image.startswith(_PNG_SIGNATURE):
+        raise VisualVerificationUnavailable("Invalid PNG image signature")
+    pos = len(_PNG_SIGNATURE)
+    count = 0
+    width = height = bpp = None
+    idats = []
+    finished = False
+    while pos + 12 <= len(image) and count < 256:
+        length = int.from_bytes(image[pos:pos + 4], "big")
+        kind = image[pos + 4:pos + 8]
+        if length > 8 * 1024 * 1024 or pos + 12 + length > len(image):
+            raise VisualVerificationUnavailable("Oversized or truncated PNG chunk")
+        payload = image[pos + 8:pos + 8 + length]
+        crc = int.from_bytes(image[pos + 8 + length:pos + 12 + length], "big")
+        if zlib.crc32(kind + payload) != crc:
+            raise VisualVerificationUnavailable("PNG chunk CRC mismatch")
+        pos += length + 12
+        count += 1
+        if count == 1 and kind != b"IHDR":
+            raise VisualVerificationUnavailable("PNG header must be first")
+        if kind == b"IHDR":
+            if width is not None or len(payload) != 13:
+                raise VisualVerificationUnavailable("Invalid PNG header")
+            width, height, bits, color, comp, filt, interlace = struct.unpack(">IIBBBBB", payload)
+            _dimensions(width, height)
+            if bits != 8 or color not in (0, 2, 6) or comp or filt or interlace:
+                raise VisualVerificationUnavailable("Unsupported PNG layout")
+            bpp = {0: 1, 2: 3, 6: 4}[color]
+        elif kind == b"IDAT":
+            if width is None:
+                raise VisualVerificationUnavailable("PNG data precedes header")
+            idats.append(payload)
+        elif kind == b"IEND":
+            if length != 0:
+                raise VisualVerificationUnavailable("Invalid PNG termination")
+            finished = True
+            break
+    if not finished or pos != len(image) or not idats or width is None or bpp is None:
+        raise VisualVerificationUnavailable("PNG image stream is incomplete")
+    expected = height * (1 + width * bpp)
+    try:
+        inflator = zlib.decompressobj()
+        raw = inflator.decompress(b"".join(idats), expected + 1)
+    except zlib.error as exc:
+        raise VisualVerificationUnavailable("PNG compressed scanlines are invalid") from exc
+    if (len(raw) != expected or not inflator.eof or inflator.unused_data
+            or inflator.unconsumed_tail):
+        raise VisualVerificationUnavailable("PNG decompressed size is invalid")
+    small_w, small_h = _scaled_dimensions(width, height)
+    selected_rows = {(i * height) // small_h: i for i in range(small_h)}
+    output = bytearray(small_w * small_h * 3)
+    stride = width * bpp
+    previous = bytearray(stride)
+    offset = 0
+    for y in range(height):
+        mode = raw[offset]
+        offset += 1
+        scan = bytearray(raw[offset:offset + stride])
+        offset += stride
+        if mode > 4:
+            raise VisualVerificationUnavailable("Invalid PNG scanline filter")
+        for i in range(stride):
+            left = scan[i - bpp] if i >= bpp else 0
+            above = previous[i]
+            above_left = previous[i - bpp] if i >= bpp else 0
+            if mode == 1:
+                predicted = left
+            elif mode == 2:
+                predicted = above
+            elif mode == 3:
+                predicted = (left + above) // 2
+            elif mode == 4:
+                p = left + above - above_left
+                distances = (abs(p - left), abs(p - above), abs(p - above_left))
+                predicted = (left, above, above_left)[distances.index(min(distances))]
+            else:
+                predicted = 0
+            scan[i] = (scan[i] + predicted) & 255
+        if y in selected_rows:
+            target_y = selected_rows[y]
+            for x in range(small_w):
+                at = ((x * width) // small_w) * bpp
+                if bpp == 1:
+                    r = g = b = scan[at]
+                else:
+                    r, g, b = scan[at:at + 3]
+                    if bpp == 4:
+                        alpha = scan[at + 3]
+                        r, g, b = (
+                            (c * alpha + 255 * (255 - alpha) + 127) // 255
+                            for c in (r, g, b)
+                        )
+                dest = (target_y * small_w + x) * 3
+                output[dest:dest + 3] = bytes((r, g, b))
+        previous = scan
+    return (width, height), (small_w, small_h), bytes(output)
+
+
 class LocalPixelChangeComparator:
-    """Real in-memory Pillow image decoding and deterministic RGB difference."""
+    """Real bounded RGB pixel decoder with stdlib PNG and optional Pillow JPEG/WebP."""
 
     def _decode(self, image: bytes):
         _validate_image(image)
+        if image.startswith(_PNG_SIGNATURE):
+            return _decode_png_rgb(image)
         try:
             from PIL import Image, ImageOps
         except ImportError as exc:
-            raise VisualVerificationUnavailable("Local Pillow image decoder unavailable") from exc
+            raise VisualVerificationUnavailable(
+                "Pillow is required for non-PNG image decoding"
+            ) from exc
         try:
             with Image.open(io.BytesIO(image)) as source:
                 if source.format not in _SUPPORTED:
                     raise VisualVerificationUnavailable("Unsupported local image format")
                 width, height = source.size
-                if (
-                    type(width) is not int or type(height) is not int
-                    or not 1 <= width <= 4096 or not 1 <= height <= 4096
-                    or width * height > _MAX_PIXELS
-                ):
-                    raise VisualVerificationUnavailable("Image pixels exceed safe bound")
+                _dimensions(width, height)
                 pixels = ImageOps.exif_transpose(source).convert("RGB")
                 pixels.thumbnail((320, 320))
-                return (width, height), pixels
+                return (width, height), pixels.size, pixels.tobytes()
         except VisualVerificationUnavailable:
             raise
         except Exception as exc:
             raise VisualVerificationUnavailable("Untrusted image could not be decoded") from exc
 
     def compare(self, before: bytes, after: bytes) -> PixelChangeEvidence:
-        before_size, a = self._decode(before)
-        after_size, b = self._decode(after)
-        if before_size != after_size or a.size != b.size:
+        before_size, before_scaled, a = self._decode(before)
+        after_size, after_scaled, b = self._decode(after)
+        if before_size != after_size or before_scaled != after_scaled or len(a) != len(b):
             raise VisualVerificationUnavailable("Image captures have incomparable dimensions")
-        try:
-            from PIL import ImageChops, ImageStat
-            difference = ImageChops.difference(a, b)
-            mean = ImageStat.Stat(difference).mean
-        except Exception as exc:
-            raise VisualVerificationUnavailable("Local pixel comparison failed") from exc
-        normalized = (sum(mean) / 3.0) / 255.0
+        normalized = sum(abs(x - y) for x, y in zip(a, b)) / (len(a) * 255)
         if not math.isfinite(normalized) or not 0 <= normalized <= 1:
             raise VisualVerificationUnavailable("Nonfinite pixel difference")
         if normalized <= 0.008:
