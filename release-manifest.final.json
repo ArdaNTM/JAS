@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-16T03:45:00.000Z",
-  "git_commit": "1a4f211a7f1cfa63eca8e9973450c4373d6735d1",
+  "generated_at": "2026-11-16T03:19:52.123Z",
+  "git_commit": "f4a109edd5affea3ce26829388ff23de56bbf30d",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:3e64414dcc587a5c46cf6620cf861c01a81f8f8c2aced315360161f5ac56cd19",
-  "file_count": 235,
+  "release_digest": "sha256:6af648fb50b923cfb05111286f1754dd0b23eea1adfd09471aac0cccfaf48870",
+  "file_count": 234,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -123,10 +123,6 @@
     {
       "path": "core/pyproject.toml",
       "sha256": "e9659b037281acb116259ac9edd1c394ac318a3b32e5c2c6a4e91a1271abe567"
-    },
-    {
-      "path": "core/scripts/piper_tts_mcp.py",
-      "sha256": "d485436123a01d35e451fe5636cb3c84c983c300df7a8f280d4d5ff0980798fc"
     },
     {
       "path": "core/src/aura_core/__init__.py",
