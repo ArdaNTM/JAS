@@ -83,3 +83,6 @@ Generic home discovery uses exact Principal + PermissionEngine + MCPGateway auth
 
 ## ADR-ENG-022 — per-entity HA read is separately authorized
 A device present in an approved inventory does not gain read or action authority. Home Assistant-style state reads require new exact entity-scope Gateway permission and matching registered provider identity. This stacked read-only layer never controls physical devices.
+
+## ADR-ENG-023 — skill proposals are immutable data, never new authority
+Skill proposals can reference only explicit low-risk read-oriented existing capabilities and operations. Generated candidates start disabled with no provenance; existing SkillValidator must deny promotion. No implicit PermissionEngine/Gateway authorization, ProviderRegistry registration, code evaluation, script execution or Owner consent.

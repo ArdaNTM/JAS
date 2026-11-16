@@ -2497,40 +2497,66 @@
       "id": 49,
       "name": "Yeni beceri ve iş akışı oluşturma",
       "phase": 5,
-      "status": "NOT_STARTED",
-      "assessment": "NOT_ASSESSED",
-      "dependencies": [],
-      "code_paths": [],
-      "documentation_paths": [],
-      "test_commands": [],
-      "test_results": "NOT_RUN",
-      "security_review": "NOT_REVIEWED",
+      "status": "TESTING",
+      "assessment": "PARTIAL_VERIFIED",
+      "dependencies": [
+        99,
+        100,
+        103,
+        101
+      ],
+      "code_paths": [
+        "core/src/aura_core/learning/governed_skill_proposals.py",
+        "core/src/aura_core/learning/skill_library.py",
+        "core/src/aura_core/learning/skill_validation.py"
+      ],
+      "documentation_paths": [
+        "docs/22_IMPLEMENTATION/AURA_SKILL_PROPOSAL_PREVIEW.md"
+      ],
+      "test_commands": [
+        "cd core && uv run pytest -q tests/test_governed_skill_proposals.py",
+        "cd core && uv run pytest -q",
+        "cd core && uv run python scripts/verify_final_lock.py"
+      ],
+      "test_results": "PASS: Draft PR #130 exact HEAD 6214d571cfa9b29505e58f71650ac791ef02530f Core Assurance run 43793662855: 633 passed, 6 skipped; Final Release Lock PASS sha256:fc6280614c58cb575e44a9cb8163d0d8a63df62142f392300f07a88160859468; Remote Persistence run 43793662847 PASS.",
+      "security_review": "PARTIAL_VERIFIED: real CapabilityRegistry/ServiceRegistry/ProviderRegistry tests; low-risk allowlisted read-oriented MCP capability/operation only, flat bounded args, template injection denial, always disabled zero-confidence candidate, existing SkillValidator NO_PROVENANCE denial; no execution or policy grant.",
       "acceptance": "NOT_VERIFIED",
-      "commit": "",
-      "pull_request": "",
-      "blockers": [],
-      "technical_goal": "",
-      "user_capability": "",
-      "integration": "",
-      "hardware_requirements": "",
-      "license_review": "NOT_REVIEWED",
-      "local_offline": "NOT_VERIFIED",
-      "notes": "Existing JAS code may already provide part of this feature; audit required.",
-      "existing_jas_state": "NOT_ASSESSED",
-      "proposed_technology": "NOT_ASSESSED",
-      "license_terms": "NOT_ASSESSED",
-      "commercial_terms": "NOT_ASSESSED",
-      "integration_test_criteria": "NOT_ASSESSED",
-      "unit_test_criteria": "NOT_ASSESSED",
-      "security_test_criteria": "NOT_ASSESSED",
-      "acceptance_criteria": "NOT_ASSESSED",
-      "performance_requirements": "NOT_ASSESSED",
-      "complexity": "NOT_ASSESSED",
-      "known_limitations": "NOT_ASSESSED",
-      "missing_components": [],
-      "official_links": [],
-      "alternatives": [],
-      "hardware_review": "NOT_REVIEWED"
+      "commit": "6214d571cfa9b29505e58f71650ac791ef02530f",
+      "pull_request": "https://github.com/ArdaNTM/JAS/pull/130",
+      "blockers": [
+        "No authenticated Owner/sandbox/replay/promotion flow or actual Gateway execution integration; generated candidate is deliberately non-executable.",
+        "Provider category/low risk metadata does not independently prove remote tool cannot mutate resources; real tool policies and schemas require separate authorization."
+      ],
+      "technical_goal": "Only create bounded, immutable read-only registered-capability workflow preview data and disabled Skill candidates using existing JAS registries and validator.",
+      "user_capability": "Inspect 1–8-step declarative candidate workflow without installing/automatically promoting a skill or executing a provider.",
+      "integration": "Real CapabilityRegistry, existing Skill/SkillStep/SkillValidator. No new provider registration, no direct tool execution, no PermissionEngine bypass.",
+      "hardware_requirements": "Offline candidate tests only; actual isolated sandbox, credential and execution hardware missing.",
+      "license_review": "NOT_APPLICABLE: existing JAS Core and Python stdlib, no added dependencies.",
+      "local_offline": "PARTIAL_VERIFIED: deterministic registry/validator and security regressions in GitHub CI.",
+      "notes": "PR #130 Draft/unmerged. Exact source lock verified only on separate main-based head; no Owner production acceptance.",
+      "existing_jas_state": "Existing SkillLibrary and SkillPromotionManager track declarative workflows but no separate strict preview builder for low-risk read-only registered capability candidates.",
+      "proposed_technology": "Deterministic SkillProposalPreview wrapping existing SkillLibrary.make_id and disabled Skill candidate with explicit allowlist.",
+      "license_terms": "Existing JAS/Python stdlib.",
+      "commercial_terms": "No external service.",
+      "integration_test_criteria": "Owner-authenticated proposal UI and authorized sandbox replay, explicit existing Gateway policies, independent promotion evidence.",
+      "unit_test_criteria": "Registry-backed deterministic candidate, never enabled, NO_PROVENANCE validation, malformed args, operation allowlists.",
+      "security_test_criteria": "No unregistered/high-risk/autonomous capability, no dynamic template execution, no implicit permission, external provider health and provenance rechecked at execution.",
+      "acceptance_criteria": "Live human-reviewed, versioned, sandbox-tested skills with independent authorization, signed evidence and Owner approval; no automatic unsafe promotion.",
+      "performance_requirements": "Max 8 steps, 12 flat args each, 256 chars text each; no production benchmark.",
+      "complexity": "LOW bounded preview; HIGH trusted authoring/runtime and promotion.",
+      "known_limitations": "No real execution/skill installation, no sandbox replay, no owner UI and no remote provider nonmutation attestation.",
+      "missing_components": [
+        "Authenticated Owner skill editor and explicit confirmation",
+        "Independent replay sandbox and provider safe schema verification",
+        "Approved Core Gateway execution and promotion audit"
+      ],
+      "official_links": [
+        "https://modelcontextprotocol.io/"
+      ],
+      "alternatives": [
+        "Keep SkillPromotionManager with independently supplied provenance and human-approved review"
+      ],
+      "hardware_review": "NOT_VERIFIED"
     },
     {
       "id": 50,

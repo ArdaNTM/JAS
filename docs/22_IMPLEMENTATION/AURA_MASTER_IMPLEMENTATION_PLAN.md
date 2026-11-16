@@ -169,3 +169,6 @@ Feature #54 read-only JAS PR evidence passes independent Core/Persistence/Final 
 
 ## Home integration dependency gate #85 → #86
 PR #128 #85 and stacked PR #129 #86 pass exact-head Core/Persistence/Release Lock. Only read-only, policy-gated structured metadata, no HA hardware and no physical actions. Tracker 80 TESTING, 2 RESEARCHING, 35 NOT_STARTED; zero COMPLETED. Next #49 governed skill proposals pending CI before tracker update. Never merge without Owner approval.
+
+## #49 skill workflow proposals — safe foundation
+PR #130 tests and locks a nonpromotable declarative workflow preview, depending on #99/#100/#101/#103 for real authorization/identity/isolation. All CI PASS on separate head; 81 TESTING, 2 RESEARCHING, 34 NOT_STARTED, zero COMPLETED. Follow with real governed sandbox tests/Owner acceptances before autonomous agent features.

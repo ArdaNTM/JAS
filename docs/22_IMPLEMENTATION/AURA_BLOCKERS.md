@@ -146,3 +146,6 @@ The #92 PR #126 targets PR #125, not main. Owner-approved integration and rebuil
 - #85: No real Home Assistant/Matter/Zigbee/HomeKit bridge, authenticated household ownership, physical device tests or Owner approval.
 - #86: No live HA integration, authenticated token, actual device sensor trust, physical control/Owner action or end-to-end production acceptance.
 Read-only metadata is not physical truth or a permission to actuate. #129 stacked on #128, no automatic merge.
+
+## PR #130 feature #49 acceptance constraints
+Read-only declarative proposals are never authorized execution or executable workflows. Missing authenticated Owner UI, real Gateway tool policy/schema check, sandboxed replay, provenance/promotion audit and production verification. Capability category alone is not a guarantee of nonmutating remote provider behavior.
