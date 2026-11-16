@@ -101,7 +101,7 @@ def test_audio_over_max_duration_fails_without_unbounded_processing(monkeypatch)
 def test_mcp_schema_closes_additional_arguments():
     script = _load_script()
     result = asyncio.run(script.handle_list_tools(None, None))
-    schema = result.tools[0].inputSchema
+    schema = result.tools[0].input_schema
     assert schema["additionalProperties"] is False
     assert schema["properties"]["text"]["maxLength"] == 4000
     assert schema["properties"]["voice"]["enum"] == list(SUPPORTED_ENGLISH_VOICES)
@@ -117,7 +117,7 @@ def test_mcp_error_response_does_not_expose_attacker_input():
         arguments={"text": fake_secret, "voice": "not-a-voice", "speed": 1.0},
     )
     result = asyncio.run(script.handle_call_tool(None, params))
-    assert result.isError is True
+    assert result.is_error is True
     assert "ValueError" in result.content[0].text
     assert fake_secret not in result.content[0].text
 
