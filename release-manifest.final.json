@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-16T03:56:50.620Z",
-  "git_commit": "5d507e84c08f039fa9348963bcd7ebd7b637e9dd",
+  "generated_at": "2026-11-16T07:01:13.419Z",
+  "git_commit": "732aaa53b658023522307564b30611eb8756a1c4",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:5be34167e3714507dfa7586e8d28a7bc9fc3fc5fb51cc2557d816dbf9739d2df",
-  "file_count": 256,
+  "release_digest": "sha256:162e7c5d31e88ea5ce2dee3a86d6058a3ce9d4d8b46b40606ede62ea587a905e",
+  "file_count": 260,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -425,6 +425,10 @@
       "sha256": "e1686ae4947bf7977d6126750a5da45a8563d524019d4a121281bd0feef270de"
     },
     {
+      "path": "core/src/aura_core/application/visual_task_verification.py",
+      "sha256": "2a0aee503743c4917db55cd7f70cb9edc7c4bd81d8e84aa54b6c7a4836de497e"
+    },
+    {
       "path": "core/src/aura_core/application/voice_prosody.py",
       "sha256": "57f160879d885111e08aa6ac62071e239a685ec5be5babacc297938ef8b8eb02"
     },
@@ -797,6 +801,10 @@
       "sha256": "958c61c3f20913f4a87d93faf82ff1485cd281559cffe6bc540353f53a835ae9"
     },
     {
+      "path": "core/src/aura_core/memory/visual_sqlite.py",
+      "sha256": "b4c2cec1acde00cb754a13b13a0b2a809b5536780517aab54920f33a22a75b7d"
+    },
+    {
       "path": "core/src/aura_core/models/__init__.py",
       "sha256": "86fd00fc26c87adf696352e1cb602028c7e4847f91a3c3c1d553c820b133a231"
     },
@@ -885,12 +893,20 @@
       "sha256": "f86614f5701c138e350570b10d2d5c7fe1045a09bd8e857ae8743b187c3bc865"
     },
     {
+      "path": "core/src/aura_core/providers/ffmpeg_video_mcp.py",
+      "sha256": "7edd1373458b87200a5088e94f5bcebedd4b48b951d051cf2bc65f9742261aeb"
+    },
+    {
       "path": "core/src/aura_core/providers/local_vision.py",
       "sha256": "44a52720d803722396b5b92dd1b25bff5ced9ca1821c4247f4db4f8cbc444e37"
     },
     {
       "path": "core/src/aura_core/providers/ollama_vision_mcp.py",
       "sha256": "68d3f18d979f5a90c62bd02852e7297d59753d01bf1c44fa41a66225a0caa8e9"
+    },
+    {
+      "path": "core/src/aura_core/providers/opencv_camera_mcp.py",
+      "sha256": "e91215d066f4ef5e1b46eaae2e1b59380b9ed91cb0f052c1df8496e9f9b4ea40"
     },
     {
       "path": "core/src/aura_core/providers/speaker_embedding.py",
