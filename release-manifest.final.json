@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-10-31T00:45:29.771Z",
-  "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
+  "generated_at": "2026-11-16T03:00:00.000Z",
+  "git_commit": "659069c614706d6f5baa7dea5bb66c40df1a5523",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
-  "file_count": 233,
+  "release_digest": "sha256:e08c489cf2590cd692a964e19e0f4d4583a9f264d4b167f08f5a6c59b51918ed",
+  "file_count": 234,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -211,6 +211,10 @@
     {
       "path": "core/src/aura_core/application/cross_capability_reasoning.py",
       "sha256": "ae0b9a2d925f6e20b27b50aa0e904d53a5362da368497125c009935bbb40f5f9"
+    },
+    {
+      "path": "core/src/aura_core/application/desktop_awareness.py",
+      "sha256": "76c18158bb0b54cb7f114d0941bc75d792b8e87ed862743cc601047f1399372a"
     },
     {
       "path": "core/src/aura_core/application/diagnostics_api.py",
