@@ -768,9 +768,7 @@
       "phase": 2,
       "status": "TESTING",
       "assessment": "PARTIAL_VERIFIED",
-      "dependencies": [
-        19
-      ],
+      "dependencies": [],
       "code_paths": [
         "core/src/aura_core/tts/text.py"
       ],
