@@ -64,11 +64,14 @@ class VisualMemoryRecord:
     trust: str = "UNTRUSTED_VISUAL_MEMORY"
 
 
-def _safe_text(value: str, *, limit: int, allow_empty: bool = False) -> str:
+def _safe_text(
+    value: str, *, limit: int, allow_empty: bool = False,
+    allow_multiline: bool = False,
+) -> str:
     if (
         not isinstance(value, str) or len(value) > limit
         or (not allow_empty and not value.strip())
-        or any((ord(c) < 32 and c not in "\n\t") or ord(c) == 127
+        or any((ord(c) < 32 and not (allow_multiline and c in "\n\t")) or ord(c) == 127
                or 0xD800 <= ord(c) <= 0xDFFF for c in value)
     ):
         raise ValueError("Invalid bounded visual memory text")
@@ -264,7 +267,7 @@ class GovernedVisualMemory:
             or not _HEX.fullmatch(evidence.image_sha256)
         ):
             raise VisualMemoryUnavailable("Untrusted image evidence cannot be stored")
-        _safe_text(evidence.description, limit=4000)
+        _safe_text(evidence.description, limit=4000, allow_multiline=True)
         # Re-evaluate after the await to catch revocations in flight.
         self._authorize("memory.visual.write", RiskLevel.HIGH)
         receipt = await asyncio.to_thread(
