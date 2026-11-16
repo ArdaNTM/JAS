@@ -181,3 +181,8 @@ Both PRs remain Draft and unmerged; main unchanged. All accepted evidence is iso
 ## 2026-11-16 — PR #120 generation-fenced interruptible voice sessions
 Draft PR #120 (head 74aa91567bc561f3c884c19e3d6b00336e42f976), feature #14 PARTIAL_VERIFIED: existing FullDuplexSessionManager now rejects late recognition after close/restart or newer playback, uses same generation/session ID fences and installs playback task atomically under interrupt lock. Async barrier regression tests cover stale turns and interruption. Core Assurance run 43788402100: 597 passed, 6 skipped; Final Release Lock PASS; Persistence run 43788402101 PASS. https://github.com/ArdaNTM/JAS/pull/120
 No model, microphone, audio device, Owner identity or full natural conversation acceptance claimed. Main unchanged and PR unmerged.
+
+## 2026-11-16 — PR #121 wake phrase and PR #122 registry language preview
+Draft PR #121 exact head 59be3ffc0fb08e61a2d76d15b389344c16a50420: #13 consent-bound offline STT phrase EventBus only; Core run 43788533848 **620 passed, 6 skipped**, Final Release Lock **PASS**, Persistence 43788533895 **PASS**. No acoustic model, hardware or actual microphone integration. https://github.com/ArdaNTM/JAS/pull/121
+Draft PR #122 exact head 5224ac9f97d34bbf8cafe3cdcc184c32c9021995: #19 read-only Turkish Piper / English Kokoro locale preview using existing registry; Core run 43788947660 **616 passed, 6 skipped**, Release Lock **PASS**, Persistence 43788947692 **PASS**, Windows launcher 43788947683 **PASS**. No multi-provider runtime or real audio. https://github.com/ArdaNTM/JAS/pull/122
+Both stay TESTING/PARTIAL_VERIFIED. Additional PRs #123/#124/#125 under CI and must not be recorded as accepted until exact-head evidence.

@@ -215,3 +215,10 @@ Neither run establishes hardware/Owner acceptance. #119 is stacked on unmerged #
 
 ## Exact-head PR #120 Core and Release Lock
 PR #120 head 74aa91567bc561f3c884c19e3d6b00336e42f976 Core Assurance [run 43788402100](https://github.com/ArdaNTM/JAS/actions/runs/43788402100) 597 passed / 6 skipped, Release Lock PASS sha256:5258fbba7743aee83f74de39661cba4c2b2a7965f05770a916a3c4575bf596ca; Remote Persistence [run 43788402101](https://github.com/ArdaNTM/JAS/actions/runs/43788402101) PASS. Async fake-recognizer/player race fixtures, not real audio hardware proof.
+
+## PR #121/#122 independent exact-head Core and release lock
+| PR | HEAD | Core Assurance | Final Lock | Other CI |
+|---|---|---|---|---|
+| #121 | 59be3ffc0fb0 | 620 passed, 6 skipped (43788533848) | PASS | Persistence PASS (43788533895) |
+| #122 | 5224ac9f97d3 | 616 passed, 6 skipped (43788947660) | PASS | Persistence PASS (43788947692); Windows launcher PASS (43788947683) |
+Evidence: https://github.com/ArdaNTM/JAS/actions/runs/43788533848 and https://github.com/ArdaNTM/JAS/actions/runs/43788947660. Neither CI run tests actual microphones/model files or combined PR integration.

@@ -646,40 +646,63 @@
       "id": 13,
       "name": "Uyandırma kelimesi",
       "phase": 2,
-      "status": "NOT_STARTED",
-      "assessment": "NOT_ASSESSED",
-      "dependencies": [],
-      "code_paths": [],
-      "documentation_paths": [],
-      "test_commands": [],
-      "test_results": "NOT_RUN",
-      "security_review": "NOT_REVIEWED",
+      "status": "TESTING",
+      "assessment": "PARTIAL_VERIFIED",
+      "dependencies": [
+        14,
+        99
+      ],
+      "code_paths": [
+        "core/src/aura_core/application/wake_word_gate.py"
+      ],
+      "documentation_paths": [
+        "docs/22_IMPLEMENTATION/AURA_WAKE_WORD_GATE.md"
+      ],
+      "test_commands": [
+        "cd core && uv run pytest -q tests/test_wake_word_gate.py",
+        "cd core && uv run pytest -q",
+        "cd core && uv run python scripts/verify_final_lock.py"
+      ],
+      "test_results": "PASS: PR #121 exact head 59be3ffc0fb08e61a2d76d15b389344c16a50420, Core Assurance 620 passed 6 skipped (43788533848), Final Release Lock PASS sha256:4f8b7388d1ab69defa21f55c4b9e3f052abd1799a958221c25e4dd2722162c7a, Remote Persistence PASS (43788533895).",
+      "security_review": "PARTIAL_VERIFIED: explicit upstream microphone confirmation, exact standalone text matching, no action dispatch, EventBus metadata only, session ID isolation, one-shot arm, replay/clock rollback and malicious transcript denials.",
       "acceptance": "NOT_VERIFIED",
-      "commit": "",
-      "pull_request": "",
-      "blockers": [],
-      "technical_goal": "",
-      "user_capability": "",
-      "integration": "",
-      "hardware_requirements": "",
-      "license_review": "NOT_REVIEWED",
-      "local_offline": "NOT_VERIFIED",
-      "notes": "Existing JAS code may already provide part of this feature; audit required.",
-      "existing_jas_state": "NOT_ASSESSED",
-      "proposed_technology": "NOT_ASSESSED",
-      "license_terms": "NOT_ASSESSED",
-      "commercial_terms": "NOT_ASSESSED",
-      "integration_test_criteria": "NOT_ASSESSED",
-      "unit_test_criteria": "NOT_ASSESSED",
-      "security_test_criteria": "NOT_ASSESSED",
-      "acceptance_criteria": "NOT_ASSESSED",
-      "performance_requirements": "NOT_ASSESSED",
-      "complexity": "NOT_ASSESSED",
-      "known_limitations": "NOT_ASSESSED",
-      "missing_components": [],
-      "official_links": [],
-      "alternatives": [],
-      "hardware_review": "NOT_REVIEWED"
+      "commit": "59be3ffc0fb08e61a2d76d15b389344c16a50420",
+      "pull_request": "https://github.com/ArdaNTM/JAS/pull/121",
+      "blockers": [
+        "This recognizes explicit phrases only after offline STT text; no acoustic always-listening wake-word model or hardware/VAD tests.",
+        "Not mounted into trusted FullDuplexSessionManager/Owner microphone UI; upstream authentication and consent enforcement unverified."
+      ],
+      "technical_goal": "Create bounded EventBus-only wake phrase detection after confirmed local speech transcription, without granting tool authority.",
+      "user_capability": "Explicitly armed, confirmed local session receives a wake marker on standalone Aura/Hey Aura; no actions are executed.",
+      "integration": "Pure existing EventBus observer, separate from microphone API and MCP Gateway execution.",
+      "hardware_requirements": "Local microphone and actual noise/false trigger tests pending.",
+      "license_review": "NOT_APPLICABLE: Python stdlib and existing Core EventBus only.",
+      "local_offline": "PARTIAL_VERIFIED: deterministic offline transcript parsing and Core CI.",
+      "notes": "Draft PR #121 main-based unmerged; no production acoustic or Owner acceptance.",
+      "existing_jas_state": "Existing FullDuplexSessionManager supports authenticated local microphone activation, STT and interruption, but no explicit independent wake phrase gate.",
+      "proposed_technology": "Deterministic NFKC/casefold standalone phrase filter, existing Kernel EventBus.",
+      "license_terms": "No added dependency or model license.",
+      "commercial_terms": "No commercial dependency.",
+      "integration_test_criteria": "Confirmed microphone session -> local STT -> wake EventBus -> separate Owner action/approval with actual device.",
+      "unit_test_criteria": "Standalone phrase, consent, wrong session, cooldown, Unicode normalization, no raw audio/transcript in events.",
+      "security_test_criteria": "Prompt-like transcripts, spoofed sessions, absent consent, clock rollback and replay never execute tools.",
+      "acceptance_criteria": "Hardware-verified acoustic wake-word activation, false-positive/noise tests, always-on privacy controls, Owner-approved live UI, no auth bypass.",
+      "performance_requirements": "Transcript <=256 characters, 0.25–60-second configurable cooldown, no performance benchmark.",
+      "complexity": "LOW deterministic text gate, HIGH live acoustic microphone integration.",
+      "known_limitations": "No acoustic model, only transcribed phrase; only event signal, no real wake hardware.",
+      "missing_components": [
+        "Real acoustic wake-word model and sample/VAD evaluation",
+        "Trusted speech UI and Owner consent lifecycle",
+        "Live hardware/false-positive privacy acceptance"
+      ],
+      "official_links": [
+        "https://docs.python.org/3/library/unicodedata.html"
+      ],
+      "alternatives": [
+        "Local quantized on-device keyword spotter with verified voice licensing",
+        "Existing explicit push-to-talk workflow"
+      ],
+      "hardware_review": "NOT_VERIFIED"
     },
     {
       "id": 14,
@@ -941,40 +964,63 @@
       "id": 19,
       "name": "Çok dilli konuşma",
       "phase": 2,
-      "status": "NOT_STARTED",
-      "assessment": "NOT_ASSESSED",
-      "dependencies": [],
-      "code_paths": [],
-      "documentation_paths": [],
-      "test_commands": [],
-      "test_results": "NOT_RUN",
-      "security_review": "NOT_REVIEWED",
+      "status": "TESTING",
+      "assessment": "PARTIAL_VERIFIED",
+      "dependencies": [
+        14,
+        18
+      ],
+      "code_paths": [
+        "core/src/aura_core/tts/language_route.py",
+        "core/src/aura_core/tts/config.py"
+      ],
+      "documentation_paths": [
+        "docs/22_IMPLEMENTATION/AURA_TTS_LOCALE_ROUTING.md"
+      ],
+      "test_commands": [
+        "cd core && uv run pytest -q tests/test_tts_language_route.py",
+        "cd core && uv run pytest -q",
+        "cd core && uv run python scripts/verify_final_lock.py"
+      ],
+      "test_results": "PASS: PR #122 exact head 5224ac9f97d34bbf8cafe3cdcc184c32c9021995 Core Assurance 616 passed 6 skipped (43788947660); Final Release Lock PASS sha256:25f9e35ef8d1512bd2f6175e176af971e56321844664aae20a236adf9c0f8934; Remote Persistence PASS (43788947692); Windows launcher PASS (43788947683).",
+      "security_review": "PARTIAL_VERIFIED: real CapabilityRegistry/ProviderRegistry availability and health, strict locale allowlist, fail-closed selected provider mismatch, wrong tool and malformed locale; no tool dispatch or new grant.",
       "acceptance": "NOT_VERIFIED",
-      "commit": "",
-      "pull_request": "",
-      "blockers": [],
-      "technical_goal": "",
-      "user_capability": "",
-      "integration": "",
-      "hardware_requirements": "",
-      "license_review": "NOT_REVIEWED",
-      "local_offline": "NOT_VERIFIED",
-      "notes": "Existing JAS code may already provide part of this feature; audit required.",
-      "existing_jas_state": "NOT_ASSESSED",
-      "proposed_technology": "NOT_ASSESSED",
-      "license_terms": "NOT_ASSESSED",
-      "commercial_terms": "NOT_ASSESSED",
-      "integration_test_criteria": "NOT_ASSESSED",
-      "unit_test_criteria": "NOT_ASSESSED",
-      "security_test_criteria": "NOT_ASSESSED",
-      "acceptance_criteria": "NOT_ASSESSED",
-      "performance_requirements": "NOT_ASSESSED",
-      "complexity": "NOT_ASSESSED",
-      "known_limitations": "NOT_ASSESSED",
-      "missing_components": [],
-      "official_links": [],
-      "alternatives": [],
-      "hardware_review": "NOT_REVIEWED"
+      "commit": "5224ac9f97d34bbf8cafe3cdcc184c32c9021995",
+      "pull_request": "https://github.com/ArdaNTM/JAS/pull/122",
+      "blockers": [
+        "Preview only; current bootstrap selects a single provider, not live simultaneous Turkish/English conversational routing.",
+        "No real Kokoro/Piper voice weights, language detection, acoustic quality, mobile/desktop device and Owner acceptance."
+      ],
+      "technical_goal": "Conservative Turkish/English local speech-provider metadata routing using authoritative existing capability resolution and healthy MCP provider record.",
+      "user_capability": "Receive a fail-closed read-only locale/provider preview for tr Piper or en Kokoro when pre-registered healthy capability matches.",
+      "integration": "No provider registration or dispatch; MCP Gateway and PermissionEngine must independently authorize actual speech.",
+      "hardware_requirements": "Real microphone/audio outputs and local Piper/Kokoro models needed for full tests.",
+      "license_review": "NOT_APPLICABLE: no added model or third-party library; separate voices still require licensing review.",
+      "local_offline": "PARTIAL_VERIFIED: registry-only offline tests.",
+      "notes": "Draft PR #122 main-based; metadata preview is not bilingual STT, production voice or Owner permission.",
+      "existing_jas_state": "KokoroMCPConfig chooses Piper or Kokoro from environment for one speech.synthesize capability; live STT language is separately configured.",
+      "proposed_technology": "Read-only exact-locale map, existing CapabilityRegistry.resolve and MCP ProviderRegistry.get.",
+      "license_terms": "Python stdlib and existing JAS dependencies.",
+      "commercial_terms": "No new external service.",
+      "integration_test_criteria": "Simultaneous registered provider selection, live STT language detection, all actual speech through Gateway authorization.",
+      "unit_test_criteria": "Healthy local provider select, priority mismatch fail, unknown locale and service health denials.",
+      "security_test_criteria": "No fallback to unintended provider, no new capability grant, no direct tool execution.",
+      "acceptance_criteria": "Real offline bilingual STT/TTS pipeline, proper model provenance and Owner UI/latency/quality validation.",
+      "performance_requirements": "Registry read-only operation, no hardware latency benchmarks.",
+      "complexity": "LOW route preview, HIGH real bilingual speech runtime.",
+      "known_limitations": "A preview does not reconfigure provider registration or perform live multilingual conversation.",
+      "missing_components": [
+        "Real simultaneous bilingual provider registration",
+        "Language detection and speech session routing",
+        "Model/voice licenses and Owner hardware acceptance"
+      ],
+      "official_links": [
+        "https://docs.python.org/3/library/dataclasses.html"
+      ],
+      "alternatives": [
+        "User-selected provider switch at existing AURA_TTS_PROVIDER configuration boundary"
+      ],
+      "hardware_review": "NOT_VERIFIED"
     },
     {
       "id": 20,

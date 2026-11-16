@@ -62,3 +62,8 @@ Bounded personal hub queries use the existing GovernedEpisodicMemory PermissionE
 
 ## ADR-ENG-015 — voice session results require generation identity before mutation
 Speech transcription and playback tasks must never mutate a newer or closed FullDuplexSessionManager session. Record generation and session ID under the existing lock, discard late STT results and register playback tasks atomically with interrupt/close. Existing MCPGateway remains the only tool dispatch authority; no microphone consent, user authentication or hardware trust is inferred from race tests.
+
+## ADR-ENG-015 — wake phrase EventBus signals are never permissions
+A text-only standalone offline speech phrase match under a confirmed session emits one EventBus marker and disarms. It is neither acoustic identity nor microphone consent authority. No MCP tool executes from the signal.
+## ADR-ENG-016 — language route preview must match authoritative provider selection
+Explicit local tr->Piper/en->Kokoro metadata previews reject missing/unhealthy or differently selected provider and never reconfigure CapabilityRegistry, authorize PermissionEngine or dispatch MCP. Live bilingual voice routing needs separately approved integration.

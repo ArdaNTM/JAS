@@ -51,3 +51,8 @@ Tracker 45 NOT_STARTED / 70 TESTING / 2 RESEARCHING. No COMPLETED and no merges;
 
 ## Verified PR #120 handoff — 2026-11-16
 #120 Draft head 74aa91567bc561f3c884c19e3d6b00336e42f976: Core run 43788402100 597/6 + Final Release Lock PASS, Persistence run 43788402101 PASS; feature #14 TESTING/PARTIAL_VERIFIED with generation-aware STT/session race guard and atomic TTS task registration. Tracker 44 NOT_STARTED / 71 TESTING / 2 RESEARCHING, zero COMPLETED. No merges, pinned main b1ffe6f534ced0d329dae273a4b949a634cb8bfa unchanged. Further features require real code/test/lock and Owner/hardware acceptance.
+
+## Verified continuation — Draft PR #121/#122 (2026-11-16)
+#121 59be3ffc0fb08e61a2d76d15b389344c16a50420 Core 620 passed/6 skipped, lock PASS, Persistence PASS. Feature #13 PARTIAL: post-STT phrase only.
+#122 5224ac9f97d34bbf8cafe3cdcc184c32c9021995 Core 616 passed/6 skipped, lock PASS, Persistence and Windows launcher PASS. Feature #19 PARTIAL: read-only registry preview.
+Tracker 42 NOT_STARTED / 73 TESTING / 2 RESEARCHING, no COMPLETED. PR #123/#124/#125 are awaiting exact-head CI verification as of this tracking snapshot; inspect live current state before writing evidence. No auto-merge; main b1ffe6f534ced0d329dae273a4b949a634cb8bfa unchanged.

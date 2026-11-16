@@ -126,3 +126,8 @@ All feature PRs need explicit approved merges and recomputation of combined mani
 
 ## Feature #14 PR #120 remaining voice acceptance
 Async generation guard has passing isolated CI, but no real microphone, local recognizer weights, TTS latency/cross-device playback, Owner speech identity or full natural, privacy-preserving turn-taking deployment has been verified. Do not treat fake-recognizer tests as hardware evidence or mark COMPLETED.
+
+## PR #121/#122 acceptance gaps
+#13 is confirmed-session STT phrase detection only, not live acoustic wake-word hardware. Actual microphone consent/Owner UI model and false-positive tests remain.
+#19 checks existing selected healthy TTS provider only, no simultaneous Piper/Kokoro, language recognition or live bilingual speech. Neither PR adds permission or sidesteps MCP Gateway.
+Source locks independent and PRs remain Draft; recompute complete cumulative manifest only after explicit Owner merge order.

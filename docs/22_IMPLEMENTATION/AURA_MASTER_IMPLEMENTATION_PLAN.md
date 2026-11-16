@@ -157,3 +157,6 @@ Tracker 68 TESTING, 2 RESEARCHING, 47 NOT_STARTED (zero COMPLETED). Features #25
 
 ## Verified PR #120 interruptible voice continuation
 #14 generation-safe voice session fixes passed exact-head Core/Lock/Persistence on Draft PR #120, still PARTIAL. Program now 71 TESTING, 2 RESEARCHING, 44 NOT_STARTED and zero COMPLETED. Future voice work: #13 wake word, #16 speaker identity and #19 multilingual quality, only after real microphone/privacy and owner authorization assessment.
+
+## 2026-11-16 speech continuation #13/#19
+PR #121 wake text gate and #122 local TTS language/provider preview passed independent exact-head CI and Final Release Lock; tracker now 73 TESTING, 2 RESEARCHING, 42 NOT_STARTED. Feature #20 energy signal and #28 read-only display metadata PRs require exact HEAD CI before tracker acceptance. Full audio/hardware acceptance and Owner consent remain separate.
