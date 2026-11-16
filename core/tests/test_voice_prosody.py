@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import io
 import math
 import struct
@@ -7,6 +8,7 @@ import wave
 
 import pytest
 
+from aura_core.application.full_duplex_session import FullDuplexSessionManager
 from aura_core.application.voice_prosody import (
     ProsodyCueAnalyzer,
     VoiceProsodyService,
@@ -84,3 +86,43 @@ def test_rejects_invalid_session_scope():
     service = VoiceProsodyService(event_bus=EventBus())
     with pytest.raises(ValueError):
         service.analyze_consented_audio(make_wav(), session_id="")
+
+
+def test_full_duplex_session_runs_prosody_on_already_ingested_audio():
+    class Recognizer:
+        async def transcribe(self, audio, *, session_id):
+            return "hello"
+
+    class Synthesizer:
+        async def synthesize(self, text, *, session_id):
+            return b""
+
+    class Player:
+        async def play(self, audio, *, session_id):
+            return None
+
+        async def stop(self, *, session_id):
+            return None
+
+    async def scenario():
+        bus = EventBus()
+        observed = []
+        bus.subscribe("*", observed.append)
+        service = VoiceProsodyService(event_bus=bus)
+        manager = FullDuplexSessionManager(
+            recognizer=Recognizer(),
+            synthesizer=Synthesizer(),
+            player=Player(),
+            event_bus=bus,
+            prosody_analyzer=service,
+        )
+        await manager.start("session-integrated")
+        assert await manager.ingest_audio(make_wav()) == "hello"
+        while bus.snapshot()["queued_total"]:
+            await bus.dispatch_once()
+        event_types = [event.event_type for event in observed]
+        assert "SpeechProsodyCues" in event_types
+        assert "SpeechProsodyAnalysisCompleted" in event_types
+        assert "SpeechTranscript" in event_types
+
+    asyncio.run(scenario())
