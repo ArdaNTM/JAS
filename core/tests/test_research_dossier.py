@@ -155,7 +155,7 @@ def test_safely_truncates_total_dossier_results():
     dossier = _run(_source(FakeGateway(replies)), _plan())
     assert len(dossier.evidence) == 18
     assert dossier.output_truncated is True
-    assert len(dossier.distinct_hosts) == 32
+    assert len(dossier.distinct_hosts) == 24  # two batches each cap findings at 12
 
 
 def test_incomplete_gateway_stage_is_not_accepted(monkeypatch):
