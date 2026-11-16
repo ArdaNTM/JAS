@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-16T02:29:52.648Z",
-  "git_commit": "3db9ed142a0d6de5695208af9a11535d4d5fd3e5",
+  "generated_at": "2026-11-16T02:29:52.673Z",
+  "git_commit": "86ecde1d1be09cfcb71fa37d01ea5ca43fde5369",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:cfc508ab7888e7ec095145e0e30a86eb3c6923a9e6a9db74495d88f4cd674df4",
-  "file_count": 234,
+  "release_digest": "sha256:dea49a6e3e51ce01311cfe2f49f7eda394cbd5792a04d9e99eeb7e64fd4629a2",
+  "file_count": 235,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -247,6 +247,10 @@
     {
       "path": "core/src/aura_core/application/governed_autonomous_loop.py",
       "sha256": "f511b4d57d78d4a2b8c85e7fa039283251158415add66e3777d1091d760e923a"
+    },
+    {
+      "path": "core/src/aura_core/application/governed_ha_state.py",
+      "sha256": "96d78b3b2f471f187056cd723c16028cdbe9c05ad88e560a3660323be91b9da8"
     },
     {
       "path": "core/src/aura_core/application/governed_home_inventory.py",
