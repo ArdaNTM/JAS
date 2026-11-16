@@ -90,3 +90,11 @@ Skill proposals can reference only explicit low-risk read-oriented existing capa
 ## ADR-ENG-023 — combine review PR sources without relaxing Core permission boundaries
 
 A separate Draft integration branch containing #112–#135 preserves authoritative deterministic Kernel registries, Core PermissionEngine, MCP Gateway and EventBus and rechecks a newly generated complete 253-file source lock. The shared full-duplex speech source must keep #120 generation-safe interruption while incorporating #131 advisory prosody only while the original session/generation remains active. This is **not** permission to execute tools, alter the F2.7 Owner security seal or merge any PR automatically.
+
+## ADR-ENG-024 — local model vision and OCR must remain Gateway-executed
+
+Real local Ollama/Qwen-VL image description (#77) and Tesseract stdin/stdout OCR (#80) are separately registered Core MCP capabilities, not direct agent calls. Explicit PermissionEngine ALLOW and current MCP DispatchGrant required; client-supplied capture consent is not automatically trusted Owner identity. A local model response and all OCR text are untrusted output.
+
+## ADR-ENG-025 — object boxes are model hypotheses, not action targets
+
+Feature #79 parses strict bounded normalized boxes produced by the same governed #77 local model and returns immutable UNTRUSTED evidence only. No automatic clicking, pointing, person identification or physical control may follow without independently verified geometry and newly approved Gateway capabilities.

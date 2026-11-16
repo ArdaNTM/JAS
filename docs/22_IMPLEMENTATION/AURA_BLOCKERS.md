@@ -155,3 +155,10 @@ Read-only declarative proposals are never authorized execution or executable wor
 - PR #136 proves **only PR #112–#135** combined source/CI review, not #64–#111 or full production deployment. All originals remain Draft/unmerged and no feature may be COMPLETED solely from this review.
 - Real Piper/faster-whisper microphones/voice models and GPU timing, actual Home Assistant hardware/OAuth credentials, native HUD monitor/injected inputs and Owner approvals are **not** validated by fake-provider or local unit tests. Requires dedicated device integration and independent security review.
 - Cumulative branch was assembled with a canonical source inventory, but future PRs and existing F2.7 sealed security boundaries still require separate exact-HEAD verification before Owner-approved merge ordering.
+
+## Vision/OCR device and model gaps (#77/#79/#80)
+
+- #77 / PR #137: No real Qwen-VL model weights/GPU throughput, image parser hardening, signed Owner consent/device UI or live model hardware evidence.
+- #79 / PR #139: Model-generated boxes not calibrated, ground-truth checked or measured on real camera/screen; no actionable target or hardware acceptance.
+- #80 / PR #138: Optional live OCR smoke skipped when Tesseract/English traineddata/font are missing; no deployed Windows trusted binary and Turkish traineddata/hardware/Owner quality evidence.
+- No model-derived bounding box or OCR text is Owner authority, a verified pointer target or permission. All actual clicks, camera opening and robotic actions need separate approved Gateway capabilities and independent validation.

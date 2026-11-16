@@ -176,3 +176,7 @@ PR #130 tests and locks a nonpromotable declarative workflow preview, depending 
 ## 2026-11-16 — integrated PR #136, remaining actual capability work
 
 Verified #135 Release Lock hotfix and #136 consolidated **22 Draft PRs #112–#135**, Core 969 passed / 6 skipped, Final Lock 253 sources PASS, Persistence and Windows PASS. Tracker remains **86 TESTING, 2 RESEARCHING, 29 NOT_STARTED, 0 COMPLETED**. Next dependency groups: desktop process/terminal and safe OS broker (#26,#27,#31–#33); live vision/OCR/camera with real local models (#77–#84); physical/robot/Home integration (#87–#90); multiagent development/parallel verification (#45,#51,#55,#60,#61); 3D HUD, audio interface and game workflows (#91,#94–#97,#113); autonomous lab (#75). No unsupported production acceptance or auto-merges.
+
+## 2026-11-16 — local vision execution dependencies
+
+Features #77 real Ollama Gateway provider, #79 bounded object hypotheses and #80 offline Tesseract OCR are implemented/tested in Draft PR #137/#139/#138 and pass exact-head Core/Persistence/Final Lock. Tracker now **89 TESTING, 2 RESEARCHING, 26 NOT_STARTED**, none COMPLETED. Next: real video frame isolation (#78), real pixel/screen integration, camera and hardware trust (#83/#84), with actual models, licenses and Owner acceptance before promotion. #136's consolidated source lock covers only PR #112–#135; must extend via new integration review for #137+.

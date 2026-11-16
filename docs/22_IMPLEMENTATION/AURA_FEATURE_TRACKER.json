@@ -4081,40 +4081,63 @@
       "id": 77,
       "name": "Görüntü anlama",
       "phase": 6,
-      "status": "NOT_STARTED",
-      "assessment": "NOT_ASSESSED",
-      "dependencies": [],
-      "code_paths": [],
-      "documentation_paths": [],
-      "test_commands": [],
-      "test_results": "NOT_RUN",
-      "security_review": "NOT_REVIEWED",
+      "status": "TESTING",
+      "assessment": "PARTIAL_VERIFIED",
+      "dependencies": [
+        99,
+        100,
+        103
+      ],
+      "code_paths": [
+        "core/src/aura_core/providers/ollama_vision_mcp.py"
+      ],
+      "documentation_paths": [
+        "docs/22_IMPLEMENTATION/AURA_LOCAL_VISION_GATEWAY.md"
+      ],
+      "test_commands": [
+        "cd core && uv run pytest -q tests/test_ollama_vision_mcp.py",
+        "cd core && uv run pytest -q",
+        "cd core && uv run python scripts/verify_final_lock.py"
+      ],
+      "test_results": "PASS: Draft PR #137 exact head b07d37b240a15b837b8362be253633643a0894c0. Core Assurance 628 passed, 6 skipped (run 43799634157); Final Release Lock PASS sha256:479a81bf6cedba045074fbbee5192e842d905b3b588d680b760b99c16312ea62; Remote Persistence PASS (run 43799634160). Live model/device prerequisites are not proven by simulated HTTP or subprocess tests.",
+      "security_review": "PARTIAL_VERIFIED: already-authenticated principal and separate captured-media consent, actual Core PermissionEngine/MCP Gateway policy and provider-current-dispatch checks; no ambient microphone/camera permission, no direct provider bypass, no automatic actions. Model text remains untrusted.",
       "acceptance": "NOT_VERIFIED",
-      "commit": "",
-      "pull_request": "",
-      "blockers": [],
-      "technical_goal": "",
-      "user_capability": "",
-      "integration": "",
-      "hardware_requirements": "",
-      "license_review": "NOT_REVIEWED",
-      "local_offline": "NOT_VERIFIED",
-      "notes": "Existing JAS code may already provide part of this feature; audit required.",
-      "existing_jas_state": "NOT_ASSESSED",
-      "proposed_technology": "NOT_ASSESSED",
-      "license_terms": "NOT_ASSESSED",
-      "commercial_terms": "NOT_ASSESSED",
-      "integration_test_criteria": "NOT_ASSESSED",
-      "unit_test_criteria": "NOT_ASSESSED",
-      "security_test_criteria": "NOT_ASSESSED",
-      "acceptance_criteria": "NOT_ASSESSED",
-      "performance_requirements": "NOT_ASSESSED",
-      "complexity": "NOT_ASSESSED",
-      "known_limitations": "NOT_ASSESSED",
-      "missing_components": [],
-      "official_links": [],
-      "alternatives": [],
-      "hardware_review": "NOT_REVIEWED"
+      "commit": "b07d37b240a15b837b8362be253633643a0894c0",
+      "pull_request": "https://github.com/ArdaNTM/JAS/pull/137",
+      "blockers": [
+        "No real Qwen-VL model weights/GPU throughput, image parser hardening, signed Owner consent/device UI or live model hardware evidence.",
+        "Real Owner identity and signed desktop/mobile capture consent + production device integration still missing."
+      ],
+      "technical_goal": "Real local loopback Ollama/Qwen-VL image inference under actual ServiceRegistry/CapabilityRegistry/ProviderRegistry/PermissionEngine/MCP Gateway with authenticated principal, capture consent and current dispatch proof",
+      "user_capability": "Real local loopback Ollama/Qwen-VL image inference under actual ServiceRegistry/CapabilityRegistry/ProviderRegistry/PermissionEngine/MCP Gateway with authenticated principal, capture consent and current dispatch proof",
+      "integration": "Actual existing Core Service/Capability/Provider registry and PermissionEngine/MCP Gateway when invoked; offline local engine not wired automatically to production UI. New component creates no default policy, tool direct calls denied.",
+      "hardware_requirements": "No real Qwen-VL model weights/GPU throughput, image parser hardening, signed Owner consent/device UI or live model hardware evidence.",
+      "license_review": "PARTIAL_VERIFIED: no new pip package; actual Ollama/Qwen-VL/Tesseract model/binary licenses and installations need Owner production validation.",
+      "local_offline": "PARTIAL_VERIFIED: real Core registry/Gateway test path with local HTTP MockTransport/controlled subprocess; real system OCR smoke conditional.",
+      "notes": "PR #137 is Draft/unmerged and based on main. Exact-head Release Lock and CI passed; hardware acceptance not claimed.",
+      "existing_jas_state": "Existing loopback Ollama vision client and Kernel MCP Gateway foundations available; no fully registered consent-scoped vision object/OCR model tool.",
+      "proposed_technology": "Real local loopback Ollama/Qwen-VL image inference under actual ServiceRegistry/CapabilityRegistry/ProviderRegistry/PermissionEngine/MCP Gateway with authenticated principal, capture consent and current dispatch proof",
+      "license_terms": "Existing JAS license; Ollama/Qwen-VL/Tesseract binary/weights must be independently checked.",
+      "commercial_terms": "Offline, no cloud API or commercial key required for local model execution.",
+      "integration_test_criteria": "Real installed local model/binary with authenticated Owner/microphone-screen-camera consent, threat testing, model quality, no unsanctioned Gateway calls.",
+      "unit_test_criteria": "Real Kernel registry+PermissionEngine+Gateway positive/negative tests, malformed images, language/prompt bounds, failed process/model transport, untrusted outputs.",
+      "security_test_criteria": "No permission/consent means no provider/model process; direct provider call denied; SSRF/command prompt injection rejected; output never grants action.",
+      "acceptance_criteria": "No real Qwen-VL model weights/GPU throughput, image parser hardening, signed Owner consent/device UI or live model hardware evidence. Owner, device, model security and live inference accepted; independent source-lock integration.",
+      "performance_requirements": "Bounded <=8 MiB images and <=32k OCR chars, 1..60 s OCR timeout; GPU/CPU latency remains unmeasured.",
+      "complexity": "MEDIUM governed integration, HIGH real on-device model/vision quality and hardware acceptance.",
+      "known_limitations": "No real Qwen-VL model weights/GPU throughput, image parser hardening, signed Owner consent/device UI or live model hardware evidence.",
+      "missing_components": [
+        "No real Qwen-VL model weights/GPU throughput, image parser hardening, signed Owner consent/device UI or live model hardware evidence.",
+        "Production registered policy, end-to-end authenticated UI and hardware acceptance"
+      ],
+      "official_links": [
+        "https://github.com/ollama/ollama",
+        "https://github.com/tesseract-ocr/tesseract"
+      ],
+      "alternatives": [
+        "Continue explicitly consented local vision via existing controlled screen capture while verifying Gateway composition"
+      ],
+      "hardware_review": "NOT_VERIFIED"
     },
     {
       "id": 78,
@@ -4159,79 +4182,121 @@
       "id": 79,
       "name": "Nesne tespiti",
       "phase": 6,
-      "status": "NOT_STARTED",
-      "assessment": "NOT_ASSESSED",
-      "dependencies": [],
-      "code_paths": [],
-      "documentation_paths": [],
-      "test_commands": [],
-      "test_results": "NOT_RUN",
-      "security_review": "NOT_REVIEWED",
+      "status": "TESTING",
+      "assessment": "PARTIAL_VERIFIED",
+      "dependencies": [
+        77
+      ],
+      "code_paths": [
+        "core/src/aura_core/application/local_object_detection.py"
+      ],
+      "documentation_paths": [
+        "docs/22_IMPLEMENTATION/AURA_LOCAL_OBJECT_DETECTION.md"
+      ],
+      "test_commands": [
+        "cd core && uv run pytest -q tests/test_local_object_detection.py",
+        "cd core && uv run pytest -q",
+        "cd core && uv run python scripts/verify_final_lock.py"
+      ],
+      "test_results": "PASS: Draft PR #139 exact head 7c1aa87b73fc0ea8000870a8ca7e44a7ba523134. Core Assurance 646 passed, 6 skipped (run 43800598686); Final Release Lock PASS sha256:35cd8317518abdedac16879a3f2f498614bb4bac5a84a053855d304a917f1d1b; Remote Persistence PASS (run 43800598856). Live model/device prerequisites are not proven by simulated HTTP or subprocess tests.",
+      "security_review": "PARTIAL_VERIFIED: already-authenticated principal and separate captured-media consent, actual Core PermissionEngine/MCP Gateway policy and provider-current-dispatch checks; no ambient microphone/camera permission, no direct provider bypass, no automatic actions. Model text remains untrusted.",
       "acceptance": "NOT_VERIFIED",
-      "commit": "",
-      "pull_request": "",
-      "blockers": [],
-      "technical_goal": "",
-      "user_capability": "",
-      "integration": "",
-      "hardware_requirements": "",
-      "license_review": "NOT_REVIEWED",
-      "local_offline": "NOT_VERIFIED",
-      "notes": "Existing JAS code may already provide part of this feature; audit required.",
-      "existing_jas_state": "NOT_ASSESSED",
-      "proposed_technology": "NOT_ASSESSED",
-      "license_terms": "NOT_ASSESSED",
-      "commercial_terms": "NOT_ASSESSED",
-      "integration_test_criteria": "NOT_ASSESSED",
-      "unit_test_criteria": "NOT_ASSESSED",
-      "security_test_criteria": "NOT_ASSESSED",
-      "acceptance_criteria": "NOT_ASSESSED",
-      "performance_requirements": "NOT_ASSESSED",
-      "complexity": "NOT_ASSESSED",
-      "known_limitations": "NOT_ASSESSED",
-      "missing_components": [],
-      "official_links": [],
-      "alternatives": [],
-      "hardware_review": "NOT_REVIEWED"
+      "commit": "7c1aa87b73fc0ea8000870a8ca7e44a7ba523134",
+      "pull_request": "https://github.com/ArdaNTM/JAS/pull/139",
+      "blockers": [
+        "Model-generated boxes not calibrated, ground-truth checked or measured on real camera/screen; no actionable target or hardware acceptance.",
+        "Real Owner identity and signed desktop/mobile capture consent + production device integration still missing."
+      ],
+      "technical_goal": "Use real approved local Qwen-VL model inference from #77 for strict JSON normalized object-location hypotheses, never executable pointer/robot authority",
+      "user_capability": "Use real approved local Qwen-VL model inference from #77 for strict JSON normalized object-location hypotheses, never executable pointer/robot authority",
+      "integration": "Actual existing Core Service/Capability/Provider registry and PermissionEngine/MCP Gateway when invoked; offline local engine not wired automatically to production UI. New component creates no default policy, tool direct calls denied.",
+      "hardware_requirements": "Model-generated boxes not calibrated, ground-truth checked or measured on real camera/screen; no actionable target or hardware acceptance.",
+      "license_review": "PARTIAL_VERIFIED: no new pip package; actual Ollama/Qwen-VL/Tesseract model/binary licenses and installations need Owner production validation.",
+      "local_offline": "PARTIAL_VERIFIED: real Core registry/Gateway test path with local HTTP MockTransport/controlled subprocess; real system OCR smoke conditional.",
+      "notes": "PR #139 is Draft/unmerged and based on PR #137. Exact-head Release Lock and CI passed; hardware acceptance not claimed.",
+      "existing_jas_state": "Existing loopback Ollama vision client and Kernel MCP Gateway foundations available; no fully registered consent-scoped vision object/OCR model tool.",
+      "proposed_technology": "Use real approved local Qwen-VL model inference from #77 for strict JSON normalized object-location hypotheses, never executable pointer/robot authority",
+      "license_terms": "Existing JAS license; Ollama/Qwen-VL/Tesseract binary/weights must be independently checked.",
+      "commercial_terms": "Offline, no cloud API or commercial key required for local model execution.",
+      "integration_test_criteria": "Real installed local model/binary with authenticated Owner/microphone-screen-camera consent, threat testing, model quality, no unsanctioned Gateway calls.",
+      "unit_test_criteria": "Real Kernel registry+PermissionEngine+Gateway positive/negative tests, malformed images, language/prompt bounds, failed process/model transport, untrusted outputs.",
+      "security_test_criteria": "No permission/consent means no provider/model process; direct provider call denied; SSRF/command prompt injection rejected; output never grants action.",
+      "acceptance_criteria": "Model-generated boxes not calibrated, ground-truth checked or measured on real camera/screen; no actionable target or hardware acceptance. Owner, device, model security and live inference accepted; independent source-lock integration.",
+      "performance_requirements": "Bounded <=8 MiB images and <=32k OCR chars, 1..60 s OCR timeout; GPU/CPU latency remains unmeasured.",
+      "complexity": "MEDIUM governed integration, HIGH real on-device model/vision quality and hardware acceptance.",
+      "known_limitations": "Model-generated boxes not calibrated, ground-truth checked or measured on real camera/screen; no actionable target or hardware acceptance.",
+      "missing_components": [
+        "Model-generated boxes not calibrated, ground-truth checked or measured on real camera/screen; no actionable target or hardware acceptance.",
+        "Production registered policy, end-to-end authenticated UI and hardware acceptance"
+      ],
+      "official_links": [
+        "https://github.com/ollama/ollama",
+        "https://github.com/tesseract-ocr/tesseract"
+      ],
+      "alternatives": [
+        "Continue explicitly consented local vision via existing controlled screen capture while verifying Gateway composition"
+      ],
+      "hardware_review": "NOT_VERIFIED"
     },
     {
       "id": 80,
       "name": "OCR",
       "phase": 6,
-      "status": "NOT_STARTED",
-      "assessment": "NOT_ASSESSED",
-      "dependencies": [],
-      "code_paths": [],
-      "documentation_paths": [],
-      "test_commands": [],
-      "test_results": "NOT_RUN",
-      "security_review": "NOT_REVIEWED",
+      "status": "TESTING",
+      "assessment": "PARTIAL_VERIFIED",
+      "dependencies": [
+        77
+      ],
+      "code_paths": [
+        "core/src/aura_core/providers/tesseract_ocr_mcp.py"
+      ],
+      "documentation_paths": [
+        "docs/22_IMPLEMENTATION/AURA_TESSERACT_OCR_GATEWAY.md"
+      ],
+      "test_commands": [
+        "cd core && uv run pytest -q tests/test_tesseract_ocr_gateway.py",
+        "cd core && uv run pytest -q",
+        "cd core && uv run python scripts/verify_final_lock.py"
+      ],
+      "test_results": "PASS: Draft PR #138 exact head c239a5d29e097474f7f2cfa06f1433abc745d92f. Core Assurance 656 passed, 7 skipped (run 43800651799); Final Release Lock PASS sha256:bf8ae8ede65609510437afe986a0997e42b0812e737543a6632f317b79e56712; Remote Persistence PASS (run 43800651766). Live model/device prerequisites are not proven by simulated HTTP or subprocess tests.",
+      "security_review": "PARTIAL_VERIFIED: already-authenticated principal and separate captured-media consent, actual Core PermissionEngine/MCP Gateway policy and provider-current-dispatch checks; no ambient microphone/camera permission, no direct provider bypass, no automatic actions. Model text remains untrusted.",
       "acceptance": "NOT_VERIFIED",
-      "commit": "",
-      "pull_request": "",
-      "blockers": [],
-      "technical_goal": "",
-      "user_capability": "",
-      "integration": "",
-      "hardware_requirements": "",
-      "license_review": "NOT_REVIEWED",
-      "local_offline": "NOT_VERIFIED",
-      "notes": "Existing JAS code may already provide part of this feature; audit required.",
-      "existing_jas_state": "NOT_ASSESSED",
-      "proposed_technology": "NOT_ASSESSED",
-      "license_terms": "NOT_ASSESSED",
-      "commercial_terms": "NOT_ASSESSED",
-      "integration_test_criteria": "NOT_ASSESSED",
-      "unit_test_criteria": "NOT_ASSESSED",
-      "security_test_criteria": "NOT_ASSESSED",
-      "acceptance_criteria": "NOT_ASSESSED",
-      "performance_requirements": "NOT_ASSESSED",
-      "complexity": "NOT_ASSESSED",
-      "known_limitations": "NOT_ASSESSED",
-      "missing_components": [],
-      "official_links": [],
-      "alternatives": [],
-      "hardware_review": "NOT_REVIEWED"
+      "commit": "c239a5d29e097474f7f2cfa06f1433abc745d92f",
+      "pull_request": "https://github.com/ArdaNTM/JAS/pull/138",
+      "blockers": [
+        "Optional live OCR smoke skipped when Tesseract/English traineddata/font are missing; no deployed Windows trusted binary and Turkish traineddata/hardware/Owner quality evidence.",
+        "Real Owner identity and signed desktop/mobile capture consent + production device integration still missing."
+      ],
+      "technical_goal": "Real local Tesseract stdin/stdout OCR subprocess launched only under scoped MCP Gateway DispatchGrant, bounded image/time/stdout with captured consent and no shell",
+      "user_capability": "Real local Tesseract stdin/stdout OCR subprocess launched only under scoped MCP Gateway DispatchGrant, bounded image/time/stdout with captured consent and no shell",
+      "integration": "Actual existing Core Service/Capability/Provider registry and PermissionEngine/MCP Gateway when invoked; offline local engine not wired automatically to production UI. New component creates no default policy, tool direct calls denied.",
+      "hardware_requirements": "Optional live OCR smoke skipped when Tesseract/English traineddata/font are missing; no deployed Windows trusted binary and Turkish traineddata/hardware/Owner quality evidence.",
+      "license_review": "PARTIAL_VERIFIED: no new pip package; actual Ollama/Qwen-VL/Tesseract model/binary licenses and installations need Owner production validation.",
+      "local_offline": "PARTIAL_VERIFIED: real Core registry/Gateway test path with local HTTP MockTransport/controlled subprocess; real system OCR smoke conditional.",
+      "notes": "PR #138 is Draft/unmerged and based on PR #137. Exact-head Release Lock and CI passed; hardware acceptance not claimed.",
+      "existing_jas_state": "Existing loopback Ollama vision client and Kernel MCP Gateway foundations available; no fully registered consent-scoped vision object/OCR model tool.",
+      "proposed_technology": "Real local Tesseract stdin/stdout OCR subprocess launched only under scoped MCP Gateway DispatchGrant, bounded image/time/stdout with captured consent and no shell",
+      "license_terms": "Existing JAS license; Ollama/Qwen-VL/Tesseract binary/weights must be independently checked.",
+      "commercial_terms": "Offline, no cloud API or commercial key required for local model execution.",
+      "integration_test_criteria": "Real installed local model/binary with authenticated Owner/microphone-screen-camera consent, threat testing, model quality, no unsanctioned Gateway calls.",
+      "unit_test_criteria": "Real Kernel registry+PermissionEngine+Gateway positive/negative tests, malformed images, language/prompt bounds, failed process/model transport, untrusted outputs.",
+      "security_test_criteria": "No permission/consent means no provider/model process; direct provider call denied; SSRF/command prompt injection rejected; output never grants action.",
+      "acceptance_criteria": "Optional live OCR smoke skipped when Tesseract/English traineddata/font are missing; no deployed Windows trusted binary and Turkish traineddata/hardware/Owner quality evidence. Owner, device, model security and live inference accepted; independent source-lock integration.",
+      "performance_requirements": "Bounded <=8 MiB images and <=32k OCR chars, 1..60 s OCR timeout; GPU/CPU latency remains unmeasured.",
+      "complexity": "MEDIUM governed integration, HIGH real on-device model/vision quality and hardware acceptance.",
+      "known_limitations": "Optional live OCR smoke skipped when Tesseract/English traineddata/font are missing; no deployed Windows trusted binary and Turkish traineddata/hardware/Owner quality evidence.",
+      "missing_components": [
+        "Optional live OCR smoke skipped when Tesseract/English traineddata/font are missing; no deployed Windows trusted binary and Turkish traineddata/hardware/Owner quality evidence.",
+        "Production registered policy, end-to-end authenticated UI and hardware acceptance"
+      ],
+      "official_links": [
+        "https://github.com/ollama/ollama",
+        "https://github.com/tesseract-ocr/tesseract"
+      ],
+      "alternatives": [
+        "Continue explicitly consented local vision via existing controlled screen capture while verifying Gateway composition"
+      ],
+      "hardware_review": "NOT_VERIFIED"
     },
     {
       "id": 81,
