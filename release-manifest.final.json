@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-10-31T00:45:29.771Z",
-  "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
+  "generated_at": "2026-11-16T00:46:48.809Z",
+  "git_commit": "32c5709a781aea62ff7f97b50920a125f76eb47a",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
-  "file_count": 233,
+  "release_digest": "sha256:1132099c222a74b29ee27c377f67c969ea3e381b0cc09b2ba42773ed3a7fe3df",
+  "file_count": 235,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -123,6 +123,10 @@
     {
       "path": "core/pyproject.toml",
       "sha256": "e9659b037281acb116259ac9edd1c394ac318a3b32e5c2c6a4e91a1271abe567"
+    },
+    {
+      "path": "core/scripts/kokoro_tts_mcp.py",
+      "sha256": "5e8e1cf0b4966f40be171394c6702e8197c31f2c0e4606d3c68cdc3fe3b41947"
     },
     {
       "path": "core/src/aura_core/__init__.py",
@@ -927,6 +931,10 @@
     {
       "path": "core/src/aura_core/tts/config.py",
       "sha256": "b651fc07f34d2572c12b349014ce0bbbdc08ca69981a51052c6fd2ab0896a657"
+    },
+    {
+      "path": "core/src/aura_core/tts/kokoro_guard.py",
+      "sha256": "27d313c2dac6e557f72e028ac53c046884a3217af25f3bf95b032307a7ad3cd1"
     },
     {
       "path": "core/src/aura_core/tts/provider_bootstrap.py",
