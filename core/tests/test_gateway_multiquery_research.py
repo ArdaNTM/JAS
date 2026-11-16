@@ -89,6 +89,7 @@ def test_gateway_deny_aborts_batch_without_dispatching_later_queries():
     "file:///etc/passwd", "javascript:alert(1)", "http://localhost/private",
     "http://127.0.0.1/config", "http://10.0.0.1/", "http://192.168.1.10/",
     "http://169.254.169.254/latest/meta-data", "http://[::1]/",
+    "http://127.1/", "http://localhost./", "https://@example.org/",
     "https://user:password@example.org/", "http://example.org:8080/",
     "https://example.org/\nX-Debug: 1",
 ])
