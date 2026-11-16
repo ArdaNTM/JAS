@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-10-31T00:45:29.771Z",
-  "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
+  "generated_at": "2026-11-16T00:33:02.179Z",
+  "git_commit": "04ca4cc06b8876b79d59a935e5276a30204039d0",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
+  "release_digest": "sha256:264d25f062277dca6a3b75482b68d1ac5b134905e075b6e9a3a5754846ea6aaf",
   "file_count": 233,
   "files": [
     {
@@ -890,7 +890,7 @@
     },
     {
       "path": "core/src/aura_core/security/auth.py",
-      "sha256": "d0fd842a6b59b99d938375d5722539fe0dd62c233f70e183e6b2f5f175226632"
+      "sha256": "3b414a6d0551f40b1a659ea897f1551aa79614933558169ffb9d96f7a442c8f6"
     },
     {
       "path": "core/src/aura_core/security/http_auth.py",
