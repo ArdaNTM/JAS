@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-10-31T00:45:29.771Z",
-  "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
+  "generated_at": "2026-11-16T03:20:00.000Z",
+  "git_commit": "daf8f66f3a781bfd8091d82f16555753ed708f41",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
-  "file_count": 233,
+  "release_digest": "sha256:79c49da56f8bb802f2f418ca6bf75098df7c003d0d0d5b933f3c408fbd4ba146",
+  "file_count": 235,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -347,6 +347,10 @@
     {
       "path": "core/src/aura_core/application/service.py",
       "sha256": "ad5f2173820f2b4fc14e92acea7f0a4eb1ae8253398f4bfb22f3760f60f4d2fc"
+    },
+    {
+      "path": "core/src/aura_core/application/speaker_recognition.py",
+      "sha256": "b067ee843289b2d95619db599e28ec2f6ee9e9da71651e9a05f893dbeef8552f"
     },
     {
       "path": "core/src/aura_core/application/speech_api.py",
@@ -823,6 +827,10 @@
     {
       "path": "core/src/aura_core/providers/local_vision.py",
       "sha256": "44a52720d803722396b5b92dd1b25bff5ced9ca1821c4247f4db4f8cbc444e37"
+    },
+    {
+      "path": "core/src/aura_core/providers/speaker_embedding.py",
+      "sha256": "a898122699b9f1b77281532ef7fd357368853261dd9029b0634fdb7deb6ebc28"
     },
     {
       "path": "core/src/aura_core/release/manifest.py",
