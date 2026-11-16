@@ -101,13 +101,18 @@ class CameraFrameEvidence:
     provider_id: str = _PROVIDER
     model_provider_id: str = "vision.ollama.local"
     trust: str = "UNTRUSTED_CAMERA_FRAME"
-    camera_action_executed: bool = False
+    computer_or_robot_actuation: bool = False
 
 
 class LocalOpenCVCameraMCP:
     """Actual cv2.VideoCapture on a fixed local device ID, never an arbitrary URL."""
 
-    def __init__(self, *, trusted_device_index: int = 0, timeout_seconds: float = 10.0) -> None:
+    def __init__(
+        self, *, consent_lease: OwnerCameraConsentLease,
+        trusted_device_index: int = 0, timeout_seconds: float = 10.0,
+    ) -> None:
+        if not isinstance(consent_lease, OwnerCameraConsentLease):
+            raise TypeError("Trusted Owner consent lease is required")
         if type(trusted_device_index) is not int or not 0 <= trusted_device_index <= 3:
             raise ValueError("Trusted local camera index must be 0..3")
         if (
@@ -116,13 +121,21 @@ class LocalOpenCVCameraMCP:
         ):
             raise ValueError("Camera timeout must be 1..30 seconds")
         self.device_index = trusted_device_index
+        self._consent = consent_lease
         self.timeout = float(timeout_seconds)
 
     async def list_tools(self) -> tuple[MCPTool, ...]:
         return (MCPTool(
             name=_TOOL,
             description="One consented frame from one trusted local OpenCV camera",
-            input_schema={"type": "object", "additionalProperties": False},
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "session_id": {"type": "string", "minLength": 1, "maxLength": 128},
+                },
+                "required": ["session_id"],
+                "additionalProperties": False,
+            },
         ),)
 
     def _capture_once(self) -> bytes:
@@ -174,14 +187,21 @@ class LocalOpenCVCameraMCP:
             or name != _TOOL
         ):
             raise CameraReadDenied("Local camera must be called inside authorized MCP Gateway")
-        if arguments not in ({}, None):
+        if not isinstance(arguments, dict) or set(arguments) != {"session_id"}:
             raise ValueError("Caller cannot select camera devices or streaming options")
+        session_id = _session_id(arguments["session_id"])
+        if grant.principal_id != self._consent._principal:
+            raise CameraReadDenied("Camera dispatch principal is not the consented Owner")
+        # This is checked *inside* the provider, not only the facade:
+        # direct Gateway calls without a live owner lease cannot open a camera.
+        self._consent.require(session_id=session_id)
         # to_thread has a soft timeout: it cannot terminate a stuck OS driver.
         # A native helper process/broker is required for hard production isolation.
         try:
             frame = await asyncio.wait_for(asyncio.to_thread(self._capture_once), self.timeout)
         except TimeoutError as exc:
             raise CameraUnavailable("Local camera acquisition timed out") from exc
+        self._consent.require(session_id=session_id)
         return {
             "image_base64": base64.b64encode(frame).decode("ascii"),
             "image_sha256": hashlib.sha256(frame).hexdigest(),
@@ -191,7 +211,8 @@ class LocalOpenCVCameraMCP:
 
 def register_local_opencv_camera(
     *, services: ServiceRegistry, providers: ProviderRegistry,
-    capabilities: CapabilityRegistry, trusted_device_index: int = 0,
+    capabilities: CapabilityRegistry, consent_lease: OwnerCameraConsentLease,
+    trusted_device_index: int = 0,
 ) -> LocalOpenCVCameraMCP:
     """Trusted opt-in registration; no automatic camera policies or capture."""
     if not (
@@ -204,7 +225,9 @@ def register_local_opencv_camera(
         raise ValueError("Local camera provider already registered")
     if capabilities.providers(_CAP):
         raise ValueError("Local camera capability already registered")
-    instance = LocalOpenCVCameraMCP(trusted_device_index=trusted_device_index)
+    instance = LocalOpenCVCameraMCP(
+        consent_lease=consent_lease, trusted_device_index=trusted_device_index,
+    )
     service = services.register(ServiceDefinition(
         name="aura-verified-local-camera", version="1.0.0",
         provider="mcp", category=ServiceCategory.MCP,
@@ -244,6 +267,14 @@ class GovernedLocalCameraReader:
             raise CameraReadDenied("Trusted camera consent lease must bind same principal")
         if type(trusted_device_index) is not int or not 0 <= trusted_device_index <= 3:
             raise ValueError("Invalid trusted camera device index")
+        try:
+            registered = gateway._provider_registry.resolve(_PROVIDER)
+        except Exception as exc:
+            raise CameraReadDenied("Registered camera provider is unavailable") from exc
+        if (not isinstance(registered, LocalOpenCVCameraMCP)
+                or registered._consent is not consent_lease
+                or registered.device_index != trusted_device_index):
+            raise CameraReadDenied("Camera lease and device must match the registered provider")
         self._gateway = gateway
         self._principal = principal
         self._images = image_reader
@@ -267,7 +298,7 @@ class GovernedLocalCameraReader:
                 operation_id=_CAP,
                 resource_scope=f"vision/camera/{self._device}/frame",
                 risk_level=RiskLevel.HIGH, tool_name=_TOOL,
-                arguments={}, session_id=session_id,
+                arguments={"session_id": session_id}, session_id=session_id,
             ))
         except Exception as exc:
             raise CameraUnavailable("Local camera Gateway is unavailable") from exc
