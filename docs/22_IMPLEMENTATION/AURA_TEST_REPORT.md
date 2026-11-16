@@ -204,3 +204,11 @@ Fake provider/Gateway test fixture is not real SearXNG/web proof; per-query auth
 | #117 (f9ea0abb2cf1) | 602 passed, 6 skipped (run 43785548012) | PASS | PASS (43785547988) |
 Sources: https://github.com/ArdaNTM/JAS/actions/runs/43785154055 and https://github.com/ArdaNTM/JAS/actions/runs/43785548012
 Runs are isolated PR head checks, not merged integration or production/hardware acceptance.
+
+## PR #118 and #119 exact-head CI evidence
+| PR | Core Assurance | Release Lock | Remote Persistence |
+|---|---|---|---|
+| #118 (cd1a98e195d5) | 605 passed, 6 skipped (run 43786822015) | PASS sha256:021868bed33dbb9bf75a8c9fcb0de675b288c049b894aa50d43cdc66c521051a | PASS (43786822032) |
+| #119 (2cace2cc4927) | 619 passed, 6 skipped (run 43787305752) | PASS sha256:713f7063f04f322f8ecafc9a5a3ddcb60504dab7bf3f7a1e57015343a5fba3ea | PASS (43787305867) |
+Run URLs: https://github.com/ArdaNTM/JAS/actions/runs/43786822015 and https://github.com/ArdaNTM/JAS/actions/runs/43787305752
+Neither run establishes hardware/Owner acceptance. #119 is stacked on unmerged #117.

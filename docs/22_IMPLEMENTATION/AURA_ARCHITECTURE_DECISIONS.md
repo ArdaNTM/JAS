@@ -54,3 +54,8 @@ A deterministic evidence packet can group source references and flag subquestion
 Pin test-data root inode and walk descriptors with O_NOFOLLOW on POSIX. This is read-only and does not prove Windows handle/reparse race safety. MCP Gateway retains execution authority.
 ## ADR-ENG-012 — bound memory identity and deny unapproved store operations
 Trusted Core composition binds the authenticated principal; every read/write/forget requires an explicit Core PermissionEngine ALLOW. The adapter does not authenticate identity, grant Owner approval, encrypt stored data or replace MCP Gateway tool authorization.
+
+## ADR-ENG-013 — deny-only attested Core registry guard is not hardware immutability
+A read-only digest of existing PermissionEngine policies plus Service/Capability/Provider registry state may be HMAC-attested by an independent verifier. Optional wrapper can DENY on drift, but only existing MCPGateway authorizes/dispatches. No owner permission or kernel trust root is granted; all-path enforcement and protected signer remain future prerequisites.
+## ADR-ENG-014 — personal knowledge must consume governed principal-bound storage
+Bounded personal hub queries use the existing GovernedEpisodicMemory PermissionEngine policy per query, fail closed on revocation and treat memory text as UNTRUSTED. No raw SQLite identity override, direct model execution or new tool authorization. Full encrypted multi-source integration requires Owner acceptance.

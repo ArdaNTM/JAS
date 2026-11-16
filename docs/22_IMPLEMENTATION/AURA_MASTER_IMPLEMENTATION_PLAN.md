@@ -151,3 +151,6 @@ PR #112 implements partial governed bounded multiquery (#35) with real JAS Permi
 
 ## 2026-11-16 verified PR #116/#117 continuation
 Tracker 68 TESTING, 2 RESEARCHING, 47 NOT_STARTED (zero COMPLETED). Features #25 and #104 are PARTIAL_VERIFIED on Draft PRs #116/#117 with Core/Persistence/Release Lock PASS. Next security #106 requires tamper-evidence/deny-only tests; no claim of immutable hardware or secured memory. Continue dependency-sensitive phases without merging.
+
+## Feature #106/#116 continuation through PR #119
+#106 Core registry drift guard on Draft PR #118 and #116 principal-scoped personal knowledge view on stacked Draft PR #119 both pass exact-head Core, Release Lock, Persistence. Tracker now 70 TESTING / 2 RESEARCHING / 45 NOT_STARTED, 0 COMPLETED. External trust anchor and authenticated integration remain necessary. Next: #14 interruptible voice session concurrency or remaining read-only desktop/science tasks, preserving the Gateway and nonmerged PR architecture.

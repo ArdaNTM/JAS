@@ -172,3 +172,8 @@ Removed only the redundant #59 → #58 edge; #59 now depends on #57, #99,
 PR #116, HEAD 2020122bd0e26934ce2fd722b22dfaf8e0bdbab2: POSIX descriptor-walk filesystem safety (#25 PARTIAL). Core 598 passed, 6 skipped, Final Release Lock PASS, Persistence PASS. Windows NTFS acceptance absent. https://github.com/ArdaNTM/JAS/pull/116
 PR #117, HEAD f9ea0abb2cf109efd98ba55b245d8816c20865dc: principal-bound PermissionEngine-gated SQLite memory (#104 PARTIAL). Core 602 passed, 6 skipped, Final Release Lock PASS, Persistence PASS. No encryption at rest or complete Owner/production integration. https://github.com/ArdaNTM/JAS/pull/117
 Duplicate research PR #113 and #115 are CLOSED WITHOUT MERGE; canonical research PRs #112 and #114 remain Draft. No auto merges.
+
+## 2026-11-16 — PR #118 / #119 exact-head verified continuation
+Draft PR #118 (head cd1a98e195d5bf8961169dc490dabc62a8c98b1d), #106 PARTIAL: existing PermissionEngine read-only policy digest plus opt-in deny-only HMAC Core registry checkpoint/Gateway guard. Core 605 passed 6 skipped, Release Lock PASS, Persistence PASS. No TPM/hardware immutability, anti-replay or globally wired composition. https://github.com/ArdaNTM/JAS/pull/118
+Draft stacked PR #119 (head 2cace2cc4927963e3e9ccad917e65a91dddce08e, base #117), #116 PARTIAL: principal-scoped offline read-only personal knowledge aggregator via governed SQLite. Core 619 passed 6 skipped, Release Lock PASS, Persistence PASS. No complete UI, encrypted store or multi-source indexing. https://github.com/ArdaNTM/JAS/pull/119
+Both PRs remain Draft and unmerged; main unchanged. All accepted evidence is isolated PR HEAD, not combined integration.

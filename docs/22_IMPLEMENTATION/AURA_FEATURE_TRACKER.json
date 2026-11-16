@@ -5106,40 +5106,65 @@
       "id": 106,
       "name": "Değiştirilemeyen güvenlik çekirdeği",
       "phase": 1,
-      "status": "NOT_STARTED",
-      "assessment": "NOT_ASSESSED",
-      "dependencies": [],
-      "code_paths": [],
-      "documentation_paths": [],
-      "test_commands": [],
-      "test_results": "NOT_RUN",
-      "security_review": "NOT_REVIEWED",
+      "status": "TESTING",
+      "assessment": "PARTIAL_VERIFIED",
+      "dependencies": [
+        99,
+        100,
+        103
+      ],
+      "code_paths": [
+        "core/src/aura_core/kernel/permissions.py",
+        "core/src/aura_core/enterprise/core_integrity.py"
+      ],
+      "documentation_paths": [
+        "docs/22_IMPLEMENTATION/AURA_CORE_INTEGRITY_GUARD.md"
+      ],
+      "test_commands": [
+        "cd core && uv run pytest -q tests/test_core_integrity_guard.py tests/test_permission_engine.py",
+        "cd core && uv run python scripts/verify_final_lock.py"
+      ],
+      "test_results": "PASS: PR #118 exact HEAD cd1a98e195d5bf8961169dc490dabc62a8c98b1d Core Assurance run 43786822015: 605 passed, 6 skipped; Final Release Lock PASS digest sha256:021868bed33dbb9bf75a8c9fcb0de675b288c049b894aa50d43cdc66c521051a; Remote Persistence 43786822032 PASS.",
+      "security_review": "PARTIAL_VERIFIED: HMAC receipt and read-only existing Core Service/Capability/Provider registry + PermissionEngine policy digest; tampering, revocation, wrong key/scope, default deny and approval-required regression checked. No hardware protection.",
       "acceptance": "NOT_VERIFIED",
-      "commit": "",
-      "pull_request": "",
-      "blockers": [],
-      "technical_goal": "",
-      "user_capability": "",
-      "integration": "",
-      "hardware_requirements": "",
-      "license_review": "NOT_REVIEWED",
-      "local_offline": "NOT_VERIFIED",
-      "notes": "Existing JAS code may already provide part of this feature; audit required.",
-      "existing_jas_state": "NOT_ASSESSED",
-      "proposed_technology": "NOT_ASSESSED",
-      "license_terms": "NOT_ASSESSED",
-      "commercial_terms": "NOT_ASSESSED",
-      "integration_test_criteria": "NOT_ASSESSED",
-      "unit_test_criteria": "NOT_ASSESSED",
-      "security_test_criteria": "NOT_ASSESSED",
-      "acceptance_criteria": "NOT_ASSESSED",
-      "performance_requirements": "NOT_ASSESSED",
-      "complexity": "NOT_ASSESSED",
-      "known_limitations": "NOT_ASSESSED",
-      "missing_components": [],
-      "official_links": [],
-      "alternatives": [],
-      "hardware_review": "NOT_REVIEWED"
+      "commit": "cd1a98e195d5bf8961169dc490dabc62a8c98b1d",
+      "pull_request": "https://github.com/ArdaNTM/JAS/pull/118",
+      "blockers": [
+        "Externally protected signer/key, anti-replay monotonic anchor, baseline rotation and hardware immutable trust root not implemented",
+        "Opt-in Gateway guard not wired to every existing production execution path; unwrapped gateway remains accessible",
+        "Registry snapshots are non-atomic across service/provider/policy locks; real Owner/F2.7 integration missing"
+      ],
+      "technical_goal": "Detect unauthorized Core registry or policy drift before an existing MCPGateway dispatch through a deny-only HMAC-bound checkpoint.",
+      "user_capability": "Verifier holding separate key can compare bounded Core registry/policy receipt and reject drift before Gateway execution.",
+      "integration": "Adds PermissionEngine read-only integrity_digest and optional GuardedMCPGateway wrapper delegating every allowed request to original Gateway.",
+      "hardware_requirements": "No hardware tested; TPM/UEFI/NTFS and F2.7 trust root absent.",
+      "license_review": "NOT_APPLICABLE: Python stdlib only",
+      "local_offline": "PARTIAL_VERIFIED",
+      "notes": "No immutable kernel or automatic grant is proven. All Core paths must adopt wrapper and external key protection before production acceptance. Draft unmerged PR #118.",
+      "existing_jas_state": "Existing PermissionEngine and registries are authoritative but no opt-in runtime state HMAC receipt checks prior to Gateway dispatch.",
+      "proposed_technology": "Canonical SHA-256 read-only registry and policy snapshot, verifier-held HMAC-SHA256 receipt, deny-only existing MCPGateway wrapper.",
+      "license_terms": "Python standard library and existing repository license",
+      "commercial_terms": "No new paid provider",
+      "integration_test_criteria": "End-to-end all real MCP execution paths use attested guard after authenticated Owner policy deployment and baseline rotation.",
+      "unit_test_criteria": "Deterministic policy/registry state hash and receipt, authorize and non-authorize same input.",
+      "security_test_criteria": "Policy tampering, expired/revoked rules, key/scope mismatch, altered provider state, missing registry and forged MAC deny before provider.",
+      "acceptance_criteria": "Trusted immutable Core boot measured by hardware/external trust anchor, independently protected keys, anti-replay, Owner governance and enforced all-path Gateway integration.",
+      "performance_requirements": "Bound total registry entries <=10000, serialized snapshot <=2 MB; no runtime latency profile.",
+      "complexity": "MEDIUM deny-only guard; HIGH immutable trusted production core.",
+      "known_limitations": "In-process secret can be compromised, opt-in only; non-atomic snapshots; no prevention of privileged memory mutation, no hardware immutability.",
+      "missing_components": [
+        "Independent key custody, anti-replay and baseline rotation",
+        "Enforced application-wide Gateway guard and Owner proof",
+        "TPM/UEFI protected boot and host security integration"
+      ],
+      "official_links": [
+        "https://docs.python.org/3/library/hmac.html"
+      ],
+      "alternatives": [
+        "TPM-sealed signed policy baseline and measured boot",
+        "External signed policy transparency monitor"
+      ],
+      "hardware_review": "NOT_VERIFIED"
     },
     {
       "id": 107,
@@ -5643,40 +5668,62 @@
       "id": 116,
       "name": "Kişisel bilgi merkezi",
       "phase": 9,
-      "status": "NOT_STARTED",
-      "assessment": "NOT_ASSESSED",
-      "dependencies": [],
-      "code_paths": [],
-      "documentation_paths": [],
-      "test_commands": [],
-      "test_results": "NOT_RUN",
-      "security_review": "NOT_REVIEWED",
+      "status": "TESTING",
+      "assessment": "PARTIAL_VERIFIED",
+      "dependencies": [
+        104
+      ],
+      "code_paths": [
+        "core/src/aura_core/knowledge/personal_hub.py",
+        "core/src/aura_core/memory/governed_access.py"
+      ],
+      "documentation_paths": [
+        "docs/22_IMPLEMENTATION/AURA_PERSONAL_KNOWLEDGE_HUB.md"
+      ],
+      "test_commands": [
+        "cd core && uv run pytest -q tests/test_personal_knowledge_hub.py tests/test_governed_memory_access.py",
+        "cd core && uv run python scripts/verify_final_lock.py"
+      ],
+      "test_results": "PASS: stacked PR #119 exact HEAD 2cace2cc4927963e3e9ccad917e65a91dddce08e (based on PR #117) Core Assurance run 43787305752 619 passed 6 skipped; Final Release Lock PASS sha256:713f7063f04f322f8ecafc9a5a3ddcb60504dab7bf3f7a1e57015343a5fba3ea; Remote Persistence 43787305867 PASS.",
+      "security_review": "PARTIAL_VERIFIED: real SQLite + Core PermissionEngine per-query auth, owner scope isolation, policy revocation between queries, forged trusted content and inconsistent snapshots rejected. No encryption.",
       "acceptance": "NOT_VERIFIED",
-      "commit": "",
-      "pull_request": "",
-      "blockers": [],
-      "technical_goal": "",
-      "user_capability": "",
-      "integration": "",
-      "hardware_requirements": "",
-      "license_review": "NOT_REVIEWED",
-      "local_offline": "NOT_VERIFIED",
-      "notes": "Existing JAS code may already provide part of this feature; audit required.",
-      "existing_jas_state": "NOT_ASSESSED",
-      "proposed_technology": "NOT_ASSESSED",
-      "license_terms": "NOT_ASSESSED",
-      "commercial_terms": "NOT_ASSESSED",
-      "integration_test_criteria": "NOT_ASSESSED",
-      "unit_test_criteria": "NOT_ASSESSED",
-      "security_test_criteria": "NOT_ASSESSED",
-      "acceptance_criteria": "NOT_ASSESSED",
-      "performance_requirements": "NOT_ASSESSED",
-      "complexity": "NOT_ASSESSED",
-      "known_limitations": "NOT_ASSESSED",
-      "missing_components": [],
-      "official_links": [],
-      "alternatives": [],
-      "hardware_review": "NOT_REVIEWED"
+      "commit": "2cace2cc4927963e3e9ccad917e65a91dddce08e",
+      "pull_request": "https://github.com/ArdaNTM/JAS/pull/119",
+      "blockers": [
+        "Depends on unmerged PR #117 authenticated governed memory adapter",
+        "Only read-only lexical episodic memory; no files/mail/other source integration or Owner UI",
+        "SQLite plaintext, storage key/backup/production identity acceptance outstanding"
+      ],
+      "technical_goal": "Provide bounded read-only multiquery personal knowledge projection through already governed principal-scoped episodic memory.",
+      "user_capability": "Retrieve up to 20 deduplicated UNTRUSTED scoped knowledge previews across 1-4 explicit queries under PermissionEngine policies.",
+      "integration": "Uses GovernedEpisodicMemory on stacked PR #117; no separate store, provider, implicit permission or external fetch.",
+      "hardware_requirements": "None for local SQLite Core tests; production device identity unverified.",
+      "license_review": "NOT_APPLICABLE: no new dependency",
+      "local_offline": "PARTIAL_VERIFIED",
+      "notes": "Draft PR #119 stacked on #117, must integrate and recompute combined release lock only with separate Owner approved merges; feature not complete.",
+      "existing_jas_state": "Existing memory stores offer lexical query; #117 adds governed principal-bound access, on which hub depends.",
+      "proposed_technology": "Pure Python deterministic query aggregation and bounded memory evidence projection.",
+      "license_terms": "Existing JAS and stdlib",
+      "commercial_terms": "None",
+      "integration_test_criteria": "Production authenticated principal routes, file/knowledge/source index and end-to-end UI and privacy tests.",
+      "unit_test_criteria": "Real scoped SQLite, dedupe, stable matched query indices and output clipping.",
+      "security_test_criteria": "Default-deny, stale permission between query stages, cross-principal result isolation and prompt injection treated as data.",
+      "acceptance_criteria": "Owner-approved multi-source knowledge UI, encrypted storage, independently verified identity, signed provenance and privacy/retention controls.",
+      "performance_requirements": "1-4 queries, <=20 results, <=32000 preview chars; no production benchmark.",
+      "complexity": "LOW local aggregator; HIGH complete authenticated knowledge center.",
+      "known_limitations": "Not a semantic index, no graph/file/email/media sources, plaintext sqlite, no UI.",
+      "missing_components": [
+        "Authenticated UI and all-source knowledge indexing",
+        "Encrypted secure backups and key lifecycle",
+        "Full Owner privacy and production acceptance"
+      ],
+      "official_links": [
+        "https://docs.python.org/3/library/sqlite3.html"
+      ],
+      "alternatives": [
+        "Existing knowledge graph integration after authenticated policy checks"
+      ],
+      "hardware_review": "NOT_APPLICABLE for isolated Core tests; production hardware unverified."
     },
     {
       "id": 117,

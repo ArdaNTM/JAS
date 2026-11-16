@@ -118,3 +118,8 @@ After **explicit Owner merge approval**, integrate in dependency order, rebase e
 #25 POSIX descriptor-based safe reader does not implement Windows NTFS reparse race safety or a full Owner-granted write/delete file manager.
 #104 governed memory wrapper is optional and not wired throughout production, does not encrypt existing plaintext SQLite data or prove trusted Owner credentials/secure backups.
 PR #113 and #115 closed as duplicates, no merge. Combined source locks and separate Owner approval required.
+
+## PR #118/#119 acceptance blockers
+#106 opt-in Core integrity digest/HMAC guard not installed globally; signer key not independently protected, replay possible, policy/provider snapshots non-atomic, not hardware immutable.
+#116 personal hub depends on unmerged #117, reads only SQLite episodic memory, has no full personal knowledge UX, encrypted storage or multi-source indexing. Separate Owner acceptance required.
+All feature PRs need explicit approved merges and recomputation of combined manifest; individual CI passes are not cumulative proof.
