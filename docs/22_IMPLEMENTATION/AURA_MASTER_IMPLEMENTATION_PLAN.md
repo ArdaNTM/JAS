@@ -180,3 +180,7 @@ Verified #135 Release Lock hotfix and #136 consolidated **22 Draft PRs #112–#1
 ## 2026-11-16 — local vision execution dependencies
 
 Features #77 real Ollama Gateway provider, #79 bounded object hypotheses and #80 offline Tesseract OCR are implemented/tested in Draft PR #137/#139/#138 and pass exact-head Core/Persistence/Final Lock. Tracker now **89 TESTING, 2 RESEARCHING, 26 NOT_STARTED**, none COMPLETED. Next: real video frame isolation (#78), real pixel/screen integration, camera and hardware trust (#83/#84), with actual models, licenses and Owner acceptance before promotion. #136's consolidated source lock covers only PR #112–#135; must extend via new integration review for #137+.
+
+## 2026-11-16 — local video #78 verified
+
+Feature #78: FFmpeg frame sampling and per-frame local Ollama separately authorized via Core MCP Gateway; exact-head CI/Release Lock PASS PR #140; only PARTIAL_VERIFIED. Tracker 25 NOT_STARTED / 90 TESTING / 2 RESEARCHING. Next dependency chain #82 visual memory (SQLite/Principal/PermissionEngine), #83 camera (trusted device capture authorization), #84 visual task verification (independent evidence); never infer permission from computer vision text.

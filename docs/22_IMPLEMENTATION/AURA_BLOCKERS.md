@@ -162,3 +162,7 @@ Read-only declarative proposals are never authorized execution or executable wor
 - #79 / PR #139: Model-generated boxes not calibrated, ground-truth checked or measured on real camera/screen; no actionable target or hardware acceptance.
 - #80 / PR #138: Optional live OCR smoke skipped when Tesseract/English traineddata/font are missing; no deployed Windows trusted binary and Turkish traineddata/hardware/Owner quality evidence.
 - No model-derived bounding box or OCR text is Owner authority, a verified pointer target or permission. All actual clicks, camera opening and robotic actions need separate approved Gateway capabilities and independent validation.
+
+## #78 real video deployment gaps (PR #140)
+
+FFmpeg codec parser/sandbox privilege confinement, real Windows binary provenance, Qwen-VL model weights/GPU throughput, user consent UI and full temporal scene validation remain unverified. Tested video summaries are **UNTRUSTED**, not Owner action or click authority. PR #140 stacked on #137, no merges and no COMPLETED claim.

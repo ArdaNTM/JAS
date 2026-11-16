@@ -4143,40 +4143,65 @@
       "id": 78,
       "name": "Video analizi",
       "phase": 6,
-      "status": "NOT_STARTED",
-      "assessment": "NOT_ASSESSED",
-      "dependencies": [],
-      "code_paths": [],
-      "documentation_paths": [],
-      "test_commands": [],
-      "test_results": "NOT_RUN",
-      "security_review": "NOT_REVIEWED",
+      "status": "TESTING",
+      "assessment": "PARTIAL_VERIFIED",
+      "dependencies": [
+        77,
+        99,
+        100,
+        103
+      ],
+      "code_paths": [
+        "core/src/aura_core/providers/ffmpeg_video_mcp.py"
+      ],
+      "documentation_paths": [
+        "docs/22_IMPLEMENTATION/AURA_FFMPEG_VIDEO_GATEWAY.md"
+      ],
+      "test_commands": [
+        "cd core && uv run pytest -q tests/test_ffmpeg_video_gateway.py",
+        "cd core && uv run pytest -q",
+        "cd core && uv run python scripts/verify_final_lock.py"
+      ],
+      "test_results": "PASS: Draft PR #140 exact head 605aad5184336f002d002ae62b8a093c217e2aec Core Assurance 652 passed / 7 skipped, run 43815356004; Final Release Lock PASS sha256:8b0f3c29b6558bf4fbb8e5e82d03e92370bb70e87faffb7a29cfead3f7d79bb8 (235 canonical files); Remote Persistence PASS run 43815355926.",
+      "security_review": "PARTIAL_VERIFIED: two distinct real PermissionEngine/MCPGateway policies for FFmpeg frame decode and local Ollama image inference, principal equality, consent before processing, bounded video/frames, no network input protocols, no shell, subprocess timeout and fail-closed malformed media.",
       "acceptance": "NOT_VERIFIED",
-      "commit": "",
-      "pull_request": "",
-      "blockers": [],
-      "technical_goal": "",
-      "user_capability": "",
-      "integration": "",
-      "hardware_requirements": "",
-      "license_review": "NOT_REVIEWED",
-      "local_offline": "NOT_VERIFIED",
-      "notes": "Existing JAS code may already provide part of this feature; audit required.",
-      "existing_jas_state": "NOT_ASSESSED",
-      "proposed_technology": "NOT_ASSESSED",
-      "license_terms": "NOT_ASSESSED",
-      "commercial_terms": "NOT_ASSESSED",
-      "integration_test_criteria": "NOT_ASSESSED",
-      "unit_test_criteria": "NOT_ASSESSED",
-      "security_test_criteria": "NOT_ASSESSED",
-      "acceptance_criteria": "NOT_ASSESSED",
-      "performance_requirements": "NOT_ASSESSED",
-      "complexity": "NOT_ASSESSED",
-      "known_limitations": "NOT_ASSESSED",
-      "missing_components": [],
-      "official_links": [],
-      "alternatives": [],
-      "hardware_review": "NOT_REVIEWED"
+      "commit": "605aad5184336f002d002ae62b8a093c217e2aec",
+      "pull_request": "https://github.com/ArdaNTM/JAS/pull/140",
+      "blockers": [
+        "Live Windows FFmpeg/codec installation, OS sandbox and malformed decoder input isolation not independently assessed.",
+        "Actual Qwen-VL model weights, user media consent capture/UI, GPU throughput and per-frame image quality not verified.",
+        "Stacked PR #140 depends on #137 and requires Owner-approved cumulative integration; simulated codec/HTTP tests cannot be full hardware acceptance."
+      ],
+      "technical_goal": "Local FFmpeg MP4/WebM decoding with independently Gateway-authorized local Ollama frame descriptions, no cloud processing or untrusted action grants.",
+      "user_capability": "With explicit video consent and separate read policies, receive up to 4 local video frame summaries as untrusted metadata, not execute commands.",
+      "integration": "Opt-in registered video Service/Capability/Provider + transient Gateway dispatch, existing #137 image MCP provider, real PermissionEngine and registered model/tool path.",
+      "hardware_requirements": "Trusted FFmpeg installed on target host; Ollama/Qwen-VL model and sufficient CPU/GPU memory; operator consent.",
+      "license_review": "No new Python dependency; FFmpeg executable and Ollama model weights require deployment-specific license verification.",
+      "local_offline": "PARTIAL_VERIFIED: local-only process and mocked Ollama transport; optional real codec smoke skips in CI if unavailable.",
+      "notes": "PR #140 Draft/unmerged, stacked on #137. No general-purpose shell, camera, or physical tool authorization. Final Lock exact-head PASS; no COMPLETED claim.",
+      "existing_jas_state": "#137 provides real local Ollama Vision MCP tool; no bounded Gateway-authorized FFmpeg video frame decoder before this PR.",
+      "proposed_technology": "FFmpeg pipe-only input/output, JPEG frame sampling, per-frame independently governed Ollama vision metadata.",
+      "license_terms": "Use locally installed FFmpeg and licensed local Ollama models; no cloud subscription.",
+      "commercial_terms": "No additional commercial provider.",
+      "integration_test_criteria": "Real Windows/local FFmpeg codec and local Qwen-VL image decoding with owner-authenticated UI and verified media/consent.",
+      "unit_test_criteria": "Real registry/Gateway authorization, two policy scopes, controlled FFmpeg process, local HTTP transport, input/frame bounds and no premature action.",
+      "security_test_criteria": "DENY/REQUIRE_APPROVAL, no consent, wrong principal, forged results, malformed video/JPEG, bounded time/output, timeout kill fail closed.",
+      "acceptance_criteria": "Actual installed FFmpeg and Qwen-VL hardware end-to-end video summary validation, owner-approved provenance and security sandbox acceptance.",
+      "performance_requirements": "12 MiB maximum video, 4 frames, 8 MiB max output, 20 s process timeout; actual latency benchmark outstanding.",
+      "complexity": "MEDIUM local decode/LLM pipeline, HIGH full device/sandbox/hardware integration.",
+      "known_limitations": "Video is sampled still-image summaries, not synchronized full-motion understanding; model output untrusted and no action authority.",
+      "missing_components": [
+        "Live OS FFmpeg sandbox/hardening and codec security",
+        "Real Ollama/VL model weights and GPU test",
+        "Owner consent UI and telemetry acceptance"
+      ],
+      "official_links": [
+        "https://ffmpeg.org/documentation.html"
+      ],
+      "alternatives": [
+        "Use manual preview of user-approved local video, no automatic camera or model action"
+      ],
+      "hardware_review": "NOT_VERIFIED"
     },
     {
       "id": 79,

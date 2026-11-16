@@ -257,3 +257,7 @@ Core run https://github.com/ArdaNTM/JAS/actions/runs/43793662855: 633 passed, 6 
 - Draft PR #138, #80, HEAD `c239a5d29e097474f7f2cfa06f1433abc745d92f`: 656 passed / 7 skipped (Core [43800651799](https://github.com/ArdaNTM/JAS/actions/runs/43800651799)), Final Release Lock **PASS** sha256:bf8ae8ede65609510437afe986a0997e42b0812e737543a6632f317b79e56712, Persistence [43800651766](https://github.com/ArdaNTM/JAS/actions/runs/43800651766) **PASS**. Optional live OCR smoke skipped when Tesseract/English traineddata/font are missing; no deployed Windows trusted binary and Turkish traineddata/hardware/Owner quality evidence.
 
 #137 real local Ollama HTTP client under Gateway tested with `httpx.MockTransport`; #138 real Tesseract `create_subprocess_exec` contract and optional live CLI smoke (one more skip overall); #139 strict model JSON box evidence. CI PASS does **not** imply model weights/devices available in production. Source-lock branches independent, #138/#139 both depend on #137.
+
+## PR #140 exact-head video and visual model integration
+
+[Core Assurance run 43815356004](https://github.com/ArdaNTM/JAS/actions/runs/43815356004): **652 passed, 7 skipped**; Final Release Lock PASS, digest sha256:8b0f3c29b6558bf4fbb8e5e82d03e92370bb70e87faffb7a29cfead3f7d79bb8. [Persistence run 43815355926](https://github.com/ArdaNTM/JAS/actions/runs/43815355926): PASS. Separate Core PermissionEngine grants verified for video decode and model; no hardware model or production Windows codec acceptance.
