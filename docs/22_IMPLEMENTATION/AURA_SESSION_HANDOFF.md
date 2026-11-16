@@ -81,5 +81,5 @@ Draft PR #130 6214d571cfa9b29505e58f71650ac791ef02530f, Core 43793662855 633/6, 
 - PR #65 cycle-free 117-feature ledger remains a separate unmerged governance PR. Its prior exact-head CI/Release Lock evidence was green for commit `1c97b805dde19cd9696b890d3fa90344d9d1c3d2`; do not infer merge or production acceptance.
 - First implementation slice: feature #17 in Draft PR #131, branch `feat/voice-prosody-cues-17`, latest head `993677d010473a01ba0a677740d5ec22b99a0ae1`.
 - Core check run `43794661539` was queued when last observed. Poll exact head before any acceptance status change.
-- Feature #17 is TESTING / PARTIAL_VERIFIED only. PCM WAV acoustic delivery cues; no emotion, speaker identity, authentication or raw-audio persistence claims.
+- Feature #17 is TESTING / NOT_ASSESSED until exact-head CI passes. PCM WAV acoustic delivery cues; no emotion, speaker identity, authentication or raw-audio persistence claims.
 - No PR merged; main unchanged; F2.7 PR #64 sealed security scope not touched.
