@@ -102,3 +102,8 @@ After **explicit Owner merge approval**, integrate in dependency order, rebase e
 - #103 legacy WebSocket helper has no static default secret now, but modern WebSocketTicketManager identity and Owner/device-trust acceptance are separate. No verified real production credentials or rotation.
 - #101 bounded Docker runtime output and digest-pinned image checks are simulated with fake subprocesses; real Docker/OSWorld cgroup, network, filesystem, image provenance, threat boundary and Owner end-to-end verification still pending. Do not treat fake tests as hardware proof.
 - PR #109 and #110 are Draft and remain independently source-locked off main. Approved merge requires rebased complete manifest, integrated CI and explicit human authorization.
+
+## PR #111 voice customization evidence gap
+
+- Tests emulate Kokoro KPipeline/soundfile with fixtures. No real audio playback, installed weight/license verification, voice availability, real measured latency or multilingual acceptance. Current Kokoro is English lang_code='a'; Piper Turkish provider unchanged.
+- Additional source inventory now explicitly includes Kokoro executable MCP script. After human-approved integration with other independent PR manifest changes, regenerate full source inventory and rerun combined CI; do not merge automatically.

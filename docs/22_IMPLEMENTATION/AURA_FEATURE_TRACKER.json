@@ -855,40 +855,67 @@
       "id": 18,
       "name": "Ses özelleştirme",
       "phase": 2,
-      "status": "NOT_STARTED",
-      "assessment": "NOT_ASSESSED",
-      "dependencies": [],
-      "code_paths": [],
-      "documentation_paths": [],
-      "test_commands": [],
-      "test_results": "NOT_RUN",
-      "security_review": "NOT_REVIEWED",
+      "status": "TESTING",
+      "assessment": "PARTIAL_VERIFIED",
+      "dependencies": [
+        13,
+        15,
+        19
+      ],
+      "code_paths": [
+        "core/src/aura_core/tts/kokoro_guard.py",
+        "core/scripts/kokoro_tts_mcp.py",
+        "core/scripts/generate_final_lock.py"
+      ],
+      "documentation_paths": [
+        "docs/22_IMPLEMENTATION/AURA_KOKORO_VOICE_CONTROLS.md"
+      ],
+      "test_commands": [
+        "cd core && uv run pytest -q tests/test_kokoro_voice_controls.py tests/test_tts_provider_selection.py",
+        "cd core && uv run pytest -q tests",
+        "cd core && uv run python scripts/verify_final_lock.py"
+      ],
+      "test_results": "PASS: PR #111 exact head 595215246cf60c2a0a27cc5acf6131c1491be952, Core Assurance 618 passed 6 skipped, Final Release Lock PASS, Remote Persistence PASS, Windows launcher validation PASS. Initial prior head Core 2 failed MCP v2 alias tests; fixed and rerun successfully.",
+      "security_review": "PARTIAL_VERIFIED: allowlisted English voice profiles, finite rate bounds, text sanitation, bounded multichunk 24kHz PCM output, safe MCP error text, actual executable script included in Release Lock.",
       "acceptance": "NOT_VERIFIED",
-      "commit": "",
-      "pull_request": "",
-      "blockers": [],
-      "technical_goal": "",
-      "user_capability": "",
-      "integration": "",
-      "hardware_requirements": "",
-      "license_review": "NOT_REVIEWED",
-      "local_offline": "NOT_VERIFIED",
-      "notes": "Existing JAS code may already provide part of this feature; audit required.",
-      "existing_jas_state": "NOT_ASSESSED",
-      "proposed_technology": "NOT_ASSESSED",
-      "license_terms": "NOT_ASSESSED",
-      "commercial_terms": "NOT_ASSESSED",
-      "integration_test_criteria": "NOT_ASSESSED",
-      "unit_test_criteria": "NOT_ASSESSED",
-      "security_test_criteria": "NOT_ASSESSED",
-      "acceptance_criteria": "NOT_ASSESSED",
-      "performance_requirements": "NOT_ASSESSED",
-      "complexity": "NOT_ASSESSED",
-      "known_limitations": "NOT_ASSESSED",
-      "missing_components": [],
-      "official_links": [],
-      "alternatives": [],
-      "hardware_review": "NOT_REVIEWED"
+      "commit": "595215246cf60c2a0a27cc5acf6131c1491be952",
+      "pull_request": "https://github.com/ArdaNTM/JAS/pull/111",
+      "blockers": [
+        "No real Kokoro weights/audio-device synthesis or physical microphone tests, model voice list and provenance not verified live.",
+        "No Owner-approved end-to-end live voice customization UX or multilingual/audio quality latency acceptance."
+      ],
+      "technical_goal": "Offer safe configurable local Kokoro voice identity and bounded speech rate, normalize text, emit all returned speech chunks.",
+      "user_capability": "Choose from conservative English Kokoro voice profiles and bounded speech rate while using the existing MCP synthesis tool.",
+      "integration": "Existing Kokoro MCP script uses Core guarded input model and streams returned chunks into one bounded PCM WAV; no new provider, permissions or Gateway path.",
+      "hardware_requirements": "Real model weights, ONNX/soundfile backend, audio output and user acceptance remain unverified.",
+      "license_review": "PARTIAL: no new Python dependencies; actual Kokoro voice/model weights license not independently verified here.",
+      "local_offline": "PARTIAL_VERIFIED: mocked provider request and WAV tests execute offline, not proof that model weights are present.",
+      "notes": "Draft PR #111; exact final head CI green after test SDK alias fix. Added provider script explicitly to Final Release Lock. English Kokoro separate from Turkish Piper; no merge.",
+      "existing_jas_state": "Main Kokoro MCP script accepted free-form voice and speed, returned only the first speech chunk, and reflected raw exception messages.",
+      "proposed_technology": "Python Core voice validation + existing Kokoro KPipeline and soundfile WAV writer; reusable clean_for_speech.",
+      "license_terms": "Existing Kokoro package/model weights licensing requires separate review; no new dependencies.",
+      "commercial_terms": "TTS model weights commercial rights not assessed by this slice.",
+      "integration_test_criteria": "Verified local installed model voices, all-chunk WAV, production Gateway authorization, actual audio device and performance.",
+      "unit_test_criteria": "Named voice selection, valid/invalid speed/text, mocked multichunk WAV, schema and safe errors.",
+      "security_test_criteria": "Unknown voice, nonfinite rate, URL-only text, >90s audio, no exception message leakage, script locked.",
+      "acceptance_criteria": "Owner-customizable full voice controls, multilingual/local TTS, real device audio quality/latency, licensing and production behavior verified.",
+      "performance_requirements": "Text <=4000 chars, speed 0.75..1.35, total WAV <=90 seconds/16MB base64; no hardware performance measurement.",
+      "complexity": "MEDIUM bounded Kokoro tool improvement; HIGH complete installed-voice UX, multilingual models and real-time performance.",
+      "known_limitations": "English allowlist and model backend untested on real hardware; PCM generation may buffer audio before output.",
+      "missing_components": [
+        "Real model-weight and voice availability acceptance",
+        "Owner-facing voice selection persistence and device tests",
+        "Multilingual/pitch/environment-specific customization and production quality benchmarking"
+      ],
+      "official_links": [
+        "https://github.com/hexgrad/kokoro",
+        "https://python-soundfile.readthedocs.io/"
+      ],
+      "alternatives": [
+        "Existing Piper Turkish local voice configuration",
+        "Other licensed, offline TTS MCP providers after registry review"
+      ],
+      "hardware_review": "NOT_VERIFIED: mock soundfile and fake model only."
     },
     {
       "id": 19,

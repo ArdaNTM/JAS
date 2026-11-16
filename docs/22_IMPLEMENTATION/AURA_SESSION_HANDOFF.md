@@ -29,3 +29,8 @@
 - #109 Draft final head `da5e2948079c36dcbf2e59ad47c5b6b11d7c3e90`, Core run 43781476118 601/6 + Release Lock PASS, Persistence run 43781476157 PASS; #103 partial legacy credential safety only.
 - #110 Draft head `019b62e327b21bb3c1538cac7dafa3a2eab6ad78`, Core run 43781719023 605/6 + Release Lock PASS, Persistence run 43781719040 PASS; #101 partial Docker runner output and image validation; no hardware acceptance.
 - Tracker now **52 NOT_STARTED / 63 TESTING / 2 RESEARCHING**, zero COMPLETED. No merges, main b1ffe6f5... unchanged. #111 Kokoro voice profile work is underway; do not mark verified until latest exact HEAD CI passes, then synchronize tracker before session end.
+
+## Verified PR #111 handoff — 2026-11-16
+
+- PR #111 draft HEAD `595215246cf60c2a0a27cc5acf6131c1491be952`. Feature #18 TESTING/PARTIAL_VERIFIED. Core run 43782633134: 618 passed 6 skipped, Final Release Lock PASS. Persistence 43782633127 PASS and Windows launcher 43782633130 PASS. Do not confuse mocked WAV with actual model hardware acceptance.
+- Tracker **51 NOT_STARTED / 64 TESTING / 2 RESEARCHING**, zero COMPLETED. PR #65 main-based tracking branch remains unmerged, no automatic merges. Next: independent bounded multiquery MCP research group (#35), validate existing provider guard boundaries; continue to #43 only after #35 code verified. Always retain exact CI receipts.

@@ -37,3 +37,7 @@ Existing compatibility WebSocket credential comparison now requires explicitly c
 ## ADR-ENG-008 — sandbox output safety requires post-drain status and a combined budget
 
 DockerPythonRunner uses one capture byte budget over both pipes under a synchronization lock. A job must not be recorded as completed before reader threads finish and output overflow has been observed; invalid option-looking image references are denied before a container can start. Neither check substitutes for actual Docker/kernel isolation or Gateway authorization.
+
+## ADR-ENG-009 — bounded voice profiles belong under registered MCP tools
+
+Existing Kokoro MCP provider, not another local AI runtime, remains the synthesis execution path. Validate voice/rate/text before model loading, stream all chunks into bounded output, return sanitized MCP errors. Continue to use existing Gateway permission and capability mapping. Lock executable provider code as well as Core helper. Real model licensing/hardware tests and Owner approval are separate gates.

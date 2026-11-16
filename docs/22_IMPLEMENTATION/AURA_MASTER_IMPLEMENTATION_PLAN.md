@@ -140,3 +140,7 @@ The tracker dependency arrays for unassessed goals remain conservative; these gr
 ## Additional security boundary continuation — #101 and #103
 
 Draft PR #109 closes the hardcoded legacy WS credential risk (#103 PARTIAL); Draft PR #110 fixes actual Docker runner output races and malformed image references (#101 PARTIAL). Both independently pass exact-head Core/Remote Persistence/Release Lock. Tracker counts **63 TESTING / 2 RESEARCHING / 52 NOT_STARTED** and zero COMPLETED. Continue voice #18 integration (PR #111 pending), then research #35 without direct fetch outside MCP Gateway, and remaining hardware-gated security #104/#106.
+
+## Voice stage engineering proof — PR #111
+
+#18 bounded English Kokoro voices and rate controls, complete chunk serialization and safe MCP error paths now implemented as partial code in independent Draft PR #111. Exact-head Core/Persistence/Windows/Release Lock PASS; model/device/Owner production acceptance outstanding. Tracker counts **64 TESTING / 2 RESEARCHING / 51 NOT_STARTED**, zero COMPLETED. Continue #35 through the existing governed MCP research provider and #43 only after #35 is safe; do not substitute provider network calls for Gateway execution authority.

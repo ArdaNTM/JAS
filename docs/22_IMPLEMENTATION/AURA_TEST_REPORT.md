@@ -179,3 +179,11 @@ Negative security tests: wrong signing key/scope, forged checkpoint MAC, record 
 | [#110](https://github.com/ArdaNTM/JAS/pull/110) | `019b62e327b2` | [605 passed, 6 skipped; lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43781719023) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43781719040) |
 
 #109 initial head failed manifest byte digest (subsequently corrected); final CI PASS. #110 tests use a fake process, not real Docker; no physical isolation claims. Independent PR-head passes are not merged acceptance.
+
+## PR #111 final-head multi-platform proof (feature #18 partial)
+
+| Exact head | Core and source lock | Persistence | Windows launcher |
+| --- | --- | --- | --- |
+| [#111 / `595215246cf6`](https://github.com/ArdaNTM/JAS/pull/111) | [618 passed, 6 skipped; lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43782633134) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43782633127) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43782633130) |
+
+Earlier head Core failed two MCP v2 test model naming assertions; fixed in the final head. Tests use fake KPipeline and fake soundfile; no hardware model synthesis claim. Release lock includes both guard and executable provider script.
