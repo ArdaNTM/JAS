@@ -127,3 +127,9 @@ Feature #82 TESTING/PARTIAL_VERIFIED, Draft PR #141 HEAD `0445d474b9f60d978aafde
 ## #143 visual before-after status (2026-11-16)
 
 Draft PR #143 HEAD `1747ee11434424a19af874754bb3d61df0a90148`: 628 passed/7 skipped, Release Lock 235 files PASS, Remote Persistence PASS. Feature #84 TESTING/PARTIAL_VERIFIED, tracker **22 NOT_STARTED / 93 TESTING / 2 RESEARCHING**, zero COMPLETED. Next integrate #140–#143 with cumulative #136 and compare earlier PR #64–#111 without changing sealed F2.7 boundary. Owner/hardware acceptance missing; no merges, main pinned.
+
+## Latest green #144, #143 real PNG correction — 2026-11-16
+
+- PR #143 corrected HEAD `0b573d4fa156763cb36d093eefd61733780cb6af`, Core 654 passed/6 skipped (actual PNG codec tests run), Final Release Lock/Persistence PASS.
+- PR #144 combined #112–#143 HEAD `022dac012bfe5da971bab864a688de7a7e63a003`: 1142 passed/8 skipped, 260-source Final Lock sha256:162e7c5d31e88ea5ce2dee3a86d6058a3ce9d4d8b46b40606ede62ea587a905e, Remote Persistence and Windows PASS. Draft/unmerged, main b1ffe6f534ced0d329dae273a4b949a634cb8bfa untouched.
+- Tracker **22 NOT_STARTED / 93 TESTING / 2 RESEARCHING**, zero COMPLETED. Next: compare/open old PRs #64–#111, especially sealed F2.7 #64 and release-lock generator #111, then a cumulative security review branch. No auto-merge or hardware acceptance claims.

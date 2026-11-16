@@ -4518,10 +4518,10 @@
         "cd core && uv run pytest -q",
         "cd core && uv run python scripts/verify_final_lock.py"
       ],
-      "test_results": "PASS: Draft PR #143 exact HEAD 1747ee11434424a19af874754bb3d61df0a90148, Core Assurance 628 passed/7 skipped run 43818878842; Final Release Lock PASS sha256:17342ebe4ce497ce345ceed8c25dbe7f0c214127954f8bb4367387d2c512d5ff (235 canonical files); Remote Persistence PASS run 43818878960.",
+      "test_results": "PASS: #143 fixed exact HEAD 0b573d4fa156763cb36d093eefd61733780cb6af, Core Assurance 654 passed/6 skipped (run 43820291972), actual CRC-checked stdlib PNG image decoding/difference tests now RUN (prior Pillow-only test module had been skipped); Final Release Lock PASS sha256:77cfbb79f7faeaaba033e15e75a7711d03537324896891708332b5dfc8815684 (235 source files), Remote Persistence PASS run 43820291834. PR #144 exact head 022dac012bfe5da971bab864a688de7a7e63a003 Core 1142 passed/8 skipped (run 43820949320) and Final Release Lock PASS 260-source sha256:162e7c5d31e88ea5ce2dee3a86d6058a3ce9d4d8b46b40606ede62ea587a905e, Persistence and Windows PASS.",
       "security_review": "PARTIAL_VERIFIED: Core medium-risk PermissionEngine compare policy and separate MCP Gateway per-image model authorization, bounded Pillow image pixel decode before/after, dual capture consent, metadata-only EventBus and immutable never-task-success evidence. No physical action/Owner provenance validation.",
       "acceptance": "NOT_VERIFIED",
-      "commit": "1747ee11434424a19af874754bb3d61df0a90148",
+      "commit": "0b573d4fa156763cb36d093eefd61733780cb6af",
       "pull_request": "https://github.com/ArdaNTM/JAS/pull/143",
       "blockers": [
         "Pixel differences and local model text cannot independently verify task success, causation, human intent or correct physical action.",
@@ -4533,8 +4533,8 @@
       "integration": "Existing Core ServiceRegistry/CapabilityRegistry/PermissionEngine/EventBus, Pillow Image/Chops/Stat local processor, registered Ollama MCP Gateway for each image.",
       "hardware_requirements": "Trusted PNG/JPEG/WebP image sources (real UI/device), local Pillow and Qwen-VL model, human Owner reviewer.",
       "license_review": "Uses existing open-source Pillow runtime and Core, no new SaaS; model/data licensing review outstanding.",
-      "local_offline": "PARTIAL_VERIFIED: real Pillow PNG pixel operations and production Ollama HTTP transport via MockTransport; real model and capture hardware not verified.",
-      "notes": "PR #143 Draft/unmerged; strong pixel-change evidence is deliberately never a task-success claim. 7 CI skipped; Owner visual acceptance unverified.",
+      "local_offline": "PARTIAL_VERIFIED: actual source-independent standard-library PNG zlib/CRC/filter pixel comparisons executed in exact-head CI; model requests simulated via local MockTransport.",
+      "notes": "PR #143 Draft/unmerged; strong pixel-change evidence is deliberately never a task-success claim. 7 CI skipped; Owner visual acceptance unverified. Fix: required Pillow not installed in GitHub Core runner and an entire test module was skipped; real bounded stdlib PNG decoder/CRC/filter/overflow tests now run in CI. JPEG/WebP still require optional Pillow and are not accepted as full cross-platform media support. PR #144 integrates #112-143 but not prior #64-111.",
       "existing_jas_state": "#137 local Ollama vision, #79 object boxes, #83 camera were partial; no independently permissioned pure pixel before/after evidence with explicit no-success semantics.",
       "proposed_technology": "Pillow RGB image decoding/thumbnail and ImageChops/ImageStat quantitative difference, two MCP Gateway-authorized image descriptions.",
       "license_terms": "Pillow open source, existing Core and local-model rights.",
@@ -4545,7 +4545,7 @@
       "acceptance_criteria": "Owner-approved visual semantic verification benchmarks and trusted capture provenance, human review; never infer actuation permission from pixel delta.",
       "performance_requirements": "At most 3M decoded pixels, 320px comparison, max 8MiB per image, actual live GPU/desktop latency unmeasured.",
       "complexity": "MEDIUM deterministic evidence, HIGH real visual semantics/calibration/Owner provenance.",
-      "known_limitations": "No verified task success or action authority, only pixel similarity/difference and untrusted caption; Pillow optional.",
+      "known_limitations": "Real stdlib 8-bit noninterlaced RGB/gray/RGBA PNG pixel delta is CI verified; optional Pillow JPEG/WebP and hardware/Owner semantic truth are not. No task success decision.",
       "missing_components": [
         "Real authenticated Owner camera/screen before/after capture",
         "Semantic task benchmark and independent verification",

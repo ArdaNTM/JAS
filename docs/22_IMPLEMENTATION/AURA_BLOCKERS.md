@@ -178,3 +178,7 @@ Optional native OpenCV and physical camera hardware are not tested in CI. `async
 ## #84 visual verification is not automatic task success
 
 Pillow pixel differences and Qwen-VL descriptions are useful **untrusted evidence**, never proof that a task/physical action succeeded or permission to perform a subsequent action. Real before/after capture origin, Owner identity and manual acceptance, calibrated environments and device/model benchmarks remain mandatory. No COMPLETED claim.
+
+## #144 integrated but prior sealed F2.7 and real hardware excluded
+
+Green PR #144 covers #112–#143, not open PRs #64–#111 including sealed F2.7 #64 Owner security and its prerequisite branch. `generate_final_lock.py` has potentially conflicting changes in older #64/#111, requiring explicit verified integration; do not overwrite lock governance casually. Native camera driver hard stop, local model/device performance, encrypted visual SQLite retention and authenticated Owner UI remain unverified.

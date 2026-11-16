@@ -273,3 +273,9 @@ Core run https://github.com/ArdaNTM/JAS/actions/runs/43793662855: 633 passed, 6 
 ## PR #143 exact-head Pillow visual task verification
 
 [Core run 43818878842](https://github.com/ArdaNTM/JAS/actions/runs/43818878842): **628 passed, 7 skipped**, Final Lock PASS sha256:17342ebe4ce497ce345ceed8c25dbe7f0c214127954f8bb4367387d2c512d5ff. [Persistence run 43818878960](https://github.com/ArdaNTM/JAS/actions/runs/43818878960): PASS. Real PNG/Pillow differences and bounded model Gateway testing; skipped dependencies/actual camera/Owner review remain separate evidence gaps.
+
+## #143 correction and PR #144 exact-head cumulative CI
+
+PR #143 HEAD 0b573d4fa156763cb36d093eefd61733780cb6af: [Core 43820291972](https://github.com/ArdaNTM/JAS/actions/runs/43820291972) 654 passed/6 skipped, Release Lock PASS sha256:77cfbb79f7faeaaba033e15e75a7711d03537324896891708332b5dfc8815684; Persistence 43820291834 PASS. Previously 628/7 did not run Pillow-dependent test module: not accepted as real pixel test proof; now fully executed standard-library PNG tests.
+
+PR #144 HEAD 022dac012bfe5da971bab864a688de7a7e63a003: [Core 43820949320](https://github.com/ArdaNTM/JAS/actions/runs/43820949320) **1142 passed/8 skipped**, Release Lock **260 canonical source files PASS** sha256:162e7c5d31e88ea5ce2dee3a86d6058a3ce9d4d8b46b40606ede62ea587a905e; [Persistence 43820949194](https://github.com/ArdaNTM/JAS/actions/runs/43820949194) PASS; [Windows 43820949124](https://github.com/ArdaNTM/JAS/actions/runs/43820949124) PASS. No hardware model/Owner production acceptance or #64–#111 cumulative security proof.
