@@ -184,11 +184,13 @@ class FullDuplexSessionManager:
     def __init__(
         self, *, recognizer: SpeechRecognizer, synthesizer: SpeechSynthesizer,
         player: AudioPlayer, event_bus: EventBus | None = None,
+        prosody_analyzer: Any | None = None,
     ) -> None:
         self._recognizer = recognizer
         self._synthesizer = synthesizer
         self._player = player
         self._events = event_bus
+        self._prosody_analyzer = prosody_analyzer
         self._session_id: str | None = None
         self._state = "idle"
         self._transcript = ""
@@ -215,6 +217,20 @@ class FullDuplexSessionManager:
         await self.interrupt(reason="user_barge_in", keep_listening=True)
         async with self._lock:
             self._state = "recognizing"
+        if self._prosody_analyzer is not None:
+            try:
+                cues = await asyncio.to_thread(
+                    self._prosody_analyzer.analyze_consented_audio,
+                    audio,
+                    session_id=session_id,
+                )
+                self._emit("SpeechProsodyAnalysisCompleted", {
+                    "delivery_style": cues.delivery_style,
+                    "confidence": cues.confidence,
+                })
+            except (ValueError, RuntimeError):
+                # Prosody is advisory; malformed/unsupported audio must not break STT.
+                self._emit("SpeechProsodyAnalysisUnavailable", {})
         try:
             transcript = (await self._recognizer.transcribe(audio, session_id=session_id)).strip()
         except Exception:

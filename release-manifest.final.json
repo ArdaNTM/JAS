@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-10-31T00:45:29.771Z",
-  "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
+  "generated_at": "2026-11-16T02:55:00.000Z",
+  "git_commit": "993677d010473a01ba0a677740d5ec22b99a0ae1",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
-  "file_count": 233,
+  "release_digest": "sha256:c5930ece97de538e8b4c87fa9f5fc27835bf479ebaaf19402c61c7c43b23cb98",
+  "file_count": 234,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -242,7 +242,7 @@
     },
     {
       "path": "core/src/aura_core/application/full_duplex_session.py",
-      "sha256": "84f0876d87770b6767266b9b6e6e0c13ac0c10dabacfa9cdc2da1edbec84d4e4"
+      "sha256": "5c9a868473eaecfbe5c8429ca9e894c791dc252b31536a31bc963588b46d6e88"
     },
     {
       "path": "core/src/aura_core/application/governed_autonomous_loop.py",
@@ -383,6 +383,10 @@
     {
       "path": "core/src/aura_core/application/vision_adapters.py",
       "sha256": "e1686ae4947bf7977d6126750a5da45a8563d524019d4a121281bd0feef270de"
+    },
+    {
+      "path": "core/src/aura_core/application/voice_prosody.py",
+      "sha256": "57f160879d885111e08aa6ac62071e239a685ec5be5babacc297938ef8b8eb02"
     },
     {
       "path": "core/src/aura_core/application/windows_screen_driver.py",
