@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-10-31T00:45:29.771Z",
-  "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
+  "generated_at": "2026-11-16T03:35:00.000Z",
+  "git_commit": "24594e0d31f52c5d00e1aa3fe68f246bd4295448",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
+  "release_digest": "sha256:7d3b21584e6f96ed944fbff5b2b4b6fcd44be873f36503c43fdef6711d1243c4",
   "file_count": 233,
   "files": [
     {
@@ -674,7 +674,7 @@
     },
     {
       "path": "core/src/aura_core/mcp/screen_control_provider.py",
-      "sha256": "e643ff8143f739dd30d668675c45d1f634ad5f05c1dd7fe0b22dc31b86a0971d"
+      "sha256": "1e85bdad94da9acd93c58e3d5043f8c0a05bd678e1c824be9c74614293c6b9a3"
     },
     {
       "path": "core/src/aura_core/mcp/screen_read_provider.py",
