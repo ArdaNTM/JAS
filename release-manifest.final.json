@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-16T03:40:27.512Z",
-  "git_commit": "7d20a885ba650ce0c37ecc2f41dc5d431ffa2be9",
+  "generated_at": "2026-11-16T06:44:14.006Z",
+  "git_commit": "fb641a0339a0c15ea8e2268d7a504e9dd3290f50",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:479a81bf6cedba045074fbbee5192e842d905b3b588d680b760b99c16312ea62",
-  "file_count": 234,
+  "release_digest": "sha256:17342ebe4ce497ce345ceed8c25dbe7f0c214127954f8bb4367387d2c512d5ff",
+  "file_count": 235,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -383,6 +383,10 @@
     {
       "path": "core/src/aura_core/application/vision_adapters.py",
       "sha256": "e1686ae4947bf7977d6126750a5da45a8563d524019d4a121281bd0feef270de"
+    },
+    {
+      "path": "core/src/aura_core/application/visual_task_verification.py",
+      "sha256": "906d05431f02393626600b028e0e72d9c1b59af15ba9ca97c6427c01a7850c60"
     },
     {
       "path": "core/src/aura_core/application/windows_screen_driver.py",
