@@ -63,3 +63,6 @@ Tracker 42 NOT_STARTED / 73 TESTING / 2 RESEARCHING, no COMPLETED. PR #123/#124/
 - PR #126 HEAD b7f8509436755620163504ec23a2ad1d2a90b1df: feature #92 PARTIAL; Core 648 passed/6 skipped, Final Release Lock PASS, Persistence PASS; No real HUD window rendering, OS input or device/hotplug acceptance. https://github.com/ArdaNTM/JAS/actions/runs/43790466164
 - PR #123 HEAD c395721dcc0a3b5743b8ae74f87b01d11d7911fc: feature #93 PARTIAL; Core 601 passed/6 skipped, Final Release Lock PASS, Persistence PASS; No production app composition wiring, live HUD widget or hardware telemetry acceptance. https://github.com/ArdaNTM/JAS/actions/runs/43789150380
 Counts: 38 NOT_STARTED, 77 TESTING, 2 RESEARCHING, no COMPLETED. PR #127 open Draft for feature #54 read-only JAS MCP Gateway PR status; verify exact-head Core/Persistence/Final Lock before updating ledger. Main b1ffe6f534ced0d329dae273a4b949a634cb8bfa unchanged. No merges. #126 stacked on #125.
+
+## Latest PR #127 handoff — 2026-11-16
+Draft PR #127 head ee68856c548932fe28f0ee0d148670d179fbf32e feature #54 TESTING/PARTIAL_VERIFIED, Core run 43791155108 618/6 and Final Lock PASS, Persistence 43791155045 PASS. Still missing live GitHub/OAuth/Owner acceptance. PR #65 tracker 37 NOT_STARTED / 78 TESTING / 2 RESEARCHING; no COMPLETED. No PR merged and main b1ffe6f534ced0d329dae273a4b949a634cb8bfa unchanged.

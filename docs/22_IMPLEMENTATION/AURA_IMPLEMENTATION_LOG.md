@@ -193,3 +193,6 @@ Both stay TESTING/PARTIAL_VERIFIED. Additional PRs #123/#124/#125 under CI and m
 - PR #126 HEAD b7f8509436755620163504ec23a2ad1d2a90b1df: feature #92 PARTIAL; Core 648 passed/6 skipped, Final Release Lock PASS, Persistence PASS; No real HUD window rendering, OS input or device/hotplug acceptance. https://github.com/ArdaNTM/JAS/actions/runs/43790466164
 - PR #123 HEAD c395721dcc0a3b5743b8ae74f87b01d11d7911fc: feature #93 PARTIAL; Core 601 passed/6 skipped, Final Release Lock PASS, Persistence PASS; No production app composition wiring, live HUD widget or hardware telemetry acceptance. https://github.com/ArdaNTM/JAS/actions/runs/43789150380
 PR #123/#124/#125 and stacked #126 independently pass Core, Persistence and release lock on exact heads. No merges, no physical/Owner acceptance. PR #127 GitHub read-only currently pending CI.
+
+## 2026-11-16 — PR #127 read-only governed JAS PR status (#54)
+Draft PR #127 HEAD ee68856c548932fe28f0ee0d148670d179fbf32e adds a principal-bound exact ArdaNTM/JAS pull-request status reader using existing MCP Gateway authorization and real Core registry test fixtures; no write/merge/SDK token. Core Assurance 618 passed, 6 skipped + Final Release Lock PASS (run 43791155108), Persistence PASS (43791155045). No live OAuth provider or Owner acceptance. https://github.com/ArdaNTM/JAS/pull/127

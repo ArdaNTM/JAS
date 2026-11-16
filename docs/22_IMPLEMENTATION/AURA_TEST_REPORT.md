@@ -229,3 +229,6 @@ Evidence: https://github.com/ArdaNTM/JAS/actions/runs/43788533848 and https://gi
 - PR #126 HEAD b7f8509436755620163504ec23a2ad1d2a90b1df: feature #92 PARTIAL; Core 648 passed/6 skipped, Final Release Lock PASS, Persistence PASS; No real HUD window rendering, OS input or device/hotplug acceptance. https://github.com/ArdaNTM/JAS/actions/runs/43790466164
 - PR #123 HEAD c395721dcc0a3b5743b8ae74f87b01d11d7911fc: feature #93 PARTIAL; Core 601 passed/6 skipped, Final Release Lock PASS, Persistence PASS; No production app composition wiring, live HUD widget or hardware telemetry acceptance. https://github.com/ArdaNTM/JAS/actions/runs/43789150380
 All tests run in separate GitHub branches; none proves live audio/desktop hardware or combined merge state.
+
+## PR #127 exact-head verification — feature #54 PARTIAL
+Core run https://github.com/ArdaNTM/JAS/actions/runs/43791155108: 618 passed / 6 skipped; Final Release Lock PASS digest sha256:2292eb093fd99515f9b9a763f5fc813472ad13aa5845db57a35431bb8f8b6a30. Persistence https://github.com/ArdaNTM/JAS/actions/runs/43791155045: PASS. Networkless fake MCP transport, real registry/PermissionEngine/Gateway. No live provider acceptance.

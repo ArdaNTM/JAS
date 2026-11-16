@@ -138,3 +138,6 @@ Source locks independent and PRs remain Draft; recompute complete cumulative man
 - #92 / PR #126: No real HUD window rendering, OS input or device/hotplug acceptance
 - #93 / PR #123: No production app composition wiring, live HUD widget or hardware telemetry acceptance
 The #92 PR #126 targets PR #125, not main. Owner-approved integration and rebuilt combined Release Lock required.
+
+## PR #127 GitHub account integration gap
+#54 is only principal-bound, exact-repo **read-only** GitHub PR status via MCP Gateway. Actual GitHub provider registration, authenticated OAuth token and Owner lifecycle, live remote/network tests and mutations remain unimplemented. No automatic merge.

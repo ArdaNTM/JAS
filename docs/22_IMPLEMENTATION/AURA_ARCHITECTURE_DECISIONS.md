@@ -74,3 +74,6 @@ Feature #20 only computes bounded PCM energy/clipping from consented upstream au
 Features #28 and #92 require trusted shell-supplied monitor metadata. Core validates bounded display geometry and non-overlapping HUD panel rectangles; OS windows, captures and actual input remain separately authorized outside this slice.
 ## ADR-ENG-019 — redacted live system status must remain authenticated
 Feature #93 projects only allowlisted aggregate registry health and telemetry. No provider identifiers, raw diagnostics or secrets reach the optional bearer-protected HTTP router.
+
+## ADR-ENG-020 — GitHub read-only evidence must pass the existing MCP Gateway
+Scoped JAS pull request metadata retrieval binds a trusted principal and exact repo/PR number, dispatches exclusively through authorized MCPGateway and treats all returned metadata as UNTRUSTED. No GitHub mutations/merge grants, direct provider calls, credential leakage or automatic Owner approval.

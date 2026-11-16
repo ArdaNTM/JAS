@@ -2754,40 +2754,66 @@
       "id": 54,
       "name": "GitHub yönetimi",
       "phase": 5,
-      "status": "NOT_STARTED",
-      "assessment": "NOT_ASSESSED",
-      "dependencies": [],
-      "code_paths": [],
-      "documentation_paths": [],
-      "test_commands": [],
-      "test_results": "NOT_RUN",
-      "security_review": "NOT_REVIEWED",
+      "status": "TESTING",
+      "assessment": "PARTIAL_VERIFIED",
+      "dependencies": [
+        99,
+        100,
+        103
+      ],
+      "code_paths": [
+        "core/src/aura_core/application/governed_github_pr.py",
+        "core/src/aura_core/mcp/gateway.py"
+      ],
+      "documentation_paths": [
+        "docs/22_IMPLEMENTATION/AURA_GOVERNED_GITHUB_PR_READ.md"
+      ],
+      "test_commands": [
+        "cd core && uv run pytest -q tests/test_governed_github_pr.py",
+        "cd core && uv run pytest -q",
+        "cd core && uv run python scripts/verify_final_lock.py"
+      ],
+      "test_results": "PASS: PR #127 HEAD ee68856c548932fe28f0ee0d148670d179fbf32e Core Assurance 618 passed 6 skipped (43791155108); Final Release Lock PASS sha256:2292eb093fd99515f9b9a763f5fc813472ad13aa5845db57a35431bb8f8b6a30; Remote Persistence PASS (43791155045).",
+      "security_review": "PARTIAL_VERIFIED: real Core Service/Capability/Provider registries + PermissionEngine + MCPGateway tests, explicit per-PR ALLOW and default-deny, fixed ArdaNTM/JAS, no write path, malformed/forged provider output rejected.",
       "acceptance": "NOT_VERIFIED",
-      "commit": "",
-      "pull_request": "",
-      "blockers": [],
-      "technical_goal": "",
-      "user_capability": "",
-      "integration": "",
-      "hardware_requirements": "",
-      "license_review": "NOT_REVIEWED",
-      "local_offline": "NOT_VERIFIED",
-      "notes": "Existing JAS code may already provide part of this feature; audit required.",
-      "existing_jas_state": "NOT_ASSESSED",
-      "proposed_technology": "NOT_ASSESSED",
-      "license_terms": "NOT_ASSESSED",
-      "commercial_terms": "NOT_ASSESSED",
-      "integration_test_criteria": "NOT_ASSESSED",
-      "unit_test_criteria": "NOT_ASSESSED",
-      "security_test_criteria": "NOT_ASSESSED",
-      "acceptance_criteria": "NOT_ASSESSED",
-      "performance_requirements": "NOT_ASSESSED",
-      "complexity": "NOT_ASSESSED",
-      "known_limitations": "NOT_ASSESSED",
-      "missing_components": [],
-      "official_links": [],
-      "alternatives": [],
-      "hardware_review": "NOT_REVIEWED"
+      "commit": "ee68856c548932fe28f0ee0d148670d179fbf32e",
+      "pull_request": "https://github.com/ArdaNTM/JAS/pull/127",
+      "blockers": [
+        "No live registered GitHub MCP provider with authenticated OAuth/PAT credential and Owner-approved app composition.",
+        "Read-only PR metadata is not full GitHub management; actual repo mutations/merges, real rate limits and production acceptance absent."
+      ],
+      "technical_goal": "Only read exact ArdaNTM/JAS PR metadata through authenticated principal-bound MCPGateway request, explicit PermissionEngine policy and strict structured evidence validation.",
+      "user_capability": "An explicitly authorized local owner receives immutable UNTRUSTED PR number/state/sha/title/base metadata without any write/merge capability.",
+      "integration": "Existing MCPGateway, PermissionEngine and registry contracts, no direct GitHub HTTP/API key and no auto-granted capability.",
+      "hardware_requirements": "None for offline Core tests; real GitHub account/Owner credential setup unverified.",
+      "license_review": "NOT_APPLICABLE: Python stdlib and existing MCP/Core, no extra dependency.",
+      "local_offline": "PARTIAL_VERIFIED: fake networkless registered MCP provider with real Gateway authorization.",
+      "notes": "Draft PR #127, main-based and unmerged; exact-head Core/Persistence/Lock CI passed but no live GitHub read or Owner acceptance.",
+      "existing_jas_state": "Core MCP Gateway already supports registered tool dispatch and authorization, but no built-in scoped JAS-only PR status facade.",
+      "proposed_technology": "Principal-bound MCPGatewayRequest for github.pull_request.read, exact repo scope, immutable read-only status evidence.",
+      "license_terms": "Existing JAS/Python stdlib only.",
+      "commercial_terms": "No GitHub paid API or new service introduced.",
+      "integration_test_criteria": "Real registered authenticated GitHub MCP tool, read-only token, scoped policy, network failures, rate-limit and Owner acceptance.",
+      "unit_test_criteria": "Real registry/Gateway positive permission, default deny, wrong scope, structured metadata validation, redacted provider exceptions.",
+      "security_test_criteria": "No arbitrary repo/principal, no write API or merge, no malformed SHA/title, REQUIRES_APPROVAL is not ALLOW, no credential disclosure.",
+      "acceptance_criteria": "Actual authorized GitHub provider and Owner identity verified, version-governed repository mutations separately controlled and real production acceptance.",
+      "performance_requirements": "PR integer 1..1,000,000, bounded metadata; no remote latency/quotas benchmark.",
+      "complexity": "LOW read-only facade, HIGH production OAuth and managed GitHub workflow.",
+      "known_limitations": "No live GitHub provider/token bootstrap, no remote validation and no mutation capability.",
+      "missing_components": [
+        "Authenticated GitHub provider credentials and explicit read-only policies",
+        "Owner/broker identity, production activation and live remote tests",
+        "Full GitHub management actions with separate security review"
+      ],
+      "official_links": [
+        "https://docs.github.com/en/rest/pulls/pulls",
+        "https://modelcontextprotocol.io/"
+      ],
+      "alternatives": [
+        "Use existing trusted ChatGPT GitHub connector under human review",
+        "Dedicated hardened broker with read-only GitHub API credentials"
+      ],
+      "hardware_review": "NOT_APPLICABLE for metadata-only facade; real account setup unverified."
     },
     {
       "id": 55,
