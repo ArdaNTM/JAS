@@ -41,7 +41,8 @@ def read_test_data_file(relative_path: str, *, root: Path | None = None) -> str:
 
     configured_root = root or default_test_data_root()
     try:
-        if _is_link_or_reparse_point(configured_root.lstat()):
+        root_metadata = configured_root.lstat()
+        if _is_link_or_reparse_point(root_metadata):
             raise SafeReadError("permitted directory cannot be a symbolic link")
         base = configured_root.resolve(strict=True)
     except SafeReadError:
@@ -80,11 +81,10 @@ def read_test_data_file(relative_path: str, *, root: Path | None = None) -> str:
             with ExitStack() as opened:
                 root_fd = os.open(base, directory_flags)
                 opened.callback(os.close, root_fd)
-                original_root = configured_root.lstat()
                 actual_root = os.fstat(root_fd)
-                if _is_link_or_reparse_point(original_root) or (
+                if (
                     actual_root.st_dev, actual_root.st_ino
-                ) != (original_root.st_dev, original_root.st_ino):
+                ) != (root_metadata.st_dev, root_metadata.st_ino):
                     raise SafeReadError("permitted directory changed during access")
                 parent_fd = root_fd
                 for part in parts[:-1]:
