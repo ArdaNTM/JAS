@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-16T06:33:32.721Z",
-  "git_commit": "7ee125b95b5e60ed68ef7b26b847a88a3eb5594a",
+  "generated_at": "2026-11-16T06:36:41.645Z",
+  "git_commit": "b7e448ddced331922ddebb4e68732c79d24f589d",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:4a2bdb1c9da0e62dc20fc6fcbe0c86dc0cba653b4fa899e945736c5ad8911f3e",
+  "release_digest": "sha256:d8d8ffb390ce5584c765ba92d89835fdb6bf3e781a9b74b7404b0466fd7130d2",
   "file_count": 235,
   "files": [
     {
@@ -830,7 +830,7 @@
     },
     {
       "path": "core/src/aura_core/providers/opencv_camera_mcp.py",
-      "sha256": "604ae444bf0da56ca672768fb60068ea21e3f488721e085caf99256006714564"
+      "sha256": "e91215d066f4ef5e1b46eaae2e1b59380b9ed91cb0f052c1df8496e9f9b4ea40"
     },
     {
       "path": "core/src/aura_core/release/manifest.py",
