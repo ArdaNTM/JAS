@@ -170,3 +170,7 @@ FFmpeg codec parser/sandbox privilege confinement, real Windows binary provenanc
 ## PR #141 #82 visual memory privacy/Owner blockers
 
 On-disk SQLite description text is **plaintext**, not encryption; private POSIX permissions are not proof of private Windows NTFS ACL. WAL, SSD deletion, backups and retention consent require an Owner-approved storage threat assessment. Real local vision weights/hardware, camera/capture UI and cross-PR production integration still missing.
+
+## #83 actual local camera Owner/hardware blockers
+
+Optional native OpenCV and physical camera hardware are not tested in CI. `asyncio.to_thread` timeout is **soft** and cannot kill a stuck driver; strongly isolated native helper/broker, Windows privacy indicator/Owner credential proof, device provenance and video latency remain missing. High-risk Gateway ALLOW requires a separate real authenticated UI lease. No auto camera access/COMPLETED claim.

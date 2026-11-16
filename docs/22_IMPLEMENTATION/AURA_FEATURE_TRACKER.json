@@ -4430,40 +4430,67 @@
       "id": 83,
       "name": "Canlı kamera",
       "phase": 6,
-      "status": "NOT_STARTED",
-      "assessment": "NOT_ASSESSED",
-      "dependencies": [],
-      "code_paths": [],
-      "documentation_paths": [],
-      "test_commands": [],
-      "test_results": "NOT_RUN",
-      "security_review": "NOT_REVIEWED",
+      "status": "TESTING",
+      "assessment": "PARTIAL_VERIFIED",
+      "dependencies": [
+        77,
+        23,
+        24,
+        99,
+        100,
+        103
+      ],
+      "code_paths": [
+        "core/src/aura_core/providers/opencv_camera_mcp.py"
+      ],
+      "documentation_paths": [
+        "docs/22_IMPLEMENTATION/AURA_GOVERNED_OPENCV_CAMERA.md"
+      ],
+      "test_commands": [
+        "cd core && uv run pytest -q tests/test_opencv_camera_mcp.py",
+        "cd core && uv run pytest -q",
+        "cd core && uv run python scripts/verify_final_lock.py"
+      ],
+      "test_results": "PASS: Draft PR #142 exact HEAD feb091f118870fd6cbc48e09e681e322e09a0c75; Core Assurance 650 passed, 6 skipped run 43817947944; Final Release Lock PASS sha256:d8d8ffb390ce5584c765ba92d89835fdb6bf3e781a9b74b7404b0466fd7130d2 (235 locked sources); Remote Persistence PASS run 43817947929. First Core run failed one negative consent-revocation error classification; fixed code and lock, rerun PASS.",
+      "security_review": "PARTIAL_VERIFIED: HIGH-risk Core PermissionEngine/Gateway and native OpenCV frame read, fixed local device, exact principal, short-lived Owner consent lease checked inside MCP provider (also rejects direct Gateway bypass), separate model permission, no raw image retention. Actual Owner identity/Windows driver unverified.",
       "acceptance": "NOT_VERIFIED",
-      "commit": "",
-      "pull_request": "",
-      "blockers": [],
-      "technical_goal": "",
-      "user_capability": "",
-      "integration": "",
-      "hardware_requirements": "",
-      "license_review": "NOT_REVIEWED",
-      "local_offline": "NOT_VERIFIED",
-      "notes": "Existing JAS code may already provide part of this feature; audit required.",
-      "existing_jas_state": "NOT_ASSESSED",
-      "proposed_technology": "NOT_ASSESSED",
-      "license_terms": "NOT_ASSESSED",
-      "commercial_terms": "NOT_ASSESSED",
-      "integration_test_criteria": "NOT_ASSESSED",
-      "unit_test_criteria": "NOT_ASSESSED",
-      "security_test_criteria": "NOT_ASSESSED",
-      "acceptance_criteria": "NOT_ASSESSED",
-      "performance_requirements": "NOT_ASSESSED",
-      "complexity": "NOT_ASSESSED",
-      "known_limitations": "NOT_ASSESSED",
-      "missing_components": [],
-      "official_links": [],
-      "alternatives": [],
-      "hardware_review": "NOT_REVIEWED"
+      "commit": "feb091f118870fd6cbc48e09e681e322e09a0c75",
+      "pull_request": "https://github.com/ArdaNTM/JAS/pull/142",
+      "blockers": [
+        "Real physical Windows webcam, device driver provenance, Owner-authenticated consent UI/session and camera privacy indicators unverified.",
+        "cv2 optional installation and native helper isolation absent; asyncio.to_thread timeout cannot kill a stuck OS driver.",
+        "Separate real local Qwen-VL model weights and actual camera image quality/performance not validated; stacked on #137."
+      ],
+      "technical_goal": "Single-frame consented local OpenCV camera capture with HIGH-risk authorized Gateway provider and separately governed local image description.",
+      "user_capability": "Explicitly approved Owner session can capture one bounded local camera JPEG and obtain untrusted model description; no stream or control.",
+      "integration": "Actual registered camera Service/Capability/Provider in Core, PermissionEngine, MCPGateway, in-provider trusted Owner lease and separate #137 Ollama tool.",
+      "hardware_requirements": "Physical camera driver, local OpenCV, out-of-process trusted helper for hard timeouts, real Owner consent UI and Qwen-VL installation.",
+      "license_review": "Existing Core/Python, optional OpenCV native package and driver licensing/deployment to review; no new SaaS.",
+      "local_offline": "PARTIAL_VERIFIED: real OpenCV API path in provider with deterministic device stand-in; live Windows physical hardware not tested.",
+      "notes": "PR #142 Draft/unmerged; CI after security error classification hotfix PASS. Lease checked inside provider; Owner proof via real app remains a blocker.",
+      "existing_jas_state": "Local Ollama Vision MCP from #137; no guarded OpenCV camera helper with in-provider Owner lease before this PR.",
+      "proposed_technology": "Native OpenCV VideoCapture one frame, bounded JPEG, authenticated lease, separate Core high-risk camera and medium-risk vision Gateway grants.",
+      "license_terms": "Locally installed open-source OpenCV, local device driver; verify distribution rights.",
+      "commercial_terms": "No cloud costs.",
+      "integration_test_criteria": "Real Owner UI/Windows camera native helper under no-privilege escalation, actual consent/revocation/hardware cycles and device access privacy.",
+      "unit_test_criteria": "Real registries and PermissionEngine/Gateway, controlled cv2 API for positive/negative path, direct-provider and direct-Gateway bypass tests.",
+      "security_test_criteria": "HIGH risk default DENY, no active Owner lease, wrong principal/session/device, revocation after frame read, model policy failure, malformed JPEG and resource cleanup.",
+      "acceptance_criteria": "Real webcam and Owner consent hardware tests, separate model permission evidence, isolation of hung native drivers and privacy lifecycle.",
+      "performance_requirements": "Max 2MiB JPEG, request 640x480, 10s soft timeout, hard OS helper not implemented.",
+      "complexity": "HIGH device/Owner privacy and native isolation; MEDIUM Core registration and one-shot frame read.",
+      "known_limitations": "No streaming, hard OS device timeout, camera privacy hardware attestation or production UI; model text untrusted.",
+      "missing_components": [
+        "Owner-authenticated camera consent UI/broker",
+        "Native isolated camera helper and Windows driver acceptance",
+        "Real video device/model verification"
+      ],
+      "official_links": [
+        "https://docs.opencv.org/"
+      ],
+      "alternatives": [
+        "Manual camera image selected by user and passed through existing permitted #137 image reader"
+      ],
+      "hardware_review": "NOT_VERIFIED"
     },
     {
       "id": 84,

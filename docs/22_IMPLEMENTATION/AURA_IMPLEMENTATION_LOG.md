@@ -284,3 +284,7 @@ Draft PR #140 exact HEAD `605aad5184336f002d002ae62b8a093c217e2aec` uses registe
 ## 2026-11-16 — #82 actual private SQLite visual memory via PR #141
 
 Draft PR #141 exact head `0445d474b9f60d978aafdee83fcd6daa3a7954f7`: Core Assurance **644 passed / 6 skipped** (run 43816476060), Final Release Lock PASS sha256:56545f6889f1dc37473d9c7580e7d64d9caa0a7edd20970f6893ba91298cab46 (235 sources), Remote Persistence **PASS** run 43816476084. Real SQLite metadata-only storage, independent Core read/write/delete and Ollama MCP Gateway permissions; no raw pixels. Actual Windows ACL/disk encryption, live Ollama model/Owner UI not verified. https://github.com/ArdaNTM/JAS/pull/141
+
+## 2026-11-16 — PR #142 OpenCV camera via Owner lease and HIGH-risk MCP Gateway (#83)
+
+Exact-head Draft PR #142 `feb091f118870fd6cbc48e09e681e322e09a0c75`: Core 650 passed/6 skipped (43817947944), Final Lock PASS 235 entries sha256:d8d8ffb390ce5584c765ba92d89835fdb6bf3e781a9b74b7404b0466fd7130d2, Persistence PASS (43817947929). Initial negative test caught incorrect error mapping on lease revocation; corrected and rerun PASS. Native OpenCV camera one-frame capture guarded by fixed device, high-risk Gateway and in-provider Owner lease, with separate model permission. No real device or authenticated Owner UI acceptance. https://github.com/ArdaNTM/JAS/pull/142

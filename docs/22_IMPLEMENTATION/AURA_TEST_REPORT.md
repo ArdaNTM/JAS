@@ -265,3 +265,7 @@ Core run https://github.com/ArdaNTM/JAS/actions/runs/43793662855: 633 passed, 6 
 ## PR #141 exact-head persistence and image-model gateway evidence
 
 [Core run 43816476060](https://github.com/ArdaNTM/JAS/actions/runs/43816476060): 644 passed / 6 skipped; Final Lock 235 entries PASS sha256:56545f6889f1dc37473d9c7580e7d64d9caa0a7edd20970f6893ba91298cab46. [Remote Persistence 43816476084](https://github.com/ArdaNTM/JAS/actions/runs/43816476084): PASS. Real SQLite writes/queries/deletes and Core/Gateway policy denial are tested; actual Windows Owner storage and model hardware not accepted.
+
+## PR #142 final exact-head Core and Camera privacy CI
+
+[Core run 43817947944](https://github.com/ArdaNTM/JAS/actions/runs/43817947944): **650 passed, 6 skipped**, Final Release Lock PASS sha256:d8d8ffb390ce5584c765ba92d89835fdb6bf3e781a9b74b7404b0466fd7130d2. [Persistence 43817947929](https://github.com/ArdaNTM/JAS/actions/runs/43817947929): PASS. Uses deterministic cv2 device stand-in; actual camera/Owner identity not verified. Direct MCP Gateway attempted without a live Owner lease is rejected by the **provider**, not just the facade.

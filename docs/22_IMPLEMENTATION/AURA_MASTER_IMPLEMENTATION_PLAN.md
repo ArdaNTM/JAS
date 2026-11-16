@@ -188,3 +188,7 @@ Feature #78: FFmpeg frame sampling and per-frame local Ollama separately authori
 ## 2026-11-16 — governed SQLite visual memory #82
 
 PR #141 adds actual local SQLite metadata only with Core read/write/delete and model Gateway scope; exact-head CI and Lock PASS. Only partial: Windows ACL/privacy, live model/Owner UI missing. Tracker 24 NOT_STARTED / 91 TESTING / 2 RESEARCHING. Next #83 device camera, #84 independent visual state verification, then other dependent groups.
+
+## 2026-11-16 — camera #83 validation
+
+High-risk on-demand OpenCV camera frame with in-provider Owner lease and separate Ollama model policies, Core/Lock/Persistence PASS PR #142. Real hardware/native driver/Owner UI remains unverified. Tracker 23 NOT_STARTED / 92 TESTING / 2 RESEARCHING. Next real local visual task evidence #84, after which unify vision features with PR #136 and older F2.7 constraints.

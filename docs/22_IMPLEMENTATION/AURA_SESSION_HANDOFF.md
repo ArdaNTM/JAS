@@ -119,3 +119,7 @@ Draft PR #140 HEAD `605aad5184336f002d002ae62b8a093c217e2aec`, Core **652 passed
 ## PR #141 proof and remaining tracker status
 
 Feature #82 TESTING/PARTIAL_VERIFIED, Draft PR #141 HEAD `0445d474b9f60d978aafdee83fcd6daa3a7954f7`; Core 644 passed/6 skipped, Release Lock PASS 235 files, Remote Persistence PASS. Tracker **24 NOT_STARTED / 91 TESTING / 2 RESEARCHING**, zero COMPLETED. #141 stacked on #137. Next #83 live OpenCV camera or #84 visual verification; Owner consent and physical devices must be proven before completion. No merge, pinned main unchanged.
+
+## Verified PR #142, status after camera integration
+
+#83 Draft PR #142 exact HEAD feb091f118870fd6cbc48e09e681e322e09a0c75: 650 passed/6 skipped, Persistence and Final Lock PASS. Owner lease checked **inside** OpenCV provider. Tracker **23 NOT_STARTED / 92 TESTING / 2 RESEARCHING**, zero COMPLETED. PR #143 visual task evidence underway (unverified). Do not merge; main pinned; physical camera and Owner acceptance pending.
