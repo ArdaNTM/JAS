@@ -212,5 +212,5 @@ Draft PR #130 HEAD 6214d571cfa9b29505e58f71650ac791ef02530f, real CapabilityRegi
 - Registered the service through the existing ServiceRegistry and added optional FullDuplexSessionManager injection.
 - Added deterministic synthetic mono/stereo and session integration tests.
 - Draft PR: https://github.com/ArdaNTM/JAS/pull/131 (head `993677d010473a01ba0a677740d5ec22b99a0ae1`).
-- Exact-head Core CI was queued at last check; no test or release-lock success is claimed. Feature remains TESTING / PARTIAL_VERIFIED.
+- Exact-head Core CI was queued at last check; no test or release-lock success is claimed. Feature remains TESTING / NOT_ASSESSED until exact-head CI passes.
 - Remaining: root composition auto-wiring, non-WAV decode/resampling, real-audio and performance validation, multilingual calibration, UI/TTS adaptation and independent review.
