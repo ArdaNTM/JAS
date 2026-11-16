@@ -88,6 +88,8 @@ class SQLiteVisualMemoryStore:
             raise ValueError("Visual memory store path may not be a symlink")
         if not path.parent.is_dir():
             raise ValueError("Owner-private visual memory directory must already exist")
+        if os.name == "posix" and stat.S_IMODE(path.parent.stat().st_mode) & 0o077:
+            raise ValueError("Visual memory directory must be owner-private")
         self.path = path
         # Create with restrictive permissions before SQLite opens the database.
         if not path.exists():
