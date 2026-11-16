@@ -5,7 +5,7 @@
   "generated_at": "2026-11-16T00:06:58.249Z",
   "git_commit": "adb4a73f8c51891a98b569d510dd82c037b4e742",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:d2f6d16e791c11f668c3a219821f4fcec2d51d2dfc58a69ae02db5750b364524",
+  "release_digest": "sha256:73446513b78a0b2110c17a2dd55daecbd42dcc5b22037c76e878ff4e3fe8b96a",
   "file_count": 234,
   "files": [
     {
@@ -325,12 +325,12 @@
       "sha256": "6b0d021c3d22f96eac9c83e3be73b2f5dcd19eb1df06f59720b01758de7ee727"
     },
     {
-      "path": "core/src/aura_core/application/reflexion_inference.py",
-      "sha256": "2215a44162cdcc7ca3a8421386bb2dbdf94b0d772893c5339db6b0f9c471e05b"
-    },
-    {
       "path": "core/src/aura_core/application/reflexion.py",
       "sha256": "91bca907d904b7426712f1a134e90ba5781f5c46585d1f5265c4fc89124d9090"
+    },
+    {
+      "path": "core/src/aura_core/application/reflexion_inference.py",
+      "sha256": "2215a44162cdcc7ca3a8421386bb2dbdf94b0d772893c5339db6b0f9c471e05b"
     },
     {
       "path": "core/src/aura_core/application/sandbox_contract.py",
@@ -869,12 +869,12 @@
       "sha256": "a6d9ce74c609a8dc0b423685d50520a3b9b62c312cf6849cc9affd331e44d2ea"
     },
     {
-      "path": "core/src/aura_core/runtime/mock_transport.py",
-      "sha256": "3da4e35fb03a1f490668293bba9743f3e9f6522fb6e86065aacee7c2b9ce38c9"
-    },
-    {
       "path": "core/src/aura_core/runtime/mock.py",
       "sha256": "aa0d52fd04b3cb1190dd3e76b402fd7589363d6c7f938330c343640400f1e760"
+    },
+    {
+      "path": "core/src/aura_core/runtime/mock_transport.py",
+      "sha256": "3da4e35fb03a1f490668293bba9743f3e9f6522fb6e86065aacee7c2b9ce38c9"
     },
     {
       "path": "core/src/aura_core/runtime/ollama.py",
