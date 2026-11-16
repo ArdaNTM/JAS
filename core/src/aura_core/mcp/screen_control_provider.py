@@ -47,12 +47,15 @@ class ScreenControlMCPProvider:
                 raise ValueError("Invalid screen coordinates")
             await self.input_driver.click(x, y)
         elif action == "type":
-            if not isinstance(args.get("text"), str) or not args["text"]:
-                raise ValueError("Text required")
+            text = args.get("text")
+            if (not isinstance(text, str) or not 1 <= len(text) <= 1000
+                    or any(ord(char) < 32 or ord(char) == 127 for char in text)):
+                raise ValueError("Text must contain 1..1000 printable characters")
             await self.input_driver.type_text(args["text"])
         elif action == "key":
-            if not isinstance(args.get("key"), str) or not args["key"]:
-                raise ValueError("Key required")
+            key = args.get("key")
+            if not isinstance(key, str) or not 1 <= len(key) <= 50:
+                raise ValueError("Key must contain 1..50 characters")
             await self.input_driver.press_key(args["key"])
         else:
             raise ValueError("Unsupported screen action")
