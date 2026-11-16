@@ -28,7 +28,13 @@ def verify_ws_token(token: str | None) -> bool:
     differences on token prefixes. No credential is logged or persisted.
     """
     expected = os.getenv("AURA_WS_SECRET")
-    if not isinstance(expected, str) or len(expected.encode("utf-8")) < 32:
+    if not isinstance(expected, str):
+        _deny()
+    try:
+        expected_bytes = expected.encode("utf-8")
+    except UnicodeError:
+        _deny()
+    if len(expected_bytes) < 32:
         _deny()
     if expected != expected.strip() or any(ord(char) < 32 or ord(char) == 127 for char in expected):
         _deny()
@@ -37,7 +43,6 @@ def verify_ws_token(token: str | None) -> bool:
     if token != token.strip() or any(ord(char) < 32 or ord(char) == 127 for char in token):
         _deny()
     try:
-        expected_bytes = expected.encode("utf-8")
         supplied_bytes = token.encode("utf-8")
     except UnicodeError:
         _deny()
