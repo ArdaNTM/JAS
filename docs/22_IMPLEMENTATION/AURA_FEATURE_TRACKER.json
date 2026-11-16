@@ -1173,40 +1173,60 @@
       "id": 25,
       "name": "Dosya yönetimi",
       "phase": 3,
-      "status": "NOT_STARTED",
-      "assessment": "NOT_ASSESSED",
-      "dependencies": [],
-      "code_paths": [],
-      "documentation_paths": [],
-      "test_commands": [],
-      "test_results": "NOT_RUN",
-      "security_review": "NOT_REVIEWED",
+      "status": "TESTING",
+      "assessment": "PARTIAL_VERIFIED",
+      "dependencies": [
+        100,
+        103
+      ],
+      "code_paths": [
+        "core/src/aura_core/filesystem/safe_reader.py"
+      ],
+      "documentation_paths": [
+        "docs/22_IMPLEMENTATION/AURA_FILESYSTEM_DESCRIPTOR_SECURITY.md"
+      ],
+      "test_commands": [
+        "cd core && uv run pytest -q tests/test_safe_filesystem_reader.py tests/test_filesystem_descriptor_walk.py",
+        "cd core && uv run python scripts/verify_final_lock.py"
+      ],
+      "test_results": "PASS: PR #116 HEAD 2020122bd0e26934ce2fd722b22dfaf8e0bdbab2; Core Assurance 598 passed 6 skipped, Final Release Lock PASS, Remote Persistence PASS.",
+      "security_review": "PARTIAL_VERIFIED: POSIX dir_fd O_NOFOLLOW, root inode check, symlink-swap TOCTOU and traversal tests; Windows races unverified.",
       "acceptance": "NOT_VERIFIED",
-      "commit": "",
-      "pull_request": "",
-      "blockers": [],
-      "technical_goal": "",
-      "user_capability": "",
-      "integration": "",
-      "hardware_requirements": "",
-      "license_review": "NOT_REVIEWED",
-      "local_offline": "NOT_VERIFIED",
-      "notes": "Existing JAS code may already provide part of this feature; audit required.",
-      "existing_jas_state": "NOT_ASSESSED",
-      "proposed_technology": "NOT_ASSESSED",
-      "license_terms": "NOT_ASSESSED",
-      "commercial_terms": "NOT_ASSESSED",
-      "integration_test_criteria": "NOT_ASSESSED",
-      "unit_test_criteria": "NOT_ASSESSED",
-      "security_test_criteria": "NOT_ASSESSED",
-      "acceptance_criteria": "NOT_ASSESSED",
-      "performance_requirements": "NOT_ASSESSED",
-      "complexity": "NOT_ASSESSED",
-      "known_limitations": "NOT_ASSESSED",
-      "missing_components": [],
-      "official_links": [],
-      "alternatives": [],
-      "hardware_review": "NOT_REVIEWED"
+      "commit": "2020122bd0e26934ce2fd722b22dfaf8e0bdbab2",
+      "pull_request": "https://github.com/ArdaNTM/JAS/pull/116",
+      "blockers": [
+        "Windows NTFS native handle/reparse-race acceptance missing",
+        "Complete file manager/Owner-granted write/delete integration missing"
+      ],
+      "technical_goal": "Eliminate symlink replacement TOCTOU for bounded POSIX read-only test-data access with descriptor-relative opening.",
+      "user_capability": "Read allowlisted test-data files <=1 MiB, safely scoped on POSIX.",
+      "integration": "Existing safe_reader remains read-only, MCP Gateway remains execution authority.",
+      "hardware_requirements": "Linux/POSIX descriptor support tested; Windows NTFS native handle proof missing.",
+      "license_review": "NOT_APPLICABLE: stdlib only",
+      "local_offline": "PARTIAL_VERIFIED",
+      "notes": "Draft main-based PR #116 is unmerged, no Windows full acceptance.",
+      "existing_jas_state": "Path validation previously resolved then opened by path, permitting POSIX symlink-swap race.",
+      "proposed_technology": "POSIX openat-style dir_fd, O_NOFOLLOW/O_DIRECTORY, fstat inode comparison.",
+      "license_terms": "Python stdlib and existing JAS license",
+      "commercial_terms": "No extra service",
+      "integration_test_criteria": "Real authorized Gateway test-data reads and Windows/Posix race tests.",
+      "unit_test_criteria": "Traversal, symlink swap, bounds and decode tests.",
+      "security_test_criteria": "No intermediate/final symlink escapes or unauthorized file writes.",
+      "acceptance_criteria": "Owner-approved full cross-platform file manager and real OS isolation.",
+      "performance_requirements": "<=1 MiB local regular files",
+      "complexity": "MEDIUM POSIX / HIGH Windows",
+      "known_limitations": "Windows reparse TOCTOU and write operations absent.",
+      "missing_components": [
+        "Windows native file-handle security",
+        "Full file-management authorization and Owner tests"
+      ],
+      "official_links": [
+        "https://docs.python.org/3/library/os.html"
+      ],
+      "alternatives": [
+        "Native Windows CreateFile handle-based validation"
+      ],
+      "hardware_review": "NOT_VERIFIED"
     },
     {
       "id": 26,
@@ -4970,40 +4990,62 @@
       "id": 104,
       "name": "Güvenli hafıza",
       "phase": 1,
-      "status": "NOT_STARTED",
-      "assessment": "NOT_ASSESSED",
-      "dependencies": [],
-      "code_paths": [],
-      "documentation_paths": [],
-      "test_commands": [],
-      "test_results": "NOT_RUN",
-      "security_review": "NOT_REVIEWED",
+      "status": "TESTING",
+      "assessment": "PARTIAL_VERIFIED",
+      "dependencies": [
+        99,
+        103
+      ],
+      "code_paths": [
+        "core/src/aura_core/memory/governed_access.py",
+        "core/src/aura_core/application/episodic_memory.py"
+      ],
+      "documentation_paths": [
+        "docs/22_IMPLEMENTATION/AURA_GOVERNED_MEMORY_ACCESS.md"
+      ],
+      "test_commands": [
+        "cd core && uv run pytest -q tests/test_governed_memory_access.py",
+        "cd core && uv run python scripts/verify_final_lock.py"
+      ],
+      "test_results": "PASS: PR #117 HEAD f9ea0abb2cf109efd98ba55b245d8816c20865dc; Core Assurance 602 passed 6 skipped, Final Release Lock PASS, Remote Persistence PASS.",
+      "security_review": "PARTIAL_VERIFIED: real SQLite+PermissionEngine principal isolation, separate recall/remember/forget policies, default-deny, approval-required deny, untrusted output, sanitized store errors. Not encrypted.",
       "acceptance": "NOT_VERIFIED",
-      "commit": "",
-      "pull_request": "",
-      "blockers": [],
-      "technical_goal": "",
-      "user_capability": "",
-      "integration": "",
-      "hardware_requirements": "",
-      "license_review": "NOT_REVIEWED",
-      "local_offline": "NOT_VERIFIED",
-      "notes": "Existing JAS code may already provide part of this feature; audit required.",
-      "existing_jas_state": "NOT_ASSESSED",
-      "proposed_technology": "NOT_ASSESSED",
-      "license_terms": "NOT_ASSESSED",
-      "commercial_terms": "NOT_ASSESSED",
-      "integration_test_criteria": "NOT_ASSESSED",
-      "unit_test_criteria": "NOT_ASSESSED",
-      "security_test_criteria": "NOT_ASSESSED",
-      "acceptance_criteria": "NOT_ASSESSED",
-      "performance_requirements": "NOT_ASSESSED",
-      "complexity": "NOT_ASSESSED",
-      "known_limitations": "NOT_ASSESSED",
-      "missing_components": [],
-      "official_links": [],
-      "alternatives": [],
-      "hardware_review": "NOT_REVIEWED"
+      "commit": "f9ea0abb2cf109efd98ba55b245d8816c20865dc",
+      "pull_request": "https://github.com/ArdaNTM/JAS/pull/117",
+      "blockers": [
+        "SQLite at rest cleartext; no authenticated OS/TPM key custody or secure backups",
+        "Optional adapter not wired to all production routes and Owner identity"
+      ],
+      "technical_goal": "Require an existing Core PermissionEngine ALLOW for principal-bound episodic memory reads, writes and deletions.",
+      "user_capability": "Bound principal receives immutable UNTRUSTED records and metadata-only write receipts after scoped approval.",
+      "integration": "Existing SQLite EpisodicMemoryStore + CapabilityRegistry and PermissionEngine; no new provider/tool/permission.",
+      "hardware_requirements": "Local SQLite only, TPM/Owner hardware trust unverified.",
+      "license_review": "NOT_APPLICABLE: stdlib/existing Core",
+      "local_offline": "PARTIAL_VERIFIED",
+      "notes": "PR #117 is Draft/unmerged; no encryption, secure erase, authenticated composition or runtime-wide memory routing.",
+      "existing_jas_state": "EpisodicMemoryStore filters principal but caller could supply principal_id; content stored as plaintext.",
+      "proposed_technology": "Immutable principal-bound adapter and exact-scope Core PermissionEngine AuthorizationRequest.",
+      "license_terms": "Existing JAS/Python stdlib",
+      "commercial_terms": "No added cost",
+      "integration_test_criteria": "All authenticated memory API/MCP entrypoints use adapter; verify multiuser isolation and retention.",
+      "unit_test_criteria": "Real SQLite read/write/forget, bounds, immutable untrusted views, no side effects on denial.",
+      "security_test_criteria": "Denied/deferred/approval-required are non-ALLOW; no cross-principal read/erase, no sensitive exception text.",
+      "acceptance_criteria": "Encrypted, Owner-authenticated, audited storage incl. backup/erase and Gateway integration.",
+      "performance_requirements": "Read max 20, content <=8000 characters, <=32 tags; no benchmark",
+      "complexity": "MEDIUM adapter/HIGH encryption+integration",
+      "known_limitations": "Raw SQLite and backups bypass opt-in adapter; not encrypted at rest.",
+      "missing_components": [
+        "Authenticated composition root",
+        "Encrypted storage and key lifecycle",
+        "Owner/hardware/backup acceptance"
+      ],
+      "official_links": [
+        "https://docs.python.org/3/library/sqlite3.html"
+      ],
+      "alternatives": [
+        "Trusted OS/TPM-encrypted SQLite with independent credential broker"
+      ],
+      "hardware_review": "NOT_VERIFIED"
     },
     {
       "id": 105,

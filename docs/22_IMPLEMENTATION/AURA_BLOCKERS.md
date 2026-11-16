@@ -113,3 +113,8 @@ After **explicit Owner merge approval**, integrate in dependency order, rebase e
 - The current research MCP executable `core/scripts/local_research_mcp.py` may fetch arbitrary URLs and follow redirects; DNS rebinding, private-address SSRF, redirect policy, response byte limits and sensitive URL/error logging require independent hardening and real tests. PR #112/114 do **not** fetch; they validate source references and invoke only existing Gateway.
 - Source host diversity is a weak review signal, not credibility or independent publication. #43 does not automatically generate/synthesize factual answers or perform iterative model research.
 - #114 is stacked on #112. Owner must explicitly approve dependency order, reconcile combined final manifest and rerun cumulative CI before any merge. Both remain partial.
+
+## PR #116/#117 acceptance gaps
+#25 POSIX descriptor-based safe reader does not implement Windows NTFS reparse race safety or a full Owner-granted write/delete file manager.
+#104 governed memory wrapper is optional and not wired throughout production, does not encrypt existing plaintext SQLite data or prove trusted Owner credentials/secure backups.
+PR #113 and #115 closed as duplicates, no merge. Combined source locks and separate Owner approval required.

@@ -40,3 +40,6 @@
 - #112 `dcc4efd854468eeebf66bb5ba515077281929a2a`, Core 43783579312 618/6 + Release Lock PASS, Persistence 43783579268 PASS, #35 TESTING/PARTIAL_VERIFIED.
 - #114 `e8e971ff49091768ebc17759b3f57d1adf08fb11`, **stacked base branch #112**, Core 43784049881 628/6 + Release Lock PASS, Persistence 43784049895 PASS, #43 TESTING/PARTIAL_VERIFIED. No model synthesis or source truth claims.
 - PR #113 was observed separately in CLOSED/unmerged state, not counted as delivered. Tracker **49 NOT_STARTED / 66 TESTING / 2 RESEARCHING**. No COMPLETED or auto merges, no main edits. Next: read-only filesystem race mitigation #25, then other independent safety groups; avoid changing open PRs #64–#105.
+
+## 2026-11-16 validated PR #116/#117 handoff
+PR #116 HEAD 2020122bd0e26934ce2fd722b22dfaf8e0bdbab2, #25 PARTIAL: Core run 43785154055 598/6 + lock PASS, Persistence 43785154014 PASS. PR #117 HEAD f9ea0abb2cf109efd98ba55b245d8816c20865dc, #104 PARTIAL: Core 43785548012 602/6 + lock PASS, Persistence 43785547988 PASS. #113/#115 closed without merge (duplicates of #112/#114). Tracker 47 NOT_STARTED, 68 TESTING, 2 RESEARCHING; no completed and no merges. Main b1ffe6f534ced0d329dae273a4b949a634cb8bfa untouched. Continue #106 only with deny-only attestation and actual acceptance proofs.

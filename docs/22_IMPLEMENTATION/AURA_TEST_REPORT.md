@@ -196,3 +196,11 @@ Earlier head Core failed two MCP v2 test model naming assertions; fixed in the f
 | [#114](https://github.com/ArdaNTM/JAS/pull/114) | `e8e971ff4909` | [628 passed 6 skipped; Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43784049881) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43784049895) | stacked on #112, Owner review |
 
 Fake provider/Gateway test fixture is not real SearXNG/web proof; per-query authorization is tested with real JAS registries and PermissionEngine. #114 dossier always flags untrusted evidence and requires human review.
+
+## PR #116 and #117 exact-head CI
+| PR | Core Assurance | Final Release Lock | Persistence |
+|---|---|---|---|
+| #116 (2020122bd0e2) | 598 passed, 6 skipped (run 43785154055) | PASS | PASS (43785154014) |
+| #117 (f9ea0abb2cf1) | 602 passed, 6 skipped (run 43785548012) | PASS | PASS (43785547988) |
+Sources: https://github.com/ArdaNTM/JAS/actions/runs/43785154055 and https://github.com/ArdaNTM/JAS/actions/runs/43785548012
+Runs are isolated PR head checks, not merged integration or production/hardware acceptance.

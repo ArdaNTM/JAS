@@ -148,3 +148,6 @@ Draft PR #109 closes the hardcoded legacy WS credential risk (#103 PARTIAL); Dra
 ## Research stage: #35 -> #43 dependency
 
 PR #112 implements partial governed bounded multiquery (#35) with real JAS PermissionEngine/Gateway integration tests; PR #114 implements partial human-review research dossier (#43) stacked on #112. Each exact-head Core, Persistence and Release Lock PASS. Neither has authorized live internet, a vetted network fetch provider or trusted source verification. Tracker **66 TESTING / 2 RESEARCHING / 49 NOT_STARTED**, zero COMPLETED. Next safe independent group: #25 sandboxed filesystem path handling; maintain File MCP read authorization and prevent TOCTOU / symlink escape. Separate hardware/Owner acceptance later.
+
+## 2026-11-16 verified PR #116/#117 continuation
+Tracker 68 TESTING, 2 RESEARCHING, 47 NOT_STARTED (zero COMPLETED). Features #25 and #104 are PARTIAL_VERIFIED on Draft PRs #116/#117 with Core/Persistence/Release Lock PASS. Next security #106 requires tamper-evidence/deny-only tests; no claim of immutable hardware or secured memory. Continue dependency-sensitive phases without merging.

@@ -49,3 +49,8 @@ Multiple source queries are permitted only by calling existing MCPResearchSource
 ## ADR-ENG-011 — human-review research dossier cannot assert model-generated truth
 
 A deterministic evidence packet can group source references and flag subquestion gaps but must not equate source host counts to independent verified publications. Full deep research needs distinct governed LLM planning, source truth verification and Owner acceptance. Stack the dossier PR on the verified query coordinator, not a second authorization or fetch runtime.
+
+## ADR-ENG-011 — POSIX safe file read and Windows separate gate
+Pin test-data root inode and walk descriptors with O_NOFOLLOW on POSIX. This is read-only and does not prove Windows handle/reparse race safety. MCP Gateway retains execution authority.
+## ADR-ENG-012 — bound memory identity and deny unapproved store operations
+Trusted Core composition binds the authenticated principal; every read/write/forget requires an explicit Core PermissionEngine ALLOW. The adapter does not authenticate identity, grant Owner approval, encrypt stored data or replace MCP Gateway tool authorization.
