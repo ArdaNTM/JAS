@@ -44,6 +44,8 @@ def make_service(*, allowed: bool):
             authorization_level=AuthorizationLevel.READ,
             decision=AuthorizationDecision.ALLOW,
         ))
+    while bus.snapshot()["queued_total"]:
+        asyncio.run(bus.dispatch_once())
     return service, provider, bus
 
 
