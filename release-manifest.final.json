@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-16T01:18:34.759Z",
-  "git_commit": "b510c9fefb91c6571ba1d6585d3b6a76c4d301b8",
+  "generated_at": "2026-11-16T01:36:41.691Z",
+  "git_commit": "33e4a2f225d684f65d5940c87ee5f866215a36f0",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:f16b1e29e71e33071cb33b89d73b8af50b2150d2b69ef12f71d08f0ba35877f7",
-  "file_count": 234,
+  "release_digest": "sha256:713f7063f04f322f8ecafc9a5a3ddcb60504dab7bf3f7a1e57015343a5fba3ea",
+  "file_count": 235,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -543,6 +543,10 @@
     {
       "path": "core/src/aura_core/knowledge/models.py",
       "sha256": "1ee8b8d54022ee0c8f45dbbb3ae618563da0368458d26dd8c03fc3e9c2ec4630"
+    },
+    {
+      "path": "core/src/aura_core/knowledge/personal_hub.py",
+      "sha256": "9973ce829aef5d883e2edafbf62a1338abcc48e46201aabdc0fef0eb2b1b3f3a"
     },
     {
       "path": "core/src/aura_core/knowledge/repository.py",
