@@ -1178,7 +1178,7 @@
       "name": "Tamamen çevrimdışı ses sistemi",
       "phase": 2,
       "status": "TESTING",
-      "assessment": "NOT_ASSESSED",
+      "assessment": "PARTIAL_VERIFIED",
       "dependencies": [],
       "code_paths": [
         "core/src/aura_core/tts/offline_voice.py",
@@ -1191,16 +1191,18 @@
         "cd core && uv run pytest -q",
         "cd core && uv run python scripts/verify_final_lock.py"
       ],
-      "test_results": "PENDING: Draft PR #135 exact head f4a109edd5affea3ce26829388ff23de56bbf30d; Core Assurance, PowerShell and Remote Persistence workflows in progress.",
-      "security_review": "NOT_REVIEWED",
+      "test_results": "PASS: PR #135 exact fixed HEAD 7e10ca4500ff5b3f3b9e186839790617e6e5bfe6: 599 passed, 6 skipped; Final Release Lock PASS sha256:6af648fb50b923cfb05111286f1754dd0b23eea1adfd09471aac0cccfaf48870; Remote Persistence PASS; Windows launcher PASS. Earlier HEAD failed release inventory because core/scripts/piper_tts_mcp.py is intentionally outside generator source roots; removed from manifest. Joint PR #136 exact HEAD 91afeb0298ced7bf2cd1726b20df5d79a3a1244e: 969 passed, 6 skipped, Final Lock PASS (253 sources); Persistence and Windows PASS.",
+      "security_review": "PARTIAL_VERIFIED: local offline STT/Piper paths and exact release inventory fixed. Joint Core+Gateway test proof from PR #136 does not establish live model weights, real user microphone devices or hardware latency, nor include earlier PR #64-111.",
       "acceptance": "NOT_VERIFIED",
-      "commit": "f4a109edd5affea3ce26829388ff23de56bbf30d",
+      "commit": "7e10ca4500ff5b3f3b9e186839790617e6e5bfe6",
       "pull_request": "https://github.com/ArdaNTM/JAS/pull/135",
       "blockers": [
         "Exact-head Core Assurance and release-lock CI pending.",
         "Compatible local faster-whisper model and Turkish Piper ONNX voice must be provisioned; acoustic quality and startup latency are not yet measured.",
         "Piper package and pretrained model licensing must be reviewed before deployment.",
-        "No physical microphone/audio-device validation; offline scope is the STT/TTS voice path, not the entire AURA process."
+        "No physical microphone/audio-device validation; offline scope is the STT/TTS voice path, not the entire AURA process.",
+        "Real local audio device, model weights, Owner consent, Windows Piper latency and end-to-end acoustic quality remain unverified.",
+        "Cumulative PR #136 covers PR #112-135 only, not PR #64-111 or real physical hardware."
       ],
       "technical_goal": "Provide an explicit offline-only STT/TTS mode using local faster-whisper and a pre-provisioned Turkish Piper ONNX voice.",
       "user_capability": "Run local speech recognition and local Turkish speech synthesis without model downloads or cloud voice providers, using the existing full-duplex session.",

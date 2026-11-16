@@ -86,3 +86,7 @@ A device present in an approved inventory does not gain read or action authority
 
 ## ADR-ENG-023 — skill proposals are immutable data, never new authority
 Skill proposals can reference only explicit low-risk read-oriented existing capabilities and operations. Generated candidates start disabled with no provenance; existing SkillValidator must deny promotion. No implicit PermissionEngine/Gateway authorization, ProviderRegistry registration, code evaluation, script execution or Owner consent.
+
+## ADR-ENG-023 — combine review PR sources without relaxing Core permission boundaries
+
+A separate Draft integration branch containing #112–#135 preserves authoritative deterministic Kernel registries, Core PermissionEngine, MCP Gateway and EventBus and rechecks a newly generated complete 253-file source lock. The shared full-duplex speech source must keep #120 generation-safe interruption while incorporating #131 advisory prosody only while the original session/generation remains active. This is **not** permission to execute tools, alter the F2.7 Owner security seal or merge any PR automatically.

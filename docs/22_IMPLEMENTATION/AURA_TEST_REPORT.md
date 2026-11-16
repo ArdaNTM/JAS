@@ -240,3 +240,12 @@ Core run https://github.com/ArdaNTM/JAS/actions/runs/43791155108: 618 passed / 6
 
 ## PR #130 exact-head verification
 Core run https://github.com/ArdaNTM/JAS/actions/runs/43793662855: 633 passed, 6 skipped, Final Release Lock PASS digest sha256:fc6280614c58cb575e44a9cb8163d0d8a63df62142f392300f07a88160859468. Persistence run https://github.com/ArdaNTM/JAS/actions/runs/43793662847 PASS. Tests cover real registries and NO_PROVENANCE SkillValidator denial. No real provider call, execution, sandbox or hardware.
+
+## Exact-head #135 hotfix and #136 multi-PR integration CI
+
+| PR | Exact head | Core | Final Release Lock | Other workflows |
+| --- | --- | --- | --- | --- |
+| [#135](https://github.com/ArdaNTM/JAS/pull/135) | `7e10ca4500ff` | 599 passed / 6 skipped | PASS (234 source files, sha256:6af648fb50b923cfb05111286f1754dd0b23eea1adfd09471aac0cccfaf48870) | Persistence, Windows PASS |
+| [#136](https://github.com/ArdaNTM/JAS/pull/136) | `91afeb0298ce` | 969 passed / 6 skipped ([run 43798715015](https://github.com/ArdaNTM/JAS/actions/runs/43798715015)) | PASS (253 sources, sha256:9ea3b86ab4e8a777adaacd8f824e626c426ced250389314c30e9c30f1a0cccca) | [Persistence 43798715007](https://github.com/ArdaNTM/JAS/actions/runs/43798715007) PASS, [Windows 43798715049](https://github.com/ArdaNTM/JAS/actions/runs/43798715049) PASS |
+
+#136 adds four actual cross-module tests covering SQLite+PermissionEngine, two separate Gateway-authorized Home reads, display EventBus->HUD plan and WAV prosody DSP->generation-safe speech session. Existing integrated 969 tests exclude 6 skipped and cannot prove real microphones, Owner identity, hardware, earlier PR #64–#111 or production acceptance.

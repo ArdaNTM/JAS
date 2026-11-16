@@ -97,3 +97,9 @@ Draft PR #130 6214d571cfa9b29505e58f71650ac791ef02530f, Core 43793662855 633/6, 
 
 - Feature #22: Draft PR #135 `f4a109edd5affea3ce26829388ff23de56bbf30d`; strict local faster-whisper + Piper configuration and readiness gate; exact-head CI pending; target-host audio/model/license acceptance pending.
 - Feature #24: Draft PR #134 exact-head Core 606 passed / 6 skipped, release lock PASS, Remote Persistence PASS; PARTIAL_VERIFIED, physical Windows validation outstanding.
+
+## Verified continuation — PR #135/#136 (2026-11-16)
+
+- PR #135 #22 corrected release source lock: HEAD `7e10ca4500ff5b3f3b9e186839790617e6e5bfe6`, 599 passed/6 skipped, Final Lock 234 sources PASS, Persistence/Windows PASS. Initial lock failed due extra `core/scripts/piper_tts_mcp.py` entry outside canonical generator roots; fixed.
+- PR #136 integrated distinct PRs #112–#135 (excluding closed #113/#115) in **Draft** branch `feat/aura-integration-review-112-135`, HEAD `91afeb0298ced7bf2cd1726b20df5d79a3a1244e`: 969 passed/6 skipped, Final Release Lock PASS 253-source sha256:9ea3b86ab4e8a777adaacd8f824e626c426ced250389314c30e9c30f1a0cccca, Persistence PASS, Windows launcher PASS. Conflict `full_duplex_session.py` #120 + #131 reconciled preserving concurrency guards and prosody events. Four real cross-module integration tests.
+- Tracker **29 NOT_STARTED / 86 TESTING / 2 RESEARCHING**. No COMPLETED, no PR merged. Main pinned `b1ffe6f534ced0d329dae273a4b949a634cb8bfa`. Next: real provider/device wiring and prior unmerged PR #64–#111 integration, then remaining features. **Do not equate CI proof with hardware or Owner acceptance.**

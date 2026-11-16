@@ -149,3 +149,9 @@ Read-only metadata is not physical truth or a permission to actuate. #129 stacke
 
 ## PR #130 feature #49 acceptance constraints
 Read-only declarative proposals are never authorized execution or executable workflows. Missing authenticated Owner UI, real Gateway tool policy/schema check, sandboxed replay, provenance/promotion audit and production verification. Capability category alone is not a guarantee of nonmutating remote provider behavior.
+
+## Post-#136 cumulative acceptance limitations
+
+- PR #136 proves **only PR #112–#135** combined source/CI review, not #64–#111 or full production deployment. All originals remain Draft/unmerged and no feature may be COMPLETED solely from this review.
+- Real Piper/faster-whisper microphones/voice models and GPU timing, actual Home Assistant hardware/OAuth credentials, native HUD monitor/injected inputs and Owner approvals are **not** validated by fake-provider or local unit tests. Requires dedicated device integration and independent security review.
+- Cumulative branch was assembled with a canonical source inventory, but future PRs and existing F2.7 sealed security boundaries still require separate exact-HEAD verification before Owner-approved merge ordering.

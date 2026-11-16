@@ -262,3 +262,9 @@ CI evidence update: corrected PR #131 head `1ef3dc43818e13e74fe360ed1e7deedf6aad
 
 - Added fail-closed offline config requiring local faster-whisper model files and a local Turkish Piper ONNX model/config. Main composition uses the local STT directory; Piper loads its model before MCP readiness; TTS continues through MCPGateway.
 - Exact head `f4a109edd5affea3ce26829388ff23de56bbf30d`; Core, PowerShell and Remote Persistence workflows pending. No target-host acoustic or offline network-trace claim.
+
+## 2026-11-16 — PR #135 release correction and PR #136 cumulative integration
+
+- Draft PR #135 (#22) fixed HEAD `7e10ca4500ff5b3f3b9e186839790617e6e5bfe6`: previous Release Lock **FAILED inventory** because `core/scripts/piper_tts_mcp.py` was improperly included outside canonical `core/src` roots. Fixed manifest (234 sources) and regenerated digest `sha256:6af648fb50b923cfb05111286f1754dd0b23eea1adfd09471aac0cccfaf48870`. Exact-head Core **599 passed, 6 skipped**; Final Lock / Persistence / Windows launcher all **PASS**. https://github.com/ArdaNTM/JAS/pull/135
+- Draft PR #136 exact HEAD `91afeb0298ced7bf2cd1726b20df5d79a3a1244e`: combined code/test/doc files for **22 distinct Draft PRs #112–#135** (closed duplicates #113/#115 excluded) into a separate review tree, resolving `full_duplex_session.py` #120/#131 conflict while preserving generation/interrupt guards and advisory prosody; rebuilt canonical **253-source** SHA-256 lock. Exact-head Core **969 passed, 6 skipped**, Final Release Lock **PASS** `sha256:9ea3b86ab4e8a777adaacd8f824e626c426ced250389314c30e9c30f1a0cccca`; Persistence and Windows launcher **PASS**. https://github.com/ArdaNTM/JAS/pull/136
+- **Not** a merged release: earlier open PR #64–#111, actual hardware, real Owner/model/device acceptance still pending. No auto-merge, no COMPLETED features.

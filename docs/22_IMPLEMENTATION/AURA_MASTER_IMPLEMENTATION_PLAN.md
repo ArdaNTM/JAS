@@ -172,3 +172,7 @@ PR #128 #85 and stacked PR #129 #86 pass exact-head Core/Persistence/Release Loc
 
 ## #49 skill workflow proposals — safe foundation
 PR #130 tests and locks a nonpromotable declarative workflow preview, depending on #99/#100/#101/#103 for real authorization/identity/isolation. All CI PASS on separate head; 81 TESTING, 2 RESEARCHING, 34 NOT_STARTED, zero COMPLETED. Follow with real governed sandbox tests/Owner acceptances before autonomous agent features.
+
+## 2026-11-16 — integrated PR #136, remaining actual capability work
+
+Verified #135 Release Lock hotfix and #136 consolidated **22 Draft PRs #112–#135**, Core 969 passed / 6 skipped, Final Lock 253 sources PASS, Persistence and Windows PASS. Tracker remains **86 TESTING, 2 RESEARCHING, 29 NOT_STARTED, 0 COMPLETED**. Next dependency groups: desktop process/terminal and safe OS broker (#26,#27,#31–#33); live vision/OCR/camera with real local models (#77–#84); physical/robot/Home integration (#87–#90); multiagent development/parallel verification (#45,#51,#55,#60,#61); 3D HUD, audio interface and game workflows (#91,#94–#97,#113); autonomous lab (#75). No unsupported production acceptance or auto-merges.
