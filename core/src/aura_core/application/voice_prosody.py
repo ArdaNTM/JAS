@@ -214,7 +214,7 @@ def register_voice_prosody_service(service_registry, event_bus) -> str:
         name="voice-prosody-cues",
         version="1.0.0",
         provider="aura.local",
-        category=ServiceCategory.SERVICE,
+        category=ServiceCategory.CORE,
         capabilities=frozenset({"speech.prosody.analyze"}),
         tags=frozenset({"local", "offline", "audio", "metadata-only"}),
     )

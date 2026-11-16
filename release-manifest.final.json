@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-16T00:00:00.000Z",
-  "git_commit": "87d5465bcb6bc3e794b88b1ed34e2c3ac9737683",
+  "generated_at": "2026-11-16T02:55:00.000Z",
+  "git_commit": "993677d010473a01ba0a677740d5ec22b99a0ae1",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:f8121326fa3893bbdea521206247170984d6885f21164babcee59146e040fee2",
+  "release_digest": "sha256:c5930ece97de538e8b4c87fa9f5fc27835bf479ebaaf19402c61c7c43b23cb98",
   "file_count": 234,
   "files": [
     {
@@ -386,7 +386,7 @@
     },
     {
       "path": "core/src/aura_core/application/voice_prosody.py",
-      "sha256": "6b3f89b173aa38dd4d323bec73d6afc3d18c27e91041578b4f2afe5083085ace"
+      "sha256": "57f160879d885111e08aa6ac62071e239a685ec5be5babacc297938ef8b8eb02"
     },
     {
       "path": "core/src/aura_core/application/windows_screen_driver.py",
