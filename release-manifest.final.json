@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-16T03:40:27.512Z",
-  "git_commit": "7d20a885ba650ce0c37ecc2f41dc5d431ffa2be9",
+  "generated_at": "2026-11-16T06:13:32.873Z",
+  "git_commit": "3862f921591020b46cd51ad95342ce7824ef8983",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:479a81bf6cedba045074fbbee5192e842d905b3b588d680b760b99c16312ea62",
-  "file_count": 234,
+  "release_digest": "sha256:8b0f3c29b6558bf4fbb8e5e82d03e92370bb70e87faffb7a29cfead3f7d79bb8",
+  "file_count": 235,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -819,6 +819,10 @@
     {
       "path": "core/src/aura_core/providers/contracts.py",
       "sha256": "f86614f5701c138e350570b10d2d5c7fe1045a09bd8e857ae8743b187c3bc865"
+    },
+    {
+      "path": "core/src/aura_core/providers/ffmpeg_video_mcp.py",
+      "sha256": "7edd1373458b87200a5088e94f5bcebedd4b48b951d051cf2bc65f9742261aeb"
     },
     {
       "path": "core/src/aura_core/providers/local_vision.py",
