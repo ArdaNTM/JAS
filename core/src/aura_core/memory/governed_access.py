@@ -49,7 +49,7 @@ class MemoryWriteReceipt:
 def _principal(value: str) -> str:
     if (not isinstance(value, str) or not 1 <= len(value) <= 128
             or value != value.strip()
-            or any(ord(c) < 32 or ord(c) == 127 for c in value)):
+            or any(ord(c) < 32 or ord(c) == 127 or 0xD800 <= ord(c) <= 0xDFFF for c in value)):
         raise ValueError("authenticated principal must be bounded text")
     return value
 
@@ -109,7 +109,7 @@ class GovernedEpisodicMemory:
     def recall(
         self, *, query: str = "", kind: str | None = None, limit: int = 20,
     ) -> tuple[MemoryEvidence, ...]:
-        if not isinstance(query, str) or len(query) > 200 or any(ord(c) < 32 for c in query):
+        if (not isinstance(query, str) or len(query) > 200\n                or any(ord(c) < 32 or 0xD800 <= ord(c) <= 0xDFFF for c in query)):
             raise ValueError("invalid bounded memory query")
         if kind is not None and (not isinstance(kind, str) or not kind or len(kind) > 64):
             raise ValueError("invalid memory kind")
@@ -131,7 +131,7 @@ class GovernedEpisodicMemory:
         *, kind: str, content: str, tags: tuple[str, ...] | list[str] = (),
         source_task_id: str | None = None, importance: int = 3,
     ) -> MemoryWriteReceipt:
-        if not isinstance(content, str) or not 1 <= len(content.strip()) <= 8000:
+        if (not isinstance(content, str) or not 1 <= len(content.strip()) <= 8000\n                or any(0xD800 <= ord(c) <= 0xDFFF for c in content)):
             raise ValueError("invalid memory content")
         if not isinstance(kind, str) or not kind or len(kind) > 64:
             raise ValueError("invalid memory kind")
