@@ -234,16 +234,20 @@ class GovernedImageUnderstanding:
             raise ImageUnderstandingDenied("Explicit image/camera consent is required")
         _validate_image(image)
         prompt = _validate_prompt(prompt)
-        response = await self._gateway.invoke(MCPGatewayRequest(
-            request_id="vision-image:" + str(uuid4()),
-            principal_id=self._principal, capability_id=_CAPABILITY,
-            operation_id=_OPERATION, resource_scope=_SCOPE,
-            risk_level=RiskLevel.MEDIUM, tool_name=_TOOL,
-            arguments={
-                "image_base64": base64.b64encode(image).decode("ascii"),
-                "prompt": prompt,
-            },
-        ))
+        try:
+            response = await self._gateway.invoke(MCPGatewayRequest(
+                request_id="vision-image:" + str(uuid4()),
+                principal_id=self._principal, capability_id=_CAPABILITY,
+                operation_id=_OPERATION, resource_scope=_SCOPE,
+                risk_level=RiskLevel.MEDIUM, tool_name=_TOOL,
+                arguments={
+                    "image_base64": base64.b64encode(image).decode("ascii"),
+                    "prompt": prompt,
+                },
+            ))
+        except Exception as exc:
+            # Do not reveal Ollama transport URLs, raw images or provider logs.
+            raise ImageUnderstandingUnavailable("Local vision Gateway unavailable") from exc
         if response.decision is not AuthorizationDecision.ALLOW:
             raise ImageUnderstandingDenied("Vision capability was not authorized")
         result = response.result
