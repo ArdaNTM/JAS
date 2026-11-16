@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-16T02:01:35.272Z",
-  "git_commit": "1f692f813c065655f446aa32c115897d617d8816",
+  "generated_at": "2026-11-16T02:09:21.603Z",
+  "git_commit": "3292c5f84865a5eed562469dbe37593cb43a305e",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:858b88a0613fb72adedc205dc90590dc1a442112bba087fbc72496eb8f593cb5",
-  "file_count": 234,
+  "release_digest": "sha256:24c24f6e231d61530df8875821392dc8d15e72d752fdf27999234afd829527a9",
+  "file_count": 235,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -255,6 +255,10 @@
     {
       "path": "core/src/aura_core/application/hud_api.py",
       "sha256": "36f37052df95ac7433f0a0c75d66d8acb3e7091d5a5b24fc2fa8a63edafce1cb"
+    },
+    {
+      "path": "core/src/aura_core/application/hud_layout_plan.py",
+      "sha256": "ee41c8292c293c70499188dee488660daccac77e381ccea5c89e319a3c0084af"
     },
     {
       "path": "core/src/aura_core/application/jarvis_api.py",
