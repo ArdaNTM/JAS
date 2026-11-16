@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-16T00:36:05.918Z",
-  "git_commit": "e724c5b6beec52d99171deac72eb3d283c5ae09f",
+  "generated_at": "2026-11-16T00:37:27.011Z",
+  "git_commit": "b0b22ed9a4ca334d947961a24311ff0a643e637e",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:f602137b5114f1626b540dceeeb3ceb742e804ab4564d735c8bd6cdb82b4049b",
+  "release_digest": "sha256:a40d055bda3dbf0bbaf6cdf80b98373ffc1e0260a798766b5a676260ac5ee425",
   "file_count": 233,
   "files": [
     {
