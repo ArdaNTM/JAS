@@ -144,3 +144,7 @@ Draft PR #109 closes the hardcoded legacy WS credential risk (#103 PARTIAL); Dra
 ## Voice stage engineering proof — PR #111
 
 #18 bounded English Kokoro voices and rate controls, complete chunk serialization and safe MCP error paths now implemented as partial code in independent Draft PR #111. Exact-head Core/Persistence/Windows/Release Lock PASS; model/device/Owner production acceptance outstanding. Tracker counts **64 TESTING / 2 RESEARCHING / 51 NOT_STARTED**, zero COMPLETED. Continue #35 through the existing governed MCP research provider and #43 only after #35 is safe; do not substitute provider network calls for Gateway execution authority.
+
+## Research stage: #35 -> #43 dependency
+
+PR #112 implements partial governed bounded multiquery (#35) with real JAS PermissionEngine/Gateway integration tests; PR #114 implements partial human-review research dossier (#43) stacked on #112. Each exact-head Core, Persistence and Release Lock PASS. Neither has authorized live internet, a vetted network fetch provider or trusted source verification. Tracker **66 TESTING / 2 RESEARCHING / 49 NOT_STARTED**, zero COMPLETED. Next safe independent group: #25 sandboxed filesystem path handling; maintain File MCP read authorization and prevent TOCTOU / symlink escape. Separate hardware/Owner acceptance later.

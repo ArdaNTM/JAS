@@ -41,3 +41,11 @@ DockerPythonRunner uses one capture byte budget over both pipes under a synchron
 ## ADR-ENG-009 — bounded voice profiles belong under registered MCP tools
 
 Existing Kokoro MCP provider, not another local AI runtime, remains the synthesis execution path. Validate voice/rate/text before model loading, stream all chunks into bounded output, return sanitized MCP errors. Continue to use existing Gateway permission and capability mapping. Lock executable provider code as well as Core helper. Real model licensing/hardware tests and Owner approval are separate gates.
+
+## ADR-ENG-010 — research coordination may not bypass Gateway or trust source text
+
+Multiple source queries are permitted only by calling existing MCPResearchSource.search with authenticated principal, exact scope and unique request ID through MCPGateway. Any non-ALLOW reply aborts without partial output being called complete. Third-party URLs and text are untrusted observations, not privileged instructions.
+
+## ADR-ENG-011 — human-review research dossier cannot assert model-generated truth
+
+A deterministic evidence packet can group source references and flag subquestion gaps but must not equate source host counts to independent verified publications. Full deep research needs distinct governed LLM planning, source truth verification and Owner acceptance. Stack the dossier PR on the verified query coordinator, not a second authorization or fetch runtime.

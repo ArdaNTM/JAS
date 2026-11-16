@@ -187,3 +187,12 @@ Negative security tests: wrong signing key/scope, forged checkpoint MAC, record 
 | [#111 / `595215246cf6`](https://github.com/ArdaNTM/JAS/pull/111) | [618 passed, 6 skipped; lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43782633134) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43782633127) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43782633130) |
 
 Earlier head Core failed two MCP v2 test model naming assertions; fixed in the final head. Tests use fake KPipeline and fake soundfile; no hardware model synthesis claim. Release lock includes both guard and executable provider script.
+
+## PR #112 + dependent PR #114 exact-head proof
+
+| PR | Head | Core and Final Release Lock | Persistence | Merge dependency |
+| --- | --- | --- | --- | --- |
+| [#112](https://github.com/ArdaNTM/JAS/pull/112) | `dcc4efd85446` | [618 passed 6 skipped; Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43783579312) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43783579268) | main baseline, Owner review |
+| [#114](https://github.com/ArdaNTM/JAS/pull/114) | `e8e971ff4909` | [628 passed 6 skipped; Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43784049881) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43784049895) | stacked on #112, Owner review |
+
+Fake provider/Gateway test fixture is not real SearXNG/web proof; per-query authorization is tested with real JAS registries and PermissionEngine. #114 dossier always flags untrusted evidence and requires human review.

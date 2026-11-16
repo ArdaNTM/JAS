@@ -1607,40 +1607,64 @@
       "id": 35,
       "name": "Gelişmiş web araştırması",
       "phase": 4,
-      "status": "NOT_STARTED",
-      "assessment": "NOT_ASSESSED",
-      "dependencies": [],
-      "code_paths": [],
-      "documentation_paths": [],
-      "test_commands": [],
-      "test_results": "NOT_RUN",
-      "security_review": "NOT_REVIEWED",
+      "status": "TESTING",
+      "assessment": "PARTIAL_VERIFIED",
+      "dependencies": [
+        99
+      ],
+      "code_paths": [
+        "core/src/aura_core/research/multiquery.py",
+        "core/src/aura_core/research/mcp_source.py"
+      ],
+      "documentation_paths": [
+        "docs/22_IMPLEMENTATION/AURA_GATEWAY_MULTISOURCE_RESEARCH.md"
+      ],
+      "test_commands": [
+        "cd core && uv run pytest -q tests/test_gateway_multiquery_research.py",
+        "cd core && uv run pytest -q tests",
+        "cd core && uv run python scripts/verify_final_lock.py"
+      ],
+      "test_results": "PASS: PR #112 exact head dcc4efd854468eeebf66bb5ba515077281929a2a Core Assurance 618 passed 6 skipped, Final Release Lock PASS, Remote Persistence PASS. Real Core registries/PermissionEngine/Gateway with fake networking provider; no live web.",
+      "security_review": "PARTIAL_VERIFIED: every bounded query through authoritative MCP Gateway, any deny/error aborts entire batch, public URL reference validation, deterministic untrusted source metadata, zero direct HTTP.",
       "acceptance": "NOT_VERIFIED",
-      "commit": "",
-      "pull_request": "",
-      "blockers": [],
-      "technical_goal": "",
-      "user_capability": "",
-      "integration": "",
-      "hardware_requirements": "",
-      "license_review": "NOT_REVIEWED",
-      "local_offline": "NOT_VERIFIED",
-      "notes": "Existing JAS code may already provide part of this feature; audit required.",
-      "existing_jas_state": "NOT_ASSESSED",
-      "proposed_technology": "NOT_ASSESSED",
-      "license_terms": "NOT_ASSESSED",
-      "commercial_terms": "NOT_ASSESSED",
-      "integration_test_criteria": "NOT_ASSESSED",
-      "unit_test_criteria": "NOT_ASSESSED",
-      "security_test_criteria": "NOT_ASSESSED",
-      "acceptance_criteria": "NOT_ASSESSED",
-      "performance_requirements": "NOT_ASSESSED",
-      "complexity": "NOT_ASSESSED",
-      "known_limitations": "NOT_ASSESSED",
-      "missing_components": [],
-      "official_links": [],
-      "alternatives": [],
-      "hardware_review": "NOT_REVIEWED"
+      "commit": "dcc4efd854468eeebf66bb5ba515077281929a2a",
+      "pull_request": "https://github.com/ArdaNTM/JAS/pull/112",
+      "blockers": [
+        "Existing local_research_mcp.py live network fetch SSRF/DNS rebinding/redirect/response-size and logging controls unreviewed.",
+        "No real SearXNG/browser/web provider live acceptance, legal API terms or Owner-approved egress."
+      ],
+      "technical_goal": "Aggregate bounded multi-source web search evidence via the existing registry-bound, PermissionEngine-authorized MCP ResearchSource.",
+      "user_capability": "Call 1–3 scoped research queries through Gateway and receive structured, deduplicated, explicitly untrusted public citations.",
+      "integration": "Uses existing MCPResearchSource.search, MCPGatewayResponse, registered research capability; no new provider authority.",
+      "hardware_requirements": "Real network provider and egress policy approval needed; offline simulated Gateway tests only.",
+      "license_review": "NOT_APPLICABLE: no new dependencies; live provider licensing and search terms separately pending.",
+      "local_offline": "PARTIAL_VERIFIED: deterministic aggregation testable offline with fake MCP provider, real network not tested.",
+      "notes": "PR #113 is a separate later closed duplicate Draft (not authored or merged in this PR); #112 remains authoritative active feature slice. No merge.",
+      "existing_jas_state": "Main already had MCPResearchSource and SearXNG/DDG fallback research provider but not bounded multiquery provenance across authorized calls.",
+      "proposed_technology": "Existing Core MCPGateway, registries, permission engine; Python standard-library URL parsing and dataclasses.",
+      "license_terms": "Python stdlib only; network service terms need separate review.",
+      "commercial_terms": "No new runtime license, real data source terms not assessed.",
+      "integration_test_criteria": "Live authorized Gateway research against trusted pinned SearXNG with egress protection and source provenance.",
+      "unit_test_criteria": "Query cap, URL dedupe, stable source ordering, untrusted source labels, malformed responses, correct request IDs.",
+      "security_test_criteria": "DENY/REQUIRE_APPROVAL/DEFER, unsafe URLs, injection snippets, invalid request scopes and data budgets fail closed.",
+      "acceptance_criteria": "Authorized multi-source live search, safe SSRF-protected fetch and credible citation/provenance, actual Owner end-to-end acceptance.",
+      "performance_requirements": "1..3 queries serially, <=20 evidence findings, <=100 tool items/query; no live latency measurement.",
+      "complexity": "MEDIUM bounded local orchestration; HIGH live web fetch/SSRF/source verification.",
+      "known_limitations": "Returns untrusted source claims and public URLs, does not fetch contents or verify third-party source credibility.",
+      "missing_components": [
+        "Hardened live research network/SSRF/redirect provider",
+        "Owner-authorized external search and fetch safety",
+        "Source credibility and production end-to-end verification"
+      ],
+      "official_links": [
+        "https://modelcontextprotocol.io/",
+        "https://docs.python.org/3/library/urllib.parse.html"
+      ],
+      "alternatives": [
+        "SearXNG through registered provider only",
+        "Offline indexed research corpus behind Gateway"
+      ],
+      "hardware_review": "NOT_APPLICABLE for tests; real web/network egress not accepted."
     },
     {
       "id": 36,
@@ -2034,40 +2058,65 @@
       "id": 43,
       "name": "Derin araştırma modu",
       "phase": 4,
-      "status": "NOT_STARTED",
-      "assessment": "NOT_ASSESSED",
-      "dependencies": [],
-      "code_paths": [],
-      "documentation_paths": [],
-      "test_commands": [],
-      "test_results": "NOT_RUN",
-      "security_review": "NOT_REVIEWED",
+      "status": "TESTING",
+      "assessment": "PARTIAL_VERIFIED",
+      "dependencies": [
+        35,
+        36,
+        37
+      ],
+      "code_paths": [
+        "core/src/aura_core/research/dossier.py",
+        "core/src/aura_core/research/multiquery.py"
+      ],
+      "documentation_paths": [
+        "docs/22_IMPLEMENTATION/AURA_RESEARCH_DOSSIER.md"
+      ],
+      "test_commands": [
+        "cd core && uv run pytest -q tests/test_research_dossier.py tests/test_gateway_multiquery_research.py",
+        "cd core && uv run pytest -q tests",
+        "cd core && uv run python scripts/verify_final_lock.py"
+      ],
+      "test_results": "PASS: stacked PR #114 exact head e8e971ff49091768ebc17759b3f57d1adf08fb11 Core Assurance 628 passed 6 skipped; Final Release Lock PASS; Remote Persistence PASS. Inherits #112 registry/Gateway CI test basis.",
+      "security_review": "PARTIAL_VERIFIED: all subquery evidence from Gateway, denial aborts entire dossier; every source UNTRUSTED, no automatic truth/authority or prompt execution.",
       "acceptance": "NOT_VERIFIED",
-      "commit": "",
-      "pull_request": "",
-      "blockers": [],
-      "technical_goal": "",
-      "user_capability": "",
-      "integration": "",
-      "hardware_requirements": "",
-      "license_review": "NOT_REVIEWED",
-      "local_offline": "NOT_VERIFIED",
-      "notes": "Existing JAS code may already provide part of this feature; audit required.",
-      "existing_jas_state": "NOT_ASSESSED",
-      "proposed_technology": "NOT_ASSESSED",
-      "license_terms": "NOT_ASSESSED",
-      "commercial_terms": "NOT_ASSESSED",
-      "integration_test_criteria": "NOT_ASSESSED",
-      "unit_test_criteria": "NOT_ASSESSED",
-      "security_test_criteria": "NOT_ASSESSED",
-      "acceptance_criteria": "NOT_ASSESSED",
-      "performance_requirements": "NOT_ASSESSED",
-      "complexity": "NOT_ASSESSED",
-      "known_limitations": "NOT_ASSESSED",
-      "missing_components": [],
-      "official_links": [],
-      "alternatives": [],
-      "hardware_review": "NOT_REVIEWED"
+      "commit": "e8e971ff49091768ebc17759b3f57d1adf08fb11",
+      "pull_request": "https://github.com/ArdaNTM/JAS/pull/114",
+      "blockers": [
+        "Depends on parent Draft PR #112; must review/merge parent before dependent work.",
+        "No genuine autonomous question decomposition/LLM synthesis, independent real-source verification, live provider or Owner acceptance."
+      ],
+      "technical_goal": "Produce a structured human-review evidence dossier with sources by explicit research subquestion, gaps and no unsupported factual judgments.",
+      "user_capability": "Create a multi-question research evidence matrix with exact citation indices, gaps and mandatory human-review state.",
+      "integration": "Stacked on PR #112 bounded_multiquery_search; every network-capable action remains behind MCPResearchSource and MCPGateway.",
+      "hardware_requirements": "None for simulated evidence; real live provider/network acceptance missing.",
+      "license_review": "NOT_APPLICABLE: no new dependencies; real source content/licensing not assessed.",
+      "local_offline": "PARTIAL_VERIFIED: fully deterministic offline dossier tests on fake research data.",
+      "notes": "PR #114 targets feat/aura-gateway-multisearch-evidence (PR #112), not main. Fully cumulative under stacked branch only; no automatic merge.",
+      "existing_jas_state": "Existing JAS had bounded research tools but no orchestrated human-review dossier; parent PR #112 adds bounded queries unmerged.",
+      "proposed_technology": "Frozen dataclasses and existing bounded multiquery evidence; no LLM-driven action or external executor.",
+      "license_terms": "Existing Python stdlib and JAS contract only.",
+      "commercial_terms": "No external service introduced.",
+      "integration_test_criteria": "Real authorized research with source metadata verified and human-reviewed synthesis under production policy.",
+      "unit_test_criteria": "Question/subquestion shape, citation grouping, insufficient source flags, mandatory review state.",
+      "security_test_criteria": "Provider DENY/REQUIRE_APPROVAL abort, unsafe URL, prompt-like source treated as data, no fabricated verified claims.",
+      "acceptance_criteria": "Governed iterative deep search, decomposition, multi-source fact/contradiction verification, source-cited conclusions and Owner acceptance.",
+      "performance_requirements": "Bound <=3 subqueries, <=20 findings via #35, no live performance benchmark.",
+      "complexity": "LOW structured evidence review, HIGH full autonomous deep research.",
+      "known_limitations": "No automated question decomposition or answer synthesis; hostname diversity is not source independence.",
+      "missing_components": [
+        "Governed model planning and re-query decisions",
+        "Real source trust and contradiction verification",
+        "Approved production review and synthesis workflow"
+      ],
+      "official_links": [
+        "https://modelcontextprotocol.io/",
+        "https://docs.python.org/3/library/dataclasses.html"
+      ],
+      "alternatives": [
+        "Human-guided research dossier only until model planning is safety-reviewed"
+      ],
+      "hardware_review": "NOT_APPLICABLE for offline tests; real provider unverified."
     },
     {
       "id": 44,

@@ -107,3 +107,9 @@ After **explicit Owner merge approval**, integrate in dependency order, rebase e
 
 - Tests emulate Kokoro KPipeline/soundfile with fixtures. No real audio playback, installed weight/license verification, voice availability, real measured latency or multilingual acceptance. Current Kokoro is English lang_code='a'; Piper Turkish provider unchanged.
 - Additional source inventory now explicitly includes Kokoro executable MCP script. After human-approved integration with other independent PR manifest changes, regenerate full source inventory and rerun combined CI; do not merge automatically.
+
+## PR #112/#114 research integration and trust blockers
+
+- The current research MCP executable `core/scripts/local_research_mcp.py` may fetch arbitrary URLs and follow redirects; DNS rebinding, private-address SSRF, redirect policy, response byte limits and sensitive URL/error logging require independent hardening and real tests. PR #112/114 do **not** fetch; they validate source references and invoke only existing Gateway.
+- Source host diversity is a weak review signal, not credibility or independent publication. #43 does not automatically generate/synthesize factual answers or perform iterative model research.
+- #114 is stacked on #112. Owner must explicitly approve dependency order, reconcile combined final manifest and rerun cumulative CI before any merge. Both remain partial.
