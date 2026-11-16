@@ -232,3 +232,8 @@ All tests run in separate GitHub branches; none proves live audio/desktop hardwa
 
 ## PR #127 exact-head verification — feature #54 PARTIAL
 Core run https://github.com/ArdaNTM/JAS/actions/runs/43791155108: 618 passed / 6 skipped; Final Release Lock PASS digest sha256:2292eb093fd99515f9b9a763f5fc813472ad13aa5845db57a35431bb8f8b6a30. Persistence https://github.com/ArdaNTM/JAS/actions/runs/43791155045: PASS. Networkless fake MCP transport, real registry/PermissionEngine/Gateway. No live provider acceptance.
+
+## PR #128–129 exact-head CI evidence
+- Draft PR #128, HEAD 12a08718d42b4f26593b099a2b87152f86803a4d, #85 TESTING/PARTIAL: Core 609 passed/6 skipped, lock PASS, Persistence PASS. No real Home Assistant/Matter/Zigbee/HomeKit bridge, authenticated household ownership, physical device tests or Owner approval. https://github.com/ArdaNTM/JAS/actions/runs/43792527756
+- Draft PR #129, HEAD 82e4883bb0ef3ab855a42e004f9ae26f531a425f, #86 TESTING/PARTIAL: Core 629 passed/6 skipped, lock PASS, Persistence PASS. No live HA integration, authenticated token, actual device sensor trust, physical control/Owner action or end-to-end production acceptance. https://github.com/ArdaNTM/JAS/actions/runs/43792885209
+#128 final lock sha256:cfc508ab7888e7ec095145e0e30a86eb3c6923a9e6a9db74495d88f4cd674df4; #129 stacked full 235-source lock sha256:dea49a6e3e51ce01311cfe2f49f7eda394cbd5792a04d9e99eeb7e64fd4629a2. No real home devices tested.

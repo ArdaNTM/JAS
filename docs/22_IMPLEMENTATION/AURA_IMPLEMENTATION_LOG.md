@@ -196,3 +196,8 @@ PR #123/#124/#125 and stacked #126 independently pass Core, Persistence and rele
 
 ## 2026-11-16 — PR #127 read-only governed JAS PR status (#54)
 Draft PR #127 HEAD ee68856c548932fe28f0ee0d148670d179fbf32e adds a principal-bound exact ArdaNTM/JAS pull-request status reader using existing MCP Gateway authorization and real Core registry test fixtures; no write/merge/SDK token. Core Assurance 618 passed, 6 skipped + Final Release Lock PASS (run 43791155108), Persistence PASS (43791155045). No live OAuth provider or Owner acceptance. https://github.com/ArdaNTM/JAS/pull/127
+
+## 2026-11-16 — governed home inventory and HA state PRs #128–129
+- Draft PR #128, HEAD 12a08718d42b4f26593b099a2b87152f86803a4d, #85 TESTING/PARTIAL: Core 609 passed/6 skipped, lock PASS, Persistence PASS. No real Home Assistant/Matter/Zigbee/HomeKit bridge, authenticated household ownership, physical device tests or Owner approval. https://github.com/ArdaNTM/JAS/actions/runs/43792527756
+- Draft PR #129, HEAD 82e4883bb0ef3ab855a42e004f9ae26f531a425f, #86 TESTING/PARTIAL: Core 629 passed/6 skipped, lock PASS, Persistence PASS. No live HA integration, authenticated token, actual device sensor trust, physical control/Owner action or end-to-end production acceptance. https://github.com/ArdaNTM/JAS/actions/runs/43792885209
+PR #128 initially failed one *real* negative test: nested MCP structured status=failed must be rejected. Source fixed and lock recomputed. PR #129 rebased onto PR #128 corrected HEAD without merge, verified in its own exact-head CI.

@@ -141,3 +141,8 @@ The #92 PR #126 targets PR #125, not main. Owner-approved integration and rebuil
 
 ## PR #127 GitHub account integration gap
 #54 is only principal-bound, exact-repo **read-only** GitHub PR status via MCP Gateway. Actual GitHub provider registration, authenticated OAuth token and Owner lifecycle, live remote/network tests and mutations remain unimplemented. No automatic merge.
+
+## Physical home device acceptance gaps — #85/#86
+- #85: No real Home Assistant/Matter/Zigbee/HomeKit bridge, authenticated household ownership, physical device tests or Owner approval.
+- #86: No live HA integration, authenticated token, actual device sensor trust, physical control/Owner action or end-to-end production acceptance.
+Read-only metadata is not physical truth or a permission to actuate. #129 stacked on #128, no automatic merge.

@@ -166,3 +166,6 @@ Feature #20 environmental PCM signal metadata, #28 display geometry, #92 stacked
 
 ## PR #127 verified — 2026-11-16
 Feature #54 read-only JAS PR evidence passes independent Core/Persistence/Final Release Lock. Tracker 78 TESTING / 2 RESEARCHING / 37 NOT_STARTED (zero COMPLETED). Further implementation should prioritize real authenticated service integrations and hardware tests, not confuse preview-only slices with finished capabilities.
+
+## Home integration dependency gate #85 → #86
+PR #128 #85 and stacked PR #129 #86 pass exact-head Core/Persistence/Release Lock. Only read-only, policy-gated structured metadata, no HA hardware and no physical actions. Tracker 80 TESTING, 2 RESEARCHING, 35 NOT_STARTED; zero COMPLETED. Next #49 governed skill proposals pending CI before tracker update. Never merge without Owner approval.

@@ -66,3 +66,8 @@ Counts: 38 NOT_STARTED, 77 TESTING, 2 RESEARCHING, no COMPLETED. PR #127 open Dr
 
 ## Latest PR #127 handoff — 2026-11-16
 Draft PR #127 head ee68856c548932fe28f0ee0d148670d179fbf32e feature #54 TESTING/PARTIAL_VERIFIED, Core run 43791155108 618/6 and Final Lock PASS, Persistence 43791155045 PASS. Still missing live GitHub/OAuth/Owner acceptance. PR #65 tracker 37 NOT_STARTED / 78 TESTING / 2 RESEARCHING; no COMPLETED. No PR merged and main b1ffe6f534ced0d329dae273a4b949a634cb8bfa unchanged.
+
+## Verified #128/#129 continuation (2026-11-16)
+- Draft PR #128, HEAD 12a08718d42b4f26593b099a2b87152f86803a4d, #85 TESTING/PARTIAL: Core 609 passed/6 skipped, lock PASS, Persistence PASS. No real Home Assistant/Matter/Zigbee/HomeKit bridge, authenticated household ownership, physical device tests or Owner approval. https://github.com/ArdaNTM/JAS/actions/runs/43792527756
+- Draft PR #129, HEAD 82e4883bb0ef3ab855a42e004f9ae26f531a425f, #86 TESTING/PARTIAL: Core 629 passed/6 skipped, lock PASS, Persistence PASS. No live HA integration, authenticated token, actual device sensor trust, physical control/Owner action or end-to-end production acceptance. https://github.com/ArdaNTM/JAS/actions/runs/43792885209
+Tracker **35 NOT_STARTED / 80 TESTING / 2 RESEARCHING**, zero COMPLETED. #129 rebased correctly onto #128 HEAD 12a08718d42b4f26593b099a2b87152f86803a4d. PR #130 (skills #49) open Draft, CI pending; confirm before recording. Main b1ffe6f534ced0d329dae273a4b949a634cb8bfa unchanged and no merges.

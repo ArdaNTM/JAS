@@ -77,3 +77,9 @@ Feature #93 projects only allowlisted aggregate registry health and telemetry. N
 
 ## ADR-ENG-020 — GitHub read-only evidence must pass the existing MCP Gateway
 Scoped JAS pull request metadata retrieval binds a trusted principal and exact repo/PR number, dispatches exclusively through authorized MCPGateway and treats all returned metadata as UNTRUSTED. No GitHub mutations/merge grants, direct provider calls, credential leakage or automatic Owner approval.
+
+## ADR-ENG-021 — physical device inventory never grants actuation
+Generic home discovery uses exact Principal + PermissionEngine + MCPGateway authorization and returns only bounded untrusted safe-category device hints. The nested structured MCP failure flag is a fail-closed error. No network scanning, credential or physical write.
+
+## ADR-ENG-022 — per-entity HA read is separately authorized
+A device present in an approved inventory does not gain read or action authority. Home Assistant-style state reads require new exact entity-scope Gateway permission and matching registered provider identity. This stacked read-only layer never controls physical devices.
