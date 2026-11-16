@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-10-31T00:45:29.771Z",
-  "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
+  "generated_at": "2026-11-16T03:19:52.123Z",
+  "git_commit": "f4a109edd5affea3ce26829388ff23de56bbf30d",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
-  "file_count": 233,
+  "release_digest": "sha256:6af648fb50b923cfb05111286f1754dd0b23eea1adfd09471aac0cccfaf48870",
+  "file_count": 234,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -630,7 +630,7 @@
     },
     {
       "path": "core/src/aura_core/main.py",
-      "sha256": "994cb2dfe1723239a3032001ef75345c8f4a4dd73ddafe098d1cd2e512828fd6"
+      "sha256": "ee3fc1d71de023d00ba7230476ffef8c508f509f7f409c65b9e49774413dbab6"
     },
     {
       "path": "core/src/aura_core/mcp/__init__.py",
@@ -927,6 +927,10 @@
     {
       "path": "core/src/aura_core/tts/config.py",
       "sha256": "b651fc07f34d2572c12b349014ce0bbbdc08ca69981a51052c6fd2ab0896a657"
+    },
+    {
+      "path": "core/src/aura_core/tts/offline_voice.py",
+      "sha256": "f2ee08554f0eccacc79f3a9dc9ebf0d59a14380b108dab1661b8bb1ee3e0729f"
     },
     {
       "path": "core/src/aura_core/tts/provider_bootstrap.py",
