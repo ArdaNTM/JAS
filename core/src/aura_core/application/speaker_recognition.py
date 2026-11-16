@@ -10,6 +10,7 @@ from aura_core.kernel.capabilities import CapabilityCategory, CapabilityDefiniti
 from aura_core.kernel.events import EventBus, KernelEvent
 from aura_core.kernel.permissions import AuthorizationDecision, AuthorizationRequest, PermissionEngine, RiskLevel
 from aura_core.kernel.services import ServiceCategory, ServiceDefinition, ServiceRegistry
+from aura_core.mcp.provider import ProviderDefinition, ProviderRegistry
 from aura_core.providers.speaker_embedding import SpeakerEmbeddingProvider
 
 
@@ -132,8 +133,8 @@ class SpeakerRecognitionService:
 
 def register_speaker_recognition_service(*, service_registry: ServiceRegistry,
         capability_registry: CapabilityRegistry, permission_engine: PermissionEngine,
-        event_bus: EventBus, provider: SpeakerEmbeddingProvider,
-        similarity_threshold: float = 0.35) -> SpeakerRecognitionService:
+        event_bus: EventBus, provider_registry: ProviderRegistry,
+        provider: SpeakerEmbeddingProvider, similarity_threshold: float = 0.35) -> SpeakerRecognitionService:
     service = SpeakerRecognitionService(provider=provider, permission_engine=permission_engine,
                                         event_bus=event_bus, similarity_threshold=similarity_threshold)
     definition = ServiceDefinition(
@@ -143,6 +144,11 @@ def register_speaker_recognition_service(*, service_registry: ServiceRegistry,
         tags=frozenset({"voice", "speaker-diarization", "local-only", "session-scoped"}),
     )
     service_registry.register(definition, service)
+    provider_registry.register(ProviderDefinition(
+        provider_id="voice.speaker.local", name="Local speaker embedding provider",
+        version="1.0.0", service_id=definition.service_id,
+        description="Pre-provisioned local SpeechBrain speaker embedding model.",
+    ), provider)
     capability_registry.register(CapabilityDefinition(
         capability_id=SpeakerRecognitionService.CAPABILITY_ID,
         name="Anonymous session speaker recognition", version="1.0.0",

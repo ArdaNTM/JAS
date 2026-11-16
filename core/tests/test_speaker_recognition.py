@@ -6,6 +6,7 @@ from aura_core.kernel.capabilities import CapabilityRegistry
 from aura_core.kernel.events import EventBus
 from aura_core.kernel.permissions import AuthorizationDecision, AuthorizationLevel, PermissionEngine, PermissionPolicy
 from aura_core.kernel.services import ServiceRegistry
+from aura_core.mcp.provider import ProviderRegistry
 
 
 class FakeEmbeddingProvider:
@@ -20,11 +21,12 @@ def build(*, vectors, allowed=True):
     bus = EventBus()
     services = ServiceRegistry(bus)
     capabilities = CapabilityRegistry(services, bus)
+    providers = ProviderRegistry(services, bus)
     permissions = PermissionEngine(capabilities, bus)
     provider = FakeEmbeddingProvider(vectors)
     service = register_speaker_recognition_service(
         service_registry=services, capability_registry=capabilities,
-        permission_engine=permissions, event_bus=bus, provider=provider,
+        permission_engine=permissions, event_bus=bus, provider_registry=providers, provider=provider,
         similarity_threshold=0.9,
     )
     if allowed:
@@ -38,6 +40,7 @@ def build(*, vectors, allowed=True):
                 ))
     while bus.snapshot()["queued_total"]:
         asyncio.run(bus.dispatch_once())
+    assert providers.resolve("voice.speaker.local") is provider
     return service, provider, bus
 
 
