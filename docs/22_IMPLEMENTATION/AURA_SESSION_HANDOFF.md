@@ -94,3 +94,6 @@ Draft PR #130 6214d571cfa9b29505e58f71650ac791ef02530f, Core 43793662855 633/6, 
 
 - Feature #16: Draft PR #133 `3805af120d6620c78ae16d5d13de46cb4f95715c`; Core 598 passed / 6 skipped, Final Release Lock PASS, Remote Persistence PASS. Session diarization PARTIAL_VERIFIED; real model/acoustic/consent validation pending.
 - Feature #24: Draft PR #134 `c6905e905c7aa1deb8e21b8667852dd6570a2ef9`; provider tests and bounds added; exact-head CI pending; no physical Windows validation.
+
+- Feature #22: Draft PR #135 `f4a109edd5affea3ce26829388ff23de56bbf30d`; strict local faster-whisper + Piper configuration and readiness gate; exact-head CI pending; target-host audio/model/license acceptance pending.
+- Feature #24: Draft PR #134 exact-head Core 606 passed / 6 skipped, release lock PASS, Remote Persistence PASS; PARTIAL_VERIFIED, physical Windows validation outstanding.

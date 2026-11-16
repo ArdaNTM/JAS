@@ -251,3 +251,14 @@ CI evidence update: corrected PR #131 head `1ef3dc43818e13e74fe360ed1e7deedf6aad
 
 - Added dedicated ScreenControl provider regression tests and provider-side printable-text/key bounds. Existing SendInput driver remains disabled by default and requires consumed interactive Gateway approval.
 - Draft PR https://github.com/ArdaNTM/JAS/pull/134, head `c6905e905c7aa1deb8e21b8667852dd6570a2ef9`; exact-head Core and Remote Persistence CI pending. No physical Windows validation claim.
+
+
+## 2026-11-16 — Feature #24 computer control evidence (Draft PR #134)
+
+- Exact head `c6905e905c7aa1deb8e21b8667852dd6570a2ef9`: Core Assurance PASS (606 passed, 6 skipped), complete Final Release Lock PASS (`sha256:7d3b21584e6f96ed944fbff5b2b4b6fcd44be873f36503c43fdef6711d1243c4`), Remote Persistence Integration PASS.
+- Existing ScreenControl provider and Windows SendInput driver remain disabled by default and require consumed interactive Gateway approval. Physical Windows target validation is outstanding; status PARTIAL_VERIFIED.
+
+## 2026-11-16 — Feature #22 offline voice path (Draft PR #135)
+
+- Added fail-closed offline config requiring local faster-whisper model files and a local Turkish Piper ONNX model/config. Main composition uses the local STT directory; Piper loads its model before MCP readiness; TTS continues through MCPGateway.
+- Exact head `f4a109edd5affea3ce26829388ff23de56bbf30d`; Core, PowerShell and Remote Persistence workflows pending. No target-host acoustic or offline network-trace claim.
