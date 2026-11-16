@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 import stat
+from contextlib import ExitStack
 from pathlib import Path, PurePosixPath, PureWindowsPath
 
 MAX_READ_BYTES = 1_048_576
@@ -35,7 +36,7 @@ def read_test_data_file(relative_path: str, *, root: Path | None = None) -> str:
     if win_path.is_absolute() or win_path.drive or posix_path.is_absolute():
         raise SafeReadError("absolute paths are not allowed")
     parts = posix_path.parts
-    if not parts or any(part in {"", ".", ".."} for part in parts):
+    if not parts or any(part in {"", ".", ".."} for part in relative_path.split("/")):
         raise SafeReadError("path traversal is not allowed")
 
     configured_root = root or default_test_data_root()
@@ -69,15 +70,49 @@ def read_test_data_file(relative_path: str, *, root: Path | None = None) -> str:
         raise SafeReadError("path is outside the permitted directory or unavailable") from exc
 
     try:
-        flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
-        descriptor = os.open(resolved, flags)
-        with os.fdopen(descriptor, "rb") as handle:
-            file_stat = os.fstat(handle.fileno())
-            if not stat.S_ISREG(file_stat.st_mode):
-                raise SafeReadError("only regular files can be read")
-            if file_stat.st_size > MAX_READ_BYTES:
-                raise SafeReadError("file exceeds the 1 MiB read limit")
-            content = handle.read(MAX_READ_BYTES + 1)
+        if os.name == "posix" and hasattr(os, "O_NOFOLLOW") and hasattr(os, "O_DIRECTORY"):
+            # Anchor path traversal to a verified directory inode, then open
+            # each component relative to the *previous open descriptor*. A
+            # concurrent symlink swap cannot redirect a child lookup outside
+            # the trusted directory even after preflight lstat/resolve().
+            directory_flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | getattr(os, "O_CLOEXEC", 0)
+            file_flags = os.O_RDONLY | os.O_NOFOLLOW | getattr(os, "O_CLOEXEC", 0)
+            with ExitStack() as opened:
+                root_fd = os.open(base, directory_flags)
+                opened.callback(os.close, root_fd)
+                original_root = configured_root.lstat()
+                actual_root = os.fstat(root_fd)
+                if _is_link_or_reparse_point(original_root) or (
+                    actual_root.st_dev, actual_root.st_ino
+                ) != (original_root.st_dev, original_root.st_ino):
+                    raise SafeReadError("permitted directory changed during access")
+                parent_fd = root_fd
+                for part in parts[:-1]:
+                    next_fd = os.open(part, directory_flags, dir_fd=parent_fd)
+                    opened.callback(os.close, next_fd)
+                    parent_fd = next_fd
+                file_fd = os.open(parts[-1], file_flags, dir_fd=parent_fd)
+                with os.fdopen(file_fd, "rb") as handle:
+                    file_stat = os.fstat(handle.fileno())
+                    if not stat.S_ISREG(file_stat.st_mode):
+                        raise SafeReadError("only regular files can be read")
+                    if file_stat.st_size > MAX_READ_BYTES:
+                        raise SafeReadError("file exceeds the 1 MiB read limit")
+                    content = handle.read(MAX_READ_BYTES + 1)
+        else:
+            # Windows fallback: keep the strict lstat/reparse check. Python
+            # does not expose openat/dir_fd guarantees on Windows. A trusted
+            # native handle-based implementation is still required for full
+            # race-free Windows acceptance.
+            flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
+            descriptor = os.open(resolved, flags)
+            with os.fdopen(descriptor, "rb") as handle:
+                file_stat = os.fstat(handle.fileno())
+                if not stat.S_ISREG(file_stat.st_mode):
+                    raise SafeReadError("only regular files can be read")
+                if file_stat.st_size > MAX_READ_BYTES:
+                    raise SafeReadError("file exceeds the 1 MiB read limit")
+                content = handle.read(MAX_READ_BYTES + 1)
     except SafeReadError:
         raise
     except FileNotFoundError as exc:
