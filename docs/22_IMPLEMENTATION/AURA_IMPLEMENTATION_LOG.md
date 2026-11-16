@@ -240,3 +240,14 @@ CI evidence update: corrected PR #131 head `1ef3dc43818e13e74fe360ed1e7deedf6aad
 
 - Draft PR #132 head `773a3e18d38fbf86930f2866ff345923db98bce5`: AURA Core Assurance PASS; AURA Remote Persistence Integration PASS.
 - Release lock and Core tests passed. Native Windows runtime/Owner acceptance remain outstanding; assessment is PARTIAL_VERIFIED, not COMPLETED.
+
+
+## 2026-11-16 — Feature #16 speaker diarization (Draft PR #133)
+
+- Exact head `3805af120d6620c78ae16d5d13de46cb4f95715c`: Core Assurance PASS (598 passed, 6 skipped), bytecode compilation PASS, Final Release Lock PASS (`sha256:345f618de1c58cb8640c5c1c7510538755b9de5ae1241559fc13bdf35ac00d94`); Remote Persistence Integration PASS.
+- CI verifies the session clustering and authorization paths with fake embeddings. It does not verify SpeechBrain acoustic accuracy, local model loading, model licensing or live stream integration. Status TESTING / PARTIAL_VERIFIED.
+
+## 2026-11-16 — Feature #24 desktop control (Draft PR #134)
+
+- Added dedicated ScreenControl provider regression tests and provider-side printable-text/key bounds. Existing SendInput driver remains disabled by default and requires consumed interactive Gateway approval.
+- Draft PR https://github.com/ArdaNTM/JAS/pull/134, head `c6905e905c7aa1deb8e21b8667852dd6570a2ef9`; exact-head Core and Remote Persistence CI pending. No physical Windows validation claim.
