@@ -2,6 +2,7 @@
 import asyncio
 import base64
 import importlib.util
+import json
 import math
 from pathlib import Path
 from types import SimpleNamespace
@@ -119,3 +120,11 @@ def test_mcp_error_response_does_not_expose_attacker_input():
     assert result.isError is True
     assert "ValueError" in result.content[0].text
     assert fake_secret not in result.content[0].text
+
+
+def test_executable_kokoro_provider_is_in_final_release_inventory():
+    root = Path(__file__).resolve().parents[2]
+    manifest = json.loads((root / "release-manifest.final.json").read_text(encoding="utf-8"))
+    locked = {item["path"] for item in manifest["files"]}
+    assert "core/src/aura_core/tts/kokoro_guard.py" in locked
+    assert "core/scripts/kokoro_tts_mcp.py" in locked
