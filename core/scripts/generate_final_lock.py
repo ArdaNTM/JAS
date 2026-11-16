@@ -54,6 +54,9 @@ def files_to_hash() -> list[Path]:
         ROOT / "core" / "src",
         ROOT / "core" / "pyproject.toml",
         ROOT / "core" / "uv.lock",
+        # Include the executable Kokoro MCP provider whose runtime behavior is
+        # changed by this feature. Previously only core/src files were locked.
+        ROOT / "core" / "scripts" / "kokoro_tts_mcp.py",
         ROOT / "aura-ui" / "src",
         ROOT / "aura-ui" / "package.json",
         ROOT / "aura-ui" / "package-lock.json",
