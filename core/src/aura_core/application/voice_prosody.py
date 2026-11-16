@@ -47,8 +47,8 @@ class ProsodyCueAnalyzer:
         if not 0.10 <= duration <= _MAX_DURATION_SECONDS:
             raise ValueError("Audio duration must be between 0.1 and 30 seconds")
 
-        # Downsample deterministically for bounded pitch analysis.
-        stride = max(1, math.ceil(sample_rate / 16_000))
+        # Downsample deterministically to at most 8 kHz for bounded pitch analysis.
+        stride = max(1, math.ceil(sample_rate / 8_000))
         analysis_rate = sample_rate / stride
         samples = samples[::stride]
         frame_size = max(1, round(analysis_rate * _FRAME_SECONDS))

@@ -103,7 +103,6 @@ class EventBusAudioPlayer:
 
     def __init__(self, event_bus: EventBus) -> None:
         self._events = event_bus
-        self._prosody_analyzer = prosody_analyzer
 
     async def play(self, audio: Any, *, session_id: str) -> None:
         payload = getattr(audio, "structured_content", None)
@@ -191,6 +190,7 @@ class FullDuplexSessionManager:
         self._synthesizer = synthesizer
         self._player = player
         self._events = event_bus
+        self._prosody_analyzer = prosody_analyzer
         self._session_id: str | None = None
         self._state = "idle"
         self._transcript = ""
