@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-10-31T00:45:29.771Z",
-  "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
+  "generated_at": "2026-11-16T01:55:56.348Z",
+  "git_commit": "f88606b04af21b57140327002b118ae6e48217bf",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
-  "file_count": 233,
+  "release_digest": "sha256:cd2d2123b3dccd11d9ea9cd9ba8933cb2df1ed0c38fc167275a8b13bc61d7ffe",
+  "file_count": 234,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -331,6 +331,10 @@
     {
       "path": "core/src/aura_core/application/reflexion_inference.py",
       "sha256": "2215a44162cdcc7ca3a8421386bb2dbdf94b0d772893c5339db6b0f9c471e05b"
+    },
+    {
+      "path": "core/src/aura_core/application/safe_live_status.py",
+      "sha256": "a9ac5d9f4c8026912b38a01abdd125cfc89483e83b7d0d65f74efee9d85afa44"
     },
     {
       "path": "core/src/aura_core/application/sandbox_contract.py",
