@@ -220,3 +220,10 @@ CI follow-up: first exact-head Core run for PR #131 reported 599 passed / 1 fail
 
 
 CI evidence update: corrected PR #131 head `1ef3dc43818e13e74fe360ed1e7deedf6aad6415` — Core Assurance PASS (600 passed, 6 skipped), bytecode compilation PASS, Final Release Lock PASS (`sha256:c5930ece97de538e8b4c87fa9f5fc27835bf479ebaaf19402c61c7c43b23cb98`). Remote Persistence Integration remains in progress. Feature remains partial; no end-to-end Owner acceptance.
+
+
+## 2026-11-16 — Feature #23 foreground desktop awareness (Draft PR #132)
+
+- Added a Windows-only read-only foreground window provider, exact-scope PermissionEngine authorization, ServiceRegistry/CapabilityRegistry registration and redacted EventBus metadata.
+- No screenshot, OCR, keyboard/mouse input, background polling or app control.
+- Draft PR: https://github.com/ArdaNTM/JAS/pull/132 (head `773a3e18d38fbf86930f2866ff345923db98bce5`). Exact-head CI and Windows runtime validation pending; status TESTING / NOT_ASSESSED.
