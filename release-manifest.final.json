@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-16T03:40:27.512Z",
-  "git_commit": "7d20a885ba650ce0c37ecc2f41dc5d431ffa2be9",
+  "generated_at": "2026-11-16T03:50:56.788Z",
+  "git_commit": "8a13f0ac4155a000c533d6da057ad5143badd22c",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:479a81bf6cedba045074fbbee5192e842d905b3b588d680b760b99c16312ea62",
-  "file_count": 234,
+  "release_digest": "sha256:35cd8317518abdedac16879a3f2f498614bb4bac5a84a053855d304a917f1d1b",
+  "file_count": 235,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -271,6 +271,10 @@
     {
       "path": "core/src/aura_core/application/live_events.py",
       "sha256": "51d23fe8f540b5781a1962f96594cd3e6b85ce600334d612c504ba2ec0bd23f0"
+    },
+    {
+      "path": "core/src/aura_core/application/local_object_detection.py",
+      "sha256": "77c65c22af1ea8f7c70071bc541fb1939298cf8aca985b1c31ac340adf0b4f6f"
     },
     {
       "path": "core/src/aura_core/application/ollama_completion.py",
