@@ -107,8 +107,9 @@ def test_real_sqlite_insert_recall_and_explicit_delete_use_distinct_core_policie
         assert "description" in columns
         assert db.execute("SELECT count(*) FROM visual_records").fetchone()[0] == 1
     assert caps.resolve("memory.visual.write").definition.provider_type.value == "service"
-    assert len(engine.audit_records()) == 5  # write preflight, model, write recheck, read, delete
+    assert len(engine.audit_records()) == 4  # write preflight, model, write recheck, read
     assert memory.forget(memory_id=receipt.memory_id) is True
+    assert len(engine.audit_records()) == 5  # distinct delete authorization
     assert memory.recall() == ()
     assert memory.forget(memory_id=receipt.memory_id) is False
 
