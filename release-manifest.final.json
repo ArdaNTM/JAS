@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-16T00:58:58.896Z",
-  "git_commit": "52d1b5d2b536889f9b92442002accaa94cc70bed",
+  "generated_at": "2026-11-16T01:10:03.177Z",
+  "git_commit": "1028066242e590fff5e3cdc89bf4c203ab597d6d",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:e266b76ddb84420c67b8b87eaeb639431db8db194fcfa85d5fb9fd09be59ed58",
-  "file_count": 234,
+  "release_digest": "sha256:0ff766fe30514eb5aff6bca09c087b07c1d53ef8f6b2348c64c81bca8b7da3b0",
+  "file_count": 235,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -835,6 +835,10 @@
     {
       "path": "core/src/aura_core/research/config.py",
       "sha256": "2e32a4aefeddc5af516726d22e5c4a83e39367bbd654c99ff3a88474cbfd6769"
+    },
+    {
+      "path": "core/src/aura_core/research/dossier.py",
+      "sha256": "cf37714e460d47d31b827c3762b5bced715a61ac8de74883c93f9051fb2d93a9"
     },
     {
       "path": "core/src/aura_core/research/mcp_source.py",
