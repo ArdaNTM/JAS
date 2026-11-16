@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-10-31T00:45:29.771Z",
-  "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
+  "generated_at": "2026-11-16T00:39:39.096Z",
+  "git_commit": "7960adfb61dd1c326d75598608763baeabcf9fac",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
+  "release_digest": "sha256:3357365b250a818caaa2a0737751a707b4d6dcefb5a3e59be0bb3adfc6e08523",
   "file_count": 233,
   "files": [
     {
@@ -338,7 +338,7 @@
     },
     {
       "path": "core/src/aura_core/application/sandbox_runner.py",
-      "sha256": "f97440ec7b3acdbb17438e48849a1b86979220ea24a2a5d5c03dc94ec9a59c48"
+      "sha256": "a597c618e65940d069279301dd057e6cbda7acc0c40dec6b5b9a66a399ed92aa"
     },
     {
       "path": "core/src/aura_core/application/self_tool_synthesis.py",
