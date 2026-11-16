@@ -73,6 +73,7 @@ from aura_core.research.provider_bootstrap import (
     install_local_research_policies,
 )
 from aura_core.tts.config import KokoroMCPConfig
+from aura_core.tts.offline_voice import OfflineVoiceConfig
 from aura_core.tts.provider_bootstrap import register_kokoro_mcp
 
 
@@ -195,6 +196,7 @@ def build_app() -> FastAPI:
     )
     research_config = ResearchMCPConfig.from_env()
     kokoro_config = KokoroMCPConfig.from_env()
+    offline_voice_config = OfflineVoiceConfig.from_environment()
     filesystem_config = LocalFilesystemMCPConfig.from_env()
     research_tools = MCPToolRegistry()
     tts_tools = MCPToolRegistry()
@@ -664,7 +666,13 @@ def build_app() -> FastAPI:
             )
             app.state.speech_session_manager = FullDuplexSessionManager(
                 recognizer=FasterWhisperRecognizer(
-                    model_size=os.getenv("AURA_STT_MODEL", "small"),
+                    # Offline mode passes an absolute, pre-provisioned model
+                    # directory. FasterWhisper therefore has no model-hub fallback.
+                    model_size=(
+                        offline_voice_config.stt_model_path
+                        if offline_voice_config is not None
+                        else os.getenv("AURA_STT_MODEL", "small")
+                    ),
                     device=os.getenv("AURA_STT_DEVICE", "cpu"),
                     compute_type=os.getenv("AURA_STT_COMPUTE_TYPE", "int8"),
                 ),
