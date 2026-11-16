@@ -123,3 +123,7 @@ Feature #82 TESTING/PARTIAL_VERIFIED, Draft PR #141 HEAD `0445d474b9f60d978aafde
 ## Verified PR #142, status after camera integration
 
 #83 Draft PR #142 exact HEAD feb091f118870fd6cbc48e09e681e322e09a0c75: 650 passed/6 skipped, Persistence and Final Lock PASS. Owner lease checked **inside** OpenCV provider. Tracker **23 NOT_STARTED / 92 TESTING / 2 RESEARCHING**, zero COMPLETED. PR #143 visual task evidence underway (unverified). Do not merge; main pinned; physical camera and Owner acceptance pending.
+
+## #143 visual before-after status (2026-11-16)
+
+Draft PR #143 HEAD `1747ee11434424a19af874754bb3d61df0a90148`: 628 passed/7 skipped, Release Lock 235 files PASS, Remote Persistence PASS. Feature #84 TESTING/PARTIAL_VERIFIED, tracker **22 NOT_STARTED / 93 TESTING / 2 RESEARCHING**, zero COMPLETED. Next integrate #140–#143 with cumulative #136 and compare earlier PR #64–#111 without changing sealed F2.7 boundary. Owner/hardware acceptance missing; no merges, main pinned.

@@ -4496,40 +4496,68 @@
       "id": 84,
       "name": "Görsel görev doğrulama",
       "phase": 6,
-      "status": "NOT_STARTED",
-      "assessment": "NOT_ASSESSED",
-      "dependencies": [],
-      "code_paths": [],
-      "documentation_paths": [],
-      "test_commands": [],
-      "test_results": "NOT_RUN",
-      "security_review": "NOT_REVIEWED",
+      "status": "TESTING",
+      "assessment": "PARTIAL_VERIFIED",
+      "dependencies": [
+        77,
+        79,
+        80,
+        83,
+        99,
+        100,
+        103
+      ],
+      "code_paths": [
+        "core/src/aura_core/application/visual_task_verification.py"
+      ],
+      "documentation_paths": [
+        "docs/22_IMPLEMENTATION/AURA_VISUAL_TASK_EVIDENCE.md"
+      ],
+      "test_commands": [
+        "cd core && uv run pytest -q tests/test_visual_task_verification.py",
+        "cd core && uv run pytest -q",
+        "cd core && uv run python scripts/verify_final_lock.py"
+      ],
+      "test_results": "PASS: Draft PR #143 exact HEAD 1747ee11434424a19af874754bb3d61df0a90148, Core Assurance 628 passed/7 skipped run 43818878842; Final Release Lock PASS sha256:17342ebe4ce497ce345ceed8c25dbe7f0c214127954f8bb4367387d2c512d5ff (235 canonical files); Remote Persistence PASS run 43818878960.",
+      "security_review": "PARTIAL_VERIFIED: Core medium-risk PermissionEngine compare policy and separate MCP Gateway per-image model authorization, bounded Pillow image pixel decode before/after, dual capture consent, metadata-only EventBus and immutable never-task-success evidence. No physical action/Owner provenance validation.",
       "acceptance": "NOT_VERIFIED",
-      "commit": "",
-      "pull_request": "",
-      "blockers": [],
-      "technical_goal": "",
-      "user_capability": "",
-      "integration": "",
-      "hardware_requirements": "",
-      "license_review": "NOT_REVIEWED",
-      "local_offline": "NOT_VERIFIED",
-      "notes": "Existing JAS code may already provide part of this feature; audit required.",
-      "existing_jas_state": "NOT_ASSESSED",
-      "proposed_technology": "NOT_ASSESSED",
-      "license_terms": "NOT_ASSESSED",
-      "commercial_terms": "NOT_ASSESSED",
-      "integration_test_criteria": "NOT_ASSESSED",
-      "unit_test_criteria": "NOT_ASSESSED",
-      "security_test_criteria": "NOT_ASSESSED",
-      "acceptance_criteria": "NOT_ASSESSED",
-      "performance_requirements": "NOT_ASSESSED",
-      "complexity": "NOT_ASSESSED",
-      "known_limitations": "NOT_ASSESSED",
-      "missing_components": [],
-      "official_links": [],
-      "alternatives": [],
-      "hardware_review": "NOT_REVIEWED"
+      "commit": "1747ee11434424a19af874754bb3d61df0a90148",
+      "pull_request": "https://github.com/ArdaNTM/JAS/pull/143",
+      "blockers": [
+        "Pixel differences and local model text cannot independently verify task success, causation, human intent or correct physical action.",
+        "Real captured before/after owner provenance, OpenCV camera or screen source, device lighting/calibration and actual Ollama weights and performance not validated.",
+        "Combined integration with #79 detector/#80 OCR/#83 camera, F2.7 and Owner human review UI absent; Pillow optional in CI."
+      ],
+      "technical_goal": "Bounded local before/after image pixel change with independent model descriptions, explicit Core compare permission, no autonomous success/actuation.",
+      "user_capability": "With explicit double image consent and verified policies, receive deterministic pixel-change classification and untrusted model descriptions for mandatory human review.",
+      "integration": "Existing Core ServiceRegistry/CapabilityRegistry/PermissionEngine/EventBus, Pillow Image/Chops/Stat local processor, registered Ollama MCP Gateway for each image.",
+      "hardware_requirements": "Trusted PNG/JPEG/WebP image sources (real UI/device), local Pillow and Qwen-VL model, human Owner reviewer.",
+      "license_review": "Uses existing open-source Pillow runtime and Core, no new SaaS; model/data licensing review outstanding.",
+      "local_offline": "PARTIAL_VERIFIED: real Pillow PNG pixel operations and production Ollama HTTP transport via MockTransport; real model and capture hardware not verified.",
+      "notes": "PR #143 Draft/unmerged; strong pixel-change evidence is deliberately never a task-success claim. 7 CI skipped; Owner visual acceptance unverified.",
+      "existing_jas_state": "#137 local Ollama vision, #79 object boxes, #83 camera were partial; no independently permissioned pure pixel before/after evidence with explicit no-success semantics.",
+      "proposed_technology": "Pillow RGB image decoding/thumbnail and ImageChops/ImageStat quantitative difference, two MCP Gateway-authorized image descriptions.",
+      "license_terms": "Pillow open source, existing Core and local-model rights.",
+      "commercial_terms": "No new commercial provider.",
+      "integration_test_criteria": "Real Owner-session before/after captures, calibrated camera or desktop source with per-capture consent and human-labelled ground-truth task outcomes.",
+      "unit_test_criteria": "Real Pillow RGB changes, default DENY before decode, second model policy, malformed images, mismatch, double consent, no task-success output.",
+      "security_test_criteria": "No unauthorized compare/model, forged Owner ID, malicious image text ignored as policy, bounded image pixels and metadata-only events.",
+      "acceptance_criteria": "Owner-approved visual semantic verification benchmarks and trusted capture provenance, human review; never infer actuation permission from pixel delta.",
+      "performance_requirements": "At most 3M decoded pixels, 320px comparison, max 8MiB per image, actual live GPU/desktop latency unmeasured.",
+      "complexity": "MEDIUM deterministic evidence, HIGH real visual semantics/calibration/Owner provenance.",
+      "known_limitations": "No verified task success or action authority, only pixel similarity/difference and untrusted caption; Pillow optional.",
+      "missing_components": [
+        "Real authenticated Owner camera/screen before/after capture",
+        "Semantic task benchmark and independent verification",
+        "Human-approved outcome UI and model hardware throughput"
+      ],
+      "official_links": [
+        "https://pillow.readthedocs.io/"
+      ],
+      "alternatives": [
+        "Treat change evidence as reviewer aid only, never automatic completion"
+      ],
+      "hardware_review": "NOT_VERIFIED"
     },
     {
       "id": 85,

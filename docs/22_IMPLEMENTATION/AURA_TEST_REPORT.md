@@ -269,3 +269,7 @@ Core run https://github.com/ArdaNTM/JAS/actions/runs/43793662855: 633 passed, 6 
 ## PR #142 final exact-head Core and Camera privacy CI
 
 [Core run 43817947944](https://github.com/ArdaNTM/JAS/actions/runs/43817947944): **650 passed, 6 skipped**, Final Release Lock PASS sha256:d8d8ffb390ce5584c765ba92d89835fdb6bf3e781a9b74b7404b0466fd7130d2. [Persistence 43817947929](https://github.com/ArdaNTM/JAS/actions/runs/43817947929): PASS. Uses deterministic cv2 device stand-in; actual camera/Owner identity not verified. Direct MCP Gateway attempted without a live Owner lease is rejected by the **provider**, not just the facade.
+
+## PR #143 exact-head Pillow visual task verification
+
+[Core run 43818878842](https://github.com/ArdaNTM/JAS/actions/runs/43818878842): **628 passed, 7 skipped**, Final Lock PASS sha256:17342ebe4ce497ce345ceed8c25dbe7f0c214127954f8bb4367387d2c512d5ff. [Persistence run 43818878960](https://github.com/ArdaNTM/JAS/actions/runs/43818878960): PASS. Real PNG/Pillow differences and bounded model Gateway testing; skipped dependencies/actual camera/Owner review remain separate evidence gaps.

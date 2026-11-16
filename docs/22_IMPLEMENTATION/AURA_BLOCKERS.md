@@ -174,3 +174,7 @@ On-disk SQLite description text is **plaintext**, not encryption; private POSIX 
 ## #83 actual local camera Owner/hardware blockers
 
 Optional native OpenCV and physical camera hardware are not tested in CI. `asyncio.to_thread` timeout is **soft** and cannot kill a stuck driver; strongly isolated native helper/broker, Windows privacy indicator/Owner credential proof, device provenance and video latency remain missing. High-risk Gateway ALLOW requires a separate real authenticated UI lease. No auto camera access/COMPLETED claim.
+
+## #84 visual verification is not automatic task success
+
+Pillow pixel differences and Qwen-VL descriptions are useful **untrusted evidence**, never proof that a task/physical action succeeded or permission to perform a subsequent action. Real before/after capture origin, Owner identity and manual acceptance, calibrated environments and device/model benchmarks remain mandatory. No COMPLETED claim.

@@ -288,3 +288,7 @@ Draft PR #141 exact head `0445d474b9f60d978aafdee83fcd6daa3a7954f7`: Core Assura
 ## 2026-11-16 — PR #142 OpenCV camera via Owner lease and HIGH-risk MCP Gateway (#83)
 
 Exact-head Draft PR #142 `feb091f118870fd6cbc48e09e681e322e09a0c75`: Core 650 passed/6 skipped (43817947944), Final Lock PASS 235 entries sha256:d8d8ffb390ce5584c765ba92d89835fdb6bf3e781a9b74b7404b0466fd7130d2, Persistence PASS (43817947929). Initial negative test caught incorrect error mapping on lease revocation; corrected and rerun PASS. Native OpenCV camera one-frame capture guarded by fixed device, high-risk Gateway and in-provider Owner lease, with separate model permission. No real device or authenticated Owner UI acceptance. https://github.com/ArdaNTM/JAS/pull/142
+
+## 2026-11-16 — PR #143 real Pillow visual task evidence (#84)
+
+Draft PR #143 exact HEAD `1747ee11434424a19af874754bb3d61df0a90148`: Core Assurance 628 passed, 7 skipped (run 43818878842); Final Release Lock PASS sha256:17342ebe4ce497ce345ceed8c25dbe7f0c214127954f8bb4367387d2c512d5ff (235 source files); Remote Persistence PASS run 43818878960. Real local Pillow RGB pixel-difference and two independently Gateway-authorized local Ollama descriptions, explicit no-success/no-actuation evidence. No real authenticated capture/Owner semantic acceptance. https://github.com/ArdaNTM/JAS/pull/143

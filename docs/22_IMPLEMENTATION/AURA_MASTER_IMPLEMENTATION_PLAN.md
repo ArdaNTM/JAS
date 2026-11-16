@@ -192,3 +192,7 @@ PR #141 adds actual local SQLite metadata only with Core read/write/delete and m
 ## 2026-11-16 — camera #83 validation
 
 High-risk on-demand OpenCV camera frame with in-provider Owner lease and separate Ollama model policies, Core/Lock/Persistence PASS PR #142. Real hardware/native driver/Owner UI remains unverified. Tracker 23 NOT_STARTED / 92 TESTING / 2 RESEARCHING. Next real local visual task evidence #84, after which unify vision features with PR #136 and older F2.7 constraints.
+
+## 2026-11-16 — visual evidence #84 and integration dependency
+
+Pillow-based visual differences plus independently Gateway-permitted before/after Ollama descriptions PASS CI/Release Lock in PR #143. Cannot conclude task success/actuate. Tracker 22 NOT_STARTED / 93 TESTING / 2 RESEARCHING. Next combine partial #78/#82/#83/#84 into PR #136 review tree with new lock and cross-module security tests; later integrate #64–#111 under F2.7 unchanged Owner gate.
