@@ -131,3 +131,10 @@ Async generation guard has passing isolated CI, but no real microphone, local re
 #13 is confirmed-session STT phrase detection only, not live acoustic wake-word hardware. Actual microphone consent/Owner UI model and false-positive tests remain.
 #19 checks existing selected healthy TTS provider only, no simultaneous Piper/Kokoro, language recognition or live bilingual speech. Neither PR adds permission or sidesteps MCP Gateway.
 Source locks independent and PRs remain Draft; recompute complete cumulative manifest only after explicit Owner merge order.
+
+## New hardware and integration blockers (#20/#28/#92/#93)
+- #20 / PR #124: No actual environmental sound model, hardware microphone/consent UI or production wiring
+- #28 / PR #125: No real Electron/native display bridge, DPI hardware or HUD windows
+- #92 / PR #126: No real HUD window rendering, OS input or device/hotplug acceptance
+- #93 / PR #123: No production app composition wiring, live HUD widget or hardware telemetry acceptance
+The #92 PR #126 targets PR #125, not main. Owner-approved integration and rebuilt combined Release Lock required.

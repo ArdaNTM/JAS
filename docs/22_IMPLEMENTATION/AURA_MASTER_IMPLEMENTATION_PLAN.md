@@ -160,3 +160,6 @@ Tracker 68 TESTING, 2 RESEARCHING, 47 NOT_STARTED (zero COMPLETED). Features #25
 
 ## 2026-11-16 speech continuation #13/#19
 PR #121 wake text gate and #122 local TTS language/provider preview passed independent exact-head CI and Final Release Lock; tracker now 73 TESTING, 2 RESEARCHING, 42 NOT_STARTED. Feature #20 energy signal and #28 read-only display metadata PRs require exact HEAD CI before tracker acceptance. Full audio/hardware acceptance and Owner consent remain separate.
+
+## 2026-11-16 actual security/audio/HUD continuation
+Feature #20 environmental PCM signal metadata, #28 display geometry, #92 stacked HUD placement, #93 authenticated redacted live status passed exact-head Core/Persistence/Release Lock. Tracker 77 TESTING / 2 RESEARCHING / 38 NOT_STARTED; zero COMPLETED. Prioritize real desktop/voice hardware and Owner authentication before any full acceptance.

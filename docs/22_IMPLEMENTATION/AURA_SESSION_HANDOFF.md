@@ -56,3 +56,10 @@ Tracker 45 NOT_STARTED / 70 TESTING / 2 RESEARCHING. No COMPLETED and no merges;
 #121 59be3ffc0fb08e61a2d76d15b389344c16a50420 Core 620 passed/6 skipped, lock PASS, Persistence PASS. Feature #13 PARTIAL: post-STT phrase only.
 #122 5224ac9f97d34bbf8cafe3cdcc184c32c9021995 Core 616 passed/6 skipped, lock PASS, Persistence and Windows launcher PASS. Feature #19 PARTIAL: read-only registry preview.
 Tracker 42 NOT_STARTED / 73 TESTING / 2 RESEARCHING, no COMPLETED. PR #123/#124/#125 are awaiting exact-head CI verification as of this tracking snapshot; inspect live current state before writing evidence. No auto-merge; main b1ffe6f534ced0d329dae273a4b949a634cb8bfa unchanged.
+
+## PR #123–#126 verified continuation (2026-11-16)
+- PR #124 HEAD 58c1b6bef2cf21ff2ef362b6a1a1760e2b1c8011: feature #20 PARTIAL; Core 618 passed/6 skipped, Final Release Lock PASS, Persistence PASS; No actual environmental sound model, hardware microphone/consent UI or production wiring. https://github.com/ArdaNTM/JAS/actions/runs/43789297469
+- PR #125 HEAD 52e9bba04363c8f1f76ad3374866a9d9af85fbac: feature #28 PARTIAL; Core 622 passed/6 skipped, Final Release Lock PASS, Persistence PASS; No real Electron/native display bridge, DPI hardware or HUD windows. https://github.com/ArdaNTM/JAS/actions/runs/43789685660
+- PR #126 HEAD b7f8509436755620163504ec23a2ad1d2a90b1df: feature #92 PARTIAL; Core 648 passed/6 skipped, Final Release Lock PASS, Persistence PASS; No real HUD window rendering, OS input or device/hotplug acceptance. https://github.com/ArdaNTM/JAS/actions/runs/43790466164
+- PR #123 HEAD c395721dcc0a3b5743b8ae74f87b01d11d7911fc: feature #93 PARTIAL; Core 601 passed/6 skipped, Final Release Lock PASS, Persistence PASS; No production app composition wiring, live HUD widget or hardware telemetry acceptance. https://github.com/ArdaNTM/JAS/actions/runs/43789150380
+Counts: 38 NOT_STARTED, 77 TESTING, 2 RESEARCHING, no COMPLETED. PR #127 open Draft for feature #54 read-only JAS MCP Gateway PR status; verify exact-head Core/Persistence/Final Lock before updating ledger. Main b1ffe6f534ced0d329dae273a4b949a634cb8bfa unchanged. No merges. #126 stacked on #125.

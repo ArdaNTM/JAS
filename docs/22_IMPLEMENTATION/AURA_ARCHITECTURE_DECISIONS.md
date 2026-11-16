@@ -67,3 +67,10 @@ Speech transcription and playback tasks must never mutate a newer or closed Full
 A text-only standalone offline speech phrase match under a confirmed session emits one EventBus marker and disarms. It is neither acoustic identity nor microphone consent authority. No MCP tool executes from the signal.
 ## ADR-ENG-016 — language route preview must match authoritative provider selection
 Explicit local tr->Piper/en->Kokoro metadata previews reject missing/unhealthy or differently selected provider and never reconfigure CapabilityRegistry, authorize PermissionEngine or dispatch MCP. Live bilingual voice routing needs separately approved integration.
+
+## ADR-ENG-017 — audio signal-level cues are not sound classification or voice authority
+Feature #20 only computes bounded PCM energy/clipping from consented upstream audio; emits metadata-only EventBus notifications, no raw audio, tool action or permission.
+## ADR-ENG-018 — monitor topology and HUD placement are metadata previews
+Features #28 and #92 require trusted shell-supplied monitor metadata. Core validates bounded display geometry and non-overlapping HUD panel rectangles; OS windows, captures and actual input remain separately authorized outside this slice.
+## ADR-ENG-019 — redacted live system status must remain authenticated
+Feature #93 projects only allowlisted aggregate registry health and telemetry. No provider identifiers, raw diagnostics or secrets reach the optional bearer-protected HTTP router.

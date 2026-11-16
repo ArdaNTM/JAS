@@ -222,3 +222,10 @@ PR #120 head 74aa91567bc561f3c884c19e3d6b00336e42f976 Core Assurance [run 437884
 | #121 | 59be3ffc0fb0 | 620 passed, 6 skipped (43788533848) | PASS | Persistence PASS (43788533895) |
 | #122 | 5224ac9f97d3 | 616 passed, 6 skipped (43788947660) | PASS | Persistence PASS (43788947692); Windows launcher PASS (43788947683) |
 Evidence: https://github.com/ArdaNTM/JAS/actions/runs/43788533848 and https://github.com/ArdaNTM/JAS/actions/runs/43788947660. Neither CI run tests actual microphones/model files or combined PR integration.
+
+## PR #123–#126 exact-head independent evidence
+- PR #124 HEAD 58c1b6bef2cf21ff2ef362b6a1a1760e2b1c8011: feature #20 PARTIAL; Core 618 passed/6 skipped, Final Release Lock PASS, Persistence PASS; No actual environmental sound model, hardware microphone/consent UI or production wiring. https://github.com/ArdaNTM/JAS/actions/runs/43789297469
+- PR #125 HEAD 52e9bba04363c8f1f76ad3374866a9d9af85fbac: feature #28 PARTIAL; Core 622 passed/6 skipped, Final Release Lock PASS, Persistence PASS; No real Electron/native display bridge, DPI hardware or HUD windows. https://github.com/ArdaNTM/JAS/actions/runs/43789685660
+- PR #126 HEAD b7f8509436755620163504ec23a2ad1d2a90b1df: feature #92 PARTIAL; Core 648 passed/6 skipped, Final Release Lock PASS, Persistence PASS; No real HUD window rendering, OS input or device/hotplug acceptance. https://github.com/ArdaNTM/JAS/actions/runs/43790466164
+- PR #123 HEAD c395721dcc0a3b5743b8ae74f87b01d11d7911fc: feature #93 PARTIAL; Core 601 passed/6 skipped, Final Release Lock PASS, Persistence PASS; No production app composition wiring, live HUD widget or hardware telemetry acceptance. https://github.com/ArdaNTM/JAS/actions/runs/43789150380
+All tests run in separate GitHub branches; none proves live audio/desktop hardware or combined merge state.
