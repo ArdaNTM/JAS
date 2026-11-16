@@ -66,8 +66,17 @@ class DockerPythonRunner:
             raise SandboxUnavailable("Only the Docker runner is implemented")
         if not self.docker_executable:
             raise SandboxUnavailable("Docker executable is unavailable; no code was executed")
-        if not re.fullmatch(r".+@sha256:[0-9a-f]{64}", self.image):
-            raise SandboxUnavailable("A digest-pinned AURA_PYTHON_SANDBOX_IMAGE is required")
+        # Reject option-looking, malformed, multiline or overly long image names.
+        # Docker receives image as an argv element; never let it be parsed as
+        # an injected --privileged/--volume/etc flag before the Python command.
+        if (
+            not isinstance(self.image, str)
+            or not re.fullmatch(
+                r"[a-z0-9][a-z0-9._/:-]{0,220}@sha256:[0-9a-f]{64}",
+                self.image,
+            )
+        ):
+            raise SandboxUnavailable("A safe digest-pinned AURA_PYTHON_SANDBOX_IMAGE is required")
 
         container_name = "aura-sandbox-" + hashlib.sha256(job.job_id.encode("utf-8")).hexdigest()[:20]
         command = [
@@ -94,18 +103,26 @@ class DockerPythonRunner:
 
         captured = {"stdout": bytearray(), "stderr": bytearray()}
         overflow = threading.Event()
+        capture_lock = threading.Lock()
+        # Both streams share one budget; two individually capped streams must
+        # not silently double the memory/output allowance.
+        total_captured = 0
 
         def drain(pipe, key: str) -> None:
+            nonlocal total_captured
             try:
                 while True:
                     chunk = pipe.read(4096)
                     if not chunk:
                         return
-                    remaining = self.policy.max_output_bytes - len(captured[key])
-                    if remaining > 0:
-                        captured[key].extend(chunk[:remaining])
-                    if len(chunk) > remaining:
-                        overflow.set()
+                    with capture_lock:
+                        remaining = self.policy.max_output_bytes - total_captured
+                        take = min(max(remaining, 0), len(chunk))
+                        if take:
+                            captured[key].extend(chunk[:take])
+                            total_captured += take
+                        if take < len(chunk):
+                            overflow.set()
             finally:
                 pipe.close()
 
@@ -139,21 +156,27 @@ class DockerPythonRunner:
 
         writer = threading.Thread(target=feed_source, daemon=True)
         writer.start()
+        timed_out = False
         try:
             process.wait(timeout=self.policy.max_wall_time_seconds)
         except subprocess.TimeoutExpired:
             process.kill()
             process.wait()
             stop_container()
-            status = "timed_out"
-        else:
-            status = "output_limit_exceeded" if overflow.is_set() else (
-                "completed" if process.returncode == 0 else "failed"
-            )
+            timed_out = True
         finally:
             writer.join(timeout=1)
             for reader in readers:
                 reader.join(timeout=1)
+        # In the old sequence, status was computed before the pipe drains
+        # joined. A fast process could be classified "completed" before its
+        # oversized output was counted. Never claim success with unfinished IO.
+        if timed_out:
+            status = "timed_out"
+        elif overflow.is_set() or any(reader.is_alive() for reader in readers) or writer.is_alive():
+            status = "output_limit_exceeded"
+        else:
+            status = "completed" if process.returncode == 0 else "failed"
         return SandboxResult(
             job_id=job.job_id, status=status, return_code=process.returncode,
             stdout=captured["stdout"].decode("utf-8", errors="replace"),
