@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-16T03:40:27.512Z",
-  "git_commit": "7d20a885ba650ce0c37ecc2f41dc5d431ffa2be9",
+  "generated_at": "2026-11-16T03:46:48.476Z",
+  "git_commit": "6481b4a6e9ea3a149c5383b09c7d562dad90e863",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:479a81bf6cedba045074fbbee5192e842d905b3b588d680b760b99c16312ea62",
-  "file_count": 234,
+  "release_digest": "sha256:bf8ae8ede65609510437afe986a0997e42b0812e737543a6632f317b79e56712",
+  "file_count": 235,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -827,6 +827,10 @@
     {
       "path": "core/src/aura_core/providers/ollama_vision_mcp.py",
       "sha256": "68d3f18d979f5a90c62bd02852e7297d59753d01bf1c44fa41a66225a0caa8e9"
+    },
+    {
+      "path": "core/src/aura_core/providers/tesseract_ocr_mcp.py",
+      "sha256": "8d52dd384437b07c7d218bfc5988a446527f92b825171ea6505ea571ce3194fb"
     },
     {
       "path": "core/src/aura_core/release/manifest.py",
