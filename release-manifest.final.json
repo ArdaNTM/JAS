@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-16T03:20:00.000Z",
-  "git_commit": "daf8f66f3a781bfd8091d82f16555753ed708f41",
+  "generated_at": "2026-11-16T03:25:00.000Z",
+  "git_commit": "8a8fdaedef47c2a4dd10e5015239d8b198b33561",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:79c49da56f8bb802f2f418ca6bf75098df7c003d0d0d5b933f3c408fbd4ba146",
+  "release_digest": "sha256:345f618de1c58cb8640c5c1c7510538755b9de5ae1241559fc13bdf35ac00d94",
   "file_count": 235,
   "files": [
     {
@@ -350,7 +350,7 @@
     },
     {
       "path": "core/src/aura_core/application/speaker_recognition.py",
-      "sha256": "b067ee843289b2d95619db599e28ec2f6ee9e9da71651e9a05f893dbeef8552f"
+      "sha256": "b03e86f1b7e3deddb5e40c23b2c1ea1330fabf4a4e257fb9855654c32202f65f"
     },
     {
       "path": "core/src/aura_core/application/speech_api.py",
