@@ -17,3 +17,7 @@ Each independent feature PR uses the JAS deterministic source lock and tests its
 ## ADR-ENG-003 — 2026-11-15: Storage confirmation is not authenticated authorization
 
 Flags such as `confirmed=True` or `consented=True` in low-level local stores are only fail-closed preconditions, not Owner signatures or principal validation. Do not expose destructive storage methods as model tools without a separately reviewed, authenticated PermissionEngine/MCP Gateway + human approval workflow.
+
+## ADR-ENG-004 — 2026-11-16: external HMAC checkpoints are evidence, never authority
+
+Feature #107 uses the existing in-memory Gateway-connected `HashChainAuditLedger` and canonical SHA-256 record format. A read-only helper verifies a frozen snapshot and generates a scope-bound HMAC checkpoint with a caller-held secret and previous-checkpoint chain. It does not insert a second audit/security engine, mutate PermissionEngine, authorize execution or silently grant Owner approval. A separate durable verifier and independently protected key/receipt repository are prerequisites to any WORM/prod audit claim.

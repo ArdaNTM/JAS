@@ -153,3 +153,11 @@ The runs are independent branch checks, not an integrated combined acceptance.
 | [#105](https://github.com/ArdaNTM/JAS/pull/105) | `6fa9f155a757` | [603 passed, 6 skipped; Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43776433513) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43776433459) |
 
 Registry health-state unit integration is not a signed Owner or real-world agent acceptance.
+
+## PR #106 exact-head CI — independent audit checkpoint partial
+
+| PR | Commit | Core Assurance + Final Release Lock | Remote Persistence |
+| --- | --- | --- | --- |
+| [#106](https://github.com/ArdaNTM/JAS/pull/106) | `a145504a3ce80b496333169bb393b3ed42b1848b` | [599 passed, 6 skipped; Release Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43778641345) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43778641265) |
+
+Negative security tests: wrong signing key/scope, forged checkpoint MAC, record tampering, re-chaining, rollback/truncation, invalid input. Local isolated harness 7 passed. This is a separate branch, **not** cumulative integration or independent external signer acceptance. Production custody and WORM tests remain missing.

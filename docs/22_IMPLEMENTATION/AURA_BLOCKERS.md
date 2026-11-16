@@ -84,3 +84,9 @@ After **explicit Owner merge approval**, integrate in dependency order, rebase e
 - Specialist profiles are caller-supplied, not authenticated identities. The registry validates provider registration/availability, **not** authorization. Actual task execution still needs Owner/PermissionEngine/MCP Gateway checks.
 - This does not create or evolve new skills, agents or registered capabilities, nor permit privileged actions. Features #57/#64 remain partial.
 - Its own Final Release Lock manifest differs from other open PRs; any combined merge requires reconciled inventory, fresh full CI and explicit security/Owner acceptance.
+
+## PR #106: independent audit checkpoint integration gaps
+
+- #107 checkpoint bytes are HMAC-authenticated only when the verifier controls a **separate** secret; no secure external key custody, WORM write-ahead audit store, trusted producer identity or complete Gateway event capture exists in this PR.
+- Local ledger is mutable and in-memory. Missing-event attacks before signing and joint compromise of signer+ledger are not solved by this slice. Scope digests are not authorization.
+- The PR carries a main-baseline complete source lock; reconcile all manifests and rerun combined CI only after explicit Owner-approved merge order. No automatic merging; no full acceptance.

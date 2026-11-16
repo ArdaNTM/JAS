@@ -112,3 +112,21 @@ Adds actual Core CapabilityRegistry health-based specialist **selection**
 (#57/#64), but no specialist execution, tool capability, high-risk
 authority or new registration. Exact-head CI and Release Lock PASS.
 All newly tracked entries remain TESTING/PARTIAL_VERIFIED.
+
+## PR #106 security-foundation continuation and remaining program groups
+
+PR #106 implements #107 only **partially**: read-only independently keyable audit checkpoints over the existing Gateway audit metadata. Exact-head Core and Persistence CI plus Release Lock passed; durable independent custody, trusted audit completeness and Owner acceptance are missing. Tracker now has **59 TESTING, 2 RESEARCHING, 56 NOT_STARTED**; zero completed.
+
+Next dependency-sensitive engineering groups (IDs are feature IDs, not PR numbers; existing code must be assessed before implementation):
+
+1. **Security/authority prerequisite:** #100 explicit approver policy/identity; #103 authenticated principal/device identities; #101 sandbox isolation; #106 security-core immutability; #104 protected memory/key custody. Do not grant new permissions while closing these gaps.
+2. **Voice foundations:** #13 wake word, #14 interruption, #16 speaker differentiation, #17 speech affect cues, #18 voice settings, #19 multilingual flow, #20 environmental sound events, #22 offline integration. Device permissions and actual microphones remain independent gates.
+3. **Governed desktop:** read-only #23/#25/#28, then Owner/Gateway-gated #24/#26/#27, then #31/#32/#33. Avoid direct OS execution shortcuts.
+4. **Research:** #35 multi-source authorized fetch precedes #43 deep-research orchestration.
+5. **Development/agents:** #51 sandbox before #45/#49/#54, then verified #55/#60/#61 coordination.
+6. **Perception + HUD:** #77/#79/#80/#78/#81/#82/#83/#84 source/observation chain; #91/#92/#93/#95/#96/#97 HUD/display; #94 authenticated voice UI.
+7. **Laboratory:** #75 only after explicit device identity, safety approval and emergency stop.
+8. **Physical systems:** #85/#86/#88 discovery/sensors, then #89/#90 verified automation, then #87 robot actuation with human emergency controls.
+9. **User outputs:** #112 artifact production, #113 game-design integration, #116 personal knowledge index after secure storage/identity.
+
+The tracker dependency arrays for unassessed goals remain conservative; these groups are review guides, not assertions that unmerged features already exist on main. Merge each reviewed PR only with Owner approval, then regenerate shared complete manifest and run cumulative CI.

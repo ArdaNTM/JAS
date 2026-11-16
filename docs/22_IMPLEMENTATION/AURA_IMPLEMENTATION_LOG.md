@@ -136,3 +136,10 @@ Removed only the redundant #59 → #58 edge; #59 now depends on #57, #99,
 - Draft PR #105 at `6fa9f155a7571556eb3eb34e1a14c68cfb9d764d` selects only existing coder/researcher specialist descriptors tied to available/healthy Core CapabilityRegistry provider records. Core Assurance **603 passed / 6 skipped**, Final Release Lock PASS, Remote Persistence PASS.
 - High/critical risk requests/providers are refused; no new profile identity is authenticated, no capability or policy added, no tool invoked.
 - Complete feature DAG was rechecked before updating. No main merge, no feature COMPLETED.
+
+## 2026-11-16 — PR #106: externally keyed audit checkpoint proof (#107)
+
+- From unchanged main `b1ffe6f5...`, created Draft [PR #106](https://github.com/ArdaNTM/JAS/pull/106), head `a145504a3ce80b496333169bb393b3ed42b1848b`, feature `#107` TESTING/PARTIAL_VERIFIED.
+- Actual source `core/src/aura_core/enterprise/audit_checkpoint.py`: read-only existing ledger hash verification + HMAC-SHA256 checkpoints, independently supplied key and exact scope, prior-checkpoint chain integrity. Test file `core/tests/test_audit_checkpoint.py`; documentation in `docs/22_IMPLEMENTATION/AURA_AUDIT_CHECKPOINTS.md`.
+- Verified GitHub [Core Assurance #43778641345](https://github.com/ArdaNTM/JAS/actions/runs/43778641345): **599 passed, 6 skipped; Final Release Lock PASS** on exact head. [Remote Persistence #43778641265](https://github.com/ArdaNTM/JAS/actions/runs/43778641265): **PASS**. Local isolated compatibility harness: 7 passed, not a substitute for full CI.
+- No durable/WORM sink, independent custody of HMAC key, end-to-end complete audit trail, Owner/hardware acceptance or active permission changes. No merge.
