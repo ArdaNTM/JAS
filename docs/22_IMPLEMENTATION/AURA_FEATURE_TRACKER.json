@@ -857,7 +857,7 @@
       "name": "Duygu ve konuşma biçimi ipuçları",
       "phase": 2,
       "status": "TESTING",
-      "assessment": "NOT_ASSESSED",
+      "assessment": "PARTIAL_VERIFIED",
       "dependencies": [],
       "code_paths": [
         "core/src/aura_core/application/voice_prosody.py",
@@ -869,7 +869,7 @@
         "cd core && uv run pytest -q",
         "cd core && uv run python scripts/verify_final_lock.py"
       ],
-      "test_results": "PENDING: first Core CI exposed ServiceCategory.SERVICE enum mismatch (599 passed, 1 failed, 6 skipped); corrected to ServiceCategory.CORE and refreshed source lock. Exact-head rerun queued.",
+      "test_results": "PASS: PR #131 exact head 1ef3dc43818e13e74fe360ed1e7deedf6aad6415 Core Assurance 600 passed / 6 skipped; bytecode compilation PASS; complete Final Release Lock PASS sha256:c5930ece97de538e8b4c87fa9f5fc27835bf479ebaaf19402c61c7c43b23cb98. Remote Persistence Integration workflow still running; not required by this local acoustic slice.",
       "security_review": "NOT_REVIEWED",
       "acceptance": "NOT_VERIFIED",
       "commit": "1ef3dc43818e13e74fe360ed1e7deedf6aad6415",
@@ -885,8 +885,8 @@
       "integration": "VoiceProsodyService registers in the existing Kernel ServiceRegistry and publishes through the existing EventBus; FullDuplexSessionManager accepts it as an optional analyzer. No new MCP tool, ProviderRegistry entry or PermissionEngine grant is introduced.",
       "hardware_requirements": "No hardware required for synthetic PCM tests; physical microphone and target-device validation not performed.",
       "license_review": "NOT_APPLICABLE: Python standard library only.",
-      "local_offline": "NOT_VERIFIED",
-      "notes": "Draft PR #131 exact head 1ef3dc43818e13e74fe360ed1e7deedf6aad6415; first CI failure fixed; exact-head Core Assurance and Remote Persistence reruns queued. No pass or acceptance claim.",
+      "local_offline": "PARTIAL_VERIFIED",
+      "notes": "Draft PR #131 exact head 1ef3dc43818e13e74fe360ed1e7deedf6aad6415: Core Assurance and Final Release Lock PASS (600 passed / 6 skipped). First CI enum mismatch fixed. Feature remains partial: composition wiring, non-WAV support, real audio, multilingual calibration and Owner acceptance outstanding.",
       "existing_jas_state": "JAS main already has FasterWhisperRecognizer and FullDuplexSessionManager; a dedicated local prosody measurement service was not previously established.",
       "proposed_technology": "Python standard-library wave parsing, bounded autocorrelation pitch estimation and existing Kernel EventBus/ServiceRegistry.",
       "license_terms": "Python standard library; no new dependency.",
