@@ -4366,40 +4366,65 @@
       "id": 82,
       "name": "Görsel hafıza",
       "phase": 6,
-      "status": "NOT_STARTED",
-      "assessment": "NOT_ASSESSED",
-      "dependencies": [],
-      "code_paths": [],
-      "documentation_paths": [],
-      "test_commands": [],
-      "test_results": "NOT_RUN",
-      "security_review": "NOT_REVIEWED",
+      "status": "TESTING",
+      "assessment": "PARTIAL_VERIFIED",
+      "dependencies": [
+        77,
+        99,
+        100,
+        104
+      ],
+      "code_paths": [
+        "core/src/aura_core/memory/visual_sqlite.py"
+      ],
+      "documentation_paths": [
+        "docs/22_IMPLEMENTATION/AURA_PRIVATE_VISUAL_MEMORY.md"
+      ],
+      "test_commands": [
+        "cd core && uv run pytest -q tests/test_visual_sqlite_gateway.py",
+        "cd core && uv run pytest -q",
+        "cd core && uv run python scripts/verify_final_lock.py"
+      ],
+      "test_results": "PASS: Draft PR #141 exact HEAD 0445d474b9f60d978aafdee83fcd6daa3a7954f7 Core Assurance 644 passed, 6 skipped run 43816476060; Release Lock PASS sha256:56545f6889f1dc37473d9c7580e7d64d9caa0a7edd20970f6893ba91298cab46 (235 source entries); Remote Persistence PASS run 43816476084.",
+      "security_review": "PARTIAL_VERIFIED: local real SQLite, exact principal-scoped read/write/delete Core PermissionEngine grants, separate authenticated Ollama MCP Gateway image authority, write preflight/revalidation, no raw image persistence and metadata-only EventBus. Windows ACL and at-rest encryption unverified.",
       "acceptance": "NOT_VERIFIED",
-      "commit": "",
-      "pull_request": "",
-      "blockers": [],
-      "technical_goal": "",
-      "user_capability": "",
-      "integration": "",
-      "hardware_requirements": "",
-      "license_review": "NOT_REVIEWED",
-      "local_offline": "NOT_VERIFIED",
-      "notes": "Existing JAS code may already provide part of this feature; audit required.",
-      "existing_jas_state": "NOT_ASSESSED",
-      "proposed_technology": "NOT_ASSESSED",
-      "license_terms": "NOT_ASSESSED",
-      "commercial_terms": "NOT_ASSESSED",
-      "integration_test_criteria": "NOT_ASSESSED",
-      "unit_test_criteria": "NOT_ASSESSED",
-      "security_test_criteria": "NOT_ASSESSED",
-      "acceptance_criteria": "NOT_ASSESSED",
-      "performance_requirements": "NOT_ASSESSED",
-      "complexity": "NOT_ASSESSED",
-      "known_limitations": "NOT_ASSESSED",
-      "missing_components": [],
-      "official_links": [],
-      "alternatives": [],
-      "hardware_review": "NOT_REVIEWED"
+      "commit": "0445d474b9f60d978aafdee83fcd6daa3a7954f7",
+      "pull_request": "https://github.com/ArdaNTM/JAS/pull/141",
+      "blockers": [
+        "Actual Owner Windows NTFS ACL, disk encryption, SQLite WAL/backup/snapshot security and secure deletion must be reviewed; descriptions stored as unencrypted text.",
+        "Live Qwen-VL model and consented screen/camera flow, UI retrieval/deletion, performance and data lifecycle acceptance absent.",
+        "PR #141 stacked on #137; no Owner-approved merged integration with earlier open PRs."
+      ],
+      "technical_goal": "Principal-bound local SQLite visual memory using explicitly authorized Core read/write/delete operations and separate Gateway-authorized local image captioning.",
+      "user_capability": "With Owner consent and explicit policies, privately remember/retrieve/delete bounded untrusted visual text descriptions and image SHA256, never raw pixels.",
+      "integration": "Real SQLite3 store registered as Core Service plus read/write/delete Capabilities, existing PermissionEngine, authenticated Ollama MCPGateway image tool and metadata-only EventBus.",
+      "hardware_requirements": "Owner-private database directory, verified Windows ACL and encryption, locally available Ollama model when used.",
+      "license_review": "SQLite3 Python stdlib + existing Core, no new package or cloud fees; model rights must be verified.",
+      "local_offline": "PARTIAL_VERIFIED: actual on-disk SQLite and deterministic Ollama HTTP transport; model hardware not live in CI.",
+      "notes": "PR #141 Draft and unmerged. SQLite plaintext visual descriptions, no raw pixel persistence, actual backup/Owner policy acceptance pending.",
+      "existing_jas_state": "#137 provides gated local Ollama image descriptions; no dedicated principal-bound visual SQLite metadata store with distinct three-operation Core policies before #141.",
+      "proposed_technology": "Owner-scoped SQLite3 with parameterized SQL, SHA256 index/dedup, opt-in registry and separate PermissionEngine grants.",
+      "license_terms": "Existing Python SQLite stdlib; no new dependency.",
+      "commercial_terms": "No added external SaaS.",
+      "integration_test_criteria": "Real Owner-authenticated local model, NTFS ACL, encrypted disk/backup retention and UI consent/retrieval flows.",
+      "unit_test_criteria": "Real SQLite rows, separate scopes, no consent/default DENY/REQUIRE_APPROVAL, cross-owner deletion, data bounds, metadata event privacy.",
+      "security_test_criteria": "Cross-principal SQL isolation, path/symlink/weak perms, quota, injection as data, no implicit model inference when write denied.",
+      "acceptance_criteria": "Owner-approved Windows ACL and privacy lifecycle plus real device/model end-to-end evidence before COMPLETED.",
+      "performance_requirements": "500 records per principal; max 20 results; 5s SQLite busy timeout; model latency not measured.",
+      "complexity": "MEDIUM SQLite and Core policy assembly; HIGH privacy deployment/Owner UX.",
+      "known_limitations": "No encryption or secure erase guarantee, no image retrieval or automatic tool action, text remains untrusted.",
+      "missing_components": [
+        "Windows ACL and on-disk encryption/backup review",
+        "Real consented capture and Ollama model weights",
+        "User-facing memory lifecycle controls"
+      ],
+      "official_links": [
+        "https://sqlite.org/docs.html"
+      ],
+      "alternatives": [
+        "Keep visual descriptions ephemeral until owner-private persistent storage is accepted"
+      ],
+      "hardware_review": "NOT_VERIFIED"
     },
     {
       "id": 83,

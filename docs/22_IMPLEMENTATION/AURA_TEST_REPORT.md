@@ -261,3 +261,7 @@ Core run https://github.com/ArdaNTM/JAS/actions/runs/43793662855: 633 passed, 6 
 ## PR #140 exact-head video and visual model integration
 
 [Core Assurance run 43815356004](https://github.com/ArdaNTM/JAS/actions/runs/43815356004): **652 passed, 7 skipped**; Final Release Lock PASS, digest sha256:8b0f3c29b6558bf4fbb8e5e82d03e92370bb70e87faffb7a29cfead3f7d79bb8. [Persistence run 43815355926](https://github.com/ArdaNTM/JAS/actions/runs/43815355926): PASS. Separate Core PermissionEngine grants verified for video decode and model; no hardware model or production Windows codec acceptance.
+
+## PR #141 exact-head persistence and image-model gateway evidence
+
+[Core run 43816476060](https://github.com/ArdaNTM/JAS/actions/runs/43816476060): 644 passed / 6 skipped; Final Lock 235 entries PASS sha256:56545f6889f1dc37473d9c7580e7d64d9caa0a7edd20970f6893ba91298cab46. [Remote Persistence 43816476084](https://github.com/ArdaNTM/JAS/actions/runs/43816476084): PASS. Real SQLite writes/queries/deletes and Core/Gateway policy denial are tested; actual Windows Owner storage and model hardware not accepted.

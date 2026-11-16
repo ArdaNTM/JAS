@@ -280,3 +280,7 @@ PR #138 failed two earlier CI attempts because the negative timeout test modeled
 ## 2026-11-16 — PR #140 real local FFmpeg + Ollama frame analysis (#78)
 
 Draft PR #140 exact HEAD `605aad5184336f002d002ae62b8a093c217e2aec` uses registered MCP video frame decoder and **separate** Gateway authorization for each local Ollama/VL image call. Core Assurance **652 passed, 7 skipped** run 43815356004; Final Release Lock **PASS**, 235-source digest `sha256:8b0f3c29b6558bf4fbb8e5e82d03e92370bb70e87faffb7a29cfead3f7d79bb8`; Remote Persistence **PASS** run 43815355926. An optional real FFmpeg codec smoke may be skipped on runners without executable; actual Owner/hardware acceptance not proven. https://github.com/ArdaNTM/JAS/pull/140
+
+## 2026-11-16 — #82 actual private SQLite visual memory via PR #141
+
+Draft PR #141 exact head `0445d474b9f60d978aafdee83fcd6daa3a7954f7`: Core Assurance **644 passed / 6 skipped** (run 43816476060), Final Release Lock PASS sha256:56545f6889f1dc37473d9c7580e7d64d9caa0a7edd20970f6893ba91298cab46 (235 sources), Remote Persistence **PASS** run 43816476084. Real SQLite metadata-only storage, independent Core read/write/delete and Ollama MCP Gateway permissions; no raw pixels. Actual Windows ACL/disk encryption, live Ollama model/Owner UI not verified. https://github.com/ArdaNTM/JAS/pull/141

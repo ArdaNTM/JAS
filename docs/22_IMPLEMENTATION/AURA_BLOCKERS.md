@@ -166,3 +166,7 @@ Read-only declarative proposals are never authorized execution or executable wor
 ## #78 real video deployment gaps (PR #140)
 
 FFmpeg codec parser/sandbox privilege confinement, real Windows binary provenance, Qwen-VL model weights/GPU throughput, user consent UI and full temporal scene validation remain unverified. Tested video summaries are **UNTRUSTED**, not Owner action or click authority. PR #140 stacked on #137, no merges and no COMPLETED claim.
+
+## PR #141 #82 visual memory privacy/Owner blockers
+
+On-disk SQLite description text is **plaintext**, not encryption; private POSIX permissions are not proof of private Windows NTFS ACL. WAL, SSD deletion, backups and retention consent require an Owner-approved storage threat assessment. Real local vision weights/hardware, camera/capture UI and cross-PR production integration still missing.

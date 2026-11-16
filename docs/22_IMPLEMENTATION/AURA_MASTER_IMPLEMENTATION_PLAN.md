@@ -184,3 +184,7 @@ Features #77 real Ollama Gateway provider, #79 bounded object hypotheses and #80
 ## 2026-11-16 — local video #78 verified
 
 Feature #78: FFmpeg frame sampling and per-frame local Ollama separately authorized via Core MCP Gateway; exact-head CI/Release Lock PASS PR #140; only PARTIAL_VERIFIED. Tracker 25 NOT_STARTED / 90 TESTING / 2 RESEARCHING. Next dependency chain #82 visual memory (SQLite/Principal/PermissionEngine), #83 camera (trusted device capture authorization), #84 visual task verification (independent evidence); never infer permission from computer vision text.
+
+## 2026-11-16 — governed SQLite visual memory #82
+
+PR #141 adds actual local SQLite metadata only with Core read/write/delete and model Gateway scope; exact-head CI and Lock PASS. Only partial: Windows ACL/privacy, live model/Owner UI missing. Tracker 24 NOT_STARTED / 91 TESTING / 2 RESEARCHING. Next #83 device camera, #84 independent visual state verification, then other dependent groups.

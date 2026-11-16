@@ -115,3 +115,7 @@ PR #138 Tesseract timeout-test mismatch resolved; exact head c239a5d29e097474f7f
 ## PR #140 verified, PR #65 tracker updated
 
 Draft PR #140 HEAD `605aad5184336f002d002ae62b8a093c217e2aec`, Core **652 passed / 7 skipped**, Persistence PASS, Final Lock PASS (235 entries; sha256:8b0f3c29b6558bf4fbb8e5e82d03e92370bb70e87faffb7a29cfead3f7d79bb8). #78 moved NOT_STARTED → TESTING/PARTIAL_VERIFIED; **25 NOT_STARTED / 90 TESTING / 2 RESEARCHING**, zero COMPLETED. Next: #82 visual memory, then #83/#84; all require live Owner/device acceptance. Main pinned, no PR merged.
+
+## PR #141 proof and remaining tracker status
+
+Feature #82 TESTING/PARTIAL_VERIFIED, Draft PR #141 HEAD `0445d474b9f60d978aafdee83fcd6daa3a7954f7`; Core 644 passed/6 skipped, Release Lock PASS 235 files, Remote Persistence PASS. Tracker **24 NOT_STARTED / 91 TESTING / 2 RESEARCHING**, zero COMPLETED. #141 stacked on #137. Next #83 live OpenCV camera or #84 visual verification; Owner consent and physical devices must be proven before completion. No merge, pinned main unchanged.
