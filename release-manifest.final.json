@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-16T03:40:27.512Z",
-  "git_commit": "7d20a885ba650ce0c37ecc2f41dc5d431ffa2be9",
+  "generated_at": "2026-11-16T06:33:32.721Z",
+  "git_commit": "7ee125b95b5e60ed68ef7b26b847a88a3eb5594a",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:479a81bf6cedba045074fbbee5192e842d905b3b588d680b760b99c16312ea62",
-  "file_count": 234,
+  "release_digest": "sha256:4a2bdb1c9da0e62dc20fc6fcbe0c86dc0cba653b4fa899e945736c5ad8911f3e",
+  "file_count": 235,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -827,6 +827,10 @@
     {
       "path": "core/src/aura_core/providers/ollama_vision_mcp.py",
       "sha256": "68d3f18d979f5a90c62bd02852e7297d59753d01bf1c44fa41a66225a0caa8e9"
+    },
+    {
+      "path": "core/src/aura_core/providers/opencv_camera_mcp.py",
+      "sha256": "604ae444bf0da56ca672768fb60068ea21e3f488721e085caf99256006714564"
     },
     {
       "path": "core/src/aura_core/release/manifest.py",
