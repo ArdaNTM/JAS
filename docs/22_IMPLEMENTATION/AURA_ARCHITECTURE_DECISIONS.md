@@ -21,3 +21,11 @@ Flags such as `confirmed=True` or `consented=True` in low-level local stores are
 ## ADR-ENG-004 — 2026-11-16: external HMAC checkpoints are evidence, never authority
 
 Feature #107 uses the existing in-memory Gateway-connected `HashChainAuditLedger` and canonical SHA-256 record format. A read-only helper verifies a frozen snapshot and generates a scope-bound HMAC checkpoint with a caller-held secret and previous-checkpoint chain. It does not insert a second audit/security engine, mutate PermissionEngine, authorize execution or silently grant Owner approval. A separate durable verifier and independently protected key/receipt repository are prerequisites to any WORM/prod audit claim.
+
+## ADR-ENG-005 — 2026-11-16: pure report serialization has no filesystem authority
+
+Feature #112 isolated XLSX report generation takes already-authorized bounded data, returns memory bytes and treats formula-looking values only as inline strings. PermissionEngine and MCP Gateway remain the only execution authority; this primitive cannot read/write files or send mail. Other document types and end-to-end authorization are separate acceptance gates.
+
+## ADR-ENG-006 — 2026-11-16: approval list and decision are separately policy-governed
+
+Feature #100 security hardening uses current authenticated principal + existing Core PermissionEngine. Requester can see their pending records but cannot self-approve. Cross-principal enumeration and decisions require distinct explicit policy ALLOW with exact record scope; absent registry/policy is DENY. Approver identity is not authenticated merely by a client header; real Owner credential assurance and fully wired Gateway approval lifecycle remain acceptance gaps.

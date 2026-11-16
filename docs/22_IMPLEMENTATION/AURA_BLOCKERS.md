@@ -90,3 +90,9 @@ After **explicit Owner merge approval**, integrate in dependency order, rebase e
 - #107 checkpoint bytes are HMAC-authenticated only when the verifier controls a **separate** secret; no secure external key custody, WORM write-ahead audit store, trusted producer identity or complete Gateway event capture exists in this PR.
 - Local ledger is mutable and in-memory. Missing-event attacks before signing and joint compromise of signer+ledger are not solved by this slice. Scope digests are not authorization.
 - The PR carries a main-baseline complete source lock; reconcile all manifests and rerun combined CI only after explicit Owner-approved merge order. No automatic merging; no full acceptance.
+
+## PR #107 XLSX and #108 approval end-to-end blockers
+
+- #107 generates safe OOXML in memory only. No user-authorized export/download/durable storage route, PDF/PPTX/DOCX, Office cross-client acceptance, or production data provenance. No new MCP authority.
+- #108 approval router security now rejects cross-principal disclosure/decision by default without existing PermissionEngine ALLOW. Its reviewed component may not be mounted by the production application; explicit capability/policies and actual Owner credential/identity acceptance are absent. Must not confuse bearer possession with independent operator authorization.
+- Both releases independently lock their main-based trees. Rebuild a combined source-lock manifest in approved integration order and rerun all CI before merge. Do not mark COMPLETED.

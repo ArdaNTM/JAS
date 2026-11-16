@@ -17,3 +17,9 @@
 - [PR #106](https://github.com/ArdaNTM/JAS/pull/106) created Draft, head `a145504a3ce80b496333169bb393b3ed42b1848b`: audited independently keyable ledger checkpoint (#107 partial). Full CI 599 passed/6 skipped + lock PASS (run 43778641345), Persistence PASS (43778641265).
 - Updated #107 to TESTING/PARTIAL_VERIFIED with actual proof; tracker now **56 NOT_STARTED / 59 TESTING / 2 RESEARCHING**. No COMPLETED claims or merges, no main or F2.7 changes.
 - Next: continue security prerequisite set #100/#103/#101/#106/#104 in independent Draft PRs, or move to other groups only after dependency review. Preserve all release locks, approval boundaries and exact-head receipts. An external trust anchor is a future prerequisite before #107 completion.
+
+## PR #107/#108 verified continuation (2026-11-16)
+
+- #107 Draft `02f0ab2f242135b873e667710fe6ac29d4a198dc`: #112 partial XLSX, Core run 43779626496 PASS 600/6, release lock PASS, Persistence run 43779626363 PASS.
+- #108 Draft `46b1660bc95ff909cb5409f3b651c4030067d5ed`: #100 approval policy hardening, Core run 43780300467 PASS 598/6, release lock PASS, Persistence run 43780300516 PASS.
+- All feature PRs independent and unmerged; main b1ffe6f5... unchanged. Tracker **54 NOT_STARTED / 61 TESTING / 2 RESEARCHING**. No full acceptance. Next: strengthen authenticated identity (#103) only where existing JAS routes use it, and confirm owner trust pipeline; do not bypass authorized Gateway or F2.7 boundaries.

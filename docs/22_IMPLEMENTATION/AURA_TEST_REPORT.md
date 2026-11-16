@@ -161,3 +161,12 @@ Registry health-state unit integration is not a signed Owner or real-world agent
 | [#106](https://github.com/ArdaNTM/JAS/pull/106) | `a145504a3ce80b496333169bb393b3ed42b1848b` | [599 passed, 6 skipped; Release Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43778641345) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43778641265) |
 
 Negative security tests: wrong signing key/scope, forged checkpoint MAC, record tampering, re-chaining, rollback/truncation, invalid input. Local isolated harness 7 passed. This is a separate branch, **not** cumulative integration or independent external signer acceptance. Production custody and WORM tests remain missing.
+
+## Exact-head independent CI evidence — PR #107–#108
+
+| PR | Head | Core Assurance + Release Lock | Remote Persistence |
+| --- | --- | --- | --- |
+| [#107](https://github.com/ArdaNTM/JAS/pull/107) | `02f0ab2f2421` | [600 passed, 6 skipped; lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43779626496) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43779626363) |
+| [#108](https://github.com/ArdaNTM/JAS/pull/108) | `46b1660bc95f` | [598 passed, 6 skipped; lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43780300467) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43780300516) |
+
+#107 isolated local 8-pass + openpyxl load validation is not CI. #108 Core tests include real PermissionEngine and registry, approval store, FastAPI TestClient checks. These runs are isolated branches, not cumulative acceptance or proof of trustworthy Owner identity.

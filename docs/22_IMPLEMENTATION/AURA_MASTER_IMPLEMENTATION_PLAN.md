@@ -130,3 +130,9 @@ Next dependency-sensitive engineering groups (IDs are feature IDs, not PR number
 9. **User outputs:** #112 artifact production, #113 game-design integration, #116 personal knowledge index after secure storage/identity.
 
 The tracker dependency arrays for unassessed goals remain conservative; these groups are review guides, not assertions that unmerged features already exist on main. Merge each reviewed PR only with Owner approval, then regenerate shared complete manifest and run cumulative CI.
+
+## 2026-11-16 implementation continuation: PR #107/#108
+
+- #112 bounded offline XLSX serializer implemented partially and tested on Draft PR #107; full document/presentation suite and authenticated export missing.
+- #100 explicit PermissionEngine-gated cross-principal approval views/decisions implemented partially and tested on Draft PR #108; no new implicit review authority. Real operator identity/policy composition/Owner acceptance missing.
+- Exact-head Core, Persistence and Release Lock PASS on each isolated PR, not a combined build. Tracker status **61 TESTING / 2 RESEARCHING / 54 NOT_STARTED**, zero COMPLETED. Continue priority review of identity (#103), core immutability (#106), sandbox (#101), secure memory (#104) and remaining phases without requiring any intermediate feature merge.

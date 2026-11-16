@@ -4651,40 +4651,63 @@
       "id": 100,
       "name": "İşlem onayı",
       "phase": 1,
-      "status": "NOT_STARTED",
-      "assessment": "NOT_ASSESSED",
-      "dependencies": [],
-      "code_paths": [],
-      "documentation_paths": [],
-      "test_commands": [],
-      "test_results": "NOT_RUN",
-      "security_review": "NOT_REVIEWED",
+      "status": "TESTING",
+      "assessment": "PARTIAL_VERIFIED",
+      "dependencies": [
+        99,
+        103
+      ],
+      "code_paths": [
+        "core/src/aura_core/application/approval_api.py"
+      ],
+      "documentation_paths": [
+        "docs/22_IMPLEMENTATION/AURA_APPROVAL_REVIEW_SECURITY.md"
+      ],
+      "test_commands": [
+        "cd core && uv run pytest -q tests/test_approval_api.py tests/test_approval_review_authorization.py",
+        "cd core && uv run pytest -q tests",
+        "cd core && uv run python scripts/verify_final_lock.py"
+      ],
+      "test_results": "PASS: PR #108 exact HEAD 46b1660bc95ff909cb5409f3b651c4030067d5ed Core Assurance 598 passed 6 skipped; Final Release Lock PASS; Remote Persistence PASS.",
+      "security_review": "PARTIAL_VERIFIED: real PermissionEngine + CapabilityRegistry + SQLiteApprovalStore tests cover explicit list/decide policies, denial, no self-approval, wrong scope and bearer auth.",
       "acceptance": "NOT_VERIFIED",
-      "commit": "",
-      "pull_request": "",
-      "blockers": [],
-      "technical_goal": "",
-      "user_capability": "",
-      "integration": "",
-      "hardware_requirements": "",
-      "license_review": "NOT_REVIEWED",
-      "local_offline": "NOT_VERIFIED",
-      "notes": "Existing JAS code may already provide part of this feature; audit required.",
-      "existing_jas_state": "NOT_ASSESSED",
-      "proposed_technology": "NOT_ASSESSED",
-      "license_terms": "NOT_ASSESSED",
-      "commercial_terms": "NOT_ASSESSED",
-      "integration_test_criteria": "NOT_ASSESSED",
-      "unit_test_criteria": "NOT_ASSESSED",
-      "security_test_criteria": "NOT_ASSESSED",
-      "acceptance_criteria": "NOT_ASSESSED",
-      "performance_requirements": "NOT_ASSESSED",
-      "complexity": "NOT_ASSESSED",
-      "known_limitations": "NOT_ASSESSED",
-      "missing_components": [],
-      "official_links": [],
-      "alternatives": [],
-      "hardware_review": "NOT_REVIEWED"
+      "commit": "46b1660bc95ff909cb5409f3b651c4030067d5ed",
+      "pull_request": "https://github.com/ArdaNTM/JAS/pull/108",
+      "blockers": [
+        "Approval router may not be mounted into production composition root; end-to-end activation missing.",
+        "Authenticated human/Owner identity assurance and device verification are unproven; no explicit live policy enrollment."
+      ],
+      "technical_goal": "Prevent cross-principal approval list disclosure and unauthorized decisions while reusing existing PermissionEngine and Gateway.",
+      "user_capability": "Explicitly configured high-trust reviewer may see/decide targeted other-principal approvals; no implicit reviewer privileges.",
+      "integration": "Existing HTTP bearer principal + PermissionEngine check + real CapabilityRegistry + SQLiteApprovalStore, no new authority or auto-registered policy.",
+      "hardware_requirements": "No hardware required for test harness, but real operator/device/Owner identity acceptance unverified.",
+      "license_review": "NOT_APPLICABLE: uses existing FastAPI/Core and standard library, no dependency change.",
+      "local_offline": "PARTIAL_VERIFIED: read-only/decision endpoints tested with in-memory SQLite and no network calls.",
+      "notes": "Draft PR #108 hardens component; if unregistered review capability engine fails closed; no auto merge; no Owner acceptance.",
+      "existing_jas_state": "Existing router returned all pending approval records to every authenticated principal and permitted cross-principal decisions without separate explicit PermissionEngine authorization.",
+      "proposed_technology": "Existing Core PermissionEngine, CapabilityRegistry, SQLiteApprovalStore and authenticated_principal.",
+      "license_terms": "No new dependencies; existing repository licensing applies.",
+      "commercial_terms": "No new licensed runtime dependency.",
+      "integration_test_criteria": "Authenticated multi-principal production identities and explicit reviewer policy; Gateway consumes policy-bound one-use approved record.",
+      "unit_test_criteria": "Different requester/list/decision policy, explicit scope, denied/default cases, version conflict, self-approval.",
+      "security_test_criteria": "No cross-principal disclosure with missing policy; no self-approval; wrong approval ID, missing bearer, REQUIRE_APPROVAL and stale policy fail closed.",
+      "acceptance_criteria": "Verified real Owner signature/identity and policy lifecycle, scoped approval UI, one-time Gateway consumption and real production acceptance.",
+      "performance_requirements": "Bounded 100-record pending list (existing API), review check per cross-principal item; no latency benchmark.",
+      "complexity": "MEDIUM policy hardening; HIGH operator authentication and trusted approval UX.",
+      "known_limitations": "Explicit review capability/policies are not installed by this PR; component API might not be mounted; bearer alone is not proven human approval.",
+      "missing_components": [
+        "Authenticated Owner reviewer enrollment and trusted UI",
+        "Composition-root policy registration and governed deployment",
+        "Real end-to-end Gateway approval consumption acceptance"
+      ],
+      "official_links": [
+        "https://fastapi.tiangolo.com/tutorial/security/",
+        "https://docs.python.org/3/library/hmac.html"
+      ],
+      "alternatives": [
+        "External identity broker with short-lived signed claims and explicit local policy mapping"
+      ],
+      "hardware_review": "NOT_APPLICABLE for unit integration; real operator device attestation missing."
     },
     {
       "id": 101,
@@ -5243,40 +5266,63 @@
       "id": 112,
       "name": "Rapor ve sunum üretimi",
       "phase": 9,
-      "status": "NOT_STARTED",
-      "assessment": "NOT_ASSESSED",
-      "dependencies": [],
-      "code_paths": [],
-      "documentation_paths": [],
-      "test_commands": [],
-      "test_results": "NOT_RUN",
-      "security_review": "NOT_REVIEWED",
+      "status": "TESTING",
+      "assessment": "PARTIAL_VERIFIED",
+      "dependencies": [
+        99
+      ],
+      "code_paths": [
+        "core/src/aura_core/application/offline_xlsx_report.py"
+      ],
+      "documentation_paths": [
+        "docs/22_IMPLEMENTATION/AURA_OFFLINE_XLSX_REPORT.md"
+      ],
+      "test_commands": [
+        "cd core && uv run pytest -q tests/test_offline_xlsx_report.py",
+        "cd core && uv run pytest -q tests",
+        "cd core && uv run python scripts/verify_final_lock.py"
+      ],
+      "test_results": "PASS: PR #107 exact HEAD 02f0ab2f242135b873e667710fe6ac29d4a198dc Core Assurance 600 passed 6 skipped; Final Release Lock PASS; Remote Persistence PASS; local isolated 8 passed and openpyxl read-back.",
+      "security_review": "PARTIAL_VERIFIED: formula-looking cells literal; XML, types, finite numeric precision, ZIP member and input/output bounds tested; no direct filesystem/MCP access.",
       "acceptance": "NOT_VERIFIED",
-      "commit": "",
-      "pull_request": "",
-      "blockers": [],
-      "technical_goal": "",
-      "user_capability": "",
-      "integration": "",
-      "hardware_requirements": "",
-      "license_review": "NOT_REVIEWED",
-      "local_offline": "NOT_VERIFIED",
-      "notes": "Existing JAS code may already provide part of this feature; audit required.",
-      "existing_jas_state": "NOT_ASSESSED",
-      "proposed_technology": "NOT_ASSESSED",
-      "license_terms": "NOT_ASSESSED",
-      "commercial_terms": "NOT_ASSESSED",
-      "integration_test_criteria": "NOT_ASSESSED",
-      "unit_test_criteria": "NOT_ASSESSED",
-      "security_test_criteria": "NOT_ASSESSED",
-      "acceptance_criteria": "NOT_ASSESSED",
-      "performance_requirements": "NOT_ASSESSED",
-      "complexity": "NOT_ASSESSED",
-      "known_limitations": "NOT_ASSESSED",
-      "missing_components": [],
-      "official_links": [],
-      "alternatives": [],
-      "hardware_review": "NOT_REVIEWED"
+      "commit": "02f0ab2f242135b873e667710fe6ac29d4a198dc",
+      "pull_request": "https://github.com/ArdaNTM/JAS/pull/107",
+      "blockers": [
+        "No authenticated integration and authorized export/storage/download route.",
+        "DOCX/PDF/PPTX output, large data, Office compatibility and Owner production acceptance missing."
+      ],
+      "technical_goal": "Build deterministic bounded offline XLSX bytes from previously authorized tabular data, preserving formula injection safety.",
+      "user_capability": "Call pure function to produce a read-only single-sheet spreadsheet from explicit in-memory data.",
+      "integration": "Pure stdlib OOXML ZIP serializer; actual AURA data source, storage, UX and MCP authorization integration not built.",
+      "hardware_requirements": "None for pure offline generator; Office application/device compatibility not verified.",
+      "license_review": "NOT_APPLICABLE: Python standard library, no external dependencies.",
+      "local_offline": "PARTIAL_VERIFIED: offline memory-only XLSX generation and local openpyxl fixture validation.",
+      "notes": "PR #107 is draft/unmerged; CI passed on separate main-based branch, not cumulative JAS acceptance.",
+      "existing_jas_state": "Main contains release lock and Core but not this bounded report serializer; other document report formats not assessed fully.",
+      "proposed_technology": "Python standard-library zipfile and XML escaping / OOXML strict single sheet.",
+      "license_terms": "Python standard library PSF license; no added dependency.",
+      "commercial_terms": "No new licensed runtime dependency.",
+      "integration_test_criteria": "Authenticated report request -> permitted data read -> authorized download/storage, real Excel/LibreOffice formats, independent provenance.",
+      "unit_test_criteria": "Valid ZIP/OOXML cells, repeatable byte output, Unicode, blank cells, booleans, numbers.",
+      "security_test_criteria": "Formula injection, XML control/surrogate, external relationships, malformed and oversized data, unsupported nested objects.",
+      "acceptance_criteria": "Owner-approved integrated reports: DOCX/XLSX/PPTX/PDF as applicable, verified authorization, source tracking, valid export and real-client acceptance.",
+      "performance_requirements": "One sheet <=1000 rows, <=32 columns, <=256000 input characters, <=2 MiB output; no production benchmark.",
+      "complexity": "LOW for bounded XLSX serializer, HIGH for complete reporting and presentation suite.",
+      "known_limitations": "No direct file writer or MCP tool; one unformatted worksheet, OOXML memory output only.",
+      "missing_components": [
+        "Authorized report export route and UX",
+        "Additional DOCX/PDF/PPTX renderers and templates",
+        "Cross-client and production owner acceptance"
+      ],
+      "official_links": [
+        "https://docs.python.org/3/library/zipfile.html",
+        "https://learn.microsoft.com/en-us/openspecs/office_standards/ms-xlsx/"
+      ],
+      "alternatives": [
+        "Existing openpyxl library after dependency/license audit",
+        "LibreOffice headless renderer in a bounded, authorized sandbox"
+      ],
+      "hardware_review": "NOT_APPLICABLE for pure serializer; hardware/client tests outstanding."
     },
     {
       "id": 113,
