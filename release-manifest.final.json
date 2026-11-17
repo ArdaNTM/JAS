@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-10-31T00:45:29.771Z",
+  "generated_at": "2026-11-17T23:50:28.402Z",
   "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
-  "file_count": 233,
+  "release_digest": "sha256:b953fd48a8abb424c4e0d6ad396551a00033064f98ebbf50cda1c3684a6c7244",
+  "file_count": 234,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -823,6 +823,10 @@
     {
       "path": "core/src/aura_core/providers/local_vision.py",
       "sha256": "44a52720d803722396b5b92dd1b25bff5ced9ca1821c4247f4db4f8cbc444e37"
+    },
+    {
+      "path": "core/src/aura_core/providers/stereo_depth_mcp.py",
+      "sha256": "b55dfbe98d8989c325d8dc02621137dc4abfcda4790af9e63b70b77cdb0c923c"
     },
     {
       "path": "core/src/aura_core/release/manifest.py",
