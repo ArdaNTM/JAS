@@ -98,3 +98,7 @@ Real local Ollama/Qwen-VL image description (#77) and Tesseract stdin/stdout OCR
 ## ADR-ENG-025 — object boxes are model hypotheses, not action targets
 
 Feature #79 parses strict bounded normalized boxes produced by the same governed #77 local model and returns immutable UNTRUSTED evidence only. No automatic clicking, pointing, person identification or physical control may follow without independently verified geometry and newly approved Gateway capabilities.
+
+## ADR-ENG-024 — local stereo computation is not a physical authorization source
+
+Feature #81 real bounded SAD depth operates on rectified P5 pair bytes with trusted-composition numerical calibration, under existing Core registries and an exact MCP Gateway permission. Depth output is a sparse UNTRUSTED estimate, with no physical-action authority. Numerical consistency cannot replace calibrated camera evidence or human Owner approval.

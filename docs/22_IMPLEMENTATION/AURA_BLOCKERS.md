@@ -182,3 +182,8 @@ Pillow pixel differences and Qwen-VL descriptions are useful **untrusted evidenc
 ## #144 integrated but prior sealed F2.7 and real hardware excluded
 
 Green PR #144 covers #112–#143, not open PRs #64–#111 including sealed F2.7 #64 Owner security and its prerequisite branch. `generate_final_lock.py` has potentially conflicting changes in older #64/#111, requiring explicit verified integration; do not overwrite lock governance casually. Native camera driver hard stop, local model/device performance, encrypted visual SQLite retention and authenticated Owner UI remain unverified.
+
+## #81 stereo hardware and safety blockers
+
+- Missing real stereo camera capture, timestamp synchronization, rectification/lens calibration and measured depth accuracy. Passing generated-frame unit tests cannot attest physical world geometry.
+- Result remains UNTRUSTED_STEREO_ESTIMATE / safe_for_physical_control=False; no automatic robot, mouse or other physical controls.

@@ -4327,40 +4327,61 @@
       "id": 81,
       "name": "3B algılama",
       "phase": 6,
-      "status": "NOT_STARTED",
-      "assessment": "NOT_ASSESSED",
-      "dependencies": [],
-      "code_paths": [],
-      "documentation_paths": [],
-      "test_commands": [],
-      "test_results": "NOT_RUN",
-      "security_review": "NOT_REVIEWED",
+      "status": "TESTING",
+      "assessment": "PARTIAL_VERIFIED",
+      "dependencies": [
+        77,
+        84
+      ],
+      "code_paths": [
+        "core/src/aura_core/providers/stereo_depth_mcp.py"
+      ],
+      "documentation_paths": [
+        "docs/22_IMPLEMENTATION/AURA_LOCAL_STEREO_DEPTH.md"
+      ],
+      "test_commands": [
+        "cd core && uv run pytest -q tests/test_stereo_depth_gateway.py",
+        "cd core && uv run pytest -q",
+        "cd core && uv run python scripts/verify_final_lock.py"
+      ],
+      "test_results": "PASS: Draft PR #145 exact head c1c17a98f61b12d7fbe6921a830bce0bf6da7009; AURA Core Assurance run 44202888251 621 passed / 6 skipped and AURA FINAL RELEASE LOCK PASS sha256:b953fd48a8abb424c4e0d6ad396551a00033064f98ebbf50cda1c3684a6c7244 (234 source entries); AURA Remote Persistence Integration run 44202888287 PASS. Actual 5×5 SAD CPU stereo matcher and synthetic known-disparity/metric-depth proof, not camera hardware acceptance.",
+      "security_review": "PARTIAL_VERIFIED: existing Core Service/Capability/Provider registries, PermissionEngine, MCP Gateway, short-lived dispatch grant, exact scoped per-frame ALLOW, explicit dual-frame consent, bounded P5 inputs/finite sparse output and negative cases. No physical device actions.",
       "acceptance": "NOT_VERIFIED",
-      "commit": "",
-      "pull_request": "",
-      "blockers": [],
-      "technical_goal": "",
-      "user_capability": "",
-      "integration": "",
-      "hardware_requirements": "",
-      "license_review": "NOT_REVIEWED",
-      "local_offline": "NOT_VERIFIED",
-      "notes": "Existing JAS code may already provide part of this feature; audit required.",
-      "existing_jas_state": "NOT_ASSESSED",
-      "proposed_technology": "NOT_ASSESSED",
-      "license_terms": "NOT_ASSESSED",
-      "commercial_terms": "NOT_ASSESSED",
-      "integration_test_criteria": "NOT_ASSESSED",
-      "unit_test_criteria": "NOT_ASSESSED",
-      "security_test_criteria": "NOT_ASSESSED",
-      "acceptance_criteria": "NOT_ASSESSED",
-      "performance_requirements": "NOT_ASSESSED",
-      "complexity": "NOT_ASSESSED",
-      "known_limitations": "NOT_ASSESSED",
-      "missing_components": [],
+      "commit": "c1c17a98f61b12d7fbe6921a830bce0bf6da7009",
+      "pull_request": "https://github.com/ArdaNTM/JAS/pull/145",
+      "blockers": [
+        "No actual authenticated stereo camera hardware, frame synchronization, lens rectification, measured calibration accuracy, independent depth ground truth, field latency or Owner acceptance.",
+        "Computed depth samples remain UNTRUSTED_STEREO_ESTIMATE and safe_for_physical_control=False; no robot/computer action authority.",
+        "No combined PR #145 + all earlier open PRs release-lock or physical deployment acceptance."
+      ],
+      "technical_goal": "Deterministic offline 5×5 sum-of-absolute-differences rectified stereo matching and sparse calibrated-depth computation via authorized existing Core Gateway.",
+      "user_capability": "Read bounded sparse image coordinates/disparities and estimated metric depth for consented rectified grayscale stereo pair without cloud or automatic physical action.",
+      "integration": "Existing ServiceRegistry, CapabilityRegistry, ProviderRegistry, PermissionEngine and MCPGateway; opt-in registered local stereo provider and principal-bound per-pair client.",
+      "hardware_requirements": "Trusted local calibrated and synchronized stereo cameras/rectification are mandatory for real physical acceptance but absent in CI.",
+      "license_review": "PARTIAL_VERIFIED: Python standard library only, no new third-party package/model/license; JAS repo remains governance source.",
+      "local_offline": "PARTIAL_VERIFIED: real pure-Python algorithm executes in exact-head GitHub CI, offline with deterministic PGM images.",
+      "notes": "Draft unmerged PR #145; positive algorithmic proof and negative authorization tests. No verified physical camera or robot use. Feature TESTING/PARTIAL only.",
+      "existing_jas_state": "Existing screen/camera and local vision primitives partially available on other unmerged PRs; no authenticated rectified-stereo depth path in pinned main.",
+      "proposed_technology": "Pure Python 5x5 sparse stereo SAD, bounded P5 grayscale, focal_px×baseline_m/disparity, local MCP adapter.",
+      "license_terms": "Python stdlib; no added dependencies.",
+      "commercial_terms": "No cloud or payment required.",
+      "integration_test_criteria": "Real calibrated stereo rig, synchronized capture source, trusted GUI/Owner consent, end-to-end existing Gateway authorization and optical ground truth.",
+      "unit_test_criteria": "Known synthetic 5-pixel disparity, 6.4m depth, flat texture no fabrication, invalid PGM/calibration and tampered response.",
+      "security_test_criteria": "Default DENY and unconsumed REQUIRE_APPROVAL, wrong principal, no capture consent, direct provider bypass, malformed input/output, no actuation.",
+      "acceptance_criteria": "Real stereo hardware depth accuracy/latency, rectification, independent safety evaluation, owner authorization and source-lock integrated release acceptance.",
+      "performance_requirements": "At most 512×384 mono input pair and 128 sparse points; actual on-device latency benchmark outstanding.",
+      "complexity": "MEDIUM CPU engine; HIGH real hardware calibration and control-grade validation.",
+      "known_limitations": "PGM-only pre-rectified frames, no native camera driver, no ground-truth depth confidence; never drive physical actions.",
+      "missing_components": [
+        "Real camera calibration/rectification and sync",
+        "Ground-truth depth benchmark and measured hardware performance",
+        "Explicit Owner acceptance and combined integration"
+      ],
       "official_links": [],
-      "alternatives": [],
-      "hardware_review": "NOT_REVIEWED"
+      "alternatives": [
+        "Integrate audited OpenCV StereoSGBM behind the same existing authorization boundary after calibrated hardware evidence."
+      ],
+      "hardware_review": "NOT_VERIFIED"
     },
     {
       "id": 82,

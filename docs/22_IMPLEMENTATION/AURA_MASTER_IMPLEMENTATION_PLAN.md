@@ -200,3 +200,8 @@ Pillow-based visual differences plus independently Gateway-permitted before/afte
 ## #144 source-level integration from PR #112–#143 is green
 
 Cumulative Draft PR #144 exact-head Core 1142 passed / 8 skipped, Final Release Lock 260 files/Persistence/Windows PASS. Feature tracker unchanged: 22 NOT_STARTED / 93 TESTING / 2 RESEARCHING, zero COMPLETED. Next integrate earlier PRs #64–#111 with F2.7 security isolation and generator conflict review; avoid silently weakening `generate_final_lock.py`. Continue remaining features by dependencies and real local engine/hardware acceptance.
+
+## 2026-11-18 — #81 accepted for TESTING only
+
+Draft PR #145 / feature #81 HEAD `c1c17a98f61b12d7fbe6921a830bce0bf6da7009`: Core Assurance [44202888251](https://github.com/ArdaNTM/JAS/actions/runs/44202888251) **621 passed, 6 skipped**; Final Release Lock PASS 234 entries `sha256:b953fd48a8abb424c4e0d6ad396551a00033064f98ebbf50cda1c3684a6c7244`; Remote Persistence [44202888287](https://github.com/ArdaNTM/JAS/actions/runs/44202888287) PASS. A true local sparse SAD matcher under separate Gateway ALLOW; no real stereo rig/Owner hardware acceptance.
+Tracker 94 TESTING, 2 RESEARCHING, 21 NOT_STARTED, 0 COMPLETED. Next #95 dynamic live SVG visualizer (Draft PR #146, exact-head CI pending) and remaining device/HUD/OS/agent integrations. Never merge automatically.

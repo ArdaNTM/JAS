@@ -133,3 +133,8 @@ Draft PR #143 HEAD `1747ee11434424a19af874754bb3d61df0a90148`: 628 passed/7 skip
 - PR #143 corrected HEAD `0b573d4fa156763cb36d093eefd61733780cb6af`, Core 654 passed/6 skipped (actual PNG codec tests run), Final Release Lock/Persistence PASS.
 - PR #144 combined #112–#143 HEAD `022dac012bfe5da971bab864a688de7a7e63a003`: 1142 passed/8 skipped, 260-source Final Lock sha256:162e7c5d31e88ea5ce2dee3a86d6058a3ce9d4d8b46b40606ede62ea587a905e, Remote Persistence and Windows PASS. Draft/unmerged, main b1ffe6f534ced0d329dae273a4b949a634cb8bfa untouched.
 - Tracker **22 NOT_STARTED / 93 TESTING / 2 RESEARCHING**, zero COMPLETED. Next: compare/open old PRs #64–#111, especially sealed F2.7 #64 and release-lock generator #111, then a cumulative security review branch. No auto-merge or hardware acceptance claims.
+
+## Latest verified #145 (2026-11-18)
+
+Draft PR #145 / feature #81 HEAD `c1c17a98f61b12d7fbe6921a830bce0bf6da7009`: Core Assurance [44202888251](https://github.com/ArdaNTM/JAS/actions/runs/44202888251) **621 passed, 6 skipped**; Final Release Lock PASS 234 entries `sha256:b953fd48a8abb424c4e0d6ad396551a00033064f98ebbf50cda1c3684a6c7244`; Remote Persistence [44202888287](https://github.com/ArdaNTM/JAS/actions/runs/44202888287) PASS. A true local sparse SAD matcher under separate Gateway ALLOW; no real stereo rig/Owner hardware acceptance.
+PR #65 head is updated by this commit. Counts 21 NOT_STARTED/94 TESTING/2 RESEARCHING, none COMPLETED. PR #146 new live EventBus+Gateway SVG telemetry is OPEN Draft, CI pending at this snapshot. PR #144 cumulative #112–143 has exact-head 1142 passed/8 skipped and Final Lock PASS; still lacks PR #64–111 and #145. Main pinned b1ffe6f534ced0d329dae273a4b949a634cb8bfa; no merge.

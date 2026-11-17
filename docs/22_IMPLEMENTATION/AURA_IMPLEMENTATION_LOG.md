@@ -296,3 +296,8 @@ Draft PR #143 exact HEAD `1747ee11434424a19af874754bb3d61df0a90148`: Core Assura
 ## 2026-11-16 — #143 runnable PNG tests and #144 integrated 260-source visual stack
 
 #143 updated HEAD `0b573d4fa156763cb36d093eefd61733780cb6af`: previous Pillow-only test module was skipped, so implemented true standard-library PNG zlib scanline/CRC/pixel comparison and tests without optional Pillow; **654 passed, 6 skipped** (Core 43820291972); Final Lock PASS sha256:77cfbb79f7faeaaba033e15e75a7711d03537324896891708332b5dfc8815684; Persistence PASS (43820291834). New Draft **PR #144** HEAD `022dac012bfe5da971bab864a688de7a7e63a003`: cumulative #112–#143, **1142 passed, 8 skipped** (Core 43820949320), Final Release Lock **PASS 260 source files** sha256:162e7c5d31e88ea5ce2dee3a86d6058a3ce9d4d8b46b40606ede62ea587a905e; Persistence/Windows launcher PASS. Cross-module Core/Gateway/real SQLite/PNG and controlled native camera/FFmpeg/model transport integration verified. **Prior PR #64–#111 absent**, no Owner hardware acceptance or merge. https://github.com/ArdaNTM/JAS/pull/144
+
+## 2026-11-18 — feature #81 actual local stereo geometry
+
+- Draft PR #145 / feature #81 HEAD `c1c17a98f61b12d7fbe6921a830bce0bf6da7009`: Core Assurance [44202888251](https://github.com/ArdaNTM/JAS/actions/runs/44202888251) **621 passed, 6 skipped**; Final Release Lock PASS 234 entries `sha256:b953fd48a8abb424c4e0d6ad396551a00033064f98ebbf50cda1c3684a6c7244`; Remote Persistence [44202888287](https://github.com/ArdaNTM/JAS/actions/runs/44202888287) PASS. A true local sparse SAD matcher under separate Gateway ALLOW; no real stereo rig/Owner hardware acceptance.
+- PR #146 feature #95 is open Draft, exact-head CI pending at this tracker update; do not preemptively mark it TESTING.
