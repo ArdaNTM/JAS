@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-16T07:01:13.419Z",
+  "generated_at": "2026-11-17T23:57:15.571Z",
   "git_commit": "732aaa53b658023522307564b30611eb8756a1c4",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:162e7c5d31e88ea5ce2dee3a86d6058a3ce9d4d8b46b40606ede62ea587a905e",
-  "file_count": 260,
+  "release_digest": "sha256:b03cdfcd594751959ed43a1d619e3f13ab2bd583a0b74a94e69d72b7f99e541d",
+  "file_count": 261,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -295,6 +295,10 @@
     {
       "path": "core/src/aura_core/application/live_events.py",
       "sha256": "51d23fe8f540b5781a1962f96594cd3e6b85ce600334d612c504ba2ec0bd23f0"
+    },
+    {
+      "path": "core/src/aura_core/application/live_svg_chart.py",
+      "sha256": "96c8c169c33bfa6155cdc73847da974b28a0fe030eddc7efaac7147e54def294"
     },
     {
       "path": "core/src/aura_core/application/local_object_detection.py",
@@ -694,7 +698,7 @@
     },
     {
       "path": "core/src/aura_core/main.py",
-      "sha256": "ee3fc1d71de023d00ba7230476ffef8c508f509f7f409c65b9e49774413dbab6"
+      "sha256": "0bfc131c8ff706d5eeec0fdf4130c9b6ee6e8cdf7e9ee95f9ddb0b2633f99ab6"
     },
     {
       "path": "core/src/aura_core/mcp/__init__.py",
