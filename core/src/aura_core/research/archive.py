@@ -155,6 +155,76 @@ class SQLiteResearchArchive:
             "verified_source": False,
         }
 
+
+    def list_snapshots(
+        self, *, principal_id: str, limit: int = 20, offset: int = 0
+    ) -> tuple[dict[str, object], ...]:
+        """Bounded principal-scoped archive browsing without exposing content."""
+        principal = _scope(principal_id)
+        if type(limit) is not int or not 1 <= limit <= 50:
+            raise ValueError("archive browse limit must be 1..50")
+        if type(offset) is not int or not 0 <= offset <= 10000:
+            raise ValueError("archive offset must be 0..10000")
+        with self._connect() as db:
+            rows = db.execute(
+                """SELECT archive_id, url, content_type, content,
+                          content_sha256, created_at
+                   FROM research_snapshots WHERE principal_id=?
+                   ORDER BY created_at DESC, archive_id ASC LIMIT ? OFFSET ?""",
+                (principal, limit, offset),
+            ).fetchall()
+        output = []
+        for row in rows:
+            if hashlib.sha256(row["content"].encode("utf-8")).hexdigest() != row["content_sha256"]:
+                raise ValueError("archive snapshot digest mismatch")
+            output.append({
+                "archive_id": row["archive_id"], "url": row["url"],
+                "content_type": row["content_type"],
+                "content_sha256": row["content_sha256"],
+                "created_at": row["created_at"],
+                "untrusted": True, "verified_source": False,
+            })
+        return tuple(output)
+
+    def prune_before(
+        self, *, principal_id: str, cutoff_timestamp: float,
+        confirmed: bool = False,
+    ) -> int:
+        """Delete one principal's aged snapshots; external approval is mandatory."""
+        import math
+        principal = _scope(principal_id)
+        if confirmed is not True:
+            raise PermissionError("archive retention erasure requires approval")
+        if type(cutoff_timestamp) not in (float, int) or not math.isfinite(cutoff_timestamp):
+            raise ValueError("finite archive timestamp required")
+        if not 0 <= cutoff_timestamp <= time.time():
+            raise ValueError("cannot prune future archive snapshots")
+        with self._connect() as db:
+            return int(db.execute(
+                "DELETE FROM research_snapshots WHERE principal_id=? AND created_at<?",
+                (principal, cutoff_timestamp),
+            ).rowcount)
+
+    async def archive_governed_fetch(
+        self, *, gateway: Any, request: Any, principal_id: str,
+        consented: bool,
+    ) -> dict[str, object]:
+        """Use the REAL MCP Gateway result, not a caller-forged allow snapshot.
+
+        Requires the application to authenticate the request's principal at its
+        ingress before building MCPGatewayRequest. Provider fetch may be unsafe
+        without separate network/SSRF policy and is not performed by this store.
+        """
+        from aura_core.mcp.gateway import MCPGateway, MCPGatewayRequest
+        if (not isinstance(gateway, MCPGateway) or
+            not isinstance(request, MCPGatewayRequest) or
+            principal_id != request.principal_id or
+            type(consented) is not bool or not consented):
+            raise PermissionError("authenticated principal and consented Gateway fetch required")
+        response = await gateway.invoke(request)
+        return self.archive_fetch_result(
+            principal_id=principal_id, response=response, consented=True)
+
     def forget(
         self, *, principal_id: str, archive_id: str, confirmed: bool = False
     ) -> bool:
