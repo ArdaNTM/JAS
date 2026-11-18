@@ -26,6 +26,9 @@ from aura_core.application.full_duplex_session import (
     GatewaySpeechSynthesizer, ProactiveNotifier, ControlledVisionService,
 )
 from aura_core.application.vision_adapters import DesktopScreenCapture, OllamaVisionProvider
+from aura_core.application.live_svg_chart import (
+    GovernedLiveSVGChart, live_svg_chart_router, register_live_svg_chart,
+)
 from aura_core.config.kernel import KernelConfig
 from aura_core.config.storage import StorageMode, storage_mode_from_environment, validate_storage_mode
 from aura_core.enterprise.policy_bundle import PolicyBundle
@@ -458,6 +461,22 @@ def build_app() -> FastAPI:
     app.state.remote_object_storage = remote_objects
     # Imported skills are declarative proposals only; invocation still requires Gateway authorization.
     app.state.agent_skills_mcp_registry = AgentSkillsMCPRegistry()
+
+    # Optional *real* live SVG telemetry: no implicit PermissionEngine ALLOW.
+    # Every browser read still requires HTTP bearer auth and exact Gateway policy.
+    app.state.live_svg_chart = None
+    app.state.live_svg_chart_provider = None
+    if os.getenv("AURA_LIVE_CHART_ENABLED", "0").strip().casefold() in {"1", "true", "yes", "on"}:
+        app.state.live_svg_chart_provider = register_live_svg_chart(
+            services=kernel.service_registry,
+            providers=kernel.provider_registry,
+            capabilities=kernel.capability_registry,
+            event_bus=kernel.event_bus,
+        )
+        app.state.live_svg_chart = GovernedLiveSVGChart(
+            gateway, authenticated_principal_id=http_principal_id,
+        )
+        app.include_router(live_svg_chart_router)
 
     event_runtime = EventBusRuntime(
         kernel.event_bus,
@@ -922,6 +941,9 @@ def build_app() -> FastAPI:
                         except Exception:
                             logger.exception("Local persistence shutdown failed")
 
+            chart_provider = getattr(app.state, "live_svg_chart_provider", None)
+            if chart_provider is not None:
+                chart_provider.close()
             logger.info(
                 "AURA LIFESPAN SHUTDOWN COMPLETE"
             )
