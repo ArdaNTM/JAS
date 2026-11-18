@@ -167,3 +167,48 @@ or not accepted as recorded in the authoritative feature tracker. A full
 feature is not `COMPLETED` simply because its narrower helper logic or
 general Core CI passes. `ELIGIBLE=0 COMPLETED=0` remains the truthful
 validation result until those actual code/test requirements are satisfied.
+
+
+## 2026-11-18 — Real Group A source delivery: #2 graph lifecycle and #59 signed agent receipt
+
+Implemented source commit: `5b441e55ce0b22bc88144fbd22de317036491ae7`.
+[Core Assurance run 44365112638](https://github.com/ArdaNTM/JAS/actions/runs/44365112638):
+**2250 PASS / 14 SKIP**; 440-file Release Lock **PASS**
+`sha256:ebcbd0f55845a04119563d976d72951dc506e85c763a8aba32417a4787041ad9`.
+[Unified Acceptance run 44365112370](https://github.com/ArdaNTM/JAS/actions/runs/44365112370):
+**10 E2E + 9 governance PASS**, with fail-closed
+`A=9 B1=20 B2=88 COMPLETED=0 ELIGIBLE=0`.
+[Remote Persistence 44365112329](https://github.com/ArdaNTM/JAS/actions/runs/44365112329):
+**8 PASS** with actual PostgreSQL and MinIO services.
+
+- **#2 implemented slice:** `memory/graph_store.py` now migrates old SQLite and
+  PostgreSQL graph tables to support `deleted_at` tombstones; all bounded graph
+  reads exclude tombstones. `graph_gateway.py` enrolls high-risk `graph_soft_delete`
+  and `graph_restore` without installing any default allow policy. Exact
+  `current_dispatch()` proof, PermissionEngine policy, consumed Owner-approval
+  grant and principal-derived ownership protect both. Successful transitions
+  are logged in a durable audit table in the same DB transaction. SQLite
+  migration, replay, foreign scope, double-delete/restore and real PostgreSQL
+  restore/audit pass. **Still absent:** complete authenticated user UI, retention
+  policy, graph version cleanup and real Owner deployment acceptance.
+- **#59 implemented slice:** existing `application/agent_credentials.py`
+  already performed HMAC-SHA256 principal-bound request verification,
+  TTL checks and durable SQLite nonce replay prevention **before** MCP Gateway.
+  Do not duplicate or weaken it. `application/agent_mailbox.py` now supports
+  separately provisioned broker-HMAC-signed consumption receipts, atomically
+  written to persistent SQLite before the consumed messages are committed
+  deleted. The receipt binds scoped principal, task, receiver principal,
+  sender/recipient role, message ID, sequence, payload hash and consumption
+  timestamp; tampering and cross-principal reads fail, and a fresh process
+  can sign an ingress request accepted by the real Gateway. **Limitation:**
+  broker-signed proof is not an independent receiver-signed receipt, actual
+  transport identity guarantee, network listener or retry service. Those
+  acceptance items remain open.
+- The previous 7 other Group A complete feature scopes (#5, #40, #44, #47,
+  #67, #73, #111) are **not fully implemented by this change**. External-source
+  verification, scientific data provenance, authenticated UI/export and
+  independent acceptance still require real evidence.
+
+This is code and test evidence, not a `security_review=PASS` for full
+capabilities. Preserve `TESTING` and the named missing components until
+each real acceptance requirement is verified. No F2.7/main changes.
