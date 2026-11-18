@@ -55,7 +55,7 @@ def test_rejects_subgroup_overlap_and_mislabel():
     with pytest.raises(ValueError, match="B1"):
         audit.validate(tracker, bad, provenance)
     bad = copy.deepcopy(groups)
-    bad["records"][0]["subgroup"] = "B2"
+    bad["records"][0]["subgroup"] = "B1"  # Feature #1 is B2.
     with pytest.raises(ValueError, match="grouping"):
         audit.validate(tracker, bad, provenance)
 
