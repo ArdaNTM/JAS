@@ -83,3 +83,41 @@ B1 original regression coverage was incomplete in the cumulative tree. **13 orig
 **Completion evidence:** CI acceptance auditor still reports **A=9, B1=20, B2=88, COMPLETED=0, ELIGIBLE=0**. Neither the unit tests nor the original PR test green runs establish the independent security review and full-capability integration requirements recorded in `missing_components`, including authenticated production UI, external publisher truth/SSRF controls, encryption and data removal, real agent identity/receipts, model safety challenge sets, Owner acceptance and signed release. Accordingly, these are **partial implementation findings** and MUST NOT be changed to `security_review=PASS` or `acceptance=PASS` by clearing outstanding entries without verifiable evidence.
 
 See `AURA_B1_20_RECONCILIATION.md` for the exact B1 test/provenance inventory and per-feature outstanding gates.
+
+
+## 2026-11-18 — Group A focused code/negative-path checks (no completion promotion)
+
+Exact integrated PR #158 code commit: `989c7bdebc185a324123e07d45e4fda00d9ffb97`.
+[Core Assurance run 44347846310](https://github.com/ArdaNTM/JAS/actions/runs/44347846310):
+**2246 passed, 14 skipped**; canonical **440-file** SHA-256 release-lock **PASS**
+(`sha256:82480ee30563bbf59a647d9586a7dc0a1834c1c14b3cea984222fd03a5274b30`).
+[Unified acceptance run 44347846608](https://github.com/ArdaNTM/JAS/actions/runs/44347846608):
+**10 E2E + 9 governance checks PASS**, but `A=9 B1=20 B2=88 COMPLETED=0 ELIGIBLE=0`.
+
+- **#67 conditional numerical uncertainty:** `science/linear_model.py` now calculates
+  finite OLS slope/intercept coefficient standard errors from residual degrees of freedom;
+  two-point fits yield `None`, not fabricated certainty. `to_dict()` explicitly
+  declares error-assumption validation **false**, and `test_local_linear_model.py`
+  checks hand-derived standard errors and missing degrees of freedom.
+  *Remaining:* real sample provenance, assumption validation, independently
+  reviewed numerical reproduction and external scientific acceptance.
+- **#111 formula-literal XLSX data export:** `data_analysis/tabular.py`
+  produces an actual bounded in-memory ZIP/OpenXML worksheet whose
+  cell type is `inlineStr` even for Excel formula-like inputs.
+  XML-invalid controls, invalid dimensions and oversized cells fail closed;
+  `test_local_tabular_analysis.py` checks the actual XLSX worksheet XML
+  for absent `<f>` formula tags, exact literals, and markup escaping.
+  No filesystem/network side effects, new MCP providers or permission grants.
+  *Remaining:* trusted authenticated ingest/export endpoints, production large-data
+  benchmarks, download/UI delivery, independent security/Owner acceptance.
+- **#2, #5, #40, #44, #47, #59, #73:** the original acceptance gaps remain
+  fully open; these two scoped changes do not prove those full features.
+- **Reviewer finding:** this is *author's internal source/negative-path review*
+  with verified CI evidence, **not independent security sign-off**. Preserve all
+  `security_review=PARTIAL_VERIFIED`, `assessment=PARTIAL_VERIFIED`,
+  `acceptance=NOT_VERIFIED` and original `missing_components`. No
+  feature was reclassified as `COMPLETED`.
+- **Separate red CI:** Secure Evolution HUD and Physical Trust npm-security
+  still run a full high/critical **development dependency audit**; the
+  `picomatch` advisory blocks these independent workflows even though
+  Windows Launcher production-only audit is green. No sealed F2.7 change.
