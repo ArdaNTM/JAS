@@ -10,6 +10,7 @@ import base64
 import hashlib
 import io
 import zipfile
+import time
 
 import pytest
 
@@ -202,7 +203,7 @@ def test_archive_scoped_browse_retention_and_integrity(tmp_path):
     assert archive.get(principal_id="alice", archive_id=saved["archive_id"])
     assert archive.prune_before(principal_id="bob", cutoff_timestamp=999999999.0,
                                 confirmed=True) == 0
-    assert archive.prune_before(principal_id="alice", cutoff_timestamp=999999999.0,
+    assert archive.prune_before(principal_id="alice", cutoff_timestamp=time.time(),
                                 confirmed=True) == 1
     assert archive.list_snapshots(principal_id="alice") == ()
 
