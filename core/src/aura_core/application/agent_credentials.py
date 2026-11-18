@@ -42,7 +42,7 @@ def _payload_digest(name: str, arguments: dict[str, Any]) -> str:
 
 def canonical_agent_auth_payload(
     principal_id: str, name: str, arguments: dict[str, Any],
-    nonce: str, timestamp: int,
+    nonce: str, timestamp: int, approval_id: str | None = None,
 ) -> bytes:
     if not isinstance(principal_id, str) or not principal_id or "\n" in principal_id:
         raise ValueError("invalid authenticated principal")
@@ -51,7 +51,10 @@ def canonical_agent_auth_payload(
     if type(nonce) is not str or not _NONCE.fullmatch(nonce):
         raise ValueError("nonce must be 32..64 lowercase hex")
     digest = _payload_digest(name, arguments)
-    return f"aura-agent-v1\n{principal_id}\n{name}\n{timestamp}\n{nonce}\n{digest}".encode("utf-8")
+    if approval_id is not None and (type(approval_id) is not str or
+                                    not 1 <= len(approval_id) <= 128):
+        raise ValueError("invalid signed approval reference")
+    return f"aura-agent-v1\n{principal_id}\n{name}\n{timestamp}\n{nonce}\n{digest}\n{approval_id or ''}".encode("utf-8")
 
 
 @dataclass(frozen=True, slots=True)
@@ -62,6 +65,7 @@ class SignedAgentRequest:
     timestamp: int
     nonce: str
     signature_hex: str
+    approval_id: str | None = None
 
 
 class AuthenticatedAgentGateway:
@@ -117,7 +121,7 @@ class AuthenticatedAgentGateway:
         try:
             material = canonical_agent_auth_payload(
                 principal, request.tool_name, request.arguments,
-                request.nonce, request.timestamp,
+                request.nonce, request.timestamp, request.approval_id,
             )
         except ValueError as exc:
             raise PermissionError("invalid agent signed envelope") from exc
@@ -157,4 +161,5 @@ class AuthenticatedAgentGateway:
             resource_scope=scope,
             risk_level=RiskLevel.HIGH if request.tool_name == "agent_consume" else RiskLevel.LOW,
             tool_name=request.tool_name, arguments=request.arguments,
+            approval_id=request.approval_id,
         ))
