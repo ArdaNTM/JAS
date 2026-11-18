@@ -31,6 +31,8 @@ def test_117_features_partition_and_pinned_canonical_sources():
     assert summary == {
         "group_A": 9,
         "group_B": 108,
+        "group_B1": 20,
+        "group_B2": 88,
         "group_A_complete": 0,
         "group_B_testing": 108,
         "total_verified_ready": 0,
@@ -44,6 +46,18 @@ def test_real_group_a_is_still_blocked_on_missing_acceptance():
             assert not audit.eligible_for_completion(record)
             assert record["status"] == "TESTING"
             assert record["missing_components"] or record["blockers"]
+
+
+def test_rejects_subgroup_overlap_and_mislabel():
+    tracker, groups, provenance = load()
+    bad = copy.deepcopy(groups)
+    bad["B1_ids"].append(91)
+    with pytest.raises(ValueError, match="B1"):
+        audit.validate(tracker, bad, provenance)
+    bad = copy.deepcopy(groups)
+    bad["records"][0]["subgroup"] = "B2"
+    with pytest.raises(ValueError, match="grouping"):
+        audit.validate(tracker, bad, provenance)
 
 
 def test_rejects_wrong_or_duplicate_grouping():
