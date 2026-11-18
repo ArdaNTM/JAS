@@ -1,12 +1,15 @@
 """Real Docker subprocess entrypoint, Gateway approvals, and fail-closed tests."""
 import asyncio
 import hashlib
+import json
 import os
 import shutil
 import sys
 from pathlib import Path
 
 import pytest
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 from aura_core.enterprise.approval_store import ApprovalStatus, SQLiteApprovalStore
 from aura_core.kernel.capabilities import CapabilityRegistry
@@ -18,6 +21,7 @@ from aura_core.mcp.provider import ProviderRegistry
 from aura_core.providers.docker_terminal_mcp import (
     DockerSandboxEngine, TerminalCommand, GovernedDockerTerminal,
     TerminalDenied, TerminalUnavailable, register_docker_terminal,
+    load_terminal_config, terminal_router,
 )
 
 IMAGE = "alpine@sha256:" + "a" * 64
@@ -142,3 +146,76 @@ def test_real_docker_engine_offline_when_preloaded_and_allowed(tmp_path):
     assert output["exit_code"] == 0
     assert output["stdout"].strip() == "/workspace"
     assert output["trust"] == "UNTRUSTED_CONTAINER_OUTPUT"
+
+
+
+def test_operator_manifest_has_private_mode_and_fixed_digest(tmp_path):
+    cli = str(Path(sys.executable).resolve())
+    manifest = tmp_path / "terminal.json"
+    config = {"schema": "aura.terminal.docker.v1",
+              "docker_executable": cli,
+              "docker_sha256": hashlib.sha256(Path(cli).read_bytes()).hexdigest(),
+              "commands": [{"command_id": "inspect", "image": IMAGE,
+                            "argv": ["pwd"], "timeout_seconds": 10}]}
+    manifest.write_text(json.dumps(config), encoding="utf-8")
+    manifest.chmod(0o600)
+    if os.name == "posix":
+        engine, commands = load_terminal_config(str(manifest))
+        assert engine.executable == cli and commands[0].command_id == "inspect"
+        manifest.chmod(0o666)
+        with pytest.raises(TerminalUnavailable):
+            load_terminal_config(str(manifest))
+    else:
+        with pytest.raises(TerminalUnavailable):
+            load_terminal_config(str(manifest))
+
+
+def test_authenticated_http_never_infers_policy_or_accepts_arbitrary_shell(tmp_path):
+    _, _, policy, approvals, owner = _setup(tmp_path, AuthorizationDecision.REQUIRE_APPROVAL)
+    app = FastAPI()
+    app.state.http_bearer_token = "t" * 40
+    app.state.http_principal_id = "owner"
+    app.state.governed_terminal = owner
+    app.include_router(terminal_router)
+    headers = {"Authorization": "Bearer " + "t" * 40}
+    try:
+        with TestClient(app) as client:
+            assert client.post("/api/runtime/terminal/inspect", json={}).status_code == 401
+            assert client.post("/api/runtime/terminal/inspect", headers=headers,
+                               json={"command": "rm -rf /"}).status_code == 422
+            pending = client.post("/api/runtime/terminal/inspect", headers=headers, json={})
+            assert pending.status_code == 202
+            receipt = pending.json()["approval_id"]
+            assert approvals.get(receipt).status is ApprovalStatus.PENDING
+            entry = approvals.get(receipt)
+            approvals.decide(receipt, expected_version=entry.version,
+                             approver_id="human:owner", decision=ApprovalStatus.APPROVED)
+            done = client.post("/api/runtime/terminal/inspect", headers=headers,
+                               json={"approval_id": receipt})
+            assert done.status_code == 200
+            assert done.json()["trust"] == "UNTRUSTED_CONTAINER_OUTPUT"
+            assert "no-store" in done.headers["cache-control"]
+            assert client.post("/api/runtime/terminal/inspect", headers=headers,
+                               json={"approval_id": receipt}).status_code == 403
+    finally:
+        approvals.close()
+
+
+def test_http_disabled_and_wrong_principal_fail_closed(tmp_path):
+    _, _, engine, approvals, owner = _setup(tmp_path, AuthorizationDecision.REQUIRE_APPROVAL)
+    app = FastAPI()
+    app.state.http_bearer_token = "t" * 40
+    app.state.http_principal_id = "different"
+    app.state.governed_terminal = owner
+    app.include_router(terminal_router)
+    headers = {"Authorization": "Bearer " + "t" * 40}
+    try:
+        with TestClient(app) as client:
+            assert client.post("/api/runtime/terminal/inspect", headers=headers,
+                               json={}).status_code == 403
+        app.state.governed_terminal = None
+        with TestClient(app) as client:
+            assert client.post("/api/runtime/terminal/inspect", headers=headers,
+                               json={}).status_code == 503
+    finally:
+        approvals.close()
