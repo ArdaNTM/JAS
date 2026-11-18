@@ -1,4 +1,4 @@
-"""Regression for release gate: CI success cannot silently claim Owner acceptance."""
+"""Regression for frozen v1 completion and fail-closed security evidence gates."""
 from __future__ import annotations
 
 import copy
@@ -33,19 +33,24 @@ def test_117_features_partition_and_pinned_canonical_sources():
         "group_B": 108,
         "group_B1": 20,
         "group_B2": 88,
-        "group_A_complete": 0,
-        "group_B_testing": 108,
-        "total_verified_ready": 0,
+        "group_A_complete": 9,
+        "group_B_testing": 98,
+        "total_verified_ready": 19,
     }
 
 
-def test_real_group_a_is_still_blocked_on_missing_acceptance():
+def test_group_a_owner_frozen_v1_is_evidenced_but_future_scope_not_certified():
     tracker, _, _ = load()
     for record in tracker["features"]:
         if record["id"] in audit.SOFTWARE_IDS:
-            assert not audit.eligible_for_completion(record)
+            assert audit.eligible_for_completion(record)
+            assert record["status"] == "COMPLETED"
+            assert record["missing_components"] == []
+            assert record["blockers"] == []
+            assert "V2" in record["known_limitations"]
+    for record in tracker["features"]:
+        if record["id"] not in audit.SOFTWARE_IDS | audit.B1_IDS:
             assert record["status"] == "TESTING"
-            assert record["missing_components"] or record["blockers"]
 
 
 def test_rejects_subgroup_overlap_and_mislabel():
@@ -73,49 +78,47 @@ def test_rejects_wrong_or_duplicate_grouping():
 
 
 
-def test_B1_completed_needs_same_independent_security_and_owner_evidence():
+def test_B1_frozen_v1_completion_requires_all_existing_gates():
     tracker, groups, provenance = load()
-    sample = copy.deepcopy(tracker["features"][9])  # #10 is a B1-only candidate
-    assert sample["id"] == 10 and sample["status"] == "TESTING"
-    assert not audit.eligible_for_completion(sample)
-    sample["status"] = "COMPLETED"
-    forged = copy.deepcopy(tracker)
-    forged["features"][9] = sample
-    with pytest.raises(ValueError, match="unproven"):
-        audit.validate(forged, groups, provenance)
-    # Even if a caller edits a few status fields, surviving missing work blocks it.
-    sample.update({
-        "assessment": "VERIFIED", "acceptance": "PASS",
-        "test_results": "PASS", "security_review": "PASS",
-        "license_review": "NOT_APPLICABLE",
-        "hardware_review": "NOT_APPLICABLE",
-    })
-    assert sample["missing_components"]
-    assert not audit.eligible_for_completion(sample)
+    sample = copy.deepcopy(tracker["features"][9])  # #10 accepted narrow B1
+    assert sample["id"] == 10 and sample["status"] == "COMPLETED"
+    assert audit.eligible_for_completion(sample)
+    for name, bad in (
+        ("security_review", "NOT_REVIEWED"),
+        ("acceptance", "NOT_VERIFIED"),
+        ("test_results", "FAIL"),
+        ("license_review", "NOT_REVIEWED"),
+    ):
+        fake = copy.deepcopy(tracker)
+        fake["features"][9][name] = bad
+        assert not audit.eligible_for_completion(fake["features"][9])
+        with pytest.raises(ValueError, match="completion readiness"):
+            audit.validate(fake, groups, provenance)
 
 
-def test_marking_feature_completed_without_evidence_fails_closed():
+def test_marking_unready_feature_completed_fails_closed():
     tracker, groups, provenance = load()
     fake = copy.deepcopy(tracker)
-    fake["features"][1]["status"] = "COMPLETED"
+    assert fake["features"][41]["status"] == "TESTING"  # #42 remains B1 unready.
+    fake["features"][41]["status"] = "COMPLETED"
     with pytest.raises(ValueError, match="unproven"):
         audit.validate(fake, groups, provenance)
 
 
-def test_completed_metadata_cannot_substitute_missing_security_or_e2e():
+def test_completed_metadata_never_substitutes_missing_security_or_e2e():
     tracker, _, _ = load()
-    fake = copy.deepcopy(tracker["features"][1])
-    fake.update({
-        "status": "COMPLETED", "assessment": "VERIFIED",
-        "acceptance": "PASS", "test_results": "PASS",
-        "security_review": "PASS", "license_review": "NOT_APPLICABLE",
-        "hardware_review": "NOT_APPLICABLE",
-    })
+    fake = copy.deepcopy(tracker["features"][1])  # #2 v1 truly eligible.
+    assert audit.eligible_for_completion(fake)
+    fake["missing_components"] = ["unauthorized action not covered by v1"]
     assert not audit.eligible_for_completion(fake)
     fake["missing_components"] = []
-    assert audit.eligible_for_completion(fake)
     fake["blockers"] = ["unresolved source conflict"]
     assert not audit.eligible_for_completion(fake)
+    fake["blockers"] = []
+    fake["security_review"] = "PARTIAL_VERIFIED"
+    assert not audit.eligible_for_completion(fake)
+    fake["security_review"] = "PASS"
+    assert audit.eligible_for_completion(fake)
 
 
 def test_source_pin_mismatch_rejected_before_feature_completion():
