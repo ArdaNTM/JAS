@@ -101,6 +101,7 @@ def test_completed_requires_license_hardware_and_explicit_criteria():
         "pull_request": "https://github.com/ArdaNTM/JAS/pull/66",
         "code_paths": ["core/src/example.py"], "test_commands": ["pytest"],
         "technical_goal": "A specific goal", "acceptance_criteria": "A passed check",
+        "blockers": [], "missing_components": [],  # Synthetic accepted record, not the real tracker.
         "security_test_criteria": "No unauthorized dispatch",
     })
     with pytest.raises(ValueError, match="without evidence"):
