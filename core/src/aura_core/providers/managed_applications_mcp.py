@@ -40,6 +40,11 @@ _ID = re.compile(r"\A[a-z][a-z0-9_-]{0,47}\Z")
 _DIGEST = re.compile(r"\A[a-f0-9]{64}\Z")
 _MAX_APPLICATIONS = 8
 _MAX_BINARY_SIZE = 128 * 1024 * 1024
+_MAX_RUNNING_CHILDREN = 8
+_ALLOWED_ENVIRONMENT = frozenset({
+    "SYSTEMROOT", "WINDIR", "TEMP", "TMP", "PATH", "HOME", "USERPROFILE",
+    "APPDATA", "LOCALAPPDATA", "LANG", "LC_ALL",
+})
 
 
 class ManagedAppDenied(PermissionError):
@@ -179,14 +184,19 @@ class LocalManagedApplicationsMCP:
             previous = self._owned.get(key)
             if previous is not None and previous.poll() is None:
                 return {"app_id": app_id, "state": "running", "principal_id": principal}
+            if sum(child.poll() is None for child in self._owned.values()) >= _MAX_RUNNING_CHILDREN:
+                raise ManagedAppUnavailable("Bounded managed process capacity exhausted")
             if _hash_executable(Path(spec.executable)) != spec.sha256:
                 raise ManagedAppUnavailable("Pinned application integrity changed")
+            # No AURA keys, tokens or provider credentials are inherited by children.
+            safe_env = {key: value for key, value in os.environ.items()
+                        if key.upper() in _ALLOWED_ENVIRONMENT}
             # Fixed trusted argv; never invoke shell or accept caller-supplied command.
             child = subprocess.Popen(
                 [spec.executable, *spec.arguments],
                 shell=False, stdin=subprocess.DEVNULL,
                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                cwd=str(Path(spec.executable).parent), close_fds=True,
+                cwd=str(Path(spec.executable).parent), close_fds=True, env=safe_env,
             )
             self._owned[key] = child
         self._publish(app_id, principal, "running")
