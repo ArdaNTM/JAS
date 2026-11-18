@@ -40,6 +40,9 @@ from aura_core.providers.docker_terminal_mcp import (
     GovernedDockerTerminal, load_terminal_config, register_docker_terminal,
     terminal_router,
 )
+from aura_core.application.governed_command_sequences import (
+    GovernedCommandSequences, register_command_sequences, sequence_router,
+)
 from aura_core.config.kernel import KernelConfig
 from aura_core.config.storage import StorageMode, storage_mode_from_environment, validate_storage_mode
 from aura_core.enterprise.policy_bundle import PolicyBundle
@@ -530,6 +533,7 @@ def build_app() -> FastAPI:
     # Windows requires separately attested Owner broker; configuration fails closed.
     app.state.governed_terminal = None
     app.state.terminal_provider = None
+    app.state.terminal_command_ids = ()
     if os.getenv("AURA_DOCKER_TERMINAL_ENABLED", "0").strip().casefold() in {"1", "true", "yes", "on"}:
         if http_bearer_token is None or approval_store is None:
             raise RuntimeError("Terminal requires authenticated Owner and durable approval store")
@@ -543,7 +547,31 @@ def build_app() -> FastAPI:
         app.state.governed_terminal = GovernedDockerTerminal(
             gateway, principal_id=http_principal_id,
         )
+        app.state.terminal_command_ids = tuple(command.command_id for command in fixed_commands)
         app.include_router(terminal_router)
+
+    # #33 explicitly stepped persistent command DAG. No background execution.
+    # Each action crosses BOTH its own Gateway scope and the #27 terminal
+    # command's independently consumed one-shot human approval.
+    app.state.command_sequence_provider = None
+    app.state.governed_command_sequences = None
+    if os.getenv("AURA_COMMAND_SEQUENCES_ENABLED", "0").strip().casefold() in {"1", "true", "yes", "on"}:
+        if app.state.governed_terminal is None:
+            raise RuntimeError("Command sequences require enabled governed Docker terminal")
+        raw_sequence_key = os.getenv("AURA_COMMAND_SEQUENCE_HMAC_KEY", "")
+        if len(raw_sequence_key) != 64 or not re.fullmatch("[0-9a-fA-F]{64}", raw_sequence_key):
+            raise RuntimeError("Command sequences need an independent 32-byte Owner HMAC key")
+        app.state.command_sequence_provider = register_command_sequences(
+            services=kernel.service_registry, providers=kernel.provider_registry,
+            capabilities=kernel.capability_registry, event_bus=kernel.event_bus,
+            tasks=task_state_machine, terminal=app.state.governed_terminal,
+            hmac_key=bytes.fromhex(raw_sequence_key),
+            allowed_command_ids=app.state.terminal_command_ids,
+        )
+        app.state.governed_command_sequences = GovernedCommandSequences(
+            gateway, principal_id=http_principal_id,
+        )
+        app.include_router(sequence_router)
 
     event_runtime = EventBusRuntime(
         kernel.event_bus,
