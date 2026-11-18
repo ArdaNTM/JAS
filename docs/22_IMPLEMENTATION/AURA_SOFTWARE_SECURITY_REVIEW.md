@@ -37,3 +37,29 @@
 - For A: build missing authenticated software routes, implement actual algorithms/flows promised by each feature, add positive/negative E2E with real SQLite/PG & Gateway authorization, perform independent security/license assessment, supply exact-head release-lock and UI integration evidence.
 - For B: retain `TESTING` and require relevant physical device, Windows/NTFS/SCM, Docker daemon, production external-provider, verified Owner identity or manual release merge acceptance.
 - The dedicated `scripts/audit_aura_117_completion.py` fails closed on forged group assignment, synthetic `COMPLETED`, missing evidence, or a change to the canonical five security source blobs. Passing this audit is **necessary but not sufficient** for release.
+
+
+## 2026-11-18 bounded remediation tranche — new code, not production acceptance
+
+All changes are on Draft PR #158, with F2.7 PR #64 security files untouched. The following components are **real, opt-in, bounded implementations**, but no application-wide Owner approval or independent product acceptance is inferred:
+
+| Tracker ID | Newly integrated engineering capability | Remaining missing acceptance |
+|---|---|---|
+| #2 | Existing SQLite + PostgreSQL graph store gains `delete_fact`; `GovernedGraphMCP` binds principal to real Gateway dispatch; high-risk delete requires single-use SQLite approval. Live PostgreSQL CI test exercises genuine Postgres and Gateway. | Trusted authenticated HTTP/Owner delete UI and full graph relation cleanup, production data retention/erasure policy and independent review. |
+| #5 | Versioned SQLite `TaskPriorityLedger` checks real TaskStateMachine owner and optimistic CAS; `GovernedTaskPriorityMCP` has zero implicit policies. | Production authenticated user task UI/API and accepted long-term planning UX; priority setting is not autonomous task execution. |
+| #40 | Deterministic `SourcedReport` with provenance hash, references, real DOCX and Markdown rendering and safe OOXML text. | Cryptographically trusted publisher identity, independently verified citations, full source-backed narrative generation, approved delivery/download. |
+| #44 | SQLite archive gains scoped metadata browse, retention prune, payload hash checks and async real Gateway fetch façade. | Fetch response from a bare Python argument is NOT authoritative; trusted ingress plus SSRF/redirect controls, retention/backup, PDF support and Owner privacy acceptance outstanding. |
+| #47 | Read-only Python AST and bounded multi-file Python/Java/Kotlin/TS dependency inventory behind opt-in Gateway. | Java/Kotlin/TS extraction is explicitly lexical, **not compiler validated**; no real authenticated Git repository fetch or independent security verdict/UI. |
+| #59 | Scoped agent mailbox actually persisted in SQLite; roster-bound Gateway MCP, HMAC-SHA256 keyed agent ingress, durable SQLite nonce replay protection, signed request/approval reference, single-use consumed approval for mailbox delete. | Keys are test-provisioned in CI, not live Owner-held credentials; no deployed agent process identities, actual cross-process delivery worker, verified action receipts or independent identity audit. |
+| #67 | Deterministic OLS slope/intercept covariance errors and optional clearly labeled **asymptotic** normal interval (n>=30), finite-input guards, source digest. | Assumptions (iid/Gaussian/homoscedastic) **not validated**, no independent scientific reproducibility review or trusted empirical dataset. |
+| #73 | Bounded experimental CSV parser, group comparison, OLS diagnostic uncertainty and data + calculation SHA-256 report identifiers. | Experiment design approval, independent dataset authenticity, scientifically validated methodology and user-facing report workflow. |
+| #111 | Gateway-only CSV ingestion, local bounded arithmetic, literal-safe XLSX bytes, deterministic checksum, 500k-row bounded stream numeric aggregations. | Authorized production file upload/ingestion pipeline, front-end downloadable export and genuine large-volume benchmark/Owner acceptance. |
+
+## Security review status and limits
+
+- All new MCP adapters rely on **existing Kernel/Service/Capability/Provider registries, PermissionEngine, EventBus and MCPGateway**, and install **no ALLOW** policy or Owner privilege. Direct provider calls without the current Gateway dispatch grant fail closed. This is implementation-level negative-path review, not externally signed security assurance.
+- HMAC key custody and application HTTP principal authentication remain deployer responsibilities. `AuthenticatedAgentGateway` verifies HMAC, timestamp and nonce before constructing `MCPGatewayRequest`. It does not certify physical device identity, TPM/NTFS integrity or human approver authentication.
+- Existing `SQLiteApprovalStore.decide` is not an identity provider. A test approver identity does **not** count as signed Owner consent.
+- Real PostgreSQL graph tests run only in GitHub Remote Persistence's actual postgres:16 service. Local Core CI skips them when `AURA_TEST_DATABASE_URL` is absent; this distinction is reported honestly.
+- Historical PRs #66 and #68 are incorporated as their exact source Git blob variants; #135, #146 and #147 opt-in endpoint/source/test paths are already present as cumulative ancestors. See `AURA_CORE_PROVENANCE_RECONCILIATION.json`.
+- **No Group A record should be marked COMPLETED solely because these tests pass.** Each original full-capability missing component, independent security review, relevant production authorization/Owner acceptance and final CI must be proven separately.
