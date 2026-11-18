@@ -72,6 +72,28 @@ def test_rejects_wrong_or_duplicate_grouping():
         audit.validate(tracker, bad, provenance)
 
 
+
+def test_B1_completed_needs_same_independent_security_and_owner_evidence():
+    tracker, groups, provenance = load()
+    sample = copy.deepcopy(tracker["features"][9])  # #10 is a B1-only candidate
+    assert sample["id"] == 10 and sample["status"] == "TESTING"
+    assert not audit.eligible_for_completion(sample)
+    sample["status"] = "COMPLETED"
+    forged = copy.deepcopy(tracker)
+    forged["features"][9] = sample
+    with pytest.raises(ValueError, match="unproven"):
+        audit.validate(forged, groups, provenance)
+    # Even if a caller edits a few status fields, surviving missing work blocks it.
+    sample.update({
+        "assessment": "VERIFIED", "acceptance": "PASS",
+        "test_results": "PASS", "security_review": "PASS",
+        "license_review": "NOT_APPLICABLE",
+        "hardware_review": "NOT_APPLICABLE",
+    })
+    assert sample["missing_components"]
+    assert not audit.eligible_for_completion(sample)
+
+
 def test_marking_feature_completed_without_evidence_fails_closed():
     tracker, groups, provenance = load()
     fake = copy.deepcopy(tracker)
