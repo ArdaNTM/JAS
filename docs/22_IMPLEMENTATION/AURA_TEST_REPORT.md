@@ -332,3 +332,11 @@ Both features **TESTING/PARTIAL_VERIFIED**, NOT COMPLETED. Source-lock CI passes
 - [Unified Acceptance run 44347846608](https://github.com/ArdaNTM/JAS/actions/runs/44347846608): **10 E2E and 9 governance tests PASS**; `A=9 B1=20 B2=88 COMPLETED=0 ELIGIBLE=0`.
 - Focused code/test gain: #67 formal conditional OLS coefficient uncertainty with assumption caveats; #111 actual bounded formula-literal in-memory XLSX and injection-negative tests. Exact source/reviewer limitations: [PR #158 AURA_SOFTWARE_SECURITY_REVIEW.md](https://github.com/ArdaNTM/JAS/blob/97970d65ec139933abf5a420de3d8e4bf734e670/docs/22_IMPLEMENTATION/AURA_SOFTWARE_SECURITY_REVIEW.md).
 - All nine original Group A full-capability requirements **remain TESTING**, including independent security sign-off, Owner acceptance and external authentication/retention/ingestion gates. Ledger **117 TESTING / 0 COMPLETED / 0 NOT_STARTED**. This PR #65 sync copies **the same tracker JSON blob** as PR #158; no runtime module is copied into PR #65 and no security status is elevated.
+
+
+## 2026-11-18 — Final PR #158 focused Group A integration and CI evidence
+
+- Final reviewed source/CI commit `4c1d4c861d31439b4c47e616ba37530869fccaca`: **13/13 PR CI PASS**, including formerly red Secure Evolution and Physical Trust (development-only `picomatch` handled by visible advisory reporting and fail-closed production audits).
+- [Core Assurance 44349038280](https://github.com/ArdaNTM/JAS/actions/runs/44349038280): **2247 passed / 14 skipped**. [Unified Acceptance 44349038075](https://github.com/ArdaNTM/JAS/actions/runs/44349038075): **10 E2E + 9 governance PASS**, `A=9 B1=20 B2=88 COMPLETED=0 ELIGIBLE=0`.
+- Canonical source Release Lock **440 files PASS**, digest `sha256:8abed32da6e4b52f7f80dea68a758af64bdfae6bb9d48e51fa23efb072516f0c`.
+- #67 numerically checked conditional OLS uncertainty and #111 safe literal-only XLSX are **real partial implementations**. #2, #5, #40, #44, #47, #59, #73 remain on their original acceptance gaps. **117 TESTING / 0 COMPLETED / 0 NOT_STARTED** in both authoritative PR #65 and integrated PR #158 tracker; no fabricated independent security or Owner sign-off.
