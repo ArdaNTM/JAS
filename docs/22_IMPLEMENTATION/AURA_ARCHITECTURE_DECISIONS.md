@@ -110,3 +110,7 @@ Feature #95 is explicitly opt-in (`AURA_LIVE_CHART_ENABLED=1`), read-only and bo
 ## ADR-ENG-027 — event notifications are not authoritative task state
 
 The live task panel (#97) only uses EventBus to schedule/observe refreshes. The real SQLite/PostgreSQL TaskStateMachine is queried after fresh exact-scope Gateway ALLOW, with principal SQL filtering and LIMIT 64; neither EventBus event contents nor model-proposed goals/results are trusted UI state or execution permission. Only bounded task IDs, lifecycle state, timestamps and revision are exposed in no-store JSON. Native HUD and Owner acceptance remain separate.
+
+## ADR-ENG-028 — application lifecycle must not become a general terminal or PID killer
+
+AURA feature #26 uses existing Core MCP Gateway dispatch and separately atomically consumed Owner approval for each HIGH-risk start/stop. A low-risk listing requires its own explicit read grant. Trusted local application catalog fixes executable path SHA256 and argv; provider only controls directly owned child processes, exposes no arbitrary shell, PID, process enumeration or tokens, and strips AURA secrets from child environment. On Windows, operator catalog activation fails closed until Owner private ACL trust can be independently proven. PR #149 and #150 are competing Draft alternatives, not additive capabilities.
