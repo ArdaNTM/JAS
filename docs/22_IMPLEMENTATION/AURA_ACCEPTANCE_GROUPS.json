@@ -140,7 +140,9 @@
         "End-to-end production memory migration/retention acceptance",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 2,
@@ -156,7 +158,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": null,
+      "subgroup_basis": "Software Group A candidate"
     },
     {
       "id": 3,
@@ -171,7 +175,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 4,
@@ -187,7 +193,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 5,
@@ -203,7 +211,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": null,
+      "subgroup_basis": "Software Group A candidate"
     },
     {
       "id": 6,
@@ -219,7 +229,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 7,
@@ -235,7 +247,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 8,
@@ -251,7 +265,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification."
     },
     {
       "id": 9,
@@ -267,7 +283,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 10,
@@ -283,7 +301,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification."
     },
     {
       "id": 11,
@@ -299,7 +319,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 12,
@@ -315,7 +337,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification."
     },
     {
       "id": 13,
@@ -330,7 +354,9 @@
         "Live hardware/false-positive privacy acceptance",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 14,
@@ -345,7 +371,9 @@
         "Owner-authenticated deployed voice lifecycle",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 15,
@@ -361,7 +389,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 16,
@@ -381,7 +411,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 17,
@@ -401,7 +433,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 18,
@@ -416,7 +450,9 @@
         "Multilingual/pitch/environment-specific customization and production quality benchmarking",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 19,
@@ -431,7 +467,9 @@
         "Model/voice licenses and Owner hardware acceptance",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 20,
@@ -444,7 +482,9 @@
         "Approved production composition, cross-PR source lock and Owner verification",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 21,
@@ -460,7 +500,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification."
     },
     {
       "id": 22,
@@ -481,7 +523,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 23,
@@ -499,7 +543,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 24,
@@ -516,7 +562,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 25,
@@ -530,7 +578,9 @@
         "Full file-management authorization and Owner tests",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 26,
@@ -548,7 +598,9 @@
         "Full #64–#150 cumulative security/release lock and Owner production acceptance",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 27,
@@ -565,7 +617,9 @@
         "Windows Owner and combined #64–#152 source lock acceptance",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 28,
@@ -578,7 +632,9 @@
         "Approved production composition, cross-PR source lock and Owner verification",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 29,
@@ -594,7 +650,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 30,
@@ -610,7 +668,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 31,
@@ -624,7 +684,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 32,
@@ -638,7 +700,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 33,
@@ -654,7 +718,9 @@
         "Windows native GUI and full F2.7/#64–#152 cumulative acceptance",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 34,
@@ -670,7 +736,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 35,
@@ -685,7 +753,9 @@
         "Source credibility and production end-to-end verification",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification."
     },
     {
       "id": 36,
@@ -701,7 +771,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification."
     },
     {
       "id": 37,
@@ -717,7 +789,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification."
     },
     {
       "id": 38,
@@ -733,7 +807,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification."
     },
     {
       "id": 39,
@@ -753,7 +829,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification."
     },
     {
       "id": 40,
@@ -769,7 +847,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": null,
+      "subgroup_basis": "Software Group A candidate"
     },
     {
       "id": 41,
@@ -785,7 +865,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification."
     },
     {
       "id": 42,
@@ -801,7 +883,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification."
     },
     {
       "id": 43,
@@ -816,7 +900,9 @@
         "Approved production review and synthesis workflow",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification."
     },
     {
       "id": 44,
@@ -832,7 +918,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": null,
+      "subgroup_basis": "Software Group A candidate"
     },
     {
       "id": 45,
@@ -846,7 +934,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 46,
@@ -862,7 +952,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 47,
@@ -879,7 +971,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": null,
+      "subgroup_basis": "Software Group A candidate"
     },
     {
       "id": 48,
@@ -895,7 +989,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 49,
@@ -910,7 +1006,9 @@
         "Approved Core Gateway execution and promotion audit",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 50,
@@ -926,7 +1024,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 51,
@@ -940,7 +1040,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 52,
@@ -956,7 +1058,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification."
     },
     {
       "id": 53,
@@ -973,7 +1077,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification."
     },
     {
       "id": 54,
@@ -988,7 +1094,9 @@
         "Full GitHub management actions with separate security review",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 55,
@@ -1002,7 +1110,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 56,
@@ -1018,7 +1128,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 57,
@@ -1034,7 +1146,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 58,
@@ -1050,7 +1164,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 59,
@@ -1066,7 +1182,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": null,
+      "subgroup_basis": "Software Group A candidate"
     },
     {
       "id": 60,
@@ -1080,7 +1198,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 61,
@@ -1094,7 +1214,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 62,
@@ -1110,7 +1232,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification."
     },
     {
       "id": 63,
@@ -1126,7 +1250,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 64,
@@ -1142,7 +1268,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 65,
@@ -1157,7 +1285,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification."
     },
     {
       "id": 66,
@@ -1173,7 +1303,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification."
     },
     {
       "id": 67,
@@ -1189,7 +1321,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": null,
+      "subgroup_basis": "Software Group A candidate"
     },
     {
       "id": 68,
@@ -1205,7 +1339,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 69,
@@ -1221,7 +1357,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 70,
@@ -1237,7 +1375,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 71,
@@ -1253,7 +1393,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 72,
@@ -1269,7 +1411,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 73,
@@ -1285,7 +1429,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": null,
+      "subgroup_basis": "Software Group A candidate"
     },
     {
       "id": 74,
@@ -1301,7 +1447,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 75,
@@ -1315,7 +1463,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 76,
@@ -1331,7 +1481,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification."
     },
     {
       "id": 77,
@@ -1344,7 +1496,9 @@
         "Production registered policy, end-to-end authenticated UI and hardware acceptance",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 78,
@@ -1360,7 +1514,9 @@
         "Owner consent UI and telemetry acceptance",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 79,
@@ -1373,7 +1529,9 @@
         "Production registered policy, end-to-end authenticated UI and hardware acceptance",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 80,
@@ -1386,7 +1544,9 @@
         "Production registered policy, end-to-end authenticated UI and hardware acceptance",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 81,
@@ -1402,7 +1562,9 @@
         "Explicit Owner acceptance and combined integration",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 82,
@@ -1418,7 +1580,9 @@
         "User-facing memory lifecycle controls",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 83,
@@ -1434,7 +1598,9 @@
         "Real video device/model verification",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 84,
@@ -1450,7 +1616,9 @@
         "Human-approved outcome UI and model hardware throughput",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 85,
@@ -1463,7 +1631,9 @@
         "Real Owner and Gateway appliance integration and source provenance",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 86,
@@ -1476,7 +1646,9 @@
         "Real Owner and Gateway appliance integration and source provenance",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 87,
@@ -1490,7 +1662,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 88,
@@ -1504,7 +1678,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 89,
@@ -1518,7 +1694,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 90,
@@ -1532,7 +1710,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 91,
@@ -1546,7 +1726,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 92,
@@ -1559,7 +1741,9 @@
         "Approved production composition, cross-PR source lock and Owner verification",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 93,
@@ -1572,7 +1756,9 @@
         "Approved production composition, cross-PR source lock and Owner verification",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 94,
@@ -1586,7 +1772,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 95,
@@ -1602,7 +1790,9 @@
         "Benchmarked long-session/GPU accessibility and integrated #64–#146 release acceptance",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 96,
@@ -1616,7 +1806,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 97,
@@ -1632,7 +1824,9 @@
         "Full older PR and #145/#147 integrated release lock, Owner acceptance",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 98,
@@ -1648,7 +1842,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 99,
@@ -1664,7 +1860,9 @@
         "All-provider authorization negative-path review",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 100,
@@ -1679,7 +1877,9 @@
         "Real end-to-end Gateway approval consumption acceptance",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 101,
@@ -1694,7 +1894,9 @@
         "Owner/Gateway end-to-end isolated execution acceptance",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 102,
@@ -1711,7 +1913,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification."
     },
     {
       "id": 103,
@@ -1725,7 +1929,9 @@
         "Owner device-bound proof and real active route identity verification",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 104,
@@ -1740,7 +1946,9 @@
         "Owner/hardware/backup acceptance",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 105,
@@ -1756,7 +1964,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 106,
@@ -1772,7 +1982,9 @@
         "TPM/UEFI protected boot and host security integration",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 107,
@@ -1787,7 +1999,9 @@
         "End-to-end Gateway completeness proofs and approved incident recovery process",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 108,
@@ -1804,7 +2018,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 109,
@@ -1821,7 +2037,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 110,
@@ -1838,7 +2056,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 111,
@@ -1854,7 +2074,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": null,
+      "subgroup_basis": "Software Group A candidate"
     },
     {
       "id": 112,
@@ -1869,7 +2091,9 @@
         "Cross-client and production owner acceptance",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification."
     },
     {
       "id": 113,
@@ -1883,7 +2107,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 114,
@@ -1899,7 +2125,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 115,
@@ -1916,7 +2144,9 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 116,
@@ -1932,7 +2162,9 @@
         "Full Owner privacy and production acceptance",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     },
     {
       "id": 117,
@@ -1948,7 +2180,125 @@
         "Hardware applicability review not yet recorded",
         "Feature-specific end-to-end acceptance not verified"
       ],
-      "ready_for_completion": false
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
     }
-  ]
+  ],
+  "B1_ids": [
+    8,
+    10,
+    12,
+    21,
+    35,
+    36,
+    37,
+    38,
+    39,
+    41,
+    42,
+    43,
+    52,
+    53,
+    62,
+    65,
+    66,
+    76,
+    102,
+    112
+  ],
+  "B2_ids": [
+    1,
+    3,
+    4,
+    6,
+    7,
+    9,
+    11,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    45,
+    46,
+    48,
+    49,
+    50,
+    51,
+    54,
+    55,
+    56,
+    57,
+    58,
+    60,
+    61,
+    63,
+    64,
+    68,
+    69,
+    70,
+    71,
+    72,
+    74,
+    75,
+    77,
+    78,
+    79,
+    80,
+    81,
+    82,
+    83,
+    84,
+    85,
+    86,
+    87,
+    88,
+    89,
+    90,
+    91,
+    92,
+    93,
+    94,
+    95,
+    96,
+    97,
+    98,
+    99,
+    100,
+    101,
+    103,
+    104,
+    105,
+    106,
+    107,
+    108,
+    109,
+    110,
+    113,
+    114,
+    115,
+    116,
+    117
+  ],
+  "subgroup_semantics": {
+    "B1": "Software-only acceptance candidate. Needs real implementation, authorized E2E and independent review, but no intrinsic physical camera, robot, microphone, live Windows/NTFS/SCM, Docker/QEMU or GPU requirement. Not COMPLETED or owner-approved.",
+    "B2": "Feature's full acceptance includes live device, protected host OS, sandbox/container, installed model/audio/video/GPU or real external system/Owner release boundary. CI unit fixtures alone do not fulfill acceptance."
+  }
 }
