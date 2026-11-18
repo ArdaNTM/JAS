@@ -71,7 +71,9 @@ def policy(engine, cap, decision=AuthorizationDecision.REQUIRE_APPROVAL, princip
         policy_id=f"{principal}.{cap}.{decision.value}", policy_version="1.0.0",
         principal_id=principal, capability_id=cap, operation_id=cap,
         resource_scope=scope,
-        authorization_level=AuthorizationLevel.READ if cap == READ else AuthorizationLevel.USER_APPROVAL_REQUIRED,
+        authorization_level=(AuthorizationLevel.READ if cap == READ else
+                             AuthorizationLevel.EXECUTE if decision is AuthorizationDecision.ALLOW else
+                             AuthorizationLevel.USER_APPROVAL_REQUIRED),
         decision=decision,
     ))
 
