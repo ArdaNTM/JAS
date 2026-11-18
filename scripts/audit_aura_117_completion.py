@@ -80,6 +80,9 @@ def validate(tracker: dict, groups: dict, provenance: dict, root: Path = ROOT) -
         if (entry.get("id") != record["id"] or entry.get("name") != record["name"]
                 or entry.get("group") != expected_group):
             raise ValueError("feature grouping does not match authoritative tracker")
+        expected_marker = f"[ACCEPTANCE_GROUP={expected_group};"
+        if not isinstance(record.get("notes"), str) or not record["notes"].startswith(expected_marker):
+            raise ValueError("authoritative feature tracker missing Group A/B classification")
         ready = eligible_for_completion(record)
         if entry.get("ready_for_completion") is not ready:
             raise ValueError("completion readiness flag not supported by evidence")
