@@ -107,8 +107,8 @@ def test_real_process_is_not_started_until_approval_consumed(tmp_path):
         assert any(a.decision.decision is AuthorizationDecision.REQUIRE_APPROVAL
                    for a in engine.audit_records())
         # A consumed approval must never be usable twice.
-        duplicate = _run(user.launch("owner.test.app", approval_id=receipt))
-        assert duplicate.instance is None
+        with pytest.raises(ApplicationDenied):
+            _run(user.launch("owner.test.app", approval_id=receipt))
         assert len(_run(user.list_owned())) == 1
         stop_pending = _run(user.stop(started.instance.instance_id))
         assert stop_pending.approval_required
