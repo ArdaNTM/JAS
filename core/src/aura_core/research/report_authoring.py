@@ -189,7 +189,7 @@ def author_archived_research_report(
     for archive_id, doi in sources:
         if (type(archive_id) is not str or archive_id in seen or
                 type(doi) is not str or doi not in reviewed):
-            raise ValueError("invalid or duplicate verified archive reference")
+            raise ValueError("unreviewed DOI or duplicate archive reference")
         seen.add(archive_id)
         archived = archive.get(principal_id=principal_id, archive_id=archive_id)
         if archived is None:

@@ -252,7 +252,6 @@ class SQLiteResearchArchive:
             if (type(payload) is not dict or set(payload) !=
                     {"schema", "principal_id", "records"} or
                     payload["schema"] != "aura.research.signed-backup.v1" or
-                    payload["principal_id"] != principal or
                     type(signature) is not str or len(signature) != 64):
                 raise ValueError("backup scope or format mismatch")
             canonical = json.dumps(payload, ensure_ascii=False, sort_keys=True,
@@ -260,6 +259,8 @@ class SQLiteResearchArchive:
             expected = hmac.new(signing_key, canonical, hashlib.sha256).hexdigest()
             if not hmac.compare_digest(signature, expected):
                 raise PermissionError("archive backup signature mismatch")
+            if payload["principal_id"] != principal:
+                raise PermissionError("archive backup principal scope mismatch")
             records = payload["records"]
             if type(records) is not list or len(records) > 200:
                 raise ValueError("backup item limit exceeded")
