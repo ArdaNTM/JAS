@@ -1,4 +1,5 @@
 import asyncio
+from dataclasses import FrozenInstanceError
 
 import pytest
 from fastapi import HTTPException
@@ -42,7 +43,7 @@ def test_rejects_invalid_project_parameters(seed,count):
 def test_game_integrity_detects_mutation():
     a=generate_local_game(31415)
     from dataclasses import replace
-    with pytest.raises(TypeError):
+    with pytest.raises(FrozenInstanceError):
         a.targets[0].radius=999
     assert not verify_local_game(replace(a,digest="0"*64))
 
