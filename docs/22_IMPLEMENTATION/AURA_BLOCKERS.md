@@ -210,3 +210,10 @@ Draft PR #148 exact HEAD `0b15247365ae9f9bd16eaf2f4cc38dc4a0e7e36c`, stacked on 
 - Re-hashing executable before launch is not an atomic hard link/handle pin; executable/argv scripts may change in a privileged deployment. Process-tree confinement, Windows Job Objects, GUI foreground and hostile-child isolation require follow-up.
 - Draft PR #149 and #150 implement the same feature #26 independently on PR #148; do not merge them together without choosing/reconciling one design. Primary tracked candidate is #150.
 - Neither branch proves Owner physical production acceptance, older #64–#111 sealed F2.7 integration, or a global cumulative source lock.
+
+## #27/#33 production and Owner acceptance blockers
+
+- Docker daemon access is privileged and CLI hardening does not by itself prove the sealed F2.7 broker boundary. Do not give AURA unrestricted Docker group/socket access. Require narrow unprivileged broker and independent attestation.
+- #151 live OCI smoke is skipped without a preloaded digest-pinned image. #152 workflow success state branch uses a test replacement for real execution; no actual successful Docker multi-step run attested.
+- Windows Owner/NTFS/broker, image supply-chain signature, CPU/memory measured throughput, atomic cross-process plan creation, in-doubt RUNNING manual recovery, and full #64–#152 cumulative security lock remain absent.
+- #149 remains competing superseded review-only implementation. #150 is canonical #26; never merge #149 alongside #150.

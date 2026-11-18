@@ -114,3 +114,7 @@ The live task panel (#97) only uses EventBus to schedule/observe refreshes. The 
 ## ADR-ENG-028 — application lifecycle must not become a general terminal or PID killer
 
 AURA feature #26 uses existing Core MCP Gateway dispatch and separately atomically consumed Owner approval for each HIGH-risk start/stop. A low-risk listing requires its own explicit read grant. Trusted local application catalog fixes executable path SHA256 and argv; provider only controls directly owned child processes, exposes no arbitrary shell, PID, process enumeration or tokens, and strips AURA secrets from child environment. On Windows, operator catalog activation fails closed until Owner private ACL trust can be independently proven. PR #149 and #150 are competing Draft alternatives, not additive capabilities.
+
+## ADR-ENG-029 — terminal and chained actions have independent approval boundaries
+
+AURA #27 exposes only immutable command catalog IDs into offline Docker sessions with no network/mounts/capabilities, per-command exact-scope HIGH MCP Gateway policy and separately consumed one-shot Owner approval. Host daemon socket remains an unverified high-privilege external boundary. #33 persists up to six principal-bound HMAC-sealed TaskStateMachine steps, with explicit plan and advance Gateway grants. Even after a step succeeds, its successor never runs automatically; nested #27 terminal consent is always separate. Unknown outcomes fail closed and demand Owner recovery. PR #150 canonical / #149 superseded; neither feature is physically accepted or COMPLETED.
