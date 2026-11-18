@@ -16,6 +16,7 @@ TRACKER = ROOT / "docs/22_IMPLEMENTATION/AURA_FEATURE_TRACKER.json"
 GROUPS = ROOT / "docs/22_IMPLEMENTATION/AURA_ACCEPTANCE_GROUPS.json"
 PROVENANCE = ROOT / "docs/22_IMPLEMENTATION/AURA_CORE_PROVENANCE_RECONCILIATION.json"
 SOFTWARE_IDS = frozenset({2, 5, 40, 44, 47, 59, 67, 73, 111})
+B1_IDS = frozenset({8, 10, 12, 21, 35, 36, 37, 38, 39, 41, 42, 43, 52, 53, 62, 65, 66, 76, 102, 112})
 
 
 def read_json(path: Path) -> dict:
@@ -72,13 +73,19 @@ def validate(tracker: dict, groups: dict, provenance: dict, root: Path = ROOT) -
         raise ValueError("software Group A candidate boundary changed without audit")
     if b_ids != [i for i in range(1, 118) if i not in SOFTWARE_IDS]:
         raise ValueError("Group B coverage is not the exact complement")
+    if groups.get("B1_ids") != sorted(B1_IDS):
+        raise ValueError("B1 subgroup candidate boundary changed")
+    b2_ids = sorted(set(b_ids) - B1_IDS)
+    if groups.get("B2_ids") != b2_ids or set(b_ids) != B1_IDS | set(b2_ids):
+        raise ValueError("B1/B2 subgroups do not partition all B features")
     rows = groups.get("records")
     if not isinstance(rows, list) or len(rows) != 117:
         raise ValueError("group records must cover all 117 features")
     for record, entry in zip(features, rows, strict=True):
         expected_group = "A" if record["id"] in SOFTWARE_IDS else "B"
+        subgroup = None if expected_group == "A" else ("B1" if record["id"] in B1_IDS else "B2")
         if (entry.get("id") != record["id"] or entry.get("name") != record["name"]
-                or entry.get("group") != expected_group):
+                or entry.get("group") != expected_group or entry.get("subgroup") != subgroup):
             raise ValueError("feature grouping does not match authoritative tracker")
         expected_marker = f"[ACCEPTANCE_GROUP={expected_group};"
         if not isinstance(record.get("notes"), str) or not record["notes"].startswith(expected_marker):
@@ -110,6 +117,8 @@ def validate(tracker: dict, groups: dict, provenance: dict, root: Path = ROOT) -
     return {
         "group_A": len(SOFTWARE_IDS),
         "group_B": 117 - len(SOFTWARE_IDS),
+        "group_B1": len(B1_IDS),
+        "group_B2": 117 - len(SOFTWARE_IDS) - len(B1_IDS),
         "group_A_complete": sum(f["status"] == "COMPLETED" for f in features if f["id"] in SOFTWARE_IDS),
         "group_B_testing": sum(f["status"] == "TESTING" for f in features if f["id"] not in SOFTWARE_IDS),
         "total_verified_ready": sum(eligible_for_completion(f) for f in features),
@@ -123,7 +132,7 @@ def main() -> int:
         print(f"FAIL: {exc}")
         return 2
     print("PASS: 117-feature A/B inventory and canonical source blob pins validated")
-    print("A={group_A} B={group_B} COMPLETED={group_A_complete} ELIGIBLE={total_verified_ready}".format(**summary))
+    print("A={group_A} B1={group_B1} B2={group_B2} COMPLETED={group_A_complete} ELIGIBLE={total_verified_ready}".format(**summary))
     return 0
 
 
