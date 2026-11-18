@@ -19,7 +19,7 @@ class GameObject:
     z: float
     radius: float
 
-    def as_json(self) -> dict[str, str | float]:
+    def as_json(self) -> dict[str, object]:
         return {"id":self.object_id,"shape":self.shape,
                 "position":[self.x,self.y,self.z],"radius":self.radius}
 
