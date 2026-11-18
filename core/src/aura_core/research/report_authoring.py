@@ -161,3 +161,53 @@ def author_research_report(
         title=headline, sections=tuple(normalized), cited_reviews=used,
         sha256=hashlib.sha256(material.encode("utf-8")).hexdigest(),
     )
+
+
+def author_archived_research_report(
+    *, archive: object, principal_id: str, title: str,
+    sources: tuple[tuple[str, str], ...],
+    citations: tuple[CitationReview, ...],
+) -> SourcedReport:
+    """Create a real DOCX-capable report from integrity-checked archive bytes.
+
+    A caller must independently authenticate the principal and authorize archive
+    access; this pure orchestration does not certify publisher identity.
+    """
+    from aura_core.research.archive import SQLiteResearchArchive
+    if type(archive) is not SQLiteResearchArchive:
+        raise ValueError("existing scoped archive required")
+    if type(principal_id) is not str or not principal_id.strip() or len(principal_id) > 200:
+        raise ValueError("authenticated principal must be supplied by trusted caller")
+    if type(sources) is not tuple or not 1 <= len(sources) <= 20:
+        raise ValueError("1..20 reviewed archive references required")
+    reviewed = {item.doi for item in citations if type(item) is CitationReview
+                and not item.conflicting_metadata}
+    if len(reviewed) != len(citations):
+        raise ValueError("conflicting or duplicate cited DOI")
+    seen: set[str] = set()
+    sections: list[ReportSection] = []
+    for archive_id, doi in sources:
+        if (type(archive_id) is not str or archive_id in seen or
+                type(doi) is not str or doi not in reviewed):
+            raise ValueError("invalid or duplicate verified archive reference")
+        seen.add(archive_id)
+        archived = archive.get(principal_id=principal_id, archive_id=archive_id)
+        if archived is None:
+            raise PermissionError("archive source is not visible in this principal scope")
+        content = archived["content"]
+        if type(content) is not str or not content.strip() or len(content) > 7000:
+            raise ValueError("archive source must be bounded nonempty text")
+        # Untrusted archive text is quoted/attributed, never executed or labeled
+        # a publisher-authenticated DOI just because it mentions the identifier.
+        digest = hashlib.sha256(content.encode("utf-8")).hexdigest()
+        if digest != archived["content_sha256"]:
+            raise ValueError("archive data changed during authoring")
+        sections.append(ReportSection(
+            heading="Archived source " + str(len(sections) + 1),
+            body=("Archive SHA256: " + digest + "\nSource URL: " +
+                  archived["url"] + "\nUntrusted quotation: " + content),
+            cited_dois=(doi,),
+        ))
+    return author_research_report(
+        title=title, sections=tuple(sections), citations=citations)
+

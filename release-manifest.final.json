@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-18T18:01:17.355Z",
-  "git_commit": "c5c39a5cb814bd5d27239ad0e51b191bbd46194b",
+  "generated_at": "2026-11-18T19:37:45.054Z",
+  "git_commit": "bafe8da96068124c6b111eb78dd5c3cf7fd60502",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:ebcbd0f55845a04119563d976d72951dc506e85c763a8aba32417a4787041ad9",
+  "release_digest": "sha256:a282008cb69678a6ae99f02bc27c0b3bf54f2c05c790522bb7d3c377b153ccf3",
   "file_count": 440,
   "files": [
     {
@@ -690,7 +690,7 @@
     },
     {
       "path": "core/src/aura_core/application/task_state_machine.py",
-      "sha256": "41f393ee61f6f3aaf79c263020de203cae5637e9a8ab108075b9cdd6b9e4131e"
+      "sha256": "b8ca8d8cd867d1a88640733e8dd2e7d1a17d460e29a9aa4d1359cfaf2956828b"
     },
     {
       "path": "core/src/aura_core/application/tasks.py",
@@ -1490,7 +1490,7 @@
     },
     {
       "path": "core/src/aura_core/research/archive.py",
-      "sha256": "59a3afc11800cbd6c3cccf2e52e587558680acb82b10b5a3bcecda53b6c0ed99"
+      "sha256": "b0f7daada9f633de4218e6c73a24c619a5a9cb7ec6f377d5a613df1eb8584729"
     },
     {
       "path": "core/src/aura_core/research/citations.py",
@@ -1526,7 +1526,7 @@
     },
     {
       "path": "core/src/aura_core/research/report_authoring.py",
-      "sha256": "a9df72ee0baa9ee1aac76d24dca80ca5253969bf4fcbbcdb9e45adb5a93f31dd"
+      "sha256": "31399f2cb17a7670a2550e0b2993bf28f325a866f8a746c73b8ac875c118c2aa"
     },
     {
       "path": "core/src/aura_core/research/scientific_journal.py",

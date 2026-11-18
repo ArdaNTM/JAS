@@ -261,6 +261,56 @@ class TaskStateMachine:
             "authorization_checked": False,
         }
 
+
+    def goal_progress(
+        self, *, principal_id: str, goal: str, limit: int = 100,
+    ) -> dict[str, Any]:
+        """Authoritative goal progress derived from persisted task transitions.
+
+        Task completion is counted ONLY for actual SUCCEEDED state, never an LLM
+        claim. This storage operation is not an identity/authentication gateway.
+        """
+        if (type(principal_id) is not str or not principal_id.strip()
+                or len(principal_id) > 256 or any(ord(c) < 32 for c in principal_id)):
+            raise ValueError("invalid goal principal")
+        if (type(goal) is not str or not goal.strip() or len(goal) > 4000
+                or any(ord(c) < 32 for c in goal)):
+            raise ValueError("invalid goal")
+        if type(limit) is not int or not 1 <= limit <= 100:
+            raise ValueError("goal progress limit must be 1..100")
+        with self._lock:
+            count = self._connection.execute(
+                "SELECT COUNT(*) FROM orchestration_tasks WHERE principal_id=? AND goal=?",
+                (principal_id, goal),
+            ).fetchone()[0]
+            if count > limit:
+                raise ValueError("goal task count exceeds bounded projection")
+            rows = self._connection.execute(
+                """SELECT task_id,state,revision,updated_at,deadline
+                   FROM orchestration_tasks WHERE principal_id=? AND goal=?
+                   ORDER BY created_at,task_id LIMIT ?""",
+                (principal_id, goal, limit),
+            ).fetchall()
+        counts = {state.value: 0 for state in TaskState}
+        steps = []
+        for row in rows:
+            state = TaskState(row["state"])
+            counts[state.value] += 1
+            steps.append({
+                "task_id": row["task_id"], "state": state.value,
+                "revision": row["revision"], "updated_at": row["updated_at"],
+                "deadline": row["deadline"], "untrusted": True,
+            })
+        complete = counts[TaskState.SUCCEEDED.value]
+        return {
+            "goal": goal, "total": len(rows), "succeeded": complete,
+            "counts": counts, "tasks": steps,
+            "percent_complete": (complete * 100 // len(rows)) if rows else 0,
+            "claimed_completion_verified": False,
+            "completion_derived_from_db": True,
+            "actions_executed": False,
+        }
+
     def transition(
         self,
         task_id: str,

@@ -6,6 +6,9 @@ untrusted stored data and must not grant runtime or policy authority.
 from __future__ import annotations
 
 import hashlib
+import hmac
+import json
+import math
 import sqlite3
 import time
 from pathlib import Path
@@ -185,6 +188,124 @@ class SQLiteResearchArchive:
                 "untrusted": True, "verified_source": False,
             })
         return tuple(output)
+
+
+    def export_signed_backup(
+        self, *, principal_id: str, signing_key: bytes,
+        confirmed: bool = False, max_snapshots: int = 200,
+    ) -> bytes:
+        """Bounded, integrity-checked principal backup; no filesystem/network IO."""
+        principal = _scope(principal_id)
+        if confirmed is not True:
+            raise PermissionError("explicit principal backup approval required")
+        if type(signing_key) is not bytes or len(signing_key) < 32:
+            raise PermissionError("trusted backup HMAC key >=32 bytes required")
+        if type(max_snapshots) is not int or not 1 <= max_snapshots <= 200:
+            raise ValueError("invalid backup item limit")
+        with self._connect() as db:
+            count = db.execute(
+                "SELECT COUNT(*) FROM research_snapshots WHERE principal_id=?",
+                (principal,),
+            ).fetchone()[0]
+            if count > max_snapshots:
+                raise ValueError("backup exceeds snapshot count limit")
+            rows = db.execute("""SELECT archive_id,url,content_type,content,
+                content_sha256,created_at FROM research_snapshots
+                WHERE principal_id=? ORDER BY archive_id""", (principal,)).fetchall()
+        records = []
+        for row in rows:
+            body = row["content"]
+            if (type(body) is not str or len(body) > self.max_chars or
+                    hashlib.sha256(body.encode("utf-8")).hexdigest() != row["content_sha256"]):
+                raise ValueError("archive backup digest mismatch")
+            records.append(dict(row))
+        data = {"schema": "aura.research.signed-backup.v1",
+                "principal_id": principal, "records": records}
+        raw = json.dumps(data, ensure_ascii=False, sort_keys=True,
+                         separators=(",", ":"), allow_nan=False).encode("utf-8")
+        if len(raw) > 3_000_000:
+            raise ValueError("backup exceeds byte budget")
+        signature = hmac.new(signing_key, raw, hashlib.sha256).hexdigest()
+        return json.dumps(
+            {"payload": data, "hmac_sha256": signature},
+            ensure_ascii=False, sort_keys=True, separators=(",", ":"),
+        ).encode("utf-8")
+
+    def restore_signed_backup(
+        self, *, principal_id: str, backup: bytes, signing_key: bytes,
+        confirmed: bool = False,
+    ) -> int:
+        """Atomic, fail-closed restore of a signed backup into one principal."""
+        principal = _scope(principal_id)
+        if confirmed is not True:
+            raise PermissionError("explicit backup restore approval required")
+        if type(signing_key) is not bytes or len(signing_key) < 32:
+            raise PermissionError("trusted backup key >=32 bytes required")
+        if type(backup) is not bytes or len(backup) > 3_100_000:
+            raise ValueError("invalid bounded signed archive backup")
+        try:
+            envelope = json.loads(backup.decode("utf-8"))
+            if type(envelope) is not dict or set(envelope) != {"payload", "hmac_sha256"}:
+                raise ValueError("invalid backup envelope")
+            payload = envelope["payload"]
+            signature = envelope["hmac_sha256"]
+            if (type(payload) is not dict or set(payload) !=
+                    {"schema", "principal_id", "records"} or
+                    payload["schema"] != "aura.research.signed-backup.v1" or
+                    payload["principal_id"] != principal or
+                    type(signature) is not str or len(signature) != 64):
+                raise ValueError("backup scope or format mismatch")
+            canonical = json.dumps(payload, ensure_ascii=False, sort_keys=True,
+                                   separators=(",", ":"), allow_nan=False).encode("utf-8")
+            expected = hmac.new(signing_key, canonical, hashlib.sha256).hexdigest()
+            if not hmac.compare_digest(signature, expected):
+                raise PermissionError("archive backup signature mismatch")
+            records = payload["records"]
+            if type(records) is not list or len(records) > 200:
+                raise ValueError("backup item limit exceeded")
+            seen = set()
+            values = []
+            for row in records:
+                if type(row) is not dict or set(row) != {
+                    "archive_id", "url", "content_type", "content",
+                    "content_sha256", "created_at",
+                }:
+                    raise ValueError("invalid backup snapshot record")
+                ident, url, body = row["archive_id"], row["url"], row["content"]
+                digest, ctype, created = (
+                    row["content_sha256"], row["content_type"], row["created_at"])
+                if (type(ident) is not str or len(ident) != 64 or
+                        any(ch not in "0123456789abcdef" for ch in ident) or
+                        ident in seen or type(body) is not str or
+                        not 1 <= len(body) <= self.max_chars or
+                        type(url) is not str or not 1 <= len(url) <= 2048 or
+                        any(ord(ch) < 33 or ord(ch) == 127 for ch in url) or
+                        type(ctype) is not str or
+                        ctype.lower().split(";", 1)[0].strip() not in
+                        {"text/plain", "text/html", "application/json"} or
+                        type(created) not in (int, float) or not math.isfinite(created)
+                        or created < 0 or created > time.time() + 60):
+                    raise ValueError("invalid snapshot metadata")
+                parsed = urlsplit(url)
+                if (parsed.scheme.lower() not in {"http", "https"} or
+                        not parsed.hostname or parsed.username is not None or
+                        parsed.password is not None):
+                    raise ValueError("invalid backup source URL")
+                actual = hashlib.sha256(body.encode("utf-8")).hexdigest()
+                expected_id = hashlib.sha256(
+                    (principal + "\0" + url + "\0" + actual).encode("utf-8")
+                ).hexdigest()
+                if digest != actual or ident != expected_id:
+                    raise ValueError("backup record content integrity mismatch")
+                seen.add(ident)
+                values.append((principal, ident, url, ctype, body, digest, created))
+        except (UnicodeError, json.JSONDecodeError, TypeError, KeyError, OverflowError) as exc:
+            raise ValueError("malformed signed backup") from exc
+        with self._connect() as db:
+            db.executemany("""INSERT OR IGNORE INTO research_snapshots
+                (principal_id,archive_id,url,content_type,content,content_sha256,created_at)
+                VALUES(?,?,?,?,?,?,?)""", values)
+        return len(values)
 
     def prune_before(
         self, *, principal_id: str, cutoff_timestamp: float,
