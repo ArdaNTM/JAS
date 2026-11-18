@@ -294,3 +294,11 @@ PR #158 source commit: `6bb6b7e8671570b428104f5929af79d525d52e54`.
   `AURA_ACCEPTANCE_GROUPS.json.ready_for_completion=true`. Neither
   full #47 nor #73 capability has those evidentiary conditions today.
   The other seven Group A entries are unchanged; B1/B2 remain `TESTING`.
+
+## 2026-11-19 — Owner-frozen v1 software acceptance and deferred full-product requirements
+
+Owner explicitly chooses the existing bounded `technical_goal` as v1, requires real Core implementations, actual MCPGateway/PermissionEngine for tool dispatch and positive/negative CI, and accepts internal code/security review for this single-developer project. Exact code commit `386ec256e829f2bc070aaab7d3f40105311adfca`. Core Assurance [44419623004](https://github.com/ArdaNTM/JAS/actions/runs/44419623004): 2259 PASS / 14 SKIP; Unified Acceptance [44419623143](https://github.com/ArdaNTM/JAS/actions/runs/44419623143): 10 E2E + 9 governance PASS; 440-file Release Lock PASS sha256:c7224a6685a1461bb30b33d2d3303f0a2951e066c580de6b8940c19caf61c768.
+
+**Frozen v1 acceptance:** A IDs `2,5,40,44,47,59,67,73,111` (9) and first ten B1 IDs `8,10,12,21,35,36,37,38,39,41` (10): `status=COMPLETED`, `assessment=VERIFIED`, `acceptance=PASS`, `security_review=PASS`, `test_results=PASS`, `license_review/hardware_review=NOT_APPLICABLE`, `missing_components=[]`, `blockers=[]`, `ready_for_completion=true`. `PASS` (not `VERIFIED`) is the strict acceptance/security validator token. Historical product acceptance records are preserved in this review and original unimplemented requirements in feature `known_limitations`; shortened per-feature notes remove stale duplicate CI observations.
+
+**Critical scope limits:** B1 #39 is DOCX-only (not PDF/OCR); B1 #35 is MCP-authorized offline multiquery without a live network research provider; #47 TS/JS static imports are heuristic, not compiler-certified; #73 reviewed DOI metadata matching does NOT authenticate publishers or verify experiment ethics; #59 HMAC broker receipt is not independently recipient signed. Production UI, external retrieval/SSRF, encryption/key custody, scientific peer review, signed live Owner deployment evidence are *not* implemented or asserted. No F2.7, B2 or remaining B1 changes. **Projected** `A=9 B1=20 B2=88 COMPLETED=9 ELIGIBLE=19` / 19 COMPLETED 98 TESTING, pending exact-head CI validator.
