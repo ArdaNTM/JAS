@@ -3,9 +3,9 @@
   "version": "1.0.0-final",
   "status": "production-locked",
   "generated_at": "2026-11-18T06:59:00.000Z",
-  "git_commit": "632c996e04bbec0760ed19e1e1c197e17243f526",
+  "git_commit": "904a1c2584d8f91cf48bd657de5ddb9b4fa30d3b",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:5219a9295db66fb910ed2e39eeb77d13241dd8b67eb723f5cdf4dd74985056d0",
+  "release_digest": "sha256:21ee5b3fc81fff4f0b76046e520eb44ed4256b65bb9c72788f8d915bb00000d6",
   "file_count": 312,
   "files": [
     {
@@ -230,11 +230,11 @@
     },
     {
       "path": "core/src/aura_core/application/context_synthesizer.py",
-      "sha256": "216819109af92575f5053251a039dc4192d2adb79cb7720f97f85b185174b19e"
+      "sha256": "268e607c7ed4ce787a28a4cb121c60862fe66919731b9d441d7c60a3e7f73a39"
     },
     {
       "path": "core/src/aura_core/application/cross_capability_reasoning.py",
-      "sha256": "ae0b9a2d925f6e20b27b50aa0e904d53a5362da368497125c009935bbb40f5f9"
+      "sha256": "3fb333132162a4fcc91270c51dcfa774f803efcf392af69ed6b546cac6fe8fb4"
     },
     {
       "path": "core/src/aura_core/application/desktop_awareness.py",
@@ -326,7 +326,7 @@
     },
     {
       "path": "core/src/aura_core/application/jarvis_intelligence.py",
-      "sha256": "6db13a924ada4a57b4df83427e47eea227e0d5cb935614075f936688a9fcb4a5"
+      "sha256": "55a7e6fc6864bc1c361216226276d308c0e4214b91fd25f6696f74d6c603b0c4"
     },
     {
       "path": "core/src/aura_core/application/language_learning.py",
@@ -1106,7 +1106,7 @@
     },
     {
       "path": "core/src/aura_core/research/mcp_source.py",
-      "sha256": "131fb5fdaf97a866b235714bee83667b053bfc1ea0590e51b73fbcf7be33022b"
+      "sha256": "f6c9f81d009f0c5cc675b7d7986bf4fe2028b2b630e7e5ce0d6e44617bfe86f4"
     },
     {
       "path": "core/src/aura_core/research/multiquery.py",
