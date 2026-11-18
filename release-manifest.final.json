@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-17T23:57:15.571Z",
-  "git_commit": "732aaa53b658023522307564b30611eb8756a1c4",
+  "generated_at": "2026-11-18T01:27:39.682Z",
+  "git_commit": "72026b9fda392a2258f1eaff5a514604e917e38e",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:b03cdfcd594751959ed43a1d619e3f13ab2bd583a0b74a94e69d72b7f99e541d",
-  "file_count": 261,
+  "release_digest": "sha256:262b06bd84883ee5ffc8626a38b0e1214ce43f26a3b6c3e1f7a2730f6aadfe15",
+  "file_count": 262,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -301,6 +301,10 @@
       "sha256": "96c8c169c33bfa6155cdc73847da974b28a0fe030eddc7efaac7147e54def294"
     },
     {
+      "path": "core/src/aura_core/application/live_task_panel.py",
+      "sha256": "baf6d47e09388bd868790c2d3ba86bf3c70b5c0a11d4c9b4fb1021a562deb8b8"
+    },
+    {
       "path": "core/src/aura_core/application/local_object_detection.py",
       "sha256": "77c65c22af1ea8f7c70071bc541fb1939298cf8aca985b1c31ac340adf0b4f6f"
     },
@@ -330,7 +334,7 @@
     },
     {
       "path": "core/src/aura_core/application/postgresql_task_state_machine.py",
-      "sha256": "9e85a5938a1b2a6224d84cacd795bd1f32be496a564e5d8f8adc5372a38e3e69"
+      "sha256": "f9ed67f38d4775b34e959f7880ccd8040fa932a7eac1de019005c99dd24b9db3"
     },
     {
       "path": "core/src/aura_core/application/predictive_prefetch.py",
@@ -410,7 +414,7 @@
     },
     {
       "path": "core/src/aura_core/application/task_state_machine.py",
-      "sha256": "efc5d39512ff3f7cfcb94ab8a8be740edb5f5cc77fa1480965ea7997a3205224"
+      "sha256": "f555772d8468119bc1472c23bdda8912a8bfe980f819085f421fca1cfd3f39fe"
     },
     {
       "path": "core/src/aura_core/application/tasks.py",
@@ -698,7 +702,7 @@
     },
     {
       "path": "core/src/aura_core/main.py",
-      "sha256": "0bfc131c8ff706d5eeec0fdf4130c9b6ee6e8cdf7e9ee95f9ddb0b2633f99ab6"
+      "sha256": "865163e3f485cde9af07c301c5fbf2bf95703d2063995d181e12af0be5e1d470"
     },
     {
       "path": "core/src/aura_core/mcp/__init__.py",
