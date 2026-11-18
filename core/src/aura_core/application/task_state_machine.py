@@ -197,6 +197,22 @@ class TaskStateMachine:
             ).fetchall()
         return tuple(self._record(row) for row in rows)
 
+    def list_tasks_limited(
+        self, *, principal_id: str, limit: int = 64,
+    ) -> tuple[TaskStateRecord, ...]:
+        """Bounded, principal-scoped SQL read for the live task status panel."""
+        if not isinstance(principal_id, str) or not principal_id.strip():
+            raise ValueError("Principal is required")
+        if type(limit) is not int or not 1 <= limit <= 64:
+            raise ValueError("Task panel limit must be between 1 and 64")
+        with self._lock:
+            rows = self._connection.execute(
+                "SELECT * FROM orchestration_tasks WHERE principal_id = ? "
+                "ORDER BY updated_at DESC, task_id DESC LIMIT ?",
+                (principal_id, limit),
+            ).fetchall()
+        return tuple(self._record(row) for row in rows)
+
     def transition(
         self,
         task_id: str,
