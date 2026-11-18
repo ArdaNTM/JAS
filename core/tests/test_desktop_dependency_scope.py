@@ -34,3 +34,17 @@ def test_windows_ci_audits_runtime_and_reports_dev_risks() -> None:
     assert contents.count("npm ls picomatch --all") == 2
     assert contents.count("npm audit --omit=dev --audit-level=high") == 2
     assert contents.count("npm audit --audit-level=high") == 2
+
+
+def test_security_workflows_preserve_production_audit_and_report_dev_advisories() -> None:
+    paths = [
+        ROOT / ".github/workflows/aura-secure-evolution.yml",
+        ROOT / ".github/workflows/aura-physical-trust-acceptance.yml",
+    ]
+    expected = [1, 2]
+    for path, n in zip(paths, expected, strict=True):
+        text = path.read_text(encoding="utf-8")
+        assert text.count("npm ls picomatch --all") == n
+        assert text.count("npm audit --omit=dev --audit-level=high") == n
+        assert text.count("npm audit --audit-level=high") == n
+        assert text.count("continue-on-error: true") >= n

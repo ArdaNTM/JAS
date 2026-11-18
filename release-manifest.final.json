@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-18T16:29:25.763Z",
-  "git_commit": "e61ea6b812c315f5d0d7d2b5af20a2dd8b5a9493",
+  "generated_at": "2026-11-18T16:35:34.539Z",
+  "git_commit": "97970d65ec139933abf5a420de3d8e4bf734e670",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:82480ee30563bbf59a647d9586a7dc0a1834c1c14b3cea984222fd03a5274b30",
+  "release_digest": "sha256:8abed32da6e4b52f7f80dea68a758af64bdfae6bb9d48e51fa23efb072516f0c",
   "file_count": 440,
   "files": [
     {
@@ -22,7 +22,7 @@
     },
     {
       "path": ".github/workflows/aura-physical-trust-acceptance.yml",
-      "sha256": "c777a84ef17c8b1e36d067c5150a1d2bb19ffbe78083280afb2684bf30c16532"
+      "sha256": "1d2961fa5ffcd8776a8495da356168399505adb4f4cee04ec291e28e9de2ca05"
     },
     {
       "path": ".github/workflows/aura-real-hardware-osworld.yml",
@@ -30,7 +30,7 @@
     },
     {
       "path": ".github/workflows/aura-secure-evolution.yml",
-      "sha256": "f80e01e5008abfae79f1850fc157020c840bf553c3be5d86fa04dfff81b31d6f"
+      "sha256": "4350c56fe67b4f550e9c1fb92dca6c7d5e64b52ec428fed0e6076705e2c1e672"
     },
     {
       "path": ".github/workflows/aura-stage-c-assurance.yml",
