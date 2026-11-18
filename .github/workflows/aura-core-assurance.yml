@@ -50,7 +50,7 @@ jobs:
       - name: Compile Core sources and tests
         run: uv run python -m compileall -q src tests
       - name: Run Core unit tests
-        run: uv run pytest -q
+        run: uv run pytest -q --tb=short
       - name: Validate 117-feature engineering acceptance ledger
         run: uv run python ../scripts/validate_aura_feature_tracker.py
       - name: Verify complete production release lock
