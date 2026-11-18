@@ -50,3 +50,9 @@ untrusted manifest rejection.
   Fixed arguments referencing mutable script/config files need separate
   trusted provenance. Native owner review UI/real desktop must be tested.
 - No F2.7 change, no main push, no merge, no COMPLETED declaration.
+
+## Additional validated safety constraints
+
+- Child subprocess environment uses a narrow fixed allowlist (system path/home/locale variables only), so AURA provider keys, API bearer tokens and database credentials are not inherited. A real subprocess negative test checks the credential canary is absent.
+- At most eight child processes may be running at one time across all principals, independent of the eight-profile registration cap. A process launch is never retried automatically after a denial.
+- No claim of Windows target acceptance: the opt-in manifest is deliberately blocked there until owner ACL attestation is implemented. This remains a PARTIAL implementation.
