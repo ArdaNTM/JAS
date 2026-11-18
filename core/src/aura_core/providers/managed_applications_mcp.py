@@ -12,7 +12,11 @@ import json
 import os
 import re
 import subprocess
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, ConfigDict
+from aura_core.security.http_auth import authenticated_principal
 from pathlib import Path
 from threading import RLock
 from uuid import uuid4
@@ -375,3 +379,76 @@ class GovernedManagedApplications:
 
     async def stop(self, app_id: str, *, approval_id: str | None = None) -> ManagedAppOutcome:
         return await self._invoke(_STOP, "stop_managed_application", app_id, approval_id)
+
+
+managed_applications_router = APIRouter(tags=["governed-managed-applications"])
+
+
+class ApprovalReference(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    approval_id: str | None = None
+
+
+def _http_reader(request: Request, principal_id: str) -> GovernedManagedApplications:
+    service = getattr(request.app.state, "managed_applications", None)
+    if not isinstance(service, GovernedManagedApplications):
+        raise HTTPException(status_code=503, detail="Managed applications disabled")
+    if principal_id != service.principal_id:
+        raise HTTPException(status_code=403, detail="Managed app principal mismatch")
+    return service
+
+
+def _http_response(outcome: ManagedAppOutcome | tuple[ManagedAppOutcome, ...]) -> JSONResponse:
+    if isinstance(outcome, tuple):
+        payload = {"applications": [asdict(x) for x in outcome], "read_only": True}
+        status = 200
+    else:
+        payload = asdict(outcome)
+        status = 202 if outcome.state == "approval_required" else 200
+    return JSONResponse(
+        status_code=status, content=payload,
+        headers={"Cache-Control": "private, no-store",
+                 "Content-Security-Policy": "default-src 'none'; script-src 'none'",
+                 "X-Content-Type-Options": "nosniff"},
+    )
+
+
+@managed_applications_router.get("/api/runtime/managed-apps")
+async def http_managed_applications(
+    request: Request, principal_id: str = Depends(authenticated_principal),
+) -> JSONResponse:
+    reader = _http_reader(request, principal_id)
+    try:
+        return _http_response(await reader.read())
+    except ManagedAppDenied as exc:
+        raise HTTPException(status_code=403, detail="Managed app read denied") from exc
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="Managed app service unavailable") from exc
+
+
+@managed_applications_router.post("/api/runtime/managed-apps/{app_id}/start")
+async def http_start_managed_application(
+    app_id: str, body: ApprovalReference, request: Request,
+    principal_id: str = Depends(authenticated_principal),
+) -> JSONResponse:
+    reader = _http_reader(request, principal_id)
+    try:
+        return _http_response(await reader.start(app_id, approval_id=body.approval_id))
+    except (ManagedAppDenied, ValueError) as exc:
+        raise HTTPException(status_code=403, detail="Managed start denied") from exc
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="Managed start unavailable") from exc
+
+
+@managed_applications_router.post("/api/runtime/managed-apps/{app_id}/stop")
+async def http_stop_managed_application(
+    app_id: str, body: ApprovalReference, request: Request,
+    principal_id: str = Depends(authenticated_principal),
+) -> JSONResponse:
+    reader = _http_reader(request, principal_id)
+    try:
+        return _http_response(await reader.stop(app_id, approval_id=body.approval_id))
+    except (ManagedAppDenied, ValueError) as exc:
+        raise HTTPException(status_code=403, detail="Managed stop denied") from exc
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="Managed stop unavailable") from exc
