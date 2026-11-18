@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-18T19:42:09.875Z",
-  "git_commit": "4d71740b0e22bb41d2ad0471ac38043ca2441442",
+  "generated_at": "2026-11-18T21:56:13.929Z",
+  "git_commit": "238c4eb0d74fbd772a3c691b859acb73c53a9f76",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:561336728ba0e9f7c1070e7339bb9c19d43ba9a350ff9e00c0efd501441bca3b",
+  "release_digest": "sha256:4fb74e38b53bcd79c0829250dac6309b8957835a5a2dbf0f501f9b79fb51c5d4",
   "file_count": 440,
   "files": [
     {
@@ -394,7 +394,7 @@
     },
     {
       "path": "core/src/aura_core/application/code_insight.py",
-      "sha256": "783ae5097ad99f5165f57fdd1de5559013d55eea89f1fa88f3487270740253da"
+      "sha256": "e57f66510786d9110901ed6af227708a61627cdcebd6d3807aa75784e7e1867e"
     },
     {
       "path": "core/src/aura_core/application/composition.py",
@@ -1582,7 +1582,7 @@
     },
     {
       "path": "core/src/aura_core/science/experiment_dataset.py",
-      "sha256": "99760b07590778a4c2cea7ebe48c7d6ba420d79ed28b6f7ebce840b47f3169bf"
+      "sha256": "ae883034c3e1335edcc35ba61b21b7f0e31d7b211c6e2465463fee94d5ef5526"
     },
     {
       "path": "core/src/aura_core/science/linear_model.py",

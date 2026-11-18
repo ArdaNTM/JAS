@@ -15,6 +15,7 @@ from typing import Any
 from aura_core.data_analysis.tabular import parse_csv_table
 from aura_core.science.analysis import describe_sample, compare_independent_samples
 from aura_core.science.model_uncertainty import fit_ols_with_uncertainty
+from aura_core.application.experiment_design import ExperimentDesign, design_balanced_experiment
 
 _METHOD = "aura.exp.descriptive.v1"
 
@@ -121,4 +122,115 @@ def render_experiment_markdown(report: ExperimentReport) -> str:
         f"Count: {report.sample_count}\n\n"
         f"JSON results: " + json.dumps(report.result, sort_keys=True, allow_nan=False)
         + "\n"
+    )
+
+
+
+@dataclass(frozen=True, slots=True)
+class DesignLinkedExperiment:
+    """Report with reproducible simulated-assignment checks, not a validity seal."""
+
+    report: ExperimentReport
+    design_sha256: str
+    linkage_sha256: str
+    design_record_consistent: bool = True
+    independent_scientific_review: bool = False
+    human_subject_consent_verified: bool = False
+    actual_randomization_verified: bool = False
+    source_authenticated: bool = False
+
+
+def analyze_experiment_with_design(
+    csv_text: str, *, plan: ExperimentDesign, study_id: str,
+    measure_column: str = "measure", group_column: str = "group",
+    unit_column: str = "unit_id",
+) -> DesignLinkedExperiment:
+    """Validate exact row-to-planned simulated unit mapping before analysis.
+
+    This checks a caller-provided CSV against a deterministic offline *plan*.
+    It does NOT prove a real-world randomization or experimental legitimacy.
+    """
+    if type(plan) is not ExperimentDesign:
+        raise ValueError("validated experiment plan required")
+    validated = design_balanced_experiment(
+        plan.hypothesis, sample_size=plan.sample_size, seed=plan.seed)
+    if plan != validated:
+        raise ValueError("tampered or non-canonical experiment design")
+    if type(csv_text) is not str:
+        raise ValueError("CSV source must be string")
+    table = parse_csv_table(csv_text)
+    if not all(type(col) is str and col in table.columns
+               for col in (measure_column, group_column, unit_column)):
+        raise ValueError("unit/group/measure columns required")
+    if len(set((measure_column, group_column, unit_column))) != 3:
+        raise ValueError("experiment columns must be distinct")
+    if len(table.rows) != plan.sample_size:
+        raise ValueError("observation count differs from recorded study plan")
+    unit_index, group_index = (
+        table.columns.index(unit_column), table.columns.index(group_column))
+    recorded = {}
+    for row in table.rows:
+        unit, group = row[unit_index], row[group_index]
+        if not unit or unit in recorded:
+            raise ValueError("duplicate or missing experiment unit identity")
+        recorded[unit] = group
+    intended = {item.simulated_unit_id: item.group for item in plan.allocations}
+    if recorded != intended:
+        raise ValueError("experiment allocation does not match recorded design")
+    report = analyze_experiment_csv(
+        csv_text, study_id=study_id, measure_column=measure_column,
+        group_column=group_column)
+    if report.sample_count != plan.sample_size:
+        raise ValueError("experiment sample count mismatch")
+    material = json.dumps(
+        {"report": report.report_sha256, "plan": plan.plan_sha256,
+         "study_id": study_id},
+        sort_keys=True, separators=(",", ":"), ensure_ascii=False,
+    ).encode("utf-8")
+    return DesignLinkedExperiment(
+        report=report, design_sha256=plan.plan_sha256,
+        linkage_sha256=hashlib.sha256(material).hexdigest())
+
+
+async def analyze_governed_experiment(
+    *, gateway: object, request: object, principal_id: str,
+    plan: ExperimentDesign, study_id: str,
+) -> DesignLinkedExperiment:
+    """Read structured CSV through an actual authorized MCP Gateway dispatch.
+
+    The provider response is untrusted sample data. The caller supplies the
+    pre-reviewed plan; this method confers NO scientific or consent approval.
+    """
+    from aura_core.kernel.permissions import AuthorizationDecision
+    from aura_core.mcp.gateway import MCPGateway, MCPGatewayRequest
+    if (not isinstance(gateway, MCPGateway) or
+        not isinstance(request, MCPGatewayRequest) or
+        type(principal_id) is not str or request.principal_id != principal_id):
+        raise PermissionError("authenticated principal and real MCP Gateway required")
+    result = await gateway.invoke(request)
+    if result.decision is not AuthorizationDecision.ALLOW:
+        raise PermissionError("experiment dataset retrieval denied by MCP Gateway")
+    data = result.result
+    if not isinstance(data, dict):
+        data = getattr(data, "structured_content", None) or getattr(
+            data, "structuredContent", None)
+    if type(data) is not dict or set(data) != {"csv_text"}:
+        raise ValueError("experiment source must be structured CSV content")
+    return analyze_experiment_with_design(
+        data["csv_text"], plan=plan, study_id=study_id)
+
+
+
+def render_design_linked_experiment_markdown(linked: DesignLinkedExperiment) -> str:
+    """Reproducible report of measured data and recorded plan; no approval claim."""
+    if type(linked) is not DesignLinkedExperiment:
+        raise ValueError("verified report wrapper required")
+    return (
+        render_experiment_markdown(linked.report)
+        + "\nRecorded experiment plan SHA256: " + linked.design_sha256
+        + "\nLinkage SHA256: " + linked.linkage_sha256
+        + "\nDesign-to-observation labels checked: "
+        + ("yes" if linked.design_record_consistent else "no")
+        + "\nIndependent scientific review, actual randomization and "
+          "participant consent: NOT VERIFIED.\n"
     )

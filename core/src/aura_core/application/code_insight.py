@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import ast
 import hashlib
+import json
 import re
 from dataclasses import dataclass
 
@@ -170,3 +171,136 @@ def render_python_api_markdown(report: PythonModuleReport) -> str:
         for item in report.call_findings
     )
     return "\n".join(lines) + "\n"
+
+
+
+@dataclass(frozen=True, slots=True)
+class PythonRepositoryGraph:
+    """Parser-derived internal module dependencies, not compiler certification."""
+
+    module_ids: tuple[str, ...]
+    local_edges: tuple[tuple[str, str], ...]
+    missing_local_modules: tuple[tuple[str, str], ...]
+    cycles: tuple[tuple[str, ...], ...]
+    graph_sha256: str
+    inspected_source_count: int
+    untrusted: bool = True
+    code_executed: bool = False
+    cross_language_compiler_verified: bool = False
+    authorization_checked: bool = False
+
+
+def analyze_python_repository(sources: dict[str, str]) -> PythonRepositoryGraph:
+    """Build bounded cross-file graph using real Python AST, never import/exec.
+
+    Fully qualified Python-module IDs must be supplied from an already
+    authorized repository reader. Relative import resolution is intentionally
+    conservative (not a package/compiler-level verdict).
+    """
+    if type(sources) is not dict or not 1 <= len(sources) <= 64:
+        raise ValueError("repository requires 1..64 bounded Python modules")
+    if any(type(name) is not str or not _MODULE.fullmatch(name)
+           or type(code) is not str for name, code in sources.items()):
+        raise ValueError("invalid Python repository module map")
+    names = frozenset(sources)
+    roots = frozenset(name.split(".", 1)[0] for name in names)
+    reports: dict[str, PythonModuleReport] = {}
+    nodes = {}
+    total_bytes = 0
+    for name in sorted(names):
+        source = sources[name]
+        total_bytes += len(source.encode("utf-8", errors="surrogatepass"))
+        if total_bytes > 1_000_000:
+            raise ValueError("repository source budget exceeded")
+        reports[name] = inspect_python_source(source, module_id=name)
+        nodes[name] = ast.parse(source, filename="<untrusted>", type_comments=True)
+
+    edges: set[tuple[str, str]] = set()
+    missing: set[tuple[str, str]] = set()
+    for name, tree in nodes.items():
+        for node in ast.walk(tree):
+            candidates: set[str] = set()
+            if isinstance(node, ast.Import):
+                candidates.update(alias.name for alias in node.names)
+            elif isinstance(node, ast.ImportFrom):
+                if node.level:
+                    # Python package-relative imports depend on package layout:
+                    # never silently resolve without the on-disk package model.
+                    missing.add((name, "." * node.level + (node.module or "")))
+                    continue
+                base = node.module or ""
+                if base:
+                    candidates.add(base)
+                    candidates.update(base + "." + alias.name for alias in node.names
+                                      if alias.name != "*")
+            for imported in candidates:
+                if imported == name:
+                    edges.add((name, name))
+                elif imported in names:
+                    edges.add((name, imported))
+                elif imported.split(".", 1)[0] in roots:
+                    missing.add((name, imported))
+
+    adjacency = {name: tuple(sorted(dst for src, dst in edges if src == name))
+                 for name in names}
+    state: dict[str, int] = {}
+    stack: list[str] = []
+    cycles: set[tuple[str, ...]] = set()
+
+    def visit(node: str) -> None:
+        if state.get(node) == 2:
+            return
+        if state.get(node) == 1:
+            pos = stack.index(node)
+            cycle = stack[pos:]
+            # Canonical rotation yields the same fingerprint under traversal order.
+            start = min(range(len(cycle)), key=lambda i: cycle[i])
+            cycles.add(tuple(cycle[start:] + cycle[:start]))
+            return
+        state[node] = 1
+        stack.append(node)
+        for target in adjacency[node]:
+            visit(target)
+        stack.pop()
+        state[node] = 2
+
+    for name in sorted(names):
+        visit(name)
+    canonical = json.dumps(
+        {"sources": [(name, reports[name].source_sha256) for name in sorted(names)],
+         "edges": sorted(edges), "missing": sorted(missing), "cycles": sorted(cycles)},
+        sort_keys=True, separators=(",", ":"), ensure_ascii=False,
+    ).encode("utf-8")
+    return PythonRepositoryGraph(
+        module_ids=tuple(sorted(names)), local_edges=tuple(sorted(edges)),
+        missing_local_modules=tuple(sorted(missing)), cycles=tuple(sorted(cycles)),
+        graph_sha256=hashlib.sha256(canonical).hexdigest(),
+        inspected_source_count=len(names),
+    )
+
+
+async def analyze_governed_python_repository(
+    *, gateway: object, request: object, principal_id: str,
+) -> PythonRepositoryGraph:
+    """Invoke a real authorized MCP Gateway source reader; never trust caller data.
+
+    The upstream caller authenticates the principal before constructing request.
+    The authorized source provider returns structured {sources: {module: code}}.
+    This is NOT an authorization grant, compiler validation or repository fetch.
+    """
+    from aura_core.kernel.permissions import AuthorizationDecision
+    from aura_core.mcp.gateway import MCPGateway, MCPGatewayRequest
+    if (not isinstance(gateway, MCPGateway) or
+        not isinstance(request, MCPGatewayRequest) or
+        type(principal_id) is not str or principal_id != request.principal_id):
+        raise PermissionError("authenticated principal and real MCP Gateway required")
+    response = await gateway.invoke(request)
+    if response.decision is not AuthorizationDecision.ALLOW:
+        raise PermissionError("repository source retrieval denied by MCP Gateway")
+    data = response.result
+    if not isinstance(data, dict):
+        data = getattr(data, "structured_content", None) or getattr(
+            data, "structuredContent", None)
+    if type(data) is not dict or set(data) != {"sources"}:
+        raise ValueError("authorized repository provider must return structured sources")
+    return analyze_python_repository(data["sources"])
