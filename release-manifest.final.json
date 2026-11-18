@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-18T06:57:00.000Z",
-  "git_commit": "a338c0b5d151246b966dac7306acf1ae11974847",
+  "generated_at": "2026-11-18T06:59:00.000Z",
+  "git_commit": "632c996e04bbec0760ed19e1e1c197e17243f526",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:96cd2de0acb4a207131e45421305d3eb68e3dcdfa94744a4c7f495e2c9ae3c01",
+  "release_digest": "sha256:5219a9295db66fb910ed2e39eeb77d13241dd8b67eb723f5cdf4dd74985056d0",
   "file_count": 312,
   "files": [
     {
@@ -502,7 +502,7 @@
     },
     {
       "path": "core/src/aura_core/application/task_state_machine.py",
-      "sha256": "f555772d8468119bc1472c23bdda8912a8bfe980f819085f421fca1cfd3f39fe"
+      "sha256": "41f393ee61f6f3aaf79c263020de203cae5637e9a8ab108075b9cdd6b9e4131e"
     },
     {
       "path": "core/src/aura_core/application/tasks.py",
