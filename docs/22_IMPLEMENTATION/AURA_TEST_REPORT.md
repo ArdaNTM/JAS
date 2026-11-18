@@ -350,3 +350,23 @@ Both features **TESTING/PARTIAL_VERIFIED**, NOT COMPLETED. Source-lock CI passes
 - [Core Assurance 44365112638](https://github.com/ArdaNTM/JAS/actions/runs/44365112638) **2250 passed / 14 skipped**; [Remote Persistence 44365112329](https://github.com/ArdaNTM/JAS/actions/runs/44365112329) **8 PASS on real PostgreSQL/MinIO**; [Unified Acceptance 44365112370](https://github.com/ArdaNTM/JAS/actions/runs/44365112370) **10 E2E + 9 governance PASS**.
 - 440 canonical source Release Lock **PASS** `sha256:ebcbd0f55845a04119563d976d72951dc506e85c763a8aba32417a4787041ad9`; independent Owner/production full-feature gates remain in tracker and its evidence audit reports `A=9 B1=20 B2=88 COMPLETED=0 ELIGIBLE=0`.
 - **117 TESTING / 0 COMPLETED / 0 NOT_STARTED**. This sync does not erase unimplemented full-feature requirements nor touch B1/B2 classification or `main`.
+
+
+## 2026-11-18 — Individual Group A acceptance: real #5/#40/#44 source + tests
+
+- Integrated source PR #158 `e76ddc8ca5d7431add4dc4e9ed66419cac44ee79`,
+  evidence documentation head `238c4eb0d74fbd772a3c691b859acb73c53a9f76`.
+- #5 principal-scoped durable goal progress derived from actual SQLite task outcomes;
+  #40 actual DOCX reports using SHA256-verified, principal-scoped untrusted archive
+  snapshots with citations; #44 bounded HMAC-signed archive backup and
+  principal-preserving atomic restore. All implemented in existing JAS modules.
+- [Core Assurance 44383040344](https://github.com/ArdaNTM/JAS/actions/runs/44383040344):
+  **2253 PASS / 14 SKIP**. [Unified Acceptance 44383040278](https://github.com/ArdaNTM/JAS/actions/runs/44383040278):
+  **10 E2E + 9 governance PASS**, output `A=9 B1=20 B2=88 COMPLETED=0 ELIGIBLE=0`.
+  440-source SHA256 Release Lock **PASS** digest
+  `sha256:561336728ba0e9f7c1070e7339bb9c19d43ba9a350ff9e00c0efd501441bca3b`.
+- Owner permits **per-feature** completion upon genuine individual acceptance.
+  This batch closes *code slices*, not the complete existing authenticated
+  UI/API, publisher verification or encrypted archive/privacy requirements;
+  the named blockers remain truthful. Both tracker JSON copies are byte-identical:
+  **117 TESTING / 0 COMPLETED / 0 NOT_STARTED**. B1/B2 unmodified.
