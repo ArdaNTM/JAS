@@ -1,0 +1,30 @@
+name: AURA Subsystem Pack 3 Assurance
+on:
+  pull_request:
+    paths:
+      - "core/**"
+      - "aura-ui/src/**"
+      - ".github/workflows/aura-subsystem-pack3.yml"
+  push:
+    branches: ["feat/aura-subsystem-pack-3"]
+permissions:
+  contents: read
+jobs:
+  focused-assurance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v5
+      - name: Install locked project dependencies
+        working-directory: core
+        run: uv sync --frozen --group dev
+      - name: Focused security and regression tests
+        working-directory: core
+        run: uv run pytest -q --tb=short tests/test_subsystem_pack3.py
+      - name: Verify final release lock
+        working-directory: core
+        run: uv run python scripts/verify_final_lock.py
