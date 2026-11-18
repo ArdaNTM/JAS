@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-18T02:31:48.098Z",
-  "git_commit": "c00b2d9872a334cfd53b37f52e28ffc5348e937d",
+  "generated_at": "2026-11-18T02:41:42.901Z",
+  "git_commit": "8fe46fc6371b5904da2c6891e966845a10e8f24f",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:0d3a71e1bb8505a8324684dbc4d957947f849871a0491858da258df5e6ee9cb4",
-  "file_count": 265,
+  "release_digest": "sha256:17afbbba2a850e7fb749b8f15715885d63b944e939fc33d301eaf305fcd38f49",
+  "file_count": 266,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -255,6 +255,10 @@
     {
       "path": "core/src/aura_core/application/governed_autonomous_loop.py",
       "sha256": "f511b4d57d78d4a2b8c85e7fa039283251158415add66e3777d1091d760e923a"
+    },
+    {
+      "path": "core/src/aura_core/application/governed_command_sequences.py",
+      "sha256": "0d9d8a49c3bae4344255e1ebfd5737536d6a6986d48c3505856af500de3a89fe"
     },
     {
       "path": "core/src/aura_core/application/governed_github_pr.py",
@@ -702,7 +706,7 @@
     },
     {
       "path": "core/src/aura_core/main.py",
-      "sha256": "261d47c90812283c46b4440b3504a68b644fa1df2f58c1fd7ccd453c2d044d6c"
+      "sha256": "8708443800c014d23d57ae34ae5c8babfd2ff111eb0e80b132a52cd75d6bbe06"
     },
     {
       "path": "core/src/aura_core/mcp/__init__.py",
