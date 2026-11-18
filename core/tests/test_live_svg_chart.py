@@ -59,7 +59,10 @@ def _deliver(bus, *events):
     for event in events:
         bus.publish(event)
     for event in events:
-        assert asyncio.run(bus.dispatch_once()) is True
+        delivered = asyncio.run(bus.dispatch_once())
+        # An unrelated event type has no chart subscriber and the real EventBus
+        # correctly dead-letters it instead of reporting successful delivery.
+        assert delivered is (event.event_type == "Telemetry.MCPGatewayExecution")
 
 
 def test_real_eventbus_to_gateway_into_local_svg_renderer():
