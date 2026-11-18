@@ -6,6 +6,7 @@ on:
       - "aura-ui/src/**"
       - "docs/22_IMPLEMENTATION/**"
       - "scripts/validate_aura_feature_tracker.py"
+      - "scripts/audit_aura_117_completion.py"
       - ".github/workflows/aura-unified-acceptance.yml"
   push:
     branches: ["feat/aura-117-unified-integration"]
@@ -28,6 +29,10 @@ jobs:
         run: uv sync --frozen --group dev
       - name: Focused cross-module and memory/Gateway E2E
         run: uv run pytest -q --tb=short tests/test_unified_cross_module_e2e.py tests/test_researching_memory_authorization_e2e.py
+      - name: Negative-path group and canonical source integrity tests
+        run: uv run pytest -q --tb=short tests/test_aura_117_acceptance_groups.py
+      - name: Audit software completion readiness and source provenance
+        run: uv run python ../scripts/audit_aura_117_completion.py
       - name: Validate evidence tracker
         run: uv run python ../scripts/validate_aura_feature_tracker.py
       - name: Verify canonical final source lock
