@@ -147,3 +147,23 @@ This changes neither existing MCP permissions nor F2.7 sealed boundaries.
 security sign-off, authenticated external integration acceptance or Owner witness
 has been recorded. The nine source records remain `TESTING`; no
 `COMPLETED` or `security_review=PASS` is asserted.
+
+
+## 2026-11-18 — Owner-selected internal review process
+
+The latest Owner-identified speaker explicitly designates the internal AURA
+code/security review plus the verified 13/13 CI at `4c1d4c86` as the
+official **software review process** for this one-developer repository, and
+states acceptance for the 29 Group A/B1 candidates. The full declaration
+and its evidence boundaries are in
+[AURA_OWNER_DECLARATION_2026_11_18.md](AURA_OWNER_DECLARATION_2026_11_18.md).
+
+This is a change in declared approval/reviewer policy, **not** an
+implementation receipt for missing production capabilities. In particular,
+principal-authenticated erasure/restore (#2), external citation/export (#40),
+verified cross-process identity/delivery (#59), authenticated PDF/OCR (#39),
+and independent source/research provenance (#35/#38) remain unimplemented
+or not accepted as recorded in the authoritative feature tracker. A full
+feature is not `COMPLETED` simply because its narrower helper logic or
+general Core CI passes. `ELIGIBLE=0 COMPLETED=0` remains the truthful
+validation result until those actual code/test requirements are satisfied.

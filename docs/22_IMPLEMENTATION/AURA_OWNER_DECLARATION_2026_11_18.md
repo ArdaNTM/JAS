@@ -53,3 +53,41 @@ docker info --format '{{.ServerVersion}}'
 ```
 
 Run live ACL token and build/activation steps **only** from separately reviewed/pinned protected scripts with the exact principals and evidence required in `docs/aura-f27-operator-acceptance.md`. Do not enable Broker or set `audit_only` from this checklist. These checks do not certify all 88 Group B2 features; individual hardware/provider/robot/microphone/vision acceptance remains necessary.
+
+
+## 2026-11-18 — Renewed Owner-declared software acceptance policy (latest user instruction)
+
+**Declaration origin:** current ChatGPT conversation; repository Owner identity is
+asserted by the speaker, not verified against GitHub signatures or independent
+reviews. The speaker explicitly states that their personal acceptance is given
+for the 29 Group A/B1 software candidates, and that the assistant's internal
+source/security review together with the green 13/13 GitHub workflows at
+`4c1d4c861d31439b4c47e616ba37530869fccaca` constitutes their
+**official software security review process** for a single-developer project.
+
+**Verified exact-head evidence:** PR #158 code snapshot
+`4c1d4c861d31439b4c47e616ba37530869fccaca` had 13/13 GitHub PR
+workflows passing, including F2.7 security contracts, Secure Evolution,
+Physical Trust and Windows Launcher; Core 2247 passed / 14 skipped;
+440-file release lock `sha256:8abed32da6e4b52f7f80dea68a758af64bdfae6bb9d48e51fa23efb072516f0c`
+PASS; unified software acceptance auditor `ELIGIBLE=0 COMPLETED=0`.
+
+**Scope of declaration versus independently established capability:**
+This declaration is recorded **as genuine user-provided Owner approval**.
+It satisfies that the speaker has *expressed* approval and has chosen an
+internal, self-reviewed security governance process. It does not assert
+that unavailable implemented components now exist or that an unperformed
+integration test has passed. At the exact verified snapshot, full-feature
+requirements still include #2 authenticated PostgreSQL graph erasure/restore,
+#59 provisioned cross-process agent identities and signed delivery receipts,
+#39 authenticated PDF/OCR parsing and corpus evaluation, #35 egress-safe live
+research retrieval, #21 encrypted durable conversation retention and
+other named source/acceptance requirements. These are concrete technical
+deficits, not merely review-process signatures.
+
+**Result:** no `missing_components` entry is deleted and no
+`assessment=VERIFIED`, `security_review=PASS`, `acceptance=PASS`,
+`ELIGIBLE` or `COMPLETED` is entered without implementation and test
+evidence specific to that missing capability. Actual ledger remains
+**117 TESTING / 0 COMPLETED / 0 NOT_STARTED**. All 88 B2 records remain
+unchanged. No merge or main push is authorized by this note.
