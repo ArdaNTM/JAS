@@ -234,3 +234,31 @@ def render_design_linked_experiment_markdown(linked: DesignLinkedExperiment) -> 
         + "\nIndependent scientific review, actual randomization and "
           "participant consent: NOT VERIFIED.\n"
     )
+
+
+
+def verify_experiment_source_digest(
+    *, csv_text: str, expected_sha256: str, citation: object,
+) -> dict[str, object]:
+    """Bind local dataset digest to reviewed DOI metadata, not publisher identity."""
+    from aura_core.research.citations import CitationReview, DOI
+    if type(csv_text) is not str:
+        raise ValueError("CSV must be text")
+    raw = csv_text.encode("utf-8")
+    if not raw or len(raw) > 2_000_000:
+        raise ValueError("CSV byte budget exceeded")
+    if (type(expected_sha256) is not str or len(expected_sha256) != 64
+            or any(c not in "0123456789abcdef" for c in expected_sha256)):
+        raise ValueError("invalid expected dataset SHA256")
+    if (type(citation) is not CitationReview or citation.conflicting_metadata
+            or not DOI.fullmatch(citation.doi) or not citation.source_ids):
+        raise ValueError("unreviewed or conflicting DOI metadata")
+    digest = hashlib.sha256(raw).hexdigest()
+    if digest != expected_sha256:
+        raise ValueError("dataset SHA256 mismatch")
+    return {
+        "dataset_sha256": digest, "citation_doi": citation.doi,
+        "source_ids": citation.source_ids, "digest_verified": True,
+        "publisher_authenticated": False,
+        "scientific_validity_verified": False,
+    }

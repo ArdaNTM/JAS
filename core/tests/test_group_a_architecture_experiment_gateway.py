@@ -12,6 +12,7 @@ import pytest
 
 from aura_core.application.code_insight import (
     analyze_governed_python_repository, analyze_python_repository,
+    scan_js_ts_imports,
 )
 from aura_core.application.experiment_design import (
     design_balanced_experiment, formulate_hypothesis,
@@ -30,6 +31,7 @@ from aura_core.mcp.provider import ProviderDefinition, ProviderRegistry
 from aura_core.science.experiment_dataset import (
     analyze_experiment_with_design, analyze_governed_experiment,
     render_design_linked_experiment_markdown,
+    verify_experiment_source_digest,
 )
 
 SOURCES = {
@@ -213,3 +215,42 @@ def test_real_gateway_authorizes_source_and_experiment_retrieval_and_denies_othe
             principal_id="owner", plan=study_plan(), study_id="study-1"))
     assert no_calls.calls == []
     assert len(audit.audit_records()) == 2
+
+
+
+def test_js_ts_static_imports_and_untrusted_specifier_rejection():
+    code = """
+import type { Account } from "./domain";
+import { Task } from "@aura/tasks";
+export { Core } from "./core";
+const crypto = require("node:crypto");
+"""
+    assert scan_js_ts_imports(code, module_id="editor.ts") == (
+        "./core", "./domain", "@aura/tasks", "node:crypto")
+    with pytest.raises(ValueError):
+        scan_js_ts_imports(code, module_id="../unsafe")
+    with pytest.raises(ValueError):
+        scan_js_ts_imports('import x from "bad\\\\path"', module_id="editor.ts")
+    with pytest.raises(ValueError):
+        scan_js_ts_imports("x" * 262145, module_id="editor.ts")
+
+
+def test_experiment_digest_and_doi_binding_rejects_forged_evidence():
+    import hashlib
+    from aura_core.research.citations import CitationReview
+    csv = study_csv(study_plan())
+    digest = hashlib.sha256(csv.encode("utf-8")).hexdigest()
+    citation = CitationReview(
+        doi="10.1234/study.1", title="Local study", authors=("A",),
+        publication_year=2026, venue="Local lab",
+        source_ids=("local-archive",), conflicting_metadata=False)
+    result = verify_experiment_source_digest(
+        csv_text=csv, expected_sha256=digest, citation=citation)
+    assert result["digest_verified"] and not result["publisher_authenticated"]
+    with pytest.raises(ValueError, match="mismatch"):
+        verify_experiment_source_digest(
+            csv_text=csv + "tampered", expected_sha256=digest, citation=citation)
+    with pytest.raises(ValueError, match="DOI"):
+        verify_experiment_source_digest(
+            csv_text=csv, expected_sha256=digest,
+            citation=replace(citation, conflicting_metadata=True))

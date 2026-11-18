@@ -304,3 +304,31 @@ async def analyze_governed_python_repository(
     if type(data) is not dict or set(data) != {"sources"}:
         raise ValueError("authorized repository provider must return structured sources")
     return analyze_python_repository(data["sources"])
+
+
+
+def scan_js_ts_imports(source: str, *, module_id: str) -> tuple[str, ...]:
+    """Conservative ES imports/exports and require candidates, never execute."""
+    if (type(source) is not str or len(source.encode("utf-8")) > 262144
+            or "\x00" in source or source.count("\n") > 10000):
+        raise ValueError("bounded JavaScript/TypeScript source required")
+    if (type(module_id) is not str or not
+            re.fullmatch(r"[A-Za-z0-9_.-]{1,100}", module_id)):
+        raise ValueError("invalid JS/TS module ID")
+    pattern = re.compile(
+        r"""(?m)^[ \t]*(?:import\s+(?:type\s+)?(?:[\w*{}, \t]+\s+from\s+)?"""
+        r"""|export\s+(?:type\s+)?(?:[\w*{}, \t]+\s+from\s+))"""
+        r"""['"]([^'"\r\n]+)['"]\s*;?[ \t]*$"""
+        r"""|^[ \t]*(?:const|let|var)\s+[\w{}, \t]+\s*=\s*require\("""
+        r"""['"]([^'"\r\n]+)['"]\)\s*;?[ \t]*$"""
+    )
+    dependencies: set[str] = set()
+    for match in pattern.finditer(source):
+        name = match.group(1) or match.group(2)
+        if (not 1 <= len(name) <= 200 or "\\" in name or
+                any(ord(ch) < 33 or ord(ch) == 127 for ch in name)):
+            raise ValueError("unsafe static module specifier")
+        dependencies.add(name)
+        if len(dependencies) > 300:
+            raise ValueError("JS/TS module limit exceeded")
+    return tuple(sorted(dependencies))
