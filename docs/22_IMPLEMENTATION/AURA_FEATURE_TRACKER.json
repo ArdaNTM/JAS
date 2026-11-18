@@ -2706,15 +2706,16 @@
         "docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md"
       ],
       "test_commands": [
+        "cd core && uv run pytest -q --tb=short tests/test_group_a_architecture_experiment_gateway.py",
         "cd core && uv run pytest -q core/tests/test_python_code_insight.py",
         "cd core && uv run pytest -q",
         "cd core && uv run python scripts/verify_final_lock.py"
       ],
       "test_results": "PASS",
-      "security_review": "PARTIAL_VERIFIED: internal source/negative-path CI at fb7c9a4; no independent security sign-off. See docs/22_IMPLEMENTATION/AURA_SOFTWARE_SECURITY_REVIEW.md.",
+      "security_review": "PARTIAL_VERIFIED: PR #158 6bb6b7e8671570b428104f5929af79d525d52e54 reviewed for bounded source parsing, actual Gateway dispatch, immutable numerical claims and denial paths; Core Assurance run 44406597201 PASS. Full production source authentication, cross-language compiler/scientific acceptance and Owner E2E gaps remain.",
       "acceptance": "NOT_VERIFIED",
-      "commit": "03657e6f9d67ebe85807b52b1dccef21a9a076ed",
-      "pull_request": "https://github.com/ArdaNTM/JAS/pull/88",
+      "commit": "6bb6b7e8671570b428104f5929af79d525d52e54",
+      "pull_request": "https://github.com/ArdaNTM/JAS/pull/158",
       "blockers": [
         "Authorized repository retrieval integration",
         "Cross-language and cross-file architecture graph",
@@ -2725,9 +2726,9 @@
       "user_capability": "Review architecture shape and potential review areas from authorized code text.",
       "integration": "Offline read-only pure module accepts already-authorized input; does not create MCP/HTTP routes or permission authority.",
       "hardware_requirements": "No physical device verified; real provider integration pending.",
-      "license_review": "NOT_REVIEWED",
+      "license_review": "NOT_APPLICABLE",
       "local_offline": "PARTIAL_VERIFIED",
-      "notes": "[ACCEPTANCE_GROUP=A;PR158_CI_CANDIDATE=YES] PR #88 Core Assurance PASS (614 passed, 6 skipped), Final Release Lock PASS, Remote Persistence Integration PASS. No independent Owner acceptance or physical provider verification. | [GROUP_A_EXACT_HEAD_CI=fb7c9a4f3c892972fc6450cc1b7d3412257dc055;7/7 PASS;Core 1494 PASS/10 SKIP;Remote PG/MinIO 8 PASS;Unified 10+8 PASS;Lock 312 PASS;ELIGIBLE=0;SECURITY_SIGNOFF=ABSENT;OWNER_ACCEPTANCE=ABSENT] | Code candidate PR https://github.com/ArdaNTM/JAS/pull/158; original feature PR retained in pull_request. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [OWNER_DECLARATION_2026_11_18] Owner (ArdaNTM) expressly declared product/security acceptance and requested merges in chat; unsigned/unverified as independent repo review; actual missing_components remain unimplemented or unproven, so acceptance=NOT_VERIFIED until verified. See docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md.",
+      "notes": "[ACCEPTANCE_GROUP=A;PR158_CI_CANDIDATE=YES] PR #88 Core Assurance PASS (614 passed, 6 skipped), Final Release Lock PASS, Remote Persistence Integration PASS. No independent Owner acceptance or physical provider verification. | [GROUP_A_EXACT_HEAD_CI=fb7c9a4f3c892972fc6450cc1b7d3412257dc055;7/7 PASS;Core 1494 PASS/10 SKIP;Remote PG/MinIO 8 PASS;Unified 10+8 PASS;Lock 312 PASS;ELIGIBLE=0;SECURITY_SIGNOFF=ABSENT;OWNER_ACCEPTANCE=ABSENT] | Code candidate PR https://github.com/ArdaNTM/JAS/pull/158; original feature PR retained in pull_request. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [OWNER_DECLARATION_2026_11_18] Owner (ArdaNTM) expressly declared product/security acceptance and requested merges in chat; unsigned/unverified as independent repo review; actual missing_components remain unimplemented or unproven, so acceptance=NOT_VERIFIED until verified. See docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md.\n[GROUP_A_CLOSURE_2026_11_18] PR #158 6bb6b7e8671570b428104f5929af79d525d52e54: added bounded Python AST cross-file dependency/cycle/missing-import graph and actual MCPGateway/PermissionEngine source retrieval (production provider not provisioned). Four new tests including forbidden principal, denied policy, malicious source, simulated study plan; GitHub Core Assurance 44406597201 PASS (2257 passed, 14 skipped), Unified 44406597246 PASS (10 E2E + 9 governance); 440-source Release Lock sha256:4fb74e38b53bcd79c0829250dac6309b8957835a5a2dbf0f501f9b79fb51c5d4 PASS. Pure stdlib/module code, no new licenses/hardware. Compiler-level Java/TS and authenticated production repository fetch still NOT implemented; no full feature VERIFIED or COMPLETED.",
       "existing_jas_state": "Existing JAS source readers and skill framework; new isolated AST inspector is read-only, not an authority.",
       "proposed_technology": "Python standard library integrated under existing JAS package; no new external dependency.",
       "license_terms": "Standard-library module; repository-wide license audit remains outstanding.",
@@ -2740,14 +2741,14 @@
       "complexity": "MEDIUM for partial static/ICS processor; full domain integration is more complex.",
       "known_limitations": "Authorized repository retrieval integration; Cross-language and cross-file architecture graph; Independent code review and security verdict; UI/Owner acceptance",
       "missing_components": [
-        "Authorized repository retrieval integration",
-        "Compiler-verified cross-language architecture graph and dependency resolution",
-        "Independent code review and security verdict",
-        "UI/Owner acceptance"
+        "Production-configured authenticated repository source provider and source provenance",
+        "Compiler-verified cross-language dependency resolution (bounded Python AST cross-file graph implemented)",
+        "Independent security verdict for the complete cross-language capability",
+        "Authenticated UI/Owner end-to-end feature acceptance"
       ],
       "official_links": [],
       "alternatives": [],
-      "hardware_review": "NOT_REVIEWED"
+      "hardware_review": "NOT_APPLICABLE"
     },
     {
       "id": 48,
@@ -4181,24 +4182,25 @@
         "docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md"
       ],
       "test_commands": [
+        "cd core && uv run pytest -q --tb=short tests/test_group_a_architecture_experiment_gateway.py",
         "cd core && uv run pytest -q tests/test_local_experiment_statistics.py",
         "cd core && uv run pytest -q tests/test_local_linear_model.py",
         "cd core && uv run pytest -q",
         "cd core && uv run python scripts/verify_final_lock.py"
       ],
       "test_results": "PASS",
-      "security_review": "PARTIAL_VERIFIED: internal source/negative-path CI at fb7c9a4; no independent security sign-off. See docs/22_IMPLEMENTATION/AURA_SOFTWARE_SECURITY_REVIEW.md.",
+      "security_review": "PARTIAL_VERIFIED: PR #158 6bb6b7e8671570b428104f5929af79d525d52e54 reviewed for bounded source parsing, actual Gateway dispatch, immutable numerical claims and denial paths; Core Assurance run 44406597201 PASS. Full production source authentication, cross-language compiler/scientific acceptance and Owner E2E gaps remain.",
       "acceptance": "NOT_VERIFIED",
-      "commit": "67a6a57bc2e25040861afbd60eb370a2d471920e",
-      "pull_request": "https://github.com/ArdaNTM/JAS/pull/75",
+      "commit": "6bb6b7e8671570b428104f5929af79d525d52e54",
+      "pull_request": "https://github.com/ArdaNTM/JAS/pull/158",
       "blockers": [],
       "technical_goal": "Analyze finite experimental samples and paired/independent differences offline.",
       "user_capability": "Compute deterministic means/variance/SEM and bounded difference summaries.",
       "integration": "",
       "hardware_requirements": "No physical experiment or device tested.",
-      "license_review": "NOT_REVIEWED",
+      "license_review": "NOT_APPLICABLE",
       "local_offline": "PARTIAL_VERIFIED",
-      "notes": "[ACCEPTANCE_GROUP=A;PR158_CI_CANDIDATE=YES] PR #75 head 67a6a57bc2: Core Assurance 620 passed, 6 skipped; release-lock PASS (https://github.com/ArdaNTM/JAS/actions/runs/43751913526). No user production acceptance or merge. | [GROUP_A_EXACT_HEAD_CI=fb7c9a4f3c892972fc6450cc1b7d3412257dc055;7/7 PASS;Core 1494 PASS/10 SKIP;Remote PG/MinIO 8 PASS;Unified 10+8 PASS;Lock 312 PASS;ELIGIBLE=0;SECURITY_SIGNOFF=ABSENT;OWNER_ACCEPTANCE=ABSENT] | Code candidate PR https://github.com/ArdaNTM/JAS/pull/158; original feature PR retained in pull_request. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [OWNER_DECLARATION_2026_11_18] Owner (ArdaNTM) expressly declared product/security acceptance and requested merges in chat; unsigned/unverified as independent repo review; actual missing_components remain unimplemented or unproven, so acceptance=NOT_VERIFIED until verified. See docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md.",
+      "notes": "[ACCEPTANCE_GROUP=A;PR158_CI_CANDIDATE=YES] PR #75 head 67a6a57bc2: Core Assurance 620 passed, 6 skipped; release-lock PASS (https://github.com/ArdaNTM/JAS/actions/runs/43751913526). No user production acceptance or merge. | [GROUP_A_EXACT_HEAD_CI=fb7c9a4f3c892972fc6450cc1b7d3412257dc055;7/7 PASS;Core 1494 PASS/10 SKIP;Remote PG/MinIO 8 PASS;Unified 10+8 PASS;Lock 312 PASS;ELIGIBLE=0;SECURITY_SIGNOFF=ABSENT;OWNER_ACCEPTANCE=ABSENT] | Code candidate PR https://github.com/ArdaNTM/JAS/pull/158; original feature PR retained in pull_request. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [OWNER_DECLARATION_2026_11_18] Owner (ArdaNTM) expressly declared product/security acceptance and requested merges in chat; unsigned/unverified as independent repo review; actual missing_components remain unimplemented or unproven, so acceptance=NOT_VERIFIED until verified. See docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md.\n[GROUP_A_CLOSURE_2026_11_18] PR #158 6bb6b7e8671570b428104f5929af79d525d52e54: added source-gated real MCPGateway + PermissionEngine experiment CSV retrieval, deterministic actual CSV unit-to-simulated design alignment validation (duplicate/mismatch/forged-design fail closed), measured data SHA256 + signed-off-independent-false provenance and explicit linked Markdown report. Four focused tests incl denied and malicious source paths; Core Assurance run 44406597201 PASS (2257 pass 14 skip), Unified 44406597246 PASS (10+9), 440-file lock PASS. No new third-party libs or hardware required. Science source authenticity, actual randomization/ethics review and authenticated delivery not validated; acceptance remains NOT_VERIFIED.",
       "existing_jas_state": "Core statistics and linear model tests PASS, but user-facing science workflow not built.",
       "proposed_technology": "Python standard library; no external dependencies",
       "license_terms": "Existing dependencies/stdlib; formal license assessment pending.",
@@ -4211,13 +4213,13 @@
       "complexity": "PARTIAL_IMPLEMENTATION; remaining integration and acceptance work",
       "known_limitations": "No hypothesis tests, p-values or inferential guarantees.",
       "missing_components": [
-        "Authenticated, provenance-verified scientific dataset ingestion",
-        "Scientific validation and experiment design",
-        "End-to-end report integration"
+        "Authenticated real scientific source provenance beyond Gateway-permitted fixture ingestion",
+        "Independent scientific validation, ethics and actual experiment randomization proof",
+        "Authenticated production delivery/UI of linked experiment analysis report"
       ],
       "official_links": [],
       "alternatives": [],
-      "hardware_review": "NOT_REVIEWED"
+      "hardware_review": "NOT_APPLICABLE"
     },
     {
       "id": 74,

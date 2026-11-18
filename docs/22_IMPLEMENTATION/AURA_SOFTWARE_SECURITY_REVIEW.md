@@ -253,3 +253,44 @@ The user's individual-completion policy is accepted; a feature may be
 promoted independently once its **own** full acceptance gates are genuinely
 closed. Existing #2/#59/#67/#111 incomplete full capabilities remain
 `TESTING` as well; B1 and B2 unchanged.
+
+
+## 2026-11-18 — #47 and #73 new source + fail-closed evidence (per-feature review)
+
+PR #158 source commit: `6bb6b7e8671570b428104f5929af79d525d52e54`.
+[Core Assurance run 44406597201](https://github.com/ArdaNTM/JAS/actions/runs/44406597201):
+**2257 passed, 14 skipped**; canonical 440-file SHA-256 Release Lock
+**PASS**, `sha256:4fb74e38b53bcd79c0829250dac6309b8957835a5a2dbf0f501f9b79fb51c5d4`.
+[Unified Acceptance run 44406597246](https://github.com/ArdaNTM/JAS/actions/runs/44406597246):
+**10 E2E + 9 governance PASS**; `A=9 B1=20 B2=88 COMPLETED=0 ELIGIBLE=0`.
+
+- **#47:** Existing `application/code_insight.py` now derives a reproducible
+  internal Python repository import graph using bounded AST parsing: local
+  edges, unresolved imports, directed cycles and source-content digest.
+  The async source wrapper invokes an existing authorized MCP Gateway and
+  explicitly rejects forged gateways, principal mismatch, malformed source
+  responses and denied PermissionEngine decisions. It never imports,
+  executes or elevates untrusted code. **Not yet implemented:** compiler-verified
+  Java/TS cross-language architecture graph, production repository provider
+  configuration and authenticated UI/Owner end-to-end use.
+- **#73:** Existing `science/experiment_dataset.py` now joins CSV observations
+  against a validated `ExperimentDesign` allocation with exact unique
+  sample identities and count; rejects tampered design/invalid allocations;
+  emits repeatable SHA-256 report and Markdown describing unverified study
+  assumptions. Structured observations may arrive only through an actual
+  MCPGateway invocation, with default-deny PermissionEngine applying.
+  **Not yet established:** actual real-world randomized assignment, consent,
+  independently verified science/source provenance or authenticated report
+  delivery.
+- Focused real-Gateway tests:
+  `core/tests/test_group_a_architecture_experiment_gateway.py` — 4 PASS.
+  No new non-stdlib dependencies or hardware requirements for either change.
+  External/reviewer/production requirements remain intentionally open; avoid
+  claiming compiler-grade or scientific certification.
+- **Independent completion policy:** each feature can be promoted separately
+  once its own exact `missing_components` are genuinely resolved, with
+  `assessment=VERIFIED`, `security_review=PASS`,
+  `acceptance=PASS`, relevant license/hardware flags and matching
+  `AURA_ACCEPTANCE_GROUPS.json.ready_for_completion=true`. Neither
+  full #47 nor #73 capability has those evidentiary conditions today.
+  The other seven Group A entries are unchanged; B1/B2 remain `TESTING`.

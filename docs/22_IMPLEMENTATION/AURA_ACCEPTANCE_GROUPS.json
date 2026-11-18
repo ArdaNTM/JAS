@@ -995,8 +995,8 @@
       "name": "Mimari analiz",
       "criterion": "Potential software-only acceptance: resolve all listed gaps with real Core/storage/algorithm E2E, independent security review, and exact unified CI.",
       "outstanding_gates": [
-        "Authorized repository retrieval integration",
-        "Cross-language and cross-file architecture graph",
+        "Production-configured authenticated repository source provider and source provenance",
+        "Compiler-verified cross-language dependency resolution (bounded Python AST cross-file graph implemented)",
         "Independent code review and security verdict",
         "UI/Owner acceptance",
         "Independent security review not yet recorded",
@@ -1465,9 +1465,9 @@
       "name": "Deney sonuçlarını analiz etme",
       "criterion": "Potential software-only acceptance: resolve all listed gaps with real Core/storage/algorithm E2E, independent security review, and exact unified CI.",
       "outstanding_gates": [
-        "Research dataset ingestion",
-        "Scientific validation and experiment design",
-        "End-to-end report integration",
+        "Authenticated real scientific source provenance beyond Gateway-permitted fixture ingestion",
+        "Independent scientific validation, ethics and actual experiment randomization proof",
+        "Authenticated production delivery/UI of linked experiment analysis report",
         "Independent security review not yet recorded",
         "OSS/model license review not yet recorded",
         "Hardware applicability review not yet recorded",
