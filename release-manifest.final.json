@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-10-31T00:45:29.771Z",
-  "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
+  "generated_at": "2026-11-18T00:00:00.000Z",
+  "git_commit": "4abd62f13e0d33b68db0575ef57059126960cbb0",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
-  "file_count": 233,
+  "release_digest": "sha256:f7d0812e45bff8392bc45aa646b5e8a95b71e3212a5cd26ce4a87bcc285b065b",
+  "file_count": 235,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -65,6 +65,10 @@
       "sha256": "c1c4ec0921918f6eff2d959be54246e5a91e2521052a30d24eaa91c6f182054e"
     },
     {
+      "path": "aura-ui/src/components/HudGameStudio.tsx",
+      "sha256": "fcf0bbf8aa32cd6f8857779ad6206300c7828944b786041e7b69207f220b76fb"
+    },
+    {
       "path": "aura-ui/src/components/TaskConsole.tsx",
       "sha256": "0bf1fbb632aac8a3549c279de7d24ffc235101cd29a6b0d45c2304c302b098a3"
     },
@@ -82,11 +86,11 @@
     },
     {
       "path": "aura-ui/src/hud.css",
-      "sha256": "6e67cd1ac804597f116044bcc1e314a543ddb85cf87b079a95b205c850853855"
+      "sha256": "cbe35b7c9a0e2b58d8da7814164a6412490178e6e37a9aa5fd68d562fb31cb73"
     },
     {
       "path": "aura-ui/src/HudOverlay.tsx",
-      "sha256": "32cd681fd14834b9381d0d3e919b184032c028f9b4e84e82dda30460d71a3b0e"
+      "sha256": "aa40bfe2f9e7f2a81155c40c9c8cb8f3ae11dcdbec96b9197125d2ad41895055"
     },
     {
       "path": "aura-ui/src/index.css",
@@ -254,7 +258,11 @@
     },
     {
       "path": "core/src/aura_core/application/hud_api.py",
-      "sha256": "36f37052df95ac7433f0a0c75d66d8acb3e7091d5a5b24fc2fa8a63edafce1cb"
+      "sha256": "e7f706e7e862c7d3788b6bdbdd4eef9d2362fe6f19458563006665ea1752133e"
+    },
+    {
+      "path": "core/src/aura_core/application/hud_game_blueprint.py",
+      "sha256": "2541d9813bbf7ff689ef0bd25950a7ba3097045b66a968704a3850d7fc866781"
     },
     {
       "path": "core/src/aura_core/application/jarvis_api.py",
