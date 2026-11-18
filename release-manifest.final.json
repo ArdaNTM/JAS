@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-18T03:00:00Z",
-  "git_commit": "cffca134e19731125a8b14540137e7118759d951",
+  "generated_at": "2026-11-18T01:51:09.618Z",
+  "git_commit": "bf6b53277ea02c7e218aff8a6de20f2432de725d",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:aefde5998dac9499f7cb7926477281eba0cd62525124a98bdbecf878d386591c",
-  "file_count": 263,
+  "release_digest": "sha256:5f818cf15604d91ec0f9e125369b63196aa7f780b57e76e1721f4651fcd6a7b0",
+  "file_count": 264,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -702,7 +702,7 @@
     },
     {
       "path": "core/src/aura_core/main.py",
-      "sha256": "865163e3f485cde9af07c301c5fbf2bf95703d2063995d181e12af0be5e1d470"
+      "sha256": "57d540d59e63d52c0934af2ce1eea9ea8de2047989c60e6b71b131a6583028a6"
     },
     {
       "path": "core/src/aura_core/mcp/__init__.py",
@@ -907,6 +907,10 @@
     {
       "path": "core/src/aura_core/providers/local_vision.py",
       "sha256": "44a52720d803722396b5b92dd1b25bff5ced9ca1821c4247f4db4f8cbc444e37"
+    },
+    {
+      "path": "core/src/aura_core/providers/managed_applications_mcp.py",
+      "sha256": "978650109b9499b9a9110dde0b278857ccebbd3871f3662ad118e9778b254e5a"
     },
     {
       "path": "core/src/aura_core/providers/ollama_vision_mcp.py",
