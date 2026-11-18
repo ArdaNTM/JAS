@@ -32,6 +32,10 @@ from aura_core.application.live_svg_chart import (
 from aura_core.application.live_task_panel import (
     GovernedLiveTaskPanel, live_task_panel_router, register_live_task_panel,
 )
+from aura_core.providers.managed_applications_mcp import (
+    GovernedManagedApplications, load_managed_app_manifest,
+    managed_applications_router, register_managed_applications,
+)
 from aura_core.config.kernel import KernelConfig
 from aura_core.config.storage import StorageMode, storage_mode_from_environment, validate_storage_mode
 from aura_core.enterprise.policy_bundle import PolicyBundle
@@ -496,6 +500,27 @@ def build_app() -> FastAPI:
             gateway, authenticated_principal_id=http_principal_id,
         )
         app.include_router(live_task_panel_router)
+
+    # Real managed local applications: opt-in, pinned trusted manifest and
+    # existing human-reviewed one-shot Gateway approval store. No auto policy.
+    app.state.managed_applications = None
+    app.state.managed_applications_provider = None
+    if os.getenv("AURA_MANAGED_APPLICATIONS_ENABLED", "0").strip().casefold() in {"1", "true", "yes", "on"}:
+        if http_bearer_token is None or approval_store is None:
+            raise RuntimeError("Managed applications require HTTP Owner bearer and durable approval store")
+        manifest_path = os.getenv("AURA_MANAGED_APPLICATIONS_MANIFEST", "")
+        trusted_apps = load_managed_app_manifest(manifest_path)
+        app.state.managed_applications_provider = register_managed_applications(
+            services=kernel.service_registry,
+            providers=kernel.provider_registry,
+            capabilities=kernel.capability_registry,
+            specifications=trusted_apps,
+            event_bus=kernel.event_bus,
+        )
+        app.state.managed_applications = GovernedManagedApplications(
+            gateway, authenticated_principal_id=http_principal_id,
+        )
+        app.include_router(managed_applications_router)
 
     event_runtime = EventBusRuntime(
         kernel.event_bus,
@@ -966,6 +991,9 @@ def build_app() -> FastAPI:
             task_panel_provider = getattr(app.state, "live_task_panel_provider", None)
             if task_panel_provider is not None:
                 task_panel_provider.close()
+            managed_apps_provider = getattr(app.state, "managed_applications_provider", None)
+            if managed_apps_provider is not None:
+                managed_apps_provider.close()
             logger.info(
                 "AURA LIFESPAN SHUTDOWN COMPLETE"
             )
