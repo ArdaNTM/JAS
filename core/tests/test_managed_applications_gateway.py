@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -275,3 +276,26 @@ def test_http_bearer_is_not_a_gateway_policy_grant(system):
     _, _, _, _, owner, _, _ = system
     with TestClient(_api(owner)) as client:
         assert client.get("/api/runtime/managed-apps", headers=_auth()).status_code == 403
+
+
+def test_real_child_environment_does_not_inherit_aura_secrets(system, monkeypatch):
+    _, backend, engine, approvals, owner, _, _ = system
+    script = Path(backend._specs["sample"].arguments[-1])
+    marker = script.with_suffix(".env")
+    script.write_text(
+        "import os,time\nfrom pathlib import Path\n"
+        "Path(__file__).with_suffix('.env').write_text("
+        "os.getenv('AURA_PRIVATE_TEST_SECRET', 'NO_SECRET_INHERITED'))\n"
+        "time.sleep(60)\n", encoding="utf-8",
+    )
+    monkeypatch.setenv("AURA_PRIVATE_TEST_SECRET", "CANNOT_LEAK_TO_CHILD")
+    policy(engine, START)
+    pending = run(owner.start("sample"))
+    approve(approvals, pending)
+    assert run(owner.start("sample", approval_id=pending.approval_id)).state == "running"
+    for _ in range(50):
+        if marker.exists():
+            break
+        time.sleep(0.05)
+    assert marker.is_file()
+    assert marker.read_text() == "NO_SECRET_INHERITED"
