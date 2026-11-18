@@ -10,18 +10,19 @@ WORKFLOW = ROOT / ".github" / "workflows" / "aura-windows-launcher.yml"
 
 
 def test_picomatch_is_build_only_in_locked_desktop_tree() -> None:
-    data = json.loads(LOCK.read_text(encoding="utf-8"))
-    packages = data["packages"]
-    scoped = [
-        (path, pkg)
-        for path, pkg in packages.items()
-        if path.endswith("/picomatch") or path == "node_modules/picomatch"
-    ]
-    assert scoped, "expected lockfile evidence for picomatch"
-    assert all(pkg.get("dev") is True for _, pkg in scoped), (
-        "picomatch entered a production dependency path; block the release"
-    )
-    assert "picomatch" not in packages[""].get("dependencies", {})
+    for lock in (LOCK, ROOT / "core" / "frontend" / "package-lock.json"):
+        data = json.loads(lock.read_text(encoding="utf-8"))
+        packages = data["packages"]
+        scoped = [
+            (path, pkg)
+            for path, pkg in packages.items()
+            if path.endswith("/picomatch") or path == "node_modules/picomatch"
+        ]
+        assert scoped, f"expected lockfile evidence for picomatch in {lock}"
+        assert all(pkg.get("dev") is True for _, pkg in scoped), (
+            f"picomatch entered a production dependency path in {lock}"
+        )
+        assert "picomatch" not in packages[""].get("dependencies", {})
 
 
 def test_windows_ci_audits_runtime_and_reports_dev_risks() -> None:
@@ -30,3 +31,6 @@ def test_windows_ci_audits_runtime_and_reports_dev_risks() -> None:
     assert "npm audit --omit=dev --audit-level=high" in contents
     assert "npm audit --audit-level=high" in contents
     assert "continue-on-error: true" in contents
+    assert contents.count("npm ls picomatch --all") == 2
+    assert contents.count("npm audit --omit=dev --audit-level=high") == 2
+    assert contents.count("npm audit --audit-level=high") == 2

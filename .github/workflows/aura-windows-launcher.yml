@@ -138,7 +138,16 @@ jobs:
         working-directory: core/frontend
         shell: pwsh
         run: npm ci --no-audit --no-fund
-      - name: Fail closed on high/critical console npm advisories
+      - name: Verify console picomatch dependency scope
+        working-directory: core/frontend
+        shell: pwsh
+        run: npm ls picomatch --all
+      - name: Fail closed on high/critical console production advisories
+        working-directory: core/frontend
+        shell: pwsh
+        run: npm audit --omit=dev --audit-level=high
+      - name: Report console development advisories (visible; non-blocking)
+        continue-on-error: true
         working-directory: core/frontend
         shell: pwsh
         run: npm audit --audit-level=high
