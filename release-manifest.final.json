@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-18T05:10:00.000Z",
-  "git_commit": "d03a95c2e58e120b90258c3eaf4941ffd2332d08",
+  "generated_at": "2026-11-18T06:57:00.000Z",
+  "git_commit": "a338c0b5d151246b966dac7306acf1ae11974847",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:e93bdd8591461a4153e06ea8dc579e01b82a5fe41aa4f0d73f35ba8ee90c0806",
-  "file_count": 304,
+  "release_digest": "sha256:96cd2de0acb4a207131e45421305d3eb68e3dcdfa94744a4c7f495e2c9ae3c01",
+  "file_count": 312,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -165,8 +165,12 @@
       "sha256": "dc0e68e557c94abeb435564827591ef869bd4fc393e33121df658cb912593fbe"
     },
     {
+      "path": "core/src/aura_core/application/agent_credentials.py",
+      "sha256": "34626de1099ba311936f9a3a00dde4df03235ed76f34c71c058ff6f083f6841f"
+    },
+    {
       "path": "core/src/aura_core/application/agent_mailbox.py",
-      "sha256": "65229a0826a0b7fbf3cb393bba809f119f742967e163639e98556ab1601e564d"
+      "sha256": "0ae399dbe6b79bfeec3469259dc97db95902092386dcacab50e633489f896af0"
     },
     {
       "path": "core/src/aura_core/application/ambient_signal.py",
@@ -246,7 +250,7 @@
     },
     {
       "path": "core/src/aura_core/application/episodic_memory.py",
-      "sha256": "c126389d1997b955e54f3f963c10866c9c12e27081f7558b0b6a70c00a7e39d0"
+      "sha256": "96ca2844a67b8617c69bedfdf9c3e3ffbdbd53c01c87103d3c0fce9377841f08"
     },
     {
       "path": "core/src/aura_core/application/event_bridge.py",
@@ -490,7 +494,11 @@
     },
     {
       "path": "core/src/aura_core/application/task_memory.py",
-      "sha256": "3e1e8d9554564b83eed84888db47b3de4f9275f34935dd6ba326085195fd7575"
+      "sha256": "d3585352e4ffa080e80e813c267ccc68c52b944b714e5ac027b6185881016cdd"
+    },
+    {
+      "path": "core/src/aura_core/application/task_priority.py",
+      "sha256": "4a17d8c8f9b6680ae7710c45e715857fe59e81d61bfc14dd71d18389e4e2dc88"
     },
     {
       "path": "core/src/aura_core/application/task_state_machine.py",
@@ -531,6 +539,10 @@
     {
       "path": "core/src/aura_core/application/windows_screen_driver.py",
       "sha256": "b00c79d965e229e4676954c6ad54678f371002b9988bb437334574b05302e13f"
+    },
+    {
+      "path": "core/src/aura_core/application/workspace_architecture.py",
+      "sha256": "4cad8a1f9e7511435c7abc420119e34d685de2fd35455f07c18c7a0f2fe567b7"
     },
     {
       "path": "core/src/aura_core/application/ws_api.py",
@@ -583,6 +595,10 @@
     {
       "path": "core/src/aura_core/data_analysis/__init__.py",
       "sha256": "fb9b07c2c53489c7bfb0a041e7ff5a2c89b13a852fc5c8745121664a32c6f1b4"
+    },
+    {
+      "path": "core/src/aura_core/data_analysis/governed_csv.py",
+      "sha256": "0cf66014d0583aaf006d6451645b2a265a4a5175c475ed994f944b88acea6cc7"
     },
     {
       "path": "core/src/aura_core/data_analysis/tabular.py",
@@ -885,12 +901,16 @@
       "sha256": "62210df852d0dc805bf291f75200ee2a83509a3c2407d46a2a1506b394dfeabe"
     },
     {
+      "path": "core/src/aura_core/memory/graph_gateway.py",
+      "sha256": "2b472368bf08fb455a63bd30739ec51f4619c89e84d2fdb2d0b65f0c76de9a26"
+    },
+    {
       "path": "core/src/aura_core/memory/graph_store.py",
-      "sha256": "265b39dbcd4131337b8e8488d8fdc15dffeb3b274a1d6d5e3922c6382094a240"
+      "sha256": "05731082b5b406beec0c7048c52253292cddd34ca9026bd7244a6029a0f55b58"
     },
     {
       "path": "core/src/aura_core/memory/hierarchical_memory.py",
-      "sha256": "98764da792f5440a7e63da07183901df93ec46d664a71581f3c088fb1143035f"
+      "sha256": "9875ff55a07d3e8f118b22293237ccf2dcfbf416845e11b014bfd9a5de5af23e"
     },
     {
       "path": "core/src/aura_core/memory/local_embeddings.py",
@@ -1062,7 +1082,7 @@
     },
     {
       "path": "core/src/aura_core/research/archive.py",
-      "sha256": "1793e2b96962dbcf4ee8a4042bbe3faeef3b28afbc429498ad7c69e7cb780731"
+      "sha256": "59a3afc11800cbd6c3cccf2e52e587558680acb82b10b5a3bcecda53b6c0ed99"
     },
     {
       "path": "core/src/aura_core/research/citations.py",
@@ -1095,6 +1115,10 @@
     {
       "path": "core/src/aura_core/research/provider_bootstrap.py",
       "sha256": "b29ec4ce38cec4f0231d324915d9116071334b63a9968467aa57902d7bc3577e"
+    },
+    {
+      "path": "core/src/aura_core/research/report_authoring.py",
+      "sha256": "a9df72ee0baa9ee1aac76d24dca80ca5253969bf4fcbbcdb9e45adb5a93f31dd"
     },
     {
       "path": "core/src/aura_core/research/scientific_journal.py",
@@ -1149,8 +1173,16 @@
       "sha256": "26f8cdcef4c59b5c19dfbb430b537a24979de18126f7edd0d9f8a0b4220c1858"
     },
     {
+      "path": "core/src/aura_core/science/experiment_dataset.py",
+      "sha256": "99760b07590778a4c2cea7ebe48c7d6ba420d79ed28b6f7ebce840b47f3169bf"
+    },
+    {
       "path": "core/src/aura_core/science/linear_model.py",
       "sha256": "6417bea8d8d6523088eee1d37b09ae2a2cd0879ac52a825256bb9d22f8df192a"
+    },
+    {
+      "path": "core/src/aura_core/science/model_uncertainty.py",
+      "sha256": "2585a25b14dc9b18a0e9794b3de1722a95053ab1e29f3b3a3c3b7742951ab6a6"
     },
     {
       "path": "core/src/aura_core/security/__init__.py",
