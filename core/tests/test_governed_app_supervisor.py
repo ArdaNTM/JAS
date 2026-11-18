@@ -122,9 +122,12 @@ def test_real_process_is_not_started_until_approval_consumed(tmp_path):
         types = []
         bus.subscribe("ApplicationStarted", lambda event: types.append(event.event_type))
         bus.subscribe("ApplicationStopped", lambda event: types.append(event.event_type))
-        assert _run(bus.dispatch_once()) is True  # Gateway telemetry or action event.
-        for _ in range(20):
+        # Gateway telemetry events without subscribers can dead-letter; drain
+        # the real queue until both authorized lifecycle notifications arrive.
+        for _ in range(32):
             _run(bus.dispatch_once())
+            if len(types) >= 2:
+                break
         assert "ApplicationStarted" in types
         assert "ApplicationStopped" in types
     finally:
