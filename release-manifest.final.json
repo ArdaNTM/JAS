@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-10-31T00:45:29.771Z",
-  "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
+  "generated_at": "2026-11-18T03:24:06.574Z",
+  "git_commit": "621dfb8d3537dd4843731055f9a182c1ce6279ba",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
-  "file_count": 233,
+  "release_digest": "sha256:0ca99c00cd9b500c84299a3fb4f56a03f4f483f847b3bf3bb8bacf8b95cee8db",
+  "file_count": 234,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -351,6 +351,10 @@
     {
       "path": "core/src/aura_core/application/speech_api.py",
       "sha256": "6dda891be92af2820f0c482bc2df43a189cb68fb1d32a055cdd1f271b8a584dc"
+    },
+    {
+      "path": "core/src/aura_core/application/subsystem_pack2.py",
+      "sha256": "1f9ac3035aea62732c67b6d3d3d457b1827e15dffe4197dbbd09819195c89bce"
     },
     {
       "path": "core/src/aura_core/application/swarm_orchestration.py",
