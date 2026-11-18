@@ -1,15 +1,22 @@
 {
   "schema": "aura.core-reconciliation.v1",
   "source_pr": "https://github.com/ArdaNTM/JAS/pull/158",
-  "unified_snapshot": "fb7c9a4f3c892972fc6450cc1b7d3412257dc055",
+  "unified_snapshot": "19baa60b1139b519947270654d0c0fd59fb2516c",
   "baseline_main": "b1ffe6f534ced0d329dae273a4b949a634cb8bfa",
-  "statement": "Canonical Git blobs and source-specific regression evidence verified for five selected PR differences; PR #66/#68 missing modules merged exactly as their respective source branch blobs. PR #135/#146/#147 endpoints, providers and tests already existed under cumulative PR #152. This is NOT a semantic sign-off for every open PR.",
+  "statement": "Canonical Git blobs and source-specific regression evidence verified for five selected PR differences; PR #66/#68 missing modules merged exactly as their respective source branch blobs. PR #135/#146/#147 endpoints, providers and tests already existed under cumulative PR #152. This is NOT a semantic sign-off for every open PR. Post-F2.7 integration: canonical main.py was merged from PR #158 and main; source pin rebased to exact blob dc3a92e3 (no automatic feature completion).",
   "files": [
     {
       "path": "core/src/aura_core/main.py",
-      "unified_blob_sha": "230c0302778353dfee62100ab09895629727f9cb",
-      "canonical": "PR #152 cumulative version",
+      "unified_blob_sha": "dc3a92e30dc1af23cb6d562ea05a6b1ab7eca9f1",
+      "canonical": "PR #158 merged main e9c68dd with PR #158 aa7b6b3, preserved governed core registrations; pending exact-head CI and security review",
       "variants": [
+        {
+          "pr": 158,
+          "ref": "19baa60b1139b519947270654d0c0fd59fb2516c",
+          "blob": "dc3a92e30dc1af23cb6d562ea05a6b1ab7eca9f1",
+          "ancestry": "two-parent-main-merge",
+          "assessment": "RECONCILED_SOURCE_PIN_CI_PENDING"
+        },
         {
           "pr": 152,
           "ref": "ed8c974a0cc16be645a30f9dea97e4c292d35df7",
