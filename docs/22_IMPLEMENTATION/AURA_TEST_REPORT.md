@@ -397,3 +397,21 @@ Both features **TESTING/PARTIAL_VERIFIED**, NOT COMPLETED. Source-lock CI passes
   These cannot be made true solely by reclassifying existing code snippets.
 - Actual program: **117 TESTING, 0 COMPLETED, 0 NOT_STARTED**.
   No merge, `main` update or F2.7 change.
+
+## 2026-11-19 — Accepted frozen v1 source tracker sync
+
+Owner locked v1 to each existing bounded `technical_goal`, real source,
+MCPGateway authorization for tool calls, and green focused/negative unit/E2E
+tests. PR #158 source `386ec256e829f2bc070aaab7d3f40105311adfca`,
+tracker head `c31c1e06e5a7f17f67d1305686ddf3b92f130010`;
+Core Assurance [44419623004](https://github.com/ArdaNTM/JAS/actions/runs/44419623004)
+**2259 PASS / 14 SKIP**; Unified [44419623143](https://github.com/ArdaNTM/JAS/actions/runs/44419623143)
+**10 E2E + 9 governance PASS**; source lock **440 PASS**.
+
+**V1-only:** Group A nine `2,5,40,44,47,59,67,73,111` and B1 first
+ten `8,10,12,21,35,36,37,38,39,41` have `status=COMPLETED`
+with matching group readiness and strict PASS/VERIFIED gate values.
+Broader unimplemented full-product gates preserved verbatim under
+`known_limitations`. B1 #39 PDF/OCR, B1 #35 live web provider,
+#47 compiler certification and #73 scientific/publisher authenticity
+are *not* claimed implemented. 19 COMPLETED / 98 TESTING.
