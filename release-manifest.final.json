@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-10-31T00:45:29.771Z",
-  "git_commit": "1fa540067858773ee00b8e755908dfded2d72ed6",
+  "generated_at": "2026-11-18T04:30:00.000Z",
+  "git_commit": "9bb77fc7fd312907a475750571453cae2e3490df",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:222ee3400571684aebc6e51da10a54580f9bf34b3d35ab8090ce99a8cc3847e0",
-  "file_count": 233,
+  "release_digest": "sha256:a3b338c9e65549b461754221f5a80ac3a79d57fa9496b31921895c4c95782c95",
+  "file_count": 234,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -695,6 +695,10 @@
     {
       "path": "core/src/aura_core/memory/embeddings.py",
       "sha256": "82dc93cba5af57c0fd461e9e5a3c04dc94032bb8dcf722e7c584ca53698cf619"
+    },
+    {
+      "path": "core/src/aura_core/memory/episodic_mcp.py",
+      "sha256": "ad4a4184b8dca1ca31a0e4a3b3a89efce8de1df9e8f2d9ee0608567b1e2907bc"
     },
     {
       "path": "core/src/aura_core/memory/graph_store.py",
