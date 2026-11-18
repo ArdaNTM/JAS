@@ -199,3 +199,7 @@ Green PR #144 covers #112–#143, not open PRs #64–#111 including sealed F2.7 
 - Core queries are real and SQL-bound by principal and limited to 64. EventBus notifications do not authorize reads or prove changes; persisted task state is authoritative.
 - No native Electron HUD, cross-process authenticated task push, screen-reader test, Windows render performance or Owner field acceptance. CI PASS is not physical acceptance.
 - #147 stacked on #146/#144; earlier #64–#111 and #145 are not part of the 262-source branch lock.
+
+## 2026-11-18 — cumulative visual/stereo/task integration Draft #148
+
+Draft PR #148 exact HEAD `0b15247365ae9f9bd16eaf2f4cc38dc4a0e7e36c`, stacked on #147 and cumulatively including #145 stereo, #146 live SVG and #147 real task panel atop #144: [Core run 44217066647](https://github.com/ArdaNTM/JAS/actions/runs/44217066647) **1200 passed / 8 skipped**, 263 canonical-source Final Release Lock **PASS** `sha256:aefde5998dac9499f7cb7926477281eba0cd62525124a98bdbecf878d386591c`; [Remote Persistence run 44217066618](https://github.com/ArdaNTM/JAS/actions/runs/44217066618) **PASS**. Three new cross-module tests verify a real SAD depth/Gateway call, Gateway profiler → EventBus → live SVG, persisted SQLite → task panel, exact separate authorization scopes, no stereo-driven task or physical actions. No actual camera calibration/Owner hardware acceptance. #64–#111 not integrated, no merge, no COMPLETED. 19 NOT_STARTED / 96 TESTING / 2 RESEARCHING / 0 COMPLETED.
