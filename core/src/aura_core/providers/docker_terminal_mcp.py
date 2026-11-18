@@ -7,6 +7,7 @@ of Docker hardening flags. Docker daemon privilege is an external deployment gat
 from __future__ import annotations
 import asyncio
 import hashlib
+import json
 import os
 import re
 import subprocess
@@ -14,6 +15,10 @@ import threading
 from dataclasses import dataclass
 from pathlib import Path
 from uuid import uuid4
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, ConfigDict
+from aura_core.security.http_auth import authenticated_principal
 
 from aura_core.kernel.capabilities import CapabilityCategory, CapabilityDefinition, CapabilityRegistry, ProviderType
 from aura_core.kernel.services import ServiceCategory, ServiceDefinition, ServiceRegistry
@@ -274,3 +279,71 @@ class GovernedDockerTerminal:
             raise TerminalUnavailable("Invalid untrusted container evidence")
         return TerminalEvidence(command_id, "executed", exit_code=value["exit_code"],
                                 stdout=value["stdout"])
+
+
+
+def load_terminal_config(path: str) -> tuple[DockerSandboxEngine, tuple[TerminalCommand, ...]]:
+    """Explicit operator-local configuration, never a model-produced command."""
+    if os.name != "posix" or type(path) is not str or not Path(path).is_absolute():
+        raise TerminalUnavailable("Only attested Unix operator terminal configuration is supported")
+    file = Path(path)
+    if file.is_symlink() or file.resolve(strict=True) != file:
+        raise TerminalUnavailable("Unsafe terminal configuration path")
+    if not file.is_file() or not 0 < file.stat().st_size <= 32768:
+        raise TerminalUnavailable("Invalid bounded operator terminal configuration")
+    if (file.stat().st_uid != os.getuid() or file.stat().st_mode & 0o077
+            or file.parent.stat().st_mode & 0o022):
+        raise TerminalUnavailable("Terminal catalog is not private to its owner")
+    data = json.loads(file.read_text(encoding="utf-8"))
+    if type(data) is not dict or set(data) != {"schema", "docker_executable", "docker_sha256", "commands"} or data["schema"] != "aura.terminal.docker.v1":
+        raise ValueError("Unsupported terminal configuration")
+    rows = data["commands"]
+    if type(rows) is not list or not 1 <= len(rows) <= _MAX_COMMANDS:
+        raise ValueError("Invalid command catalog")
+    commands = []
+    for row in rows:
+        if type(row) is not dict or set(row) != {"command_id", "image", "argv", "timeout_seconds"} or type(row["argv"]) is not list:
+            raise ValueError("Invalid terminal profile schema")
+        commands.append(TerminalCommand(row["command_id"], row["image"],
+                                        tuple(row["argv"]), row["timeout_seconds"]))
+    if len({c.command_id for c in commands}) != len(commands):
+        raise ValueError("Duplicate terminal command ID")
+    engine = DockerSandboxEngine(
+        docker_executable=data["docker_executable"], docker_sha256=data["docker_sha256"],
+    )
+    return engine, tuple(commands)
+
+
+terminal_router = APIRouter(tags=["governed-offline-terminal"])
+
+
+class TerminalApprovalBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    approval_id: str | None = None
+
+
+@terminal_router.post("/api/runtime/terminal/{command_id}")
+async def http_run_approved_terminal(
+    command_id: str, body: TerminalApprovalBody, request: Request,
+    principal_id: str = Depends(authenticated_principal),
+) -> JSONResponse:
+    reader = getattr(request.app.state, "governed_terminal", None)
+    if not isinstance(reader, GovernedDockerTerminal):
+        raise HTTPException(status_code=503, detail="Terminal service unavailable")
+    if principal_id != reader.principal_id:
+        raise HTTPException(status_code=403, detail="Terminal Owner mismatch")
+    try:
+        result = await reader.run(command_id, approval_id=body.approval_id)
+    except (TerminalDenied, ValueError) as exc:
+        raise HTTPException(status_code=403, detail="Terminal execution denied") from exc
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="Terminal backend unavailable") from exc
+    return JSONResponse(
+        status_code=202 if result.status == "approval_required" else 200,
+        content={"command_id": result.command_id, "status": result.status,
+                 "approval_id": result.approval_id, "exit_code": result.exit_code,
+                 "stdout": result.stdout, "trust": result.trust},
+        headers={"Cache-Control": "private, no-store",
+                 "X-Content-Type-Options": "nosniff",
+                 "Content-Security-Policy": "default-src 'none'; script-src 'none'"},
+    )
