@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import sqlite3
+from datetime import UTC, datetime
 from pathlib import Path
 from threading import RLock
 from uuid import uuid4
@@ -43,6 +44,11 @@ class SQLiteGraphStore:
                 object TEXT NOT NULL)""")
             db.execute("""CREATE INDEX IF NOT EXISTS idx_aura_graph_edges_scope
                 ON aura_graph_edges(principal_id, subject, fact_id)""")
+            if "deleted_at" not in {r[1] for r in db.execute("PRAGMA table_info(aura_graph_edges)")}:
+                db.execute("ALTER TABLE aura_graph_edges ADD COLUMN deleted_at TEXT")
+            db.execute("""CREATE TABLE IF NOT EXISTS aura_graph_lifecycle_audit(
+                audit_id TEXT PRIMARY KEY, principal_id TEXT NOT NULL, fact_id TEXT NOT NULL,
+                action TEXT NOT NULL, occurred_at TEXT NOT NULL)""")
 
     def _connect(self):
         return sqlite3.connect(self.path, timeout=10)
@@ -82,6 +88,49 @@ class SQLiteGraphStore:
             raise PermissionError("explicit graph deletion confirmation required")
         return await asyncio.to_thread(self._delete, principal, key)
 
+
+    def _transition(self, principal_id: str, fact_id: str, *, restore: bool) -> bool:
+        condition = "IS NOT NULL" if restore else "IS NULL"
+        stamp = datetime.now(UTC).isoformat()
+        with self._lock, self._connect() as db:
+            count = db.execute(
+                "UPDATE aura_graph_edges SET deleted_at=? WHERE principal_id=? "
+                "AND fact_id=? AND deleted_at " + condition,
+                (None if restore else stamp, principal_id, fact_id),
+            ).rowcount
+            if count:
+                db.execute("""INSERT INTO aura_graph_lifecycle_audit
+                    (audit_id, principal_id, fact_id, action, occurred_at)
+                    VALUES(?,?,?,?,?)""", (str(uuid4()), principal_id, fact_id,
+                    "restore" if restore else "soft_delete", stamp))
+        return count == 1
+
+    async def soft_delete_fact(self, *, principal_id: str, fact_id: str,
+                               confirmed: bool = False) -> bool:
+        p = _require_text(principal_id, "principal_id", 256)
+        f = _require_text(fact_id, "fact_id", 64)
+        if confirmed is not True:
+            raise PermissionError("consumed Gateway deletion approval required")
+        return await asyncio.to_thread(self._transition, p, f, restore=False)
+
+    async def restore_fact(self, *, principal_id: str, fact_id: str,
+                           confirmed: bool = False) -> bool:
+        p = _require_text(principal_id, "principal_id", 256)
+        f = _require_text(fact_id, "fact_id", 64)
+        if confirmed is not True:
+            raise PermissionError("consumed Gateway restore approval required")
+        return await asyncio.to_thread(self._transition, p, f, restore=True)
+
+    async def lifecycle_audit(self, *, principal_id: str, fact_id: str) -> tuple[dict, ...]:
+        p = _require_text(principal_id, "principal_id", 256)
+        f = _require_text(fact_id, "fact_id", 64)
+        def read():
+            with self._lock, self._connect() as db:
+                rows = db.execute("""SELECT action, occurred_at FROM aura_graph_lifecycle_audit
+                    WHERE principal_id=? AND fact_id=? ORDER BY rowid""", (p, f)).fetchall()
+            return tuple({"action": a, "occurred_at": t} for a, t in rows)
+        return await asyncio.to_thread(read)
+
     def _query(self, principal_id, subject, limit, depth):
         result = []
         frontier, seen = [subject], {subject}
@@ -91,7 +140,7 @@ class SQLiteGraphStore:
                 for node in frontier:
                     rows = db.execute("""SELECT fact_id, subject, predicate, object
                         FROM aura_graph_edges WHERE principal_id=? AND subject=?
-                        ORDER BY fact_id LIMIT ?""",
+                        AND deleted_at IS NULL ORDER BY fact_id LIMIT ?""",
                         (principal_id, node, limit - len(result))).fetchall()
                     for fact_id, sub, pred, obj in rows:
                         result.append({"fact_id": fact_id, "subject": sub,
@@ -133,6 +182,11 @@ class PostgreSQLGraphStore:
                 object TEXT NOT NULL)"""))
             await conn.execute(text("""CREATE INDEX IF NOT EXISTS idx_aura_graph_edges_scope
                 ON aura_graph_edges(principal_id, subject, fact_id)"""))
+            await conn.execute(text(
+                "ALTER TABLE aura_graph_edges ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ"))
+            await conn.execute(text("""CREATE TABLE IF NOT EXISTS aura_graph_lifecycle_audit(
+                audit_id TEXT PRIMARY KEY, principal_id TEXT NOT NULL, fact_id TEXT NOT NULL,
+                action TEXT NOT NULL, occurred_at TIMESTAMPTZ NOT NULL)"""))
 
     async def insert(self, *, principal_id, subject, predicate, object):
         values = {
@@ -164,6 +218,54 @@ class PostgreSQLGraphStore:
             )
         return result.rowcount == 1
 
+
+    async def _transition(self, *, principal_id: str, fact_id: str,
+                          restore: bool) -> bool:
+        condition = "IS NOT NULL" if restore else "IS NULL"
+        stamp = datetime.now(UTC)
+        params = {"principal": principal_id, "id": fact_id, "stamp": stamp}
+        async with self._engine.begin() as conn:
+            changed = await conn.execute(text(
+                "UPDATE aura_graph_edges SET deleted_at=" +
+                ("NULL" if restore else ":stamp") +
+                " WHERE principal_id=:principal AND fact_id=:id AND deleted_at " + condition
+            ), params)
+            if changed.rowcount:
+                await conn.execute(text("""INSERT INTO aura_graph_lifecycle_audit
+                    (audit_id, principal_id, fact_id, action, occurred_at)
+                    VALUES(:audit, :principal, :id, :action, :stamp)"""),
+                    {**params, "audit": str(uuid4()),
+                     "action": "restore" if restore else "soft_delete"})
+        return changed.rowcount == 1
+
+    async def soft_delete_fact(self, *, principal_id: str, fact_id: str,
+                               confirmed: bool = False) -> bool:
+        p = _require_text(principal_id, "principal_id", 256)
+        f = _require_text(fact_id, "fact_id", 64)
+        if confirmed is not True:
+            raise PermissionError("consumed Gateway deletion approval required")
+        return await self._transition(principal_id=p, fact_id=f, restore=False)
+
+    async def restore_fact(self, *, principal_id: str, fact_id: str,
+                           confirmed: bool = False) -> bool:
+        p = _require_text(principal_id, "principal_id", 256)
+        f = _require_text(fact_id, "fact_id", 64)
+        if confirmed is not True:
+            raise PermissionError("consumed Gateway restore approval required")
+        return await self._transition(principal_id=p, fact_id=f, restore=True)
+
+    async def lifecycle_audit(self, *, principal_id: str, fact_id: str) -> tuple[dict, ...]:
+        p = _require_text(principal_id, "principal_id", 256)
+        f = _require_text(fact_id, "fact_id", 64)
+        async with self._engine.connect() as conn:
+            rows = (await conn.execute(text("""SELECT action, occurred_at
+                FROM aura_graph_lifecycle_audit
+                WHERE principal_id=:principal AND fact_id=:id
+                ORDER BY occurred_at, audit_id"""),
+                {"principal": p, "id": f})).mappings().all()
+        return tuple({"action": row["action"],
+                      "occurred_at": row["occurred_at"].isoformat()} for row in rows)
+
     async def query(self, *, principal_id, subject, limit=20, depth=1):
         principal = _require_text(principal_id, "principal_id", 256)
         subject = _require_text(subject, "subject", 200)
@@ -175,7 +277,7 @@ class PostgreSQLGraphStore:
                 for node in frontier:
                     rows = (await conn.execute(text("""SELECT fact_id, subject, predicate, object
                         FROM aura_graph_edges WHERE principal_id=:principal AND subject=:subject
-                        ORDER BY fact_id LIMIT :limit"""),
+                        AND deleted_at IS NULL ORDER BY fact_id LIMIT :limit"""),
                         {"principal": principal, "subject": node, "limit": limit - len(result)}
                     )).mappings().all()
                     for row in rows:

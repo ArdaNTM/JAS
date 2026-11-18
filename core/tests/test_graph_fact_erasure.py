@@ -59,3 +59,35 @@ def test_postgres_stays_fail_closed_without_database_call():
         with pytest.raises(ValueError):
             await store.delete_fact(principal_id="", fact_id="id", confirmed=True)
     asyncio.run(scenario())
+
+
+def test_sqlite_tombstone_restore_migration_and_durable_audit(tmp_path):
+    import sqlite3
+
+    path = tmp_path / "old-graph.sqlite"
+    with sqlite3.connect(path) as connection:
+        connection.execute("""CREATE TABLE aura_graph_edges(
+            fact_id TEXT PRIMARY KEY, principal_id TEXT NOT NULL,
+            subject TEXT NOT NULL, predicate TEXT NOT NULL, object TEXT NOT NULL)""")
+        connection.execute("INSERT INTO aura_graph_edges VALUES(?,?,?,?,?)",
+                           ("old-fact", "owner", "node", "rel", "target"))
+    async def scenario():
+        first = SQLiteGraphStore(path)
+        with pytest.raises(PermissionError):
+            await first.soft_delete_fact(principal_id="owner", fact_id="old-fact")
+        with pytest.raises(PermissionError):
+            await first.restore_fact(principal_id="owner", fact_id="old-fact")
+        assert await first.query(principal_id="owner", subject="node")
+        assert not await first.soft_delete_fact(principal_id="stranger", fact_id="old-fact", confirmed=True)
+        assert await first.soft_delete_fact(principal_id="owner", fact_id="old-fact", confirmed=True)
+        assert not await first.soft_delete_fact(principal_id="owner", fact_id="old-fact", confirmed=True)
+        assert not await first.query(principal_id="owner", subject="node")
+        opened = SQLiteGraphStore(path)
+        assert not await opened.query(principal_id="owner", subject="node")
+        assert await opened.restore_fact(principal_id="owner", fact_id="old-fact", confirmed=True)
+        assert not await opened.restore_fact(principal_id="owner", fact_id="old-fact", confirmed=True)
+        assert (await opened.query(principal_id="owner", subject="node"))[0]["fact_id"] == "old-fact"
+        logs = await opened.lifecycle_audit(principal_id="owner", fact_id="old-fact")
+        assert [entry["action"] for entry in logs] == ["soft_delete", "restore"]
+        assert await opened.lifecycle_audit(principal_id="stranger", fact_id="old-fact") == ()
+    asyncio.run(scenario())

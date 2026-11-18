@@ -8,8 +8,12 @@ No permission policies or Owner credentials are created here.
 from __future__ import annotations
 
 import asyncio
+import hashlib
+import hmac
+import json
 import re
 import sqlite3
+from datetime import UTC, datetime
 import threading
 from dataclasses import dataclass
 from pathlib import Path
@@ -84,6 +88,12 @@ class ScopedAgentMailbox:
             message_id TEXT NOT NULL, sequence INTEGER NOT NULL,
             PRIMARY KEY(principal_id, task_id, message_id),
             UNIQUE(principal_id, task_id, sequence)
+        )""")
+        self._db.execute("""CREATE TABLE IF NOT EXISTS agent_delivery_receipts(
+            principal_id TEXT NOT NULL, task_id TEXT NOT NULL,
+            message_id TEXT NOT NULL, receiver_principal TEXT NOT NULL,
+            receipt_json TEXT NOT NULL, signature_hex TEXT NOT NULL,
+            PRIMARY KEY(principal_id, task_id, message_id)
         )""")
 
     def close(self) -> None:
@@ -195,6 +205,8 @@ class ScopedAgentMailbox:
     def consume(
         self, *, principal_id: str, task_id: str,
         recipient_role: str, confirm: bool = False, limit: int = 20,
+        receipt_signing_key: bytes | None = None,
+        receiver_principal: str | None = None,
     ) -> tuple[SpecialistMessage, ...]:
         """Explicit data consumption only; caller confirmation != authorization."""
         self._scope(principal_id, task_id)
@@ -203,6 +215,12 @@ class ScopedAgentMailbox:
             raise PermissionError("explicit mailbox consumption required")
         if type(limit) is not int or not 1 <= limit <= 128:
             raise ValueError("invalid mailbox read limit")
+        if (receipt_signing_key is None) != (receiver_principal is None):
+            raise PermissionError("receipt signer and authenticated receiver must be paired")
+        if receipt_signing_key is not None:
+            if type(receipt_signing_key) is not bytes or len(receipt_signing_key) < 32:
+                raise PermissionError("receipt signing key requires >=32 bytes")
+            receiver_principal = self._validate_id(receiver_principal, "receiver")
         with self._lock:
             self._db.execute("BEGIN IMMEDIATE")
             try:
@@ -214,12 +232,70 @@ class ScopedAgentMailbox:
                     self._db.execute("""DELETE FROM agent_messages
                         WHERE principal_id=? AND task_id=? AND message_id=?""",
                         (self._principal, self._task, row["message_id"]))
+                    if receipt_signing_key is not None:
+                        receipt = {
+                            "schema": "aura.agent.delivery-receipt.v1",
+                            "principal_id": self._principal, "task_id": self._task,
+                            "message_id": row["message_id"], "sequence": row["sequence"],
+                            "sender_role": row["sender_role"],
+                            "recipient_role": row["recipient_role"],
+                            "receiver_principal": receiver_principal,
+                            "text_sha256": hashlib.sha256(row["text"].encode("utf-8")).hexdigest(),
+                            "consumed_at": datetime.now(UTC).isoformat(),
+                        }
+                        payload = json.dumps(receipt, sort_keys=True,
+                                             separators=(",", ":"), ensure_ascii=False)
+                        mac = hmac.new(receipt_signing_key, payload.encode("utf-8"),
+                                       hashlib.sha256).hexdigest()
+                        self._db.execute("""INSERT INTO agent_delivery_receipts
+                            (principal_id, task_id, message_id, receiver_principal,
+                             receipt_json, signature_hex) VALUES(?,?,?,?,?,?)""",
+                            (self._principal, self._task, row["message_id"],
+                             receiver_principal, payload, mac))
                 self._db.execute("COMMIT")
             except Exception:
                 self._db.execute("ROLLBACK")
                 raise
         # Durable seen ledger retained after consume; replay is still denied.
         return tuple(map(self._record, rows))
+
+
+    def delivery_receipt(self, *, principal_id: str, task_id: str,
+                         message_id: str, receiver_principal: str) -> dict | None:
+        """Read durable signed consumption proof scoped to the attested receiver."""
+        self._scope(principal_id, task_id)
+        mid = self._validate_id(message_id, "message")
+        principal = self._validate_id(receiver_principal, "receiver")
+        with self._lock:
+            row = self._db.execute("""SELECT receipt_json, signature_hex
+                FROM agent_delivery_receipts WHERE principal_id=? AND task_id=?
+                AND message_id=? AND receiver_principal=?""",
+                (self._principal, self._task, mid, principal)).fetchone()
+        if row is None:
+            return None
+        return {"receipt": json.loads(row["receipt_json"]),
+                "signature_hex": row["signature_hex"]}
+
+    @staticmethod
+    def verify_delivery_receipt(record: dict, signing_key: bytes) -> bool:
+        """Verify a broker-signed record; NOT an independent receiver signature."""
+        if type(signing_key) is not bytes or len(signing_key) < 32:
+            raise ValueError("trusted receipt verification key required")
+        if type(record) is not dict or set(record) != {"receipt", "signature_hex"}:
+            return False
+        payload, sig = record["receipt"], record["signature_hex"]
+        if (type(payload) is not dict or
+                payload.get("schema") != "aura.agent.delivery-receipt.v1" or
+                type(sig) is not str or len(sig) != 64 or
+                any(c not in "0123456789abcdef" for c in sig)):
+            return False
+        try:
+            raw = json.dumps(payload, sort_keys=True, ensure_ascii=False,
+                             separators=(",", ":"), allow_nan=False).encode("utf-8")
+        except (TypeError, ValueError, UnicodeError):
+            return False
+        expected = hmac.new(signing_key, raw, hashlib.sha256).hexdigest()
+        return hmac.compare_digest(expected, sig)
 
     def pending_count(self, *, principal_id: str, task_id: str) -> int:
         self._scope(principal_id, task_id)
@@ -254,10 +330,16 @@ class GovernedAgentMailboxMCP:
     provider_id = "aura.governed-agent-mailbox"
 
     def __init__(self, mailbox: ScopedAgentMailbox,
-                 bindings: Mapping[str, AgentBinding]) -> None:
+                 bindings: Mapping[str, AgentBinding],
+                 *, receipt_signing_key: bytes | None = None) -> None:
         if not isinstance(mailbox, ScopedAgentMailbox) or not bindings:
             raise ValueError("Existing SQLite mailbox and trusted roster required")
+        if receipt_signing_key is not None and (
+            type(receipt_signing_key) is not bytes or len(receipt_signing_key) < 32
+        ):
+            raise ValueError("independent broker receipt key must be >=32 bytes")
         self.mailbox = mailbox
+        self._receipt_key = receipt_signing_key
         self._bindings = dict(bindings)
         for principal, binding in self._bindings.items():
             if principal != binding.agent_principal:
@@ -320,13 +402,24 @@ class GovernedAgentMailboxMCP:
         else:
             result = await asyncio.to_thread(self.mailbox.consume,
                 principal_id=owner, task_id=task, recipient_role=binding.role,
-                confirm=True, limit=args.get("limit", 20))
-        return {"messages": [
+                confirm=True, limit=args.get("limit", 20),
+                receipt_signing_key=self._receipt_key,
+                receiver_principal=(grant.principal_id if self._receipt_key else None))
+        response = {"messages": [
             {"message_id": item.message_id, "sequence": item.sequence,
              "sender_role": item.sender_role, "recipient_role": item.recipient_role,
              "text": item.text, "untrusted": True, "delivered_to_agent": False}
             for item in result
         ]}
+        if name == "agent_consume" and self._receipt_key is not None:
+            response["broker_signed_receipts"] = [
+                self.mailbox.delivery_receipt(
+                    principal_id=owner, task_id=task,
+                    message_id=item.message_id,
+                    receiver_principal=grant.principal_id)
+                for item in result
+            ]
+        return response
 
 
 def register_governed_agent_mailbox(kernel: Any, provider: GovernedAgentMailboxMCP) -> None:

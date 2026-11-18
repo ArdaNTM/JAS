@@ -51,6 +51,8 @@ def test_postgres_graph_gateway_principal_scope_durable_delete_and_replay():
             "graph_insert": "aura.memory.graph.insert",
             "graph_query": "aura.memory.graph.query",
             "graph_delete": "aura.memory.graph.delete",
+            "graph_soft_delete": "aura.memory.graph.soft_delete",
+            "graph_restore": "aura.memory.graph.restore",
         }
         for tool, cap in caps.items():
             kernel.permission_engine.add_policy(PermissionPolicy(
@@ -59,10 +61,12 @@ def test_postgres_graph_gateway_principal_scope_durable_delete_and_replay():
                 resource_scope="memory/"+alice,
                 authorization_level=(
                     AuthorizationLevel.USER_APPROVAL_REQUIRED
-                    if tool == "graph_delete" else AuthorizationLevel.WRITE
+                    if tool in {"graph_delete", "graph_soft_delete", "graph_restore"}
+                    else AuthorizationLevel.WRITE
                 ),
                 decision=(AuthorizationDecision.REQUIRE_APPROVAL
-                          if tool == "graph_delete" else AuthorizationDecision.ALLOW),
+                          if tool in {"graph_delete", "graph_soft_delete", "graph_restore"}
+                          else AuthorizationDecision.ALLOW),
             ))
 
         async def call(tool, *, principal=alice, approval=None, **args):
@@ -71,7 +75,8 @@ def test_postgres_graph_gateway_principal_scope_durable_delete_and_replay():
                 request_id=scope+"-"+tool, principal_id=principal,
                 capability_id=cap, operation_id=cap,
                 resource_scope="memory/"+principal,
-                risk_level=RiskLevel.HIGH if tool == "graph_delete" else RiskLevel.LOW,
+                risk_level=RiskLevel.HIGH if tool in {"graph_delete", "graph_soft_delete", "graph_restore"}
+                else RiskLevel.LOW,
                 tool_name=tool, arguments=args, approval_id=approval,
             ))
 
@@ -96,6 +101,45 @@ def test_postgres_graph_gateway_principal_scope_durable_delete_and_replay():
             assert success.decision is AuthorizationDecision.ALLOW
             assert success.result["deleted"] is True
             assert await store.query(principal_id=alice, subject="real-pg-"+scope) == []
+            # New transactional soft-delete/restore on a second durable PostgreSQL fact.
+            second = await call("graph_insert", subject="other-"+scope,
+                                predicate="link", object="tail")
+            second_id = second.result["fact_id"]
+            tombstone = await call("graph_soft_delete", fact_id=second_id)
+            assert tombstone.decision is AuthorizationDecision.REQUIRE_APPROVAL
+            pending_record = approvals.get(tombstone.approval_id)
+            approvals.decide(pending_record.approval_id,
+                             expected_version=pending_record.version,
+                             approver_id="remote-ci-test-approver",
+                             decision=ApprovalStatus.APPROVED)
+            changed = await call("graph_soft_delete", fact_id=second_id,
+                                 approval=tombstone.approval_id)
+            assert changed.decision is AuthorizationDecision.ALLOW
+            assert changed.result["soft_deleted"]
+            reopened_tombstone = PostgreSQLGraphStore(URL)
+            try:
+                assert await reopened_tombstone.query(
+                    principal_id=alice, subject="other-"+scope) == []
+                recovery = await call("graph_restore", fact_id=second_id)
+                assert recovery.decision is AuthorizationDecision.REQUIRE_APPROVAL
+                approval_record = approvals.get(recovery.approval_id)
+                approvals.decide(approval_record.approval_id,
+                                 expected_version=approval_record.version,
+                                 approver_id="remote-ci-test-approver",
+                                 decision=ApprovalStatus.APPROVED)
+                outcome = await call("graph_restore", fact_id=second_id,
+                                     approval=recovery.approval_id)
+                assert outcome.decision is AuthorizationDecision.ALLOW
+                assert outcome.result["restored"]
+                assert (await reopened_tombstone.query(
+                    principal_id=alice, subject="other-"+scope))[0]["fact_id"] == second_id
+                log = await reopened_tombstone.lifecycle_audit(
+                    principal_id=alice, fact_id=second_id)
+                assert [x["action"] for x in log] == ["soft_delete", "restore"]
+                assert await reopened_tombstone.lifecycle_audit(
+                    principal_id=bob, fact_id=second_id) == ()
+            finally:
+                await reopened_tombstone.close()
             replay = await call("graph_delete", fact_id=fact_id,
                                 approval=pending.approval_id)
             assert replay.decision is AuthorizationDecision.REQUIRE_APPROVAL

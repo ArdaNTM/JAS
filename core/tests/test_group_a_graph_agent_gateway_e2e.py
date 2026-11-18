@@ -45,7 +45,7 @@ def environment(tmp_path):
     agent_provider = GovernedAgentMailboxMCP(mailbox, {
         "owner:1:coder": AgentBinding("owner:1:coder", "owner:1", "task-42", "coder"),
         "owner:1:researcher": AgentBinding("owner:1:researcher", "owner:1", "task-42", "researcher"),
-    })
+    }, receipt_signing_key=b"test-only-broker-signed-receipts-32-byte-key")
     register_governed_agent_mailbox(kernel, agent_provider)
     approval = SQLiteApprovalStore(str(tmp_path / "approvals.sqlite"))
     gateway = MCPGateway(
@@ -58,6 +58,8 @@ def environment(tmp_path):
         ("alice", "graph_insert", "aura.memory.graph.insert", "memory/alice", False),
         ("alice", "graph_query", "aura.memory.graph.query", "memory/alice", False),
         ("alice", "graph_delete", "aura.memory.graph.delete", "memory/alice", True),
+        ("alice", "graph_soft_delete", "aura.memory.graph.soft_delete", "memory/alice", True),
+        ("alice", "graph_restore", "aura.memory.graph.restore", "memory/alice", True),
         ("owner:1:coder", "agent_send", "aura.agent.mailbox.send", "tasks/owner:1/task-42", False),
         ("owner:1:researcher", "agent_read", "aura.agent.mailbox.read", "tasks/owner:1/task-42", False),
         ("owner:1:researcher", "agent_consume", "aura.agent.mailbox.consume", "tasks/owner:1/task-42", True),
@@ -84,6 +86,8 @@ CAP = {
     "graph_insert": "aura.memory.graph.insert",
     "graph_query": "aura.memory.graph.query",
     "graph_delete": "aura.memory.graph.delete",
+    "graph_soft_delete": "aura.memory.graph.soft_delete",
+    "graph_restore": "aura.memory.graph.restore",
     "agent_send": "aura.agent.mailbox.send",
     "agent_read": "aura.agent.mailbox.read",
     "agent_consume": "aura.agent.mailbox.consume",
@@ -97,7 +101,7 @@ def call(gateway, name, *, principal="alice", scope=None, approval=None, **kwarg
         resource_scope=scope or (
             "memory/alice" if name.startswith("graph") else "tasks/owner:1/task-42"
         ),
-        risk_level=RiskLevel.HIGH if name.endswith(("delete", "consume")) else RiskLevel.LOW,
+        risk_level=RiskLevel.HIGH if name.endswith(("delete", "restore", "consume")) else RiskLevel.LOW,
         tool_name=name, arguments=kwargs, approval_id=approval,
     )
     return asyncio.run(gateway.invoke(request))
@@ -206,10 +210,32 @@ def test_mailbox_consumption_approval_replay_and_per_role_receive(environment):
                 approval=pending.approval_id, limit=5)
     assert done.decision is AuthorizationDecision.ALLOW
     assert [x["message_id"] for x in done.result["messages"]] == ["m1"]
+    receipts = done.result["broker_signed_receipts"]
+    assert len(receipts) == 1
+    assert ScopedAgentMailbox.verify_delivery_receipt(
+        receipts[0], b"test-only-broker-signed-receipts-32-byte-key")
+    assert receipts[0]["receipt"]["message_id"] == "m1"
+    assert receipts[0]["receipt"]["receiver_principal"] == "owner:1:researcher"
+    assert receipts[0]["receipt"]["text_sha256"]
+    assert not ScopedAgentMailbox.verify_delivery_receipt(
+        {**receipts[0], "receipt": {**receipts[0]["receipt"], "message_id": "tampered"}},
+        b"test-only-broker-signed-receipts-32-byte-key")
     assert mailbox.pending_count(principal_id="owner:1", task_id="task-42") == 0
     replay = call(gw, "agent_consume", principal="owner:1:researcher",
                   approval=pending.approval_id, limit=5)
     assert replay.decision is AuthorizationDecision.REQUIRE_APPROVAL
+    persisted = ScopedAgentMailbox(
+        principal_id="owner:1", task_id="task-42", database_path=path)
+    try:
+        proof = persisted.delivery_receipt(
+            principal_id="owner:1", task_id="task-42",
+            message_id="m1", receiver_principal="owner:1:researcher")
+        assert proof == receipts[0]
+        assert persisted.delivery_receipt(
+            principal_id="owner:1", task_id="task-42",
+            message_id="m1", receiver_principal="owner:1:coder") is None
+    finally:
+        persisted.close()
     with pytest.raises(ValueError, match="duplicate"):
         mailbox.send(principal_id="owner:1", task_id="task-42",
                      message_id="m1", sender_role="coder",
@@ -227,3 +253,37 @@ def test_roster_cannot_cross_owner_task_scope(tmp_path):
             })
     finally:
         store.close()
+
+
+def test_graph_tombstone_restore_is_gateway_approved_scoped_and_audited(environment):
+    _, gw, approvals, graph, provider, _, _, _ = environment
+    source = call(gw, "graph_insert", subject="source", predicate="links", object="target")
+    fid = source.result["fact_id"]
+    assert call(gw, "graph_query", subject="source").result["facts"]
+    pending = call(gw, "graph_soft_delete", fact_id=fid)
+    assert pending.decision is AuthorizationDecision.REQUIRE_APPROVAL
+    assert len(asyncio.run(graph.lifecycle_audit(principal_id="alice", fact_id=fid))) == 0
+    approve(approvals, pending.approval_id)
+    deleted = call(gw, "graph_soft_delete", fact_id=fid,
+                   approval=pending.approval_id)
+    assert deleted.decision is AuthorizationDecision.ALLOW
+    assert deleted.result == {"soft_deleted": True, "audited": True}
+    assert call(gw, "graph_query", subject="source").result["facts"] == []
+    assert call(gw, "graph_soft_delete", fact_id=fid,
+                approval=pending.approval_id).decision is AuthorizationDecision.REQUIRE_APPROVAL
+    assert call(gw, "graph_restore", principal="mallory",
+                scope="memory/mallory", fact_id=fid).decision is AuthorizationDecision.DENY
+    to_restore = call(gw, "graph_restore", fact_id=fid)
+    assert to_restore.decision is AuthorizationDecision.REQUIRE_APPROVAL
+    approve(approvals, to_restore.approval_id)
+    restored = call(gw, "graph_restore", fact_id=fid,
+                    approval=to_restore.approval_id)
+    assert restored.decision is AuthorizationDecision.ALLOW
+    assert restored.result == {"restored": True, "audited": True}
+    assert call(gw, "graph_query", subject="source").result["facts"][0]["fact_id"] == fid
+    audit = asyncio.run(graph.lifecycle_audit(principal_id="alice", fact_id=fid))
+    assert [entry["action"] for entry in audit] == ["soft_delete", "restore"]
+    assert asyncio.run(graph.lifecycle_audit(principal_id="mallory", fact_id=fid)) == ()
+    assert not call(gw, "graph_restore", fact_id=fid).decision is AuthorizationDecision.ALLOW
+    with pytest.raises(PermissionError):
+        asyncio.run(provider.call_tool("graph_soft_delete", {"fact_id": fid}))

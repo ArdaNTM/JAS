@@ -149,3 +149,41 @@ def test_signed_ingress_consumed_approval_is_one_time(signed_environment):
         RESEARCHER, "agent_consume", {"limit": 1},
         nonce="8"*32, approval=pending.approval_id)))
     assert again.decision is AuthorizationDecision.REQUIRE_APPROVAL
+
+
+def test_hmac_signature_from_separate_python_process_passes_existing_gateway(
+        signed_environment):
+    import json
+    import subprocess
+    import sys
+
+    ingress, _, mailbox, _, _, _ = signed_environment
+    data = {"message_id": "process-1", "recipient_role": "researcher",
+            "text": "signed by a separate real Python interpreter"}
+    nonce = "a" * 32
+    timestamp = int(time.time())
+    material = canonical_agent_auth_payload(CODER, "agent_send",
+                                             data, nonce, timestamp)
+    script = (
+        "import json,sys,hmac,hashlib\n"
+        "x=json.loads(sys.stdin.read())\n"
+        "print(hmac.new(bytes.fromhex(x['key']),bytes.fromhex(x['payload']),"
+        "hashlib.sha256).hexdigest())\n"
+    )
+    worker = subprocess.run(
+        [sys.executable, "-c", script],
+        input=json.dumps({"key": KEYS[CODER].hex(), "payload": material.hex()}),
+        text=True, capture_output=True, timeout=10, check=True,
+    )
+    signature = worker.stdout.strip()
+    request = SignedAgentRequest(
+        CODER, "agent_send", data, timestamp, nonce, signature)
+    result = asyncio.run(ingress.invoke(request))
+    assert result.decision is AuthorizationDecision.ALLOW
+    assert result.result["queued"] is True
+    assert mailbox.pending_count(principal_id="owner:1", task_id="task-42") == 1
+    with pytest.raises(PermissionError, match="replayed"):
+        asyncio.run(ingress.invoke(request))
+    # The same signature cannot authorize a different provisioned principal.
+    with pytest.raises(PermissionError, match="signature"):
+        asyncio.run(ingress.invoke(replace(request, principal_id=RESEARCHER)))

@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-18T16:35:34.539Z",
-  "git_commit": "97970d65ec139933abf5a420de3d8e4bf734e670",
+  "generated_at": "2026-11-18T18:01:17.355Z",
+  "git_commit": "c5c39a5cb814bd5d27239ad0e51b191bbd46194b",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:8abed32da6e4b52f7f80dea68a758af64bdfae6bb9d48e51fa23efb072516f0c",
+  "release_digest": "sha256:ebcbd0f55845a04119563d976d72951dc506e85c763a8aba32417a4787041ad9",
   "file_count": 440,
   "files": [
     {
@@ -346,7 +346,7 @@
     },
     {
       "path": "core/src/aura_core/application/agent_mailbox.py",
-      "sha256": "0ae399dbe6b79bfeec3469259dc97db95902092386dcacab50e633489f896af0"
+      "sha256": "3fce048a7697bf8416036bfbecf546d2dab589270d6d59e3372ce17a03f3ce8c"
     },
     {
       "path": "core/src/aura_core/application/ambient_signal.py",
@@ -1206,11 +1206,11 @@
     },
     {
       "path": "core/src/aura_core/memory/graph_gateway.py",
-      "sha256": "2b472368bf08fb455a63bd30739ec51f4619c89e84d2fdb2d0b65f0c76de9a26"
+      "sha256": "eccf06e52f3ee3f05aa07a279059c64c0627e7aa43fb51ab0af4a9b214748241"
     },
     {
       "path": "core/src/aura_core/memory/graph_store.py",
-      "sha256": "05731082b5b406beec0c7048c52253292cddd34ca9026bd7244a6029a0f55b58"
+      "sha256": "577475c0e19a7265482174f5325510647715dc83d2ec4a2144f3340193161bdd"
     },
     {
       "path": "core/src/aura_core/memory/hierarchical_memory.py",

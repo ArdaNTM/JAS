@@ -18,6 +18,8 @@ CAPABILITIES = {
     "graph_insert": "aura.memory.graph.insert",
     "graph_query": "aura.memory.graph.query",
     "graph_delete": "aura.memory.graph.delete",
+    "graph_soft_delete": "aura.memory.graph.soft_delete",
+    "graph_restore": "aura.memory.graph.restore",
 }
 
 
@@ -50,6 +52,16 @@ class GovernedGraphMCP:
                 },
                 "required": ["subject"], "additionalProperties": False,
             }),
+            MCPTool("graph_soft_delete", "Tombstone one fact with consumed Owner approval", {
+                "type": "object", "properties": {
+                    "fact_id": {"type": "string", "minLength": 1, "maxLength": 64}
+                }, "required": ["fact_id"], "additionalProperties": False,
+            }),
+            MCPTool("graph_restore", "Restore one fact with consumed Owner approval", {
+                "type": "object", "properties": {
+                    "fact_id": {"type": "string", "minLength": 1, "maxLength": 64}
+                }, "required": ["fact_id"], "additionalProperties": False,
+            }),
             MCPTool("graph_delete", "Delete one fact with consumed Owner approval", {
                 "type": "object",
                 "properties": {
@@ -65,7 +77,7 @@ class GovernedGraphMCP:
             grant.capability_id != CAPABILITIES[name] or grant.tool_name != name or
             type(grant.principal_id) is not str or not grant.principal_id.strip()):
             raise PermissionError("Exact MCPGateway dispatch grant is mandatory")
-        if name == "graph_delete" and (
+        if name in {"graph_delete", "graph_soft_delete", "graph_restore"} and (
             not grant.approval_consumed or grant.risk_level not in {"high", "critical"}
         ):
             raise PermissionError("Graph deletion requires consumed HIGH-risk approval")
@@ -84,6 +96,14 @@ class GovernedGraphMCP:
                 principal_id=principal, subject=args["subject"],
                 limit=args.get("limit", 20), depth=args.get("depth", 1))
             return {"facts": facts, "untrusted": True}
+        if name == "graph_soft_delete":
+            changed = await self.store.soft_delete_fact(
+                principal_id=principal, fact_id=args["fact_id"], confirmed=True)
+            return {"soft_deleted": changed, "audited": changed}
+        if name == "graph_restore":
+            changed = await self.store.restore_fact(
+                principal_id=principal, fact_id=args["fact_id"], confirmed=True)
+            return {"restored": changed, "audited": changed}
         deleted = await self.store.delete_fact(
             principal_id=principal, fact_id=args["fact_id"], confirmed=True)
         return {"deleted": deleted}
@@ -109,5 +129,5 @@ def register_governed_graph(kernel: Any, provider: GovernedGraphMCP) -> None:
             description="Owner-scoped graph fact data, never a policy source",
             provider_id=provider.provider_id, provider_type=ProviderType.MCP,
             category=CapabilityCategory.MEMORY, tool_name=name,
-            risk_level="high" if name == "graph_delete" else "low",
+            risk_level="high" if name in {"graph_delete", "graph_soft_delete", "graph_restore"} else "low",
         ))
