@@ -1,0 +1,2457 @@
+{
+  "schema": "aura.acceptance-groups.v1",
+  "scope": "ArdaNTM/JAS",
+  "baseline_tracker": "a1cf7db79ce8c2472ed240b3e00271b5ff3b64c0",
+  "baseline_unified": "0eccc2195401d29b91b5cc14a115f86c7341ef24",
+  "classification_semantics": "A means a candidate for fully automated software acceptance, NOT a completed feature; B requires live/Owner/external acceptance. Actual COMPLETED additionally requires every canonical tracker validator gate and independently evidenced unified CI. A has 9 conservative candidates.",
+  "A_ids": [
+    2,
+    5,
+    40,
+    44,
+    47,
+    59,
+    67,
+    73,
+    111
+  ],
+  "B_ids": [
+    1,
+    3,
+    4,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    41,
+    42,
+    43,
+    45,
+    46,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53,
+    54,
+    55,
+    56,
+    57,
+    58,
+    60,
+    61,
+    62,
+    63,
+    64,
+    65,
+    66,
+    68,
+    69,
+    70,
+    71,
+    72,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79,
+    80,
+    81,
+    82,
+    83,
+    84,
+    85,
+    86,
+    87,
+    88,
+    89,
+    90,
+    91,
+    92,
+    93,
+    94,
+    95,
+    96,
+    97,
+    98,
+    99,
+    100,
+    101,
+    102,
+    103,
+    104,
+    105,
+    106,
+    107,
+    108,
+    109,
+    110,
+    112,
+    113,
+    114,
+    115,
+    116,
+    117
+  ],
+  "records": [
+    {
+      "id": 1,
+      "group": "B",
+      "name": "Kalıcı kişisel hafıza",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Production Owner authentication for SQLiteApprovalStore.decide and independent security review are not evidenced; unmerged PR and no Owner release acceptance.",
+        "Full chat/semantic memory retention/export/deletion lifecycle, production encryption/NTFS ACL, crash recovery and PostgreSQL migration acceptance not verified.",
+        "Cross-branch source-path integration is green but does not attest every conflicting, unmerged PR implementation.",
+        "Authenticated Owner approval decision lifecycle",
+        "Independent privacy and Windows NTFS ACL acceptance",
+        "End-to-end production memory migration/retention acceptance",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 2,
+      "group": "A",
+      "name": "İlişkisel bilgi grafiği",
+      "criterion": "Potential software-only acceptance: resolve all listed gaps with real Core/storage/algorithm E2E, independent security review, and exact unified CI.",
+      "outstanding_gates": [
+        "Authorized user-facing erasure workflow",
+        "Live PostgreSQL acceptance",
+        "Graph relation/version cleanup",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": null,
+      "subgroup_basis": "Software Group A candidate"
+    },
+    {
+      "id": 3,
+      "group": "B",
+      "name": "Tutarlı kişilik ve karakter",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "User preference persistence",
+        "End-to-end voice persona acceptance",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 4,
+      "group": "B",
+      "name": "Proaktif asistan",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Durable schedule",
+        "Authenticated user preference UI",
+        "Real notification acceptability study",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 5,
+      "group": "A",
+      "name": "Hedef ve görev yönetimi",
+      "criterion": "Potential software-only acceptance: resolve all listed gaps with real Core/storage/algorithm E2E, independent security review, and exact unified CI.",
+      "outstanding_gates": [
+        "Authenticated UI/API integration",
+        "Priorities and long-term goal UX",
+        "End-to-end user acceptance",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": null,
+      "subgroup_basis": "Software Group A candidate"
+    },
+    {
+      "id": 6,
+      "group": "B",
+      "name": "Bağlam farkındalığı",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Verified active-window awareness",
+        "End-to-end model context prioritization",
+        "Owner-assessed multimodal situation awareness",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 7,
+      "group": "B",
+      "name": "Konuşmaları hafızaya dönüştürme",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Authenticated speaker and Owner consent receipts",
+        "Reviewed promotion into encrypted scoped durable memory",
+        "Replica/backup erasure and live E2E acceptance",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 8,
+      "group": "B",
+      "name": "Hafıza çelişkilerini tespit etme",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Human-approved correction workflow",
+        "Temporal/source-confidence reasoning",
+        "UI review and independent acceptance",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification.",
+      "next_pack": "B1_01",
+      "next_pack_readiness": "INDEXED_TEST_PRESENT; ACCEPTANCE_NOT_VERIFIED; REVIEW_NOT_SIGNED",
+      "indexed_focused_test_status": "PRESENT_AFTER_PINNED_SOURCE_RECONCILIATION"
+    },
+    {
+      "id": 9,
+      "group": "B",
+      "name": "Hafızayı düzeltme ve unutma",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Authenticated Owner approval receipt",
+        "WAL/backup/Qdrant/PostgreSQL propagation",
+        "Auditable redacted erasure proof",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 10,
+      "group": "B",
+      "name": "Uzun vadeli hedef ve planlama",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Owner-approved persistent goals and scoped progress record",
+        "Independent task completion receipts",
+        "Deadline/resource planning and real execution feedback",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification.",
+      "next_pack": "B1_01",
+      "next_pack_readiness": "INDEXED_TEST_PRESENT; ACCEPTANCE_NOT_VERIFIED; REVIEW_NOT_SIGNED",
+      "indexed_focused_test_status": "PRESENT_AFTER_PINNED_SOURCE_RECONCILIATION"
+    },
+    {
+      "id": 11,
+      "group": "B",
+      "name": "Çevrimdışı hafıza ve çekirdek",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Independent Owner authentication and signed consent",
+        "Encrypted-at-rest memory, WAL/backup erasure, retention",
+        "Full offline Core/memory E2E and physical acceptance",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 12,
+      "group": "B",
+      "name": "Geçmiş hatalardan öğrenme",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Per-principal durable outcome isolation",
+        "Longitudinal evidence of improved task outcomes",
+        "Approved improvement integration",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification.",
+      "next_pack": "B1_01",
+      "next_pack_readiness": "INDEXED_TEST_PRESENT; ACCEPTANCE_NOT_VERIFIED; REVIEW_NOT_SIGNED",
+      "indexed_focused_test_status": "PRESENT_AFTER_PINNED_SOURCE_RECONCILIATION"
+    },
+    {
+      "id": 13,
+      "group": "B",
+      "name": "Uyandırma kelimesi",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "This recognizes explicit phrases only after offline STT text; no acoustic always-listening wake-word model or hardware/VAD tests.",
+        "Not mounted into trusted FullDuplexSessionManager/Owner microphone UI; upstream authentication and consent enforcement unverified.",
+        "Real acoustic wake-word model and sample/VAD evaluation",
+        "Trusted speech UI and Owner consent lifecycle",
+        "Live hardware/false-positive privacy acceptance",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 14,
+      "group": "B",
+      "name": "Doğal ve kesilebilir konuşma",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "No real microphone, TTS hardware, model quality, diarization or voice identity tests",
+        "No full Owner-authenticated deployed session lifecycle, wake word, human-level turn taking or UI/device privacy acceptance",
+        "Real microphone/audio hardware acceptance",
+        "Full wake word, interruption latency and speaker identity evaluation",
+        "Owner-authenticated deployed voice lifecycle",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 15,
+      "group": "B",
+      "name": "Düşük gecikmeli konuşma",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Real Piper/Kokoro playback latency acceptance",
+        "Streaming interruption acceptance",
+        "Multilingual acoustic assessment",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 16,
+      "group": "B",
+      "name": "Konuşmacı tanıma",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Acoustic accuracy, SpeechBrain/PyTorch model loading and model license not yet validated on a target host.",
+        "The optional SpeechBrain + PyTorch stack and compatible local model directory must be provisioned by deployment.",
+        "No durable speaker identity or cross-session matching; this slice intentionally provides anonymous session diarization only.",
+        "No live FullDuplexSessionManager stream integration or consent UI.",
+        "Optional dependency/model provisioning and license verification",
+        "Live FullDuplexSessionManager stream integration",
+        "Acoustic accuracy and latency evaluation",
+        "Explicit user-facing microphone/voice consent integration",
+        "Independent security review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 17,
+      "group": "B",
+      "name": "Duygu ve konuşma biçimi ipuçları",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Core Assurance and final release-lock CI pending.",
+        "Only uncompressed PCM WAV is analyzed; existing STT accepts additional encoded formats.",
+        "Service registration is available but root composition does not yet automatically instantiate and inject the analyzer.",
+        "No multilingual acoustic calibration, independently validated emotion model, or user-facing prosody controls.",
+        "Automatic root composition registration and manager injection",
+        "Decode/resample integration for non-WAV formats accepted by STT",
+        "Real audio corpus, multilingual calibration and performance benchmark",
+        "User-facing controls and downstream TTS prosody adaptation",
+        "Independent security review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 18,
+      "group": "B",
+      "name": "Ses özelleştirme",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "No real Kokoro weights/audio-device synthesis or physical microphone tests, model voice list and provenance not verified live.",
+        "No Owner-approved end-to-end live voice customization UX or multilingual/audio quality latency acceptance.",
+        "Real model-weight and voice availability acceptance",
+        "Owner-facing voice selection persistence and device tests",
+        "Multilingual/pitch/environment-specific customization and production quality benchmarking",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 19,
+      "group": "B",
+      "name": "Çok dilli konuşma",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Preview only; current bootstrap selects a single provider, not live simultaneous Turkish/English conversational routing.",
+        "No real Kokoro/Piper voice weights, language detection, acoustic quality, mobile/desktop device and Owner acceptance.",
+        "Real simultaneous bilingual provider registration",
+        "Language detection and speech session routing",
+        "Model/voice licenses and Owner hardware acceptance",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 20,
+      "group": "B",
+      "name": "Ortam sesi algılama",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "No actual environmental sound model, hardware microphone/consent UI or production wiring",
+        "No real authenticated Owner/hardware end-to-end production acceptance or approved cumulative integration across unmerged PR locks.",
+        "Approved production composition, cross-PR source lock and Owner verification",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 21,
+      "group": "B",
+      "name": "Konuşma geçmişi",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Authenticated persistent conversation journal",
+        "Encryption, retention, backup/privacy erasure lifecycle",
+        "End-to-end user controls and device sync",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification.",
+      "next_pack_readiness": "INDEXED_TEST_PRESENT; ACCEPTANCE_NOT_VERIFIED; REVIEW_NOT_SIGNED",
+      "indexed_focused_test_status": "PRESENT_AFTER_PINNED_SOURCE_RECONCILIATION"
+    },
+    {
+      "id": 22,
+      "group": "B",
+      "name": "Tamamen çevrimdışı ses sistemi",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Exact-head Core Assurance and release-lock CI pending.",
+        "Compatible local faster-whisper model and Turkish Piper ONNX voice must be provisioned; acoustic quality and startup latency are not yet measured.",
+        "Piper package and pretrained model licensing must be reviewed before deployment.",
+        "No physical microphone/audio-device validation; offline scope is the STT/TTS voice path, not the entire AURA process.",
+        "Real local audio device, model weights, Owner consent, Windows Piper latency and end-to-end acoustic quality remain unverified.",
+        "Cumulative PR #136 covers PR #112-135 only, not PR #64-111 or real physical hardware.",
+        "Target-host local faster-whisper model loading and accuracy evaluation",
+        "Piper voice weight licensing",
+        "Microphone/audio hardware acceptance",
+        "Network trace proving no outbound voice inference traffic",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 23,
+      "group": "B",
+      "name": "Masaüstü farkındalığı",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Windows native API path not exercised on Windows CI or physical desktop.",
+        "No user-facing authenticated route or consent UX; callers must supply existing principal and PermissionEngine policy.",
+        "Non-Windows provider, multi-monitor inventory, screenshot/OCR and desktop history are not implemented.",
+        "Authenticated user-facing endpoint and explicit consent UI",
+        "Non-Windows providers and multi-monitor inventory",
+        "Windows target-device integration and Owner acceptance",
+        "Independent security review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 24,
+      "group": "B",
+      "name": "Fare ve klavye kontrolü",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Windows SendInput behavior has not been exercised on a physical Windows desktop.",
+        "Interactive approval-store lifecycle and Owner acceptance remain deployment validation gates.",
+        "Physical Windows target validation",
+        "User-facing approval UX/Owner acceptance",
+        "E2E Gateway approval-to-driver test using live approval store",
+        "Independent security review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 25,
+      "group": "B",
+      "name": "Dosya yönetimi",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Windows NTFS native handle/reparse-race acceptance missing",
+        "Complete file manager/Owner-granted write/delete integration missing",
+        "Windows native file-handle security",
+        "Full file-management authorization and Owner tests",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 26,
+      "group": "B",
+      "name": "Uygulama yönetimi",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Windows manifest loading currently fails closed until independent verified Owner NTFS ACL configuration; real Windows desktop application launch and Owner identity acceptance missing.",
+        "No Authenticode code signing/immutable argv target attestation, kernel process isolation, descendant process-tree/Job Objects, independently measured host performance or production recovery.",
+        "SHA256 hashing before launch cannot eliminate replacement-after-hash races; scripts/config referenced by fixed argv must receive separate provenance.",
+        "Draft PR #149 is an alternative supervisor implementation on the same #148 base and MUST NOT be merged alongside #150 without deliberate reconciliation.",
+        "Combined source release lock still excludes older unmerged #64–#111 F2.7/security group; no global deployment/Owner acceptance.",
+        "Owner-attested Windows NTFS ACL manifest trust and code-signing",
+        "Windows desktop/GUI lifecycle acceptance, Job Objects, descendant teardown",
+        "Full #64–#150 cumulative security/release lock and Owner production acceptance",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 27,
+      "group": "B",
+      "name": "Terminal kontrolü",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Real Docker isolation smoke test skipped without independently preloaded digest-pinned image; no real container execution success or output attested.",
+        "AURA's access to privileged Docker daemon/socket not independently protected under sealed F2.7 #64 Owner broker boundary. No auto docker-group privilege.",
+        "Windows Owner/Ubuntu broker attestation, image signature verification, production audit and device performance missing.",
+        "The branch release lock covers #150 + #151 stacked tree only, not all older unmerged #64–#111 and feature acceptance.",
+        "Independently protected Docker daemon/broker identity under F2.7 security",
+        "Actual pinned-image container smoke and image signing/attestation",
+        "Windows Owner and combined #64–#152 source lock acceptance",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 28,
+      "group": "B",
+      "name": "Çoklu monitör farkındalığı",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "No real Electron/native display bridge, DPI hardware or HUD windows",
+        "No real authenticated Owner/hardware end-to-end production acceptance or approved cumulative integration across unmerged PR locks.",
+        "Approved production composition, cross-PR source lock and Owner verification",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 29,
+      "group": "B",
+      "name": "Bilgisayar sağlığı izleme",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Real host disk telemetry acceptance",
+        "GPU and thermal sensing",
+        "Frontend presentation acceptance",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 30,
+      "group": "B",
+      "name": "Sistem teşhisi",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Authorized user-facing diagnostics route",
+        "Real host log and hardware diagnostics",
+        "Operator reviewed remediation and E2E evidence",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 31,
+      "group": "B",
+      "name": "Bakım otomasyonu",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Only read-only telemetry scheduling is implemented; no authorized maintenance repair actions or daemon bootstrap.",
+        "No live host/background deployment, recovery or Owner acceptance evidence.",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 32,
+      "group": "B",
+      "name": "Uzaktan bilgisayar kontrolü",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "No authenticated remote network transport, device enrollment or credential rotation lifecycle.",
+        "No Windows/Ubuntu broker, live remote Owner approval and cross-device penetration acceptance; sealed F2.7 #64 remains untouched.",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 33,
+      "group": "B",
+      "name": "Çok adımlı bilgisayar görevleri",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Real Docker-successful multi-step workflow not shown: positive success branch uses a test replacement for external executor; #27 OCI live smoke skipped.",
+        "Cross-process atomicity for multi-step creation and external action vs DB update not guaranteed; ambiguous RUNNING requires manual Owner review.",
+        "No background progression, Windows native computer UI, full Owner session/hardware and cross-PR #64–#152 security release acceptance.",
+        "Full real Docker Engine successful workflow with audited broker",
+        "Atomic multi-process plan/recovery and Owner state reconciliation",
+        "Windows native GUI and full F2.7/#64–#152 cumulative acceptance",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 34,
+      "group": "B",
+      "name": "İşlem geçmişi ve geri alma",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Authenticated per-file operation history and Owner approval",
+        "Actual atomic filesystem undo, retention and signed logs",
+        "Live task/OS rollback testing and recovery evidence",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 35,
+      "group": "B",
+      "name": "Gelişmiş web araştırması",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Existing local_research_mcp.py live network fetch SSRF/DNS rebinding/redirect/response-size and logging controls unreviewed.",
+        "No real SearXNG/browser/web provider live acceptance, legal API terms or Owner-approved egress.",
+        "Hardened live research network/SSRF/redirect provider",
+        "Owner-authorized external search and fetch safety",
+        "Source credibility and production end-to-end verification",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification.",
+      "next_pack": "B1_01",
+      "next_pack_readiness": "INDEXED_TEST_PRESENT; ACCEPTANCE_NOT_VERIFIED; REVIEW_NOT_SIGNED",
+      "indexed_focused_test_status": "PRESENT_AFTER_PINNED_SOURCE_RECONCILIATION"
+    },
+    {
+      "id": 36,
+      "group": "B",
+      "name": "Kaynak doğrulama",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Independent page fetch and content verification",
+        "Publisher/date trust checks",
+        "DNS and redirect egress enforcement",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification.",
+      "next_pack": "B1_01",
+      "next_pack_readiness": "INDEXED_TEST_PRESENT; ACCEPTANCE_NOT_VERIFIED; REVIEW_NOT_SIGNED",
+      "indexed_focused_test_status": "PRESENT_AFTER_PINNED_SOURCE_RECONCILIATION"
+    },
+    {
+      "id": 37,
+      "group": "B",
+      "name": "Çok kaynaklı karşılaştırma",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Consolidate PR #77 and #78 boundaries without duplicate runtime authority",
+        "Prove independent publication identity",
+        "Integrate under authorized research Gateway + review UX",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification.",
+      "next_pack": "B1_01",
+      "next_pack_readiness": "INDEXED_TEST_PRESENT; ACCEPTANCE_NOT_VERIFIED; REVIEW_NOT_SIGNED",
+      "indexed_focused_test_status": "PRESENT_AFTER_PINNED_SOURCE_RECONCILIATION"
+    },
+    {
+      "id": 38,
+      "group": "B",
+      "name": "Akademik araştırma",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Authorized OpenAlex/Crossref retrieval integration",
+        "DOI verification and provenance/recency",
+        "Full academic discovery acceptance",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification.",
+      "next_pack": "B1_01",
+      "next_pack_readiness": "INDEXED_TEST_PRESENT; ACCEPTANCE_NOT_VERIFIED; REVIEW_NOT_SIGNED",
+      "indexed_focused_test_status": "PRESENT_AFTER_PINNED_SOURCE_RECONCILIATION"
+    },
+    {
+      "id": 39,
+      "group": "B",
+      "name": "PDF ve belge analizi",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "No PDF/OCR support",
+        "No authenticated filesystem-to-DOCX integration",
+        "No adversarial real-world DOCX corpus or Owner acceptance",
+        "PDF processing",
+        "OCR/rendered layout analysis",
+        "Authorized file pipeline and UI",
+        "Corpus-based security evaluation",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification.",
+      "next_pack_readiness": "INDEXED_TEST_PRESENT; ACCEPTANCE_NOT_VERIFIED; REVIEW_NOT_SIGNED",
+      "indexed_focused_test_status": "PRESENT_AFTER_PINNED_SOURCE_RECONCILIATION"
+    },
+    {
+      "id": 40,
+      "group": "A",
+      "name": "Araştırma raporu oluşturma",
+      "criterion": "Potential software-only acceptance: resolve all listed gaps with real Core/storage/algorithm E2E, independent security review, and exact unified CI.",
+      "outstanding_gates": [
+        "Full sourced report authoring",
+        "Document export",
+        "Owner-verified citation provenance and acceptance",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": null,
+      "subgroup_basis": "Software Group A candidate"
+    },
+    {
+      "id": 41,
+      "group": "B",
+      "name": "Yeni gelişmeleri takip etme",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Principal-scoped persisted feed snapshots",
+        "Explicitly approved scheduler/notifications",
+        "Live transport and publisher attestation",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification.",
+      "next_pack_readiness": "INDEXED_TEST_PRESENT; ACCEPTANCE_NOT_VERIFIED; REVIEW_NOT_SIGNED",
+      "indexed_focused_test_status": "PRESENT_AFTER_PINNED_SOURCE_RECONCILIATION"
+    },
+    {
+      "id": 42,
+      "group": "B",
+      "name": "Araştırma hafızası",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Authenticated source archive UI",
+        "Encryption and key rotation",
+        "Remote/backup synchronization",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification.",
+      "next_pack": "B1_01",
+      "next_pack_readiness": "INDEXED_TEST_PRESENT; ACCEPTANCE_NOT_VERIFIED; REVIEW_NOT_SIGNED",
+      "indexed_focused_test_status": "PRESENT_AFTER_PINNED_SOURCE_RECONCILIATION"
+    },
+    {
+      "id": 43,
+      "group": "B",
+      "name": "Derin araştırma modu",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Depends on parent Draft PR #112; must review/merge parent before dependent work.",
+        "No genuine autonomous question decomposition/LLM synthesis, independent real-source verification, live provider or Owner acceptance.",
+        "Governed model planning and re-query decisions",
+        "Real source trust and contradiction verification",
+        "Approved production review and synthesis workflow",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification.",
+      "next_pack": "B1_01",
+      "next_pack_readiness": "INDEXED_TEST_PRESENT; ACCEPTANCE_NOT_VERIFIED; REVIEW_NOT_SIGNED",
+      "indexed_focused_test_status": "PRESENT_AFTER_PINNED_SOURCE_RECONCILIATION"
+    },
+    {
+      "id": 44,
+      "group": "A",
+      "name": "Kaynak arşivleme",
+      "criterion": "Potential software-only acceptance: resolve all listed gaps with real Core/storage/algorithm E2E, independent security review, and exact unified CI.",
+      "outstanding_gates": [
+        "Authorized cross-store archive browser",
+        "Retention/backup lifecycle",
+        "PDF/archive format handling",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": null,
+      "subgroup_basis": "Software Group A candidate"
+    },
+    {
+      "id": 45,
+      "group": "B",
+      "name": "Otonom yazılım geliştirme",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "No end-to-end autonomous bug-fix/iteration/commit workflow or approved live inference session.",
+        "No real Docker successful execution, independent security acceptance or Owner merge approval.",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 46,
+      "group": "B",
+      "name": "Hata bulma ve düzeltme",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Real repo/CI-authorized source retrieval",
+        "Complete bug detection or independent analysis accuracy",
+        "Actual privileged fix/testing/PR workflow and security acceptance",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 47,
+      "group": "A",
+      "name": "Mimari analiz",
+      "criterion": "Potential software-only acceptance: resolve all listed gaps with real Core/storage/algorithm E2E, independent security review, and exact unified CI.",
+      "outstanding_gates": [
+        "Production-configured authenticated repository source provider and source provenance",
+        "Compiler-verified cross-language dependency resolution (bounded Python AST cross-file graph implemented)",
+        "Independent code review and security verdict",
+        "UI/Owner acceptance",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": null,
+      "subgroup_basis": "Software Group A candidate"
+    },
+    {
+      "id": 48,
+      "group": "B",
+      "name": "Kendi performansını değerlendirme",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "User-task outcome quality metrics",
+        "Longitudinal benchmark/hardware calibration",
+        "Secure owner-facing evaluation dashboard",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 49,
+      "group": "B",
+      "name": "Yeni beceri ve iş akışı oluşturma",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "No authenticated Owner/sandbox/replay/promotion flow or actual Gateway execution integration; generated candidate is deliberately non-executable.",
+        "Provider category/low risk metadata does not independently prove remote tool cannot mutate resources; real tool policies and schemas require separate authorization.",
+        "Authenticated Owner skill editor and explicit confirmation",
+        "Independent replay sandbox and provider safe schema verification",
+        "Approved Core Gateway execution and promotion audit",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 50,
+      "group": "B",
+      "name": "Otomatik test üretimi",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Independent contract expectations and actual coverage metrics",
+        "Owner-approved sandbox execution and isolated environment",
+        "End-to-end automatic test-generation acceptance and code review",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 51,
+      "group": "B",
+      "name": "İzole geliştirme ve simülasyon",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "No independently attested digest-pinned Docker daemon/container smoke or kernel isolation evidence.",
+        "Security integration and physical execution acceptance not verified.",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 52,
+      "group": "B",
+      "name": "Sürümleme ve geri alma",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Actual Git version/branch management and conflict resolution",
+        "PermissionEngine/MCP-governed persistent writes",
+        "Atomic rollback, verified restore and signed Owner acceptance",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification.",
+      "next_pack_readiness": "INDEXED_TEST_PRESENT; ACCEPTANCE_NOT_VERIFIED; REVIEW_NOT_SIGNED",
+      "indexed_focused_test_status": "PRESENT_AFTER_PINNED_SOURCE_RECONCILIATION"
+    },
+    {
+      "id": 53,
+      "group": "B",
+      "name": "Dokümantasyon üretimi",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Authenticated repo integration",
+        "Versioned documentation publication/preview",
+        "Reference diagrams and human editorial review",
+        "End-to-end acceptance",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification.",
+      "next_pack": "B1_01",
+      "next_pack_readiness": "INDEXED_TEST_PRESENT; ACCEPTANCE_NOT_VERIFIED; REVIEW_NOT_SIGNED",
+      "indexed_focused_test_status": "PRESENT_AFTER_PINNED_SOURCE_RECONCILIATION"
+    },
+    {
+      "id": 54,
+      "group": "B",
+      "name": "GitHub yönetimi",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "No live registered GitHub MCP provider with authenticated OAuth/PAT credential and Owner-approved app composition.",
+        "Read-only PR metadata is not full GitHub management; actual repo mutations/merges, real rate limits and production acceptance absent.",
+        "Authenticated GitHub provider credentials and explicit read-only policies",
+        "Owner/broker identity, production activation and live remote tests",
+        "Full GitHub management actions with separate security review",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 55,
+      "group": "B",
+      "name": "Birden fazla kodlama ajanı",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "No end-to-end sustained team coding workflow or independently reviewed agent quality on live Ollama.",
+        "No Owner production acceptance.",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 56,
+      "group": "B",
+      "name": "Sürekli değerlendirme",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Authenticated ongoing measurement collection",
+        "Reference baselines and trend histories",
+        "Real hardware and task correctness evaluation",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 57,
+      "group": "B",
+      "name": "Uzman ajanlar",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Authenticated specialist identities",
+        "MCP/Owner-governed real tool execution",
+        "Live expert specialization outcome verification",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 58,
+      "group": "B",
+      "name": "Ajan yöneticisi",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Authenticated Owner mission approval",
+        "Independent outcome verification",
+        "Adversarial multi-agent E2E and concurrency tests",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 59,
+      "group": "A",
+      "name": "Ajanlar arası iletişim",
+      "criterion": "Potential software-only acceptance: resolve all listed gaps with real Core/storage/algorithm E2E, independent security review, and exact unified CI.",
+      "outstanding_gates": [
+        "Authenticated agent identities and authorized delivery",
+        "Durable cross-process transport, retry and independent receipts",
+        "Security and multi-agent live E2E acceptance",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": null,
+      "subgroup_basis": "Software Group A candidate"
+    },
+    {
+      "id": 60,
+      "group": "B",
+      "name": "Bağımsız doğrulama ajanı",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Caller identity/approval provisioning and independent test provenance require external authenticated Owner workflow.",
+        "No live Docker verification job or independently attested security boundary acceptance.",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 61,
+      "group": "B",
+      "name": "Paralel çalışma",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Parallelism currently covers local untrusted inference proposals, not parallel authorized shell/tool execution.",
+        "No concurrency saturation test on local Ollama hardware or Owner acceptance.",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 62,
+      "group": "B",
+      "name": "Görev koordinasyonu",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Authenticated agent assignment and scheduling",
+        "MCP/PermissionEngine-authorized execution integration",
+        "Real cancellation/recovery and coordination acceptance",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification.",
+      "next_pack_readiness": "INDEXED_TEST_PRESENT; ACCEPTANCE_NOT_VERIFIED; REVIEW_NOT_SIGNED",
+      "indexed_focused_test_status": "PRESENT_AFTER_PINNED_SOURCE_RECONCILIATION"
+    },
+    {
+      "id": 63,
+      "group": "B",
+      "name": "Ajan performans ölçümü",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Signed event provenance and clock verification",
+        "Real remote provider and tool-execution timing",
+        "Independent latency/outcome benchmarks and agent selection integration",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 64,
+      "group": "B",
+      "name": "Dinamik uzmanlaşma",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Governed creation/rotation of new specialized profiles or providers",
+        "Owner-approved role/policy lifecycle",
+        "Real dynamic skill runtime benchmarking and acceptance",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 65,
+      "group": "B",
+      "name": "Hipotez üretimi",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Grounded literature, provenance, measured scientific novelty",
+        "Scientific validation and independent subject matter review",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification.",
+      "next_pack_readiness": "INDEXED_TEST_PRESENT; ACCEPTANCE_NOT_VERIFIED; REVIEW_NOT_SIGNED",
+      "indexed_focused_test_status": "PRESENT_AFTER_PINNED_SOURCE_RECONCILIATION"
+    },
+    {
+      "id": 66,
+      "group": "B",
+      "name": "Literatür taraması",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Authorized live bibliographic/full-text retrieval",
+        "Qualitative and methodology screening, peer review",
+        "Independent citation authentication and researcher acceptance",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification.",
+      "next_pack_readiness": "INDEXED_TEST_PRESENT; ACCEPTANCE_NOT_VERIFIED; REVIEW_NOT_SIGNED",
+      "indexed_focused_test_status": "PRESENT_AFTER_PINNED_SOURCE_RECONCILIATION"
+    },
+    {
+      "id": 67,
+      "group": "A",
+      "name": "Matematiksel modelleme",
+      "criterion": "Potential software-only acceptance: resolve all listed gaps with real Core/storage/algorithm E2E, independent security review, and exact unified CI.",
+      "outstanding_gates": [
+        "Parameter uncertainty under validated assumptions",
+        "Real science data and result provenance",
+        "Independent scientific reproducibility review",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": null,
+      "subgroup_basis": "Software Group A candidate"
+    },
+    {
+      "id": 68,
+      "group": "B",
+      "name": "Fizik simülasyonu",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Independent numerical convergence/uncertainty checks",
+        "Real verified physical parameters and calibration",
+        "Broader physics models, laboratory acceptance",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 69,
+      "group": "B",
+      "name": "Malzeme araştırması",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Calibrated reliable material data and publisher provenance",
+        "Engineering uncertainty and statistical assessment",
+        "Independent manufacturing/material suitability testing",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 70,
+      "group": "B",
+      "name": "CAD tasarımı",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Editable parametric CAD operations and full geometric feature set",
+        "User visualization/authoring workflows",
+        "Physical tolerances, design verification and manufacturing acceptance",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 71,
+      "group": "B",
+      "name": "Mühendislik simülasyonu",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Independent FEA/engineering solver acceptance",
+        "Real geometry, units and tolerance enforcement",
+        "Hardware verification and design safety signoff",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 72,
+      "group": "B",
+      "name": "Deney planlama",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Ethics/Owner study approval and proper randomization protocol",
+        "Power analysis and data collection",
+        "Real laboratory design acceptance, sensors/actuators",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 73,
+      "group": "A",
+      "name": "Deney sonuçlarını analiz etme",
+      "criterion": "Potential software-only acceptance: resolve all listed gaps with real Core/storage/algorithm E2E, independent security review, and exact unified CI.",
+      "outstanding_gates": [
+        "Authenticated real scientific source provenance beyond Gateway-permitted fixture ingestion",
+        "Independent scientific validation, ethics and actual experiment randomization proof",
+        "Authenticated production delivery/UI of linked experiment analysis report",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": null,
+      "subgroup_basis": "Software Group A candidate"
+    },
+    {
+      "id": 74,
+      "group": "B",
+      "name": "Prototip tasarımı",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Prototype design UX and material selection",
+        "Slicing/tolerance/load evaluation",
+        "Hardware test, manufacturing approval and safeguards",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 75,
+      "group": "B",
+      "name": "Otonom laboratuvar entegrasyonu",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "No physical laboratory instrumentation, sensor driver, interlock, broker policy or signed Operator/Owner acceptance.",
+        "Only offline mathematical experiment batching is verified, not autonomous wet/physical lab integration.",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 76,
+      "group": "B",
+      "name": "Bilimsel keşif hafızası",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Verified scientific publisher and experiment provenance",
+        "Actual independent discovery validation and review",
+        "Encrypted durable memory, deletion, duplication and audit recovery",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification.",
+      "next_pack_readiness": "INDEXED_TEST_PRESENT; ACCEPTANCE_NOT_VERIFIED; REVIEW_NOT_SIGNED",
+      "indexed_focused_test_status": "PRESENT_AFTER_PINNED_SOURCE_RECONCILIATION"
+    },
+    {
+      "id": 77,
+      "group": "B",
+      "name": "Görüntü anlama",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "No real Qwen-VL model weights/GPU throughput, image parser hardening, signed Owner consent/device UI or live model hardware evidence.",
+        "Real Owner identity and signed desktop/mobile capture consent + production device integration still missing.",
+        "Production registered policy, end-to-end authenticated UI and hardware acceptance",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 78,
+      "group": "B",
+      "name": "Video analizi",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Live Windows FFmpeg/codec installation, OS sandbox and malformed decoder input isolation not independently assessed.",
+        "Actual Qwen-VL model weights, user media consent capture/UI, GPU throughput and per-frame image quality not verified.",
+        "Stacked PR #140 depends on #137 and requires Owner-approved cumulative integration; simulated codec/HTTP tests cannot be full hardware acceptance.",
+        "Live OS FFmpeg sandbox/hardening and codec security",
+        "Real Ollama/VL model weights and GPU test",
+        "Owner consent UI and telemetry acceptance",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 79,
+      "group": "B",
+      "name": "Nesne tespiti",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Model-generated boxes not calibrated, ground-truth checked or measured on real camera/screen; no actionable target or hardware acceptance.",
+        "Real Owner identity and signed desktop/mobile capture consent + production device integration still missing.",
+        "Production registered policy, end-to-end authenticated UI and hardware acceptance",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 80,
+      "group": "B",
+      "name": "OCR",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Optional live OCR smoke skipped when Tesseract/English traineddata/font are missing; no deployed Windows trusted binary and Turkish traineddata/hardware/Owner quality evidence.",
+        "Real Owner identity and signed desktop/mobile capture consent + production device integration still missing.",
+        "Production registered policy, end-to-end authenticated UI and hardware acceptance",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 81,
+      "group": "B",
+      "name": "3B algılama",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "No actual authenticated stereo camera hardware, frame synchronization, lens rectification, measured calibration accuracy, independent depth ground truth, field latency or Owner acceptance.",
+        "Computed depth samples remain UNTRUSTED_STEREO_ESTIMATE and safe_for_physical_control=False; no robot/computer action authority.",
+        "No combined PR #145 + all earlier open PRs release-lock or physical deployment acceptance.",
+        "Real camera calibration/rectification and sync",
+        "Ground-truth depth benchmark and measured hardware performance",
+        "Explicit Owner acceptance and combined integration",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 82,
+      "group": "B",
+      "name": "Görsel hafıza",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Actual Owner Windows NTFS ACL, disk encryption, SQLite WAL/backup/snapshot security and secure deletion must be reviewed; descriptions stored as unencrypted text.",
+        "Live Qwen-VL model and consented screen/camera flow, UI retrieval/deletion, performance and data lifecycle acceptance absent.",
+        "PR #141 stacked on #137; no Owner-approved merged integration with earlier open PRs.",
+        "Windows ACL and on-disk encryption/backup review",
+        "Real consented capture and Ollama model weights",
+        "User-facing memory lifecycle controls",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 83,
+      "group": "B",
+      "name": "Canlı kamera",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Real physical Windows webcam, device driver provenance, Owner-authenticated consent UI/session and camera privacy indicators unverified.",
+        "cv2 optional installation and native helper isolation absent; asyncio.to_thread timeout cannot kill a stuck OS driver.",
+        "Separate real local Qwen-VL model weights and actual camera image quality/performance not validated; stacked on #137.",
+        "Owner-authenticated camera consent UI/broker",
+        "Native isolated camera helper and Windows driver acceptance",
+        "Real video device/model verification",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 84,
+      "group": "B",
+      "name": "Görsel görev doğrulama",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Pixel differences and local model text cannot independently verify task success, causation, human intent or correct physical action.",
+        "Real captured before/after owner provenance, OpenCV camera or screen source, device lighting/calibration and actual Ollama weights and performance not validated.",
+        "Combined integration with #79 detector/#80 OCR/#83 camera, F2.7 and Owner human review UI absent; Pillow optional in CI.",
+        "Real authenticated Owner camera/screen before/after capture",
+        "Semantic task benchmark and independent verification",
+        "Human-approved outcome UI and model hardware throughput",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 85,
+      "group": "B",
+      "name": "Akıllı ev entegrasyonu",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "No real Home Assistant/Matter/Zigbee/HomeKit bridge, authenticated household ownership, physical device tests or Owner approval.",
+        "Independent Owner identity/device authentication, signed evidence and production trust boundaries missing.",
+        "Real Owner and Gateway appliance integration and source provenance",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 86,
+      "group": "B",
+      "name": "Home Assistant entegrasyonu",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "No live HA integration, authenticated token, actual device sensor trust, physical control/Owner action or end-to-end production acceptance.",
+        "Independent Owner identity/device authentication, signed evidence and production trust boundaries missing.",
+        "Real Owner and Gateway appliance integration and source provenance",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 87,
+      "group": "B",
+      "name": "Robot kontrolü",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Real robot, emergency-stop interlock, broker-to-device command acknowledgement, authenticated Owner provisioning and physical safety acceptance not performed.",
+        "MCP provider requires explicit registry/bootstrap enrollment after independent review; MQTT send is only submitted_unverified.",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 88,
+      "group": "B",
+      "name": "Sensör entegrasyonu",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "No authenticated hardware sensor, key rotation, broker identity audit or live telemetry acceptance.",
+        "Sensor readings must be independently provisioned, and may not replace certified functional-safety sensors.",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 89,
+      "group": "B",
+      "name": "Otomasyon senaryoları",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "No real robot automation, watchdog/stop response, failure recovery or site-specific human safety certification.",
+        "No unattended activation or policy grants; Owner must approve and register devices/capabilities.",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 90,
+      "group": "B",
+      "name": "Fiziksel eylem doğrulama",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Sensor-attested state does not constitute certified physical action verification or safety-interlock proof.",
+        "No independent live robot, time synchronization, emergency stop or Owner safety acceptance.",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 91,
+      "group": "B",
+      "name": "Gelişmiş HUD",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Full multi-monitor Electron/Windows visual regression and GPU live performance acceptance not performed.",
+        "HUD runtime UX and accessibility require human acceptance.",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 92,
+      "group": "B",
+      "name": "Çok ekranlı HUD",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "No real HUD window rendering, OS input or device/hotplug acceptance",
+        "No real authenticated Owner/hardware end-to-end production acceptance or approved cumulative integration across unmerged PR locks.",
+        "Approved production composition, cross-PR source lock and Owner verification",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 93,
+      "group": "B",
+      "name": "Canlı sistem durumu",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "No production app composition wiring, live HUD widget or hardware telemetry acceptance",
+        "No real authenticated Owner/hardware end-to-end production acceptance or approved cumulative integration across unmerged PR locks.",
+        "Approved production composition, cross-PR source lock and Owner verification",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 94,
+      "group": "B",
+      "name": "Sesli arayüz kontrolü",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Live microphone/ASR Turkish-English quality, wake-word accuracy and user opt-in acceptance not verified.",
+        "Speech cannot authorize OS/robot or remote operations.",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 95,
+      "group": "B",
+      "name": "Dinamik görselleştirme",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "No native multi-monitor Electron HUD window, cross-process telemetry bus, live desktop rendering, accessibility or Windows GPU/long-session performance measurements.",
+        "Actual Owner bearer/policy configuration, physical deployment, independent event provenance and Owner acceptance not established.",
+        "Stacked on unmerged PR #144; no combined #64–#111 + #145 + #146 source-lock/security acceptance.",
+        "Native Electron floating/multi-monitor HUD render and live user acceptance",
+        "Cross-process authenticated event provenance and production Owner token/policy",
+        "Benchmarked long-session/GPU accessibility and integrated #64–#146 release acceptance",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 96,
+      "group": "B",
+      "name": "3B holografik nesneler",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "WebGL rendering validated by TypeScript build, not a live graphical GPU screenshot/Windows HUD acceptance.",
+        "No real CAD hologram or physical volumetric display claims.",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 97,
+      "group": "B",
+      "name": "Canlı görev paneli",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "No native Electron transparent multi-monitor task panel UI, real accessibility/GPU/performance or Owner acceptance.",
+        "No independently authenticated cross-process EventBus provenance; event hints do not attest durable task state.",
+        "Stacked Draft PR #147 on #146/#144; no full integration with older PR #64–#111 and #145.",
+        "Native Electron task panel and multi-monitor UI/acceptance",
+        "Authenticated cross-process task change delivery",
+        "Full older PR and #145/#147 integrated release lock, Owner acceptance",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 98,
+      "group": "B",
+      "name": "Açıklanabilir işlem geçmişi",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Authenticated principal-scoped audit storage",
+        "Independent signed execution receipts",
+        "Owner-visible action history UI and real-world E2E acceptance",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 99,
+      "group": "B",
+      "name": "Yetki seviyeleri",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "SQLiteApprovalStore decision caller's approver_id is not independently authenticated; requires Owner-authenticated approval management and security signoff.",
+        "F2.7 PR #64 sealed broker/Owner boundary remains unmerged and its production credential/SCM/Windows live acceptance unverified.",
+        "Full cross-provider/scoped policies and multi-process denial audit were not independently accepted across all unmerged PRs.",
+        "Independent Owner credential verification and trusted approval",
+        "F2.7 live broker/Windows acceptance",
+        "All-provider authorization negative-path review",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 100,
+      "group": "B",
+      "name": "İşlem onayı",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Approval router may not be mounted into production composition root; end-to-end activation missing.",
+        "Authenticated human/Owner identity assurance and device verification are unproven; no explicit live policy enrollment.",
+        "Authenticated Owner reviewer enrollment and trusted UI",
+        "Composition-root policy registration and governed deployment",
+        "Real end-to-end Gateway approval consumption acceptance",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 101,
+      "group": "B",
+      "name": "Sandbox",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "No live Docker host escape, cgroup, network isolation or supply-chain acceptance tests; fake-process simulation cannot prove physical isolation.",
+        "No end-to-end Owner/MCP Gateway integration acceptance or F2.7 hardware proof.",
+        "Real Docker OSWorld security acceptance",
+        "Container image provenance and sandbox escape tests",
+        "Owner/Gateway end-to-end isolated execution acceptance",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 102,
+      "group": "B",
+      "name": "Prompt injection koruması",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Adversarial model/tool evaluation",
+        "Gateway argument taint testing",
+        "Multilingual prompt injection evaluation",
+        "Trusted retrieval source isolation",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification.",
+      "next_pack_readiness": "INDEXED_TEST_PRESENT; ACCEPTANCE_NOT_VERIFIED; REVIEW_NOT_SIGNED",
+      "indexed_focused_test_status": "PRESENT_AFTER_PINNED_SOURCE_RECONCILIATION"
+    },
+    {
+      "id": 103,
+      "group": "B",
+      "name": "Kimlik doğrulama",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Legacy verification helper not proven active in current live WebSocket route; live WebSocketTicketManager already separate.",
+        "No Owner/device identity attestation, authenticated principal enrollment, rotation or deployment acceptance.",
+        "Production identity and credential lifecycle",
+        "Owner device-bound proof and real active route identity verification",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 104,
+      "group": "B",
+      "name": "Güvenli hafıza",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "SQLite at rest cleartext; no authenticated OS/TPM key custody or secure backups",
+        "Optional adapter not wired to all production routes and Owner identity",
+        "Authenticated composition root",
+        "Encrypted storage and key lifecycle",
+        "Owner/hardware/backup acceptance",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 105,
+      "group": "B",
+      "name": "Yedekleme ve kurtarma",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Authenticated and encrypted at-rest backup storage",
+        "Authorized restore and corruption recovery drill",
+        "Owner audit, key rotation, retention/RPO/RTO measurement",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 106,
+      "group": "B",
+      "name": "Değiştirilemeyen güvenlik çekirdeği",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Externally protected signer/key, anti-replay monotonic anchor, baseline rotation and hardware immutable trust root not implemented",
+        "Opt-in Gateway guard not wired to every existing production execution path; unwrapped gateway remains accessible",
+        "Registry snapshots are non-atomic across service/provider/policy locks; real Owner/F2.7 integration missing",
+        "Independent key custody, anti-replay and baseline rotation",
+        "Enforced application-wide Gateway guard and Owner proof",
+        "TPM/UEFI protected boot and host security integration",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 107,
+      "group": "B",
+      "name": "Bağımsız denetim",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "No independently deployed trusted signer/verifier, externally anchored checkpoint retention, or durable/WORM event sink.",
+        "Missing authenticated end-to-end audit completeness and Owner/prod acceptance.",
+        "Independent durable protected checkpoint sink and signer custody",
+        "Verifier service and audit ingestion principal authentication",
+        "End-to-end Gateway completeness proofs and approved incident recovery process",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 108,
+      "group": "B",
+      "name": "E-posta yönetimi",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Authenticated inbox/provider integration",
+        "Send/modify/delete approval boundaries",
+        "Antivirus, HTML safety and phishing checks",
+        "Privacy/Owner E2E acceptance",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 109,
+      "group": "B",
+      "name": "Takvim yönetimi",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "OAuth/Google/Apple calendar integration",
+        "Recurring event and timezone expansion",
+        "Principal authentication and action approval",
+        "Actual calendar writes/reminders and end-to-end review",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 110,
+      "group": "B",
+      "name": "Dosya ve medya yönetimi",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Full media format support (JPEG/MP4/WebP etc.)",
+        "Sandboxed full-file decoder and malware validation",
+        "Authorized user-facing file management and media operations",
+        "Full end-to-end acceptance",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 111,
+      "group": "A",
+      "name": "Veri analizi",
+      "criterion": "Potential software-only acceptance: resolve all listed gaps with real Core/storage/algorithm E2E, independent security review, and exact unified CI.",
+      "outstanding_gates": [
+        "Authenticated file ingestion and permissions",
+        "Large dataset/streaming performance",
+        "Sanitized spreadsheet export and UI",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": null,
+      "subgroup_basis": "Software Group A candidate"
+    },
+    {
+      "id": 112,
+      "group": "B",
+      "name": "Rapor ve sunum üretimi",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "No authenticated integration and authorized export/storage/download route.",
+        "DOCX/PDF/PPTX output, large data, Office compatibility and Owner production acceptance missing.",
+        "Authorized report export route and UX",
+        "Additional DOCX/PDF/PPTX renderers and templates",
+        "Cross-client and production owner acceptance",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B1",
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification.",
+      "next_pack_readiness": "INDEXED_TEST_PRESENT; ACCEPTANCE_NOT_VERIFIED; REVIEW_NOT_SIGNED",
+      "indexed_focused_test_status": "PRESENT_AFTER_PINNED_SOURCE_RECONCILIATION"
+    },
+    {
+      "id": 113,
+      "group": "B",
+      "name": "Oyun geliştirme",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Scope is a bounded playable game prototype, not a complete AI game engine/project lifecycle.",
+        "Live Electron user testing, assets/editor persistence beyond JSON export, and Owner product acceptance not verified.",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 114,
+      "group": "B",
+      "name": "3B modelleme",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "3D editor, transforms and procedural mesh library",
+        "Material/texturing, actual rendering and file management",
+        "Real independent geometry/manufacturing acceptance",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 115,
+      "group": "B",
+      "name": "Çeviri ve dil öğrenme",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "User-facing voice/UI integration",
+        "Owner-authenticated storage access",
+        "Encrypted memory and journal/backups erasure",
+        "Translation and language teaching assessment",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 116,
+      "group": "B",
+      "name": "Kişisel bilgi merkezi",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Depends on unmerged PR #117 authenticated governed memory adapter",
+        "Only read-only lexical episodic memory; no files/mail/other source integration or Owner UI",
+        "SQLite plaintext, storage key/backup/production identity acceptance outstanding",
+        "Authenticated UI and all-source knowledge indexing",
+        "Encrypted secure backups and key lifecycle",
+        "Full Owner privacy and production acceptance",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    },
+    {
+      "id": 117,
+      "group": "B",
+      "name": "Otomatik raporlama",
+      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
+      "outstanding_gates": [
+        "Recurring/triggered scheduling with explicit Owner opt-in",
+        "Approved delivery and recipient controls",
+        "Signed data provenance and production reporting E2E",
+        "Independent security review not yet recorded",
+        "OSS/model license review not yet recorded",
+        "Hardware applicability review not yet recorded",
+        "Feature-specific end-to-end acceptance not verified"
+      ],
+      "ready_for_completion": false,
+      "subgroup": "B2",
+      "subgroup_basis": "A live/hardware/host/inference or manual deployment acceptance gate is retained; see feature-specific outstanding_gates."
+    }
+  ],
+  "B1_ids": [
+    8,
+    10,
+    12,
+    21,
+    35,
+    36,
+    37,
+    38,
+    39,
+    41,
+    42,
+    43,
+    52,
+    53,
+    62,
+    65,
+    66,
+    76,
+    102,
+    112
+  ],
+  "B2_ids": [
+    1,
+    3,
+    4,
+    6,
+    7,
+    9,
+    11,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    45,
+    46,
+    48,
+    49,
+    50,
+    51,
+    54,
+    55,
+    56,
+    57,
+    58,
+    60,
+    61,
+    63,
+    64,
+    68,
+    69,
+    70,
+    71,
+    72,
+    74,
+    75,
+    77,
+    78,
+    79,
+    80,
+    81,
+    82,
+    83,
+    84,
+    85,
+    86,
+    87,
+    88,
+    89,
+    90,
+    91,
+    92,
+    93,
+    94,
+    95,
+    96,
+    97,
+    98,
+    99,
+    100,
+    101,
+    103,
+    104,
+    105,
+    106,
+    107,
+    108,
+    109,
+    110,
+    113,
+    114,
+    115,
+    116,
+    117
+  ],
+  "subgroup_semantics": {
+    "B1": "Software-only acceptance candidate. Needs real implementation, authorized E2E and independent review, but no intrinsic physical camera, robot, microphone, live Windows/NTFS/SCM, Docker/QEMU or GPU requirement. Not COMPLETED or owner-approved.",
+    "B2": "Feature's full acceptance includes live device, protected host OS, sandbox/container, installed model/audio/video/GPU or real external system/Owner release boundary. CI unit fixtures alone do not fulfill acceptance."
+  },
+  "first_B1_package": {
+    "status": "FOCUSED_TEST_PATHS_RESTORED_NOT_ACCEPTED",
+    "anchor_commit": "fb7c9a4f3c892972fc6450cc1b7d3412257dc055",
+    "documentation_path": "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md",
+    "priority_feature_ids": [
+      8,
+      38,
+      42,
+      53,
+      35,
+      43,
+      10,
+      12,
+      36,
+      37
+    ],
+    "source_modules_present_ids": [
+      8,
+      38,
+      42,
+      53,
+      35,
+      43,
+      10,
+      12,
+      36,
+      37
+    ],
+    "indexed_focused_test_present_ids": [
+      8,
+      38,
+      42,
+      53,
+      35,
+      43,
+      10,
+      12,
+      36,
+      37
+    ],
+    "indexed_focused_test_missing_ids": [],
+    "completion_eligible_ids": [],
+    "security_review": "ENGINEERING_TRIAGE_ONLY: independent feature and Owner review outstanding",
+    "claim_limits": "Test-path existence is not test pass and unified regression PASS is not feature acceptance; no sources/tests were run afresh for this triage.",
+    "historical_missing_ids_at_fb7c9a4": [
+      10,
+      12,
+      36,
+      37
+    ]
+  },
+  "B1_reconciliation": {
+    "index": "PR #65 docs/22_IMPLEMENTATION/AURA_FEATURE_TRACKER.json",
+    "review_document": "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md",
+    "present_feature_ids": [
+      8,
+      10,
+      12,
+      21,
+      35,
+      36,
+      37,
+      38,
+      39,
+      41,
+      42,
+      43,
+      52,
+      53,
+      62,
+      65,
+      66,
+      76,
+      102,
+      112
+    ],
+    "newly_restored_focused_test_ids": [
+      10,
+      12,
+      21,
+      36,
+      37,
+      39,
+      41,
+      52,
+      65,
+      66,
+      76,
+      102,
+      112
+    ],
+    "shared_focused_test_ids": [
+      10,
+      62
+    ],
+    "unique_indexed_test_files": 19,
+    "originally_missing_unique_test_files_restored": 13,
+    "indexed_focused_test_files_present_after_reconciliation": 19,
+    "present_is_not_passing": "Passing requires exact-head pytest and independent acceptance; test presence alone never marks a feature completed",
+    "all_acceptance": "NOT_VERIFIED",
+    "readiness": "TEST_RECONCILED_AWAITING_GENUINE_FEATURE_ACCEPTANCE",
+    "eligible_for_completion": 0
+  }
+}

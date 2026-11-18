@@ -370,3 +370,30 @@ Both features **TESTING/PARTIAL_VERIFIED**, NOT COMPLETED. Source-lock CI passes
   UI/API, publisher verification or encrypted archive/privacy requirements;
   the named blockers remain truthful. Both tracker JSON copies are byte-identical:
   **117 TESTING / 0 COMPLETED / 0 NOT_STARTED**. B1/B2 unmodified.
+
+
+## 2026-11-18 — #47/#73 focused code and acceptance closure ledger sync
+
+- PR #158 source commit `6bb6b7e8671570b428104f5929af79d525d52e54`,
+  documentation head `0136e82d16e80a824db9679618f490a81b29ca77`.
+- #47 Python AST repository import graph, missing imports, cycles and
+  real MCPGateway/PermissionEngine source access checks. #73 exact
+  CSV observations to validated experiment design, replayable SHA-256
+  linkage and Markdown; real MCPGateway/PermissionEngine deny-path tests.
+- [Core Assurance 44406597201](https://github.com/ArdaNTM/JAS/actions/runs/44406597201):
+  **2257 PASS / 14 SKIP**, new 4 focused tests PASS.
+  [Unified Acceptance 44406597246](https://github.com/ArdaNTM/JAS/actions/runs/44406597246):
+  **10 E2E + 9 governance PASS** and `A=9 B1=20 B2=88 COMPLETED=0 ELIGIBLE=0`.
+  440-source Release Lock **PASS**
+  `sha256:4fb74e38b53bcd79c0829250dac6309b8957835a5a2dbf0f501f9b79fb51c5d4`.
+- Tracker and readiness group JSON use the **same exact blobs** as PR #158.
+  #47 production repository provider/compiler-grade Java/TS verification/Owner
+  UI acceptance and #73 authenticated science provenance/experiment validity/
+  delivered report acceptance are still outstanding. The other Group A
+  capability-wide gates remain unchanged. The validator requires
+  `assessment=VERIFIED`, `acceptance=PASS`, `security_review=PASS`,
+  `license_review`/`hardware_review` verified or N/A and an empty
+  `missing_components` list **and** matching group `ready_for_completion=true`.
+  These cannot be made true solely by reclassifying existing code snippets.
+- Actual program: **117 TESTING, 0 COMPLETED, 0 NOT_STARTED**.
+  No merge, `main` update or F2.7 change.
