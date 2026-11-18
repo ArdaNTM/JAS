@@ -7,6 +7,8 @@ import sys
 from pathlib import Path
 
 import pytest
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 from aura_core.enterprise.approval_store import ApprovalStatus, SQLiteApprovalStore
 from aura_core.kernel.capabilities import CapabilityRegistry
@@ -18,6 +20,7 @@ from aura_core.mcp.provider import ProviderRegistry
 from aura_core.providers.managed_applications_mcp import (
     GovernedManagedApplications, ManagedAppDenied, ManagedAppUnavailable,
     ManagedApplicationSpec, load_managed_app_manifest, register_managed_applications,
+    managed_applications_router,
 )
 
 READ = "applications.managed.read"
@@ -107,8 +110,10 @@ def test_real_process_launch_status_stop_and_replay_denial(system):
     assert approvals.get(stopping.approval_id).status is ApprovalStatus.CONSUMED
     events = []
     bus.subscribe("ManagedApplicationStateChanged", lambda event: events.append(event))
-    assert run(bus.dispatch_once()) is True
-    assert run(bus.dispatch_once()) is True
+    for _ in range(32):
+        run(bus.dispatch_once())
+        if len(events) >= 2:
+            break
     assert {ev.payload["state"] for ev in events} == {"running", "stopped"}
     assert all(ev.source_component == "aura.managed_applications" for ev in events)
 
@@ -207,3 +212,64 @@ def test_registration_is_explicit_and_duplicate_rejected(system):
             capabilities=caps, event_bus=bus,
             specifications=tuple(backend._specs.values()),
         )
+
+
+def _api(owner=None, principal="owner"):
+    app = FastAPI()
+    app.state.http_bearer_token = "t" * 40
+    app.state.http_principal_id = principal
+    app.state.managed_applications = owner
+    app.include_router(managed_applications_router)
+    return app
+
+
+def _auth():
+    return {"Authorization": "Bearer " + "t" * 40}
+
+
+def test_real_http_bearer_plus_gateway_approval_controls_start_stop(system):
+    _, backend, engine, approvals, owner, _, _ = system
+    policy(engine, READ, AuthorizationDecision.ALLOW)
+    policy(engine, START)
+    policy(engine, STOP)
+    with TestClient(_api(owner)) as client:
+        assert client.get("/api/runtime/managed-apps").status_code == 401
+        assert client.get("/api/runtime/managed-apps", headers=_auth()).status_code == 200
+        assert client.post("/api/runtime/managed-apps/sample/start",
+                           headers=_auth(), json={"executable": "/bin/sh"}).status_code == 422
+        pending = client.post("/api/runtime/managed-apps/sample/start",
+                              headers=_auth(), json={})
+        assert pending.status_code == 202 and pending.json()["state"] == "approval_required"
+        assert backend._owned == {}
+        approval = approvals.get(pending.json()["approval_id"])
+        approvals.decide(approval.approval_id, expected_version=approval.version,
+                         approver_id="human:owner", decision=ApprovalStatus.APPROVED)
+        started = client.post("/api/runtime/managed-apps/sample/start", headers=_auth(),
+                              json={"approval_id": approval.approval_id})
+        assert started.status_code == 200 and started.json()["state"] == "running"
+        assert client.get("/api/runtime/managed-apps", headers=_auth()).json()["applications"][0]["state"] == "running"
+        stopped = client.post("/api/runtime/managed-apps/sample/stop", headers=_auth(), json={})
+        assert stopped.status_code == 202
+        r = approvals.get(stopped.json()["approval_id"])
+        approvals.decide(r.approval_id, expected_version=r.version,
+                         approver_id="human:owner", decision=ApprovalStatus.APPROVED)
+        done = client.post("/api/runtime/managed-apps/sample/stop", headers=_auth(),
+                           json={"approval_id": r.approval_id})
+        assert done.status_code == 200 and done.json()["state"] == "stopped"
+        assert "no-store" in done.headers["cache-control"]
+        assert "script-src 'none'" in done.headers["content-security-policy"]
+
+
+def test_http_disabled_or_wrong_principal_fails_closed(system):
+    _, _, engine, _, owner, _, _ = system
+    policy(engine, READ, AuthorizationDecision.ALLOW)
+    with TestClient(_api(owner, principal="intruder")) as client:
+        assert client.get("/api/runtime/managed-apps", headers=_auth()).status_code == 403
+    with TestClient(_api(None)) as client:
+        assert client.get("/api/runtime/managed-apps", headers=_auth()).status_code == 503
+
+
+def test_http_bearer_is_not_a_gateway_policy_grant(system):
+    _, _, _, _, owner, _, _ = system
+    with TestClient(_api(owner)) as client:
+        assert client.get("/api/runtime/managed-apps", headers=_auth()).status_code == 403
