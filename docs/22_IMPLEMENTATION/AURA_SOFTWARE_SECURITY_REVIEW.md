@@ -212,3 +212,44 @@ Implemented source commit: `5b441e55ce0b22bc88144fbd22de317036491ae7`.
 This is code and test evidence, not a `security_review=PASS` for full
 capabilities. Preserve `TESTING` and the named missing components until
 each real acceptance requirement is verified. No F2.7/main changes.
+
+
+## 2026-11-18 — Focused implementation: #5 durable goal status, #40 archive-backed reports, #44 signed backup
+
+**Implemented PR #158:** `e76ddc8ca5d7431add4dc4e9ed66419cac44ee79`.
+[Core Assurance](https://github.com/ArdaNTM/JAS/actions/runs/44383040344):
+**2253 PASS / 14 SKIP**, including three new focused tests and adversarial
+cross-principal, signature-tamper, duplicate, limits and restart checks.
+[Unified Acceptance](https://github.com/ArdaNTM/JAS/actions/runs/44383040278):
+**10 E2E + 9 governance PASS**,
+`A=9 B1=20 B2=88 COMPLETED=0 ELIGIBLE=0`.
+440-file Release Lock PASS
+`sha256:561336728ba0e9f7c1070e7339bb9c19d43ba9a350ff9e00c0efd501441bca3b`.
+
+- **#5 real slice:** `application/task_state_machine.py` gains bounded
+  principal-scoped `goal_progress` based only on actual persistent SQLite task
+  `SUCCEEDED` outcomes. No model assertion can manufacture achievement,
+  and a restarted process reads identical state. It does not bypass existing
+  task runtime/Gateway rules. **Remaining:** authenticated UI/API, long-term
+  goal creation/planning UX and Owner acceptance.
+- **#40 real slice:** `research/report_authoring.py` adds a deterministic
+  source-backed report builder joining actual digest-verified
+  `SQLiteResearchArchive` snapshots and reviewed DOI metadata.
+  It produces a valid DOCX and strictly rejects foreign-principal archives,
+  unreviewed DOIs and invalid source lengths. Archived content remains
+  explicitly untrusted: **no independent publisher authenticity, live
+  source verification or authenticated download route is claimed**.
+- **#44 real slice:** `research/archive.py` adds explicit-consent,
+  principal-bound HMAC-SHA256 signed bounded JSON backup and atomic SQLite
+  restore, with original content-id/hash validation. Tampered backups and
+  attempts to cross principal scopes fail closed. **Security limitation:**
+  HMAC authenticity/integrity does *not* encrypt archived private text.
+  Owner key custody/rotation, UI, PDF formats, retention policy and validated
+  end-to-end backup/restore still require independent acceptance.
+
+These three features' real partial code and negative tests are recorded
+without removing open implementation gaps or promoting `COMPLETED`.
+The user's individual-completion policy is accepted; a feature may be
+promoted independently once its **own** full acceptance gates are genuinely
+closed. Existing #2/#59/#67/#111 incomplete full capabilities remain
+`TESTING` as well; B1 and B2 unchanged.
