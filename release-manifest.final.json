@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-18T01:57:13.916Z",
-  "git_commit": "eb001ff2c9e9dfb2fbc507cce0d50839993465c3",
+  "generated_at": "2026-11-18T02:31:48.098Z",
+  "git_commit": "c00b2d9872a334cfd53b37f52e28ffc5348e937d",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:069790490687180e704474f41d8f59853e4b0e74bc55bcda66b498991365676b",
-  "file_count": 264,
+  "release_digest": "sha256:0d3a71e1bb8505a8324684dbc4d957947f849871a0491858da258df5e6ee9cb4",
+  "file_count": 265,
   "files": [
     {
       "path": "aura-ui/package-lock.json",
@@ -702,7 +702,7 @@
     },
     {
       "path": "core/src/aura_core/main.py",
-      "sha256": "57d540d59e63d52c0934af2ce1eea9ea8de2047989c60e6b71b131a6583028a6"
+      "sha256": "261d47c90812283c46b4440b3504a68b644fa1df2f58c1fd7ccd453c2d044d6c"
     },
     {
       "path": "core/src/aura_core/mcp/__init__.py",
@@ -899,6 +899,10 @@
     {
       "path": "core/src/aura_core/providers/contracts.py",
       "sha256": "f86614f5701c138e350570b10d2d5c7fe1045a09bd8e857ae8743b187c3bc865"
+    },
+    {
+      "path": "core/src/aura_core/providers/docker_terminal_mcp.py",
+      "sha256": "1b1d7685ba5fe92629430d7ae609c79f4628edadc7c678ee7215c2d5546bb3e8"
     },
     {
       "path": "core/src/aura_core/providers/ffmpeg_video_mcp.py",
