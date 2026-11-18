@@ -267,7 +267,9 @@
       ],
       "ready_for_completion": false,
       "subgroup": "B1",
-      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification."
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification.",
+      "next_pack": "B1_01",
+      "next_pack_readiness": "SOURCE_PRESENT_TEST_FILE_PRESENT_ACCEPTANCE_NOT_VERIFIED"
     },
     {
       "id": 9,
@@ -303,7 +305,9 @@
       ],
       "ready_for_completion": false,
       "subgroup": "B1",
-      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification."
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification.",
+      "next_pack": "B1_01",
+      "next_pack_readiness": "SOURCE_PRESENT_TEST_FILE_MISSING_ACCEPTANCE_NOT_VERIFIED"
     },
     {
       "id": 11,
@@ -339,7 +343,9 @@
       ],
       "ready_for_completion": false,
       "subgroup": "B1",
-      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification."
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification.",
+      "next_pack": "B1_01",
+      "next_pack_readiness": "SOURCE_PRESENT_TEST_FILE_MISSING_ACCEPTANCE_NOT_VERIFIED"
     },
     {
       "id": 13,
@@ -755,7 +761,9 @@
       ],
       "ready_for_completion": false,
       "subgroup": "B1",
-      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification."
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification.",
+      "next_pack": "B1_01",
+      "next_pack_readiness": "SOURCE_PRESENT_TEST_FILE_PRESENT_ACCEPTANCE_NOT_VERIFIED"
     },
     {
       "id": 36,
@@ -773,7 +781,9 @@
       ],
       "ready_for_completion": false,
       "subgroup": "B1",
-      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification."
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification.",
+      "next_pack": "B1_01",
+      "next_pack_readiness": "SOURCE_PRESENT_TEST_FILE_MISSING_ACCEPTANCE_NOT_VERIFIED"
     },
     {
       "id": 37,
@@ -791,7 +801,9 @@
       ],
       "ready_for_completion": false,
       "subgroup": "B1",
-      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification."
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification.",
+      "next_pack": "B1_01",
+      "next_pack_readiness": "SOURCE_PRESENT_TEST_FILE_MISSING_ACCEPTANCE_NOT_VERIFIED"
     },
     {
       "id": 38,
@@ -809,7 +821,9 @@
       ],
       "ready_for_completion": false,
       "subgroup": "B1",
-      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification."
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification.",
+      "next_pack": "B1_01",
+      "next_pack_readiness": "SOURCE_PRESENT_TEST_FILE_PRESENT_ACCEPTANCE_NOT_VERIFIED"
     },
     {
       "id": 39,
@@ -885,7 +899,9 @@
       ],
       "ready_for_completion": false,
       "subgroup": "B1",
-      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification."
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification.",
+      "next_pack": "B1_01",
+      "next_pack_readiness": "SOURCE_PRESENT_TEST_FILE_PRESENT_ACCEPTANCE_NOT_VERIFIED"
     },
     {
       "id": 43,
@@ -902,7 +918,9 @@
       ],
       "ready_for_completion": false,
       "subgroup": "B1",
-      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification."
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification.",
+      "next_pack": "B1_01",
+      "next_pack_readiness": "SOURCE_PRESENT_TEST_FILE_PRESENT_ACCEPTANCE_NOT_VERIFIED"
     },
     {
       "id": 44,
@@ -1079,7 +1097,9 @@
       ],
       "ready_for_completion": false,
       "subgroup": "B1",
-      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification."
+      "subgroup_basis": "Potentially implementable as pure offline/Core software; still requires feature-specific security and Owner verification.",
+      "next_pack": "B1_01",
+      "next_pack_readiness": "SOURCE_PRESENT_TEST_FILE_PRESENT_ACCEPTANCE_NOT_VERIFIED"
     },
     {
       "id": 54,
@@ -2300,5 +2320,51 @@
   "subgroup_semantics": {
     "B1": "Software-only acceptance candidate. Needs real implementation, authorized E2E and independent review, but no intrinsic physical camera, robot, microphone, live Windows/NTFS/SCM, Docker/QEMU or GPU requirement. Not COMPLETED or owner-approved.",
     "B2": "Feature's full acceptance includes live device, protected host OS, sandbox/container, installed model/audio/video/GPU or real external system/Owner release boundary. CI unit fixtures alone do not fulfill acceptance."
+  },
+  "first_B1_package": {
+    "status": "REVIEWED_NOT_ACCEPTED",
+    "anchor_commit": "fb7c9a4f3c892972fc6450cc1b7d3412257dc055",
+    "documentation_path": "docs/22_IMPLEMENTATION/AURA_B1_FIRST_PACK_REVIEW.md",
+    "priority_feature_ids": [
+      8,
+      38,
+      42,
+      53,
+      35,
+      43,
+      10,
+      12,
+      36,
+      37
+    ],
+    "source_modules_present_ids": [
+      8,
+      38,
+      42,
+      53,
+      35,
+      43,
+      10,
+      12,
+      36,
+      37
+    ],
+    "indexed_focused_test_present_ids": [
+      8,
+      38,
+      42,
+      53,
+      35,
+      43
+    ],
+    "indexed_focused_test_missing_ids": [
+      10,
+      12,
+      36,
+      37
+    ],
+    "completion_eligible_ids": [],
+    "security_review": "ENGINEERING_TRIAGE_ONLY: independent feature and Owner review outstanding",
+    "claim_limits": "Test-path existence is not test pass and unified regression PASS is not feature acceptance; no sources/tests were run afresh for this triage."
   }
 }
