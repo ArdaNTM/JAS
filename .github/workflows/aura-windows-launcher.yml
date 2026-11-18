@@ -117,6 +117,22 @@ jobs:
       - name: Piper Unicode configuration regression (PowerShell 7)
         shell: pwsh
         run: ./scripts/test-piper-voice-config.ps1
+      - name: Check owner trust bootstrap PowerShell syntax (no provisioning)
+        shell: pwsh
+        run: |
+          [void][scriptblock]::Create((Get-Content core/scripts/provision_windows_owner.ps1 -Raw))
+      - name: Fail closed on high/critical desktop npm advisories
+        working-directory: aura-ui
+        shell: pwsh
+        run: npm audit --audit-level=high
+      - name: Install console dependencies for separate audit
+        working-directory: core/frontend
+        shell: pwsh
+        run: npm ci --no-audit --no-fund
+      - name: Fail closed on high/critical console npm advisories
+        working-directory: core/frontend
+        shell: pwsh
+        run: npm audit --audit-level=high
       - name: Check optional Turkish TTS setup script syntax
         shell: pwsh
         run: |

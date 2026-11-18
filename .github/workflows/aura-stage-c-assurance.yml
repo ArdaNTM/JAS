@@ -1,0 +1,50 @@
+name: AURA Stage C Offline Acceptance
+on:
+  pull_request:
+    paths:
+      - "core/src/aura_core/application/stage_c_*"
+      - "core/src/aura_core/mcp/stage_c_*"
+      - "core/tests/test_stage_c_*"
+      - "core/scripts/osworld_v2_lab.py"
+      - "core/scripts/hardware_stage_c_acceptance.py"
+      - "aura-ui/src/components/StageCControlPanel.tsx"
+      - "aura-ui/tests/stage-c-control.test.mjs"
+      - ".github/workflows/aura-stage-c-assurance.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  stage-c-python:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v5
+      - name: Sync pinned dependencies
+        working-directory: core
+        run: uv sync --frozen --group dev
+      - name: Isolated Stage C dry-run tests
+        working-directory: core
+        run: |
+          uv run --frozen python -m pytest -q tests/test_stage_c_runtime.py tests/test_stage_c_lab.py
+          uv run --frozen python scripts/osworld_v2_lab.py
+          uv run --frozen python scripts/hardware_stage_c_acceptance.py
+          uv run --frozen python scripts/verify_final_lock.py
+  stage-c-hud:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Compile and static HUD acceptance
+        working-directory: aura-ui
+        run: |
+          npm ci --no-fund --no-audit
+          npm run build
+          node --test tests/stage-c-control.test.mjs
+          npm audit --audit-level=high

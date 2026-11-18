@@ -58,6 +58,7 @@ def main() -> int:
         return 1
 
     entries: list[tuple[str, str]] = []
+    mismatches = 0
 
     for item in files:
         relative = item["path"]
@@ -74,16 +75,17 @@ def main() -> int:
         actual = sha256(path)
 
         if actual != expected:
-            print(
-                f"FAIL: digest mismatch: {relative}"
-            )
+            print(f"FAIL: digest mismatch: {relative}")
             print(f" expected={expected}")
             print(f" actual={actual}")
-            return 1
+            mismatches += 1
+            continue
 
-        entries.append(
-            (relative, actual)
-        )
+        entries.append((relative, actual))
+
+    if mismatches:
+        print(f"FAIL: {mismatches} release-lock SHA-256 mismatches")
+        return 1
 
     digest = hashlib.sha256()
 

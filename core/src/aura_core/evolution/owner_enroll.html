@@ -1,0 +1,25 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AURA — Trusted Owner Enrollment</title>
+<script src="/enroll.js" defer></script>
+<style>
+:root{color-scheme:dark;font-family:"Segoe UI",sans-serif;background:#08121d;color:#d2eefa}
+main{max-width:680px;margin:7vh auto;padding:32px;border:1px solid #22758c}
+h1{color:#6adcea;font-weight:400}p{line-height:1.65}
+input{width:100%;padding:12px;background:#0d2636;color:white;border:1px solid #346b7d}
+button{padding:12px 26px;background:#084959;border:1px solid #59b5cd;color:white;margin-top:20px;cursor:pointer}
+small{color:#f1c688}#status{margin-top:25px;white-space:pre-wrap}
+</style>
+</head><body><main>
+<h1>Primal Anchor — First Owner Passkey</h1>
+<p>This one-time operator-only page enrolls a <strong>Windows Hello / FIDO2
+passkey</strong>. The secret must come from your separately protected owner
+bootstrap file, never from AURA or its HUD.</p>
+<label for="secret">256-bit owner bootstrap token (64 hex characters)</label>
+<input id="secret" type="password" autocomplete="off" spellcheck="false"/>
+<button id="enroll" type="button">Register with Windows Hello</button>
+<p><small>No MCP tool or new code will be activated. The result is stored as
+public passkey configuration outside the AURA checkout. Never paste the token
+into a chat or log.</small></p>
+<p id="status" role="status" aria-live="polite">Ready for physical owner registration.</p>
+</main></body></html>

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Iterable
+import re
 
 
 @dataclass(frozen=True, slots=True)
@@ -24,9 +25,38 @@ class SynthesizedContext:
 class ContextSynthesizer:
     """Builds bounded context; recalled content is explicitly untrusted data."""
 
-    def __init__(self, *, max_memory_chars: int = 4000, max_research_chars: int = 12000) -> None:
+    def __init__(
+        self, *, max_memory_chars: int = 4000,
+        max_research_chars: int = 12000,
+        memory_selection: str = "chronological",
+    ) -> None:
+        if memory_selection not in {"chronological", "relevance"}:
+            raise ValueError("Unsupported context selection mode")
         self.max_memory_chars = max(256, min(max_memory_chars, 12000))
         self.max_research_chars = max(512, min(max_research_chars, 24000))
+        self.memory_selection = memory_selection
+
+    @staticmethod
+    def _relevant_memories(message: str, memories: Iterable[str]) -> list[str]:
+        """Deterministic relevance, bounded input and stable tie-breaking.
+
+        Memory is untrusted reference text; no model-based rewriting, fabricated
+        summaries, authority escalation, or cross-principal retrieval.
+        """
+        terms = set(re.findall(r"\w{3,}", message.casefold()[:4000]))
+        ranked: list[tuple[int, int, str]] = []
+        seen: set[str] = set()
+        for index, value in enumerate(memories):
+            if index >= 128:
+                break
+            item = str(value).strip()[:2000]
+            if not item or item.casefold() in seen:
+                continue
+            seen.add(item.casefold())
+            words = set(re.findall(r"\w{3,}", item.casefold()))
+            ranked.append((len(words & terms), index, item))
+        ranked.sort(key=lambda row: (-row[0], row[1]))
+        return [item for _, _, item in ranked]
 
     def synthesize(
         self,
@@ -40,7 +70,11 @@ class ContextSynthesizer:
             tone = "adaptive"
         memory_lines: list[str] = []
         used = 0
-        for item in memories:
+        selection = (
+            self._relevant_memories(message, memories)
+            if self.memory_selection == "relevance" else memories
+        )
+        for item in selection:
             clean = str(item).strip()
             if not clean:
                 continue

@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import io
+import time as clock
 from dataclasses import dataclass
 from datetime import datetime, time
 from typing import Any, Callable, Mapping, Protocol
@@ -16,6 +17,7 @@ from uuid import uuid4
 from aura_core.kernel.events import EventBus, KernelEvent
 from aura_core.mcp.gateway import MCPGateway, MCPGatewayRequest
 from aura_core.kernel.permissions import AuthorizationDecision, RiskLevel
+from aura_core.voice.metrics import VoiceLatencyMetrics
 
 
 class SpeechRecognizer(Protocol):
@@ -184,11 +186,13 @@ class FullDuplexSessionManager:
     def __init__(
         self, *, recognizer: SpeechRecognizer, synthesizer: SpeechSynthesizer,
         player: AudioPlayer, event_bus: EventBus | None = None,
+        latency_metrics: VoiceLatencyMetrics | None = None,
     ) -> None:
         self._recognizer = recognizer
         self._synthesizer = synthesizer
         self._player = player
         self._events = event_bus
+        self._latency_metrics = latency_metrics or VoiceLatencyMetrics()
         self._session_id: str | None = None
         self._state = "idle"
         self._transcript = ""
@@ -216,7 +220,9 @@ class FullDuplexSessionManager:
         async with self._lock:
             self._state = "recognizing"
         try:
+            started = clock.perf_counter()
             transcript = (await self._recognizer.transcribe(audio, session_id=session_id)).strip()
+            self._latency_metrics.record("stt_complete", (clock.perf_counter() - started) * 1000)
         except Exception:
             async with self._lock:
                 self._state = "listening"
@@ -226,6 +232,30 @@ class FullDuplexSessionManager:
             self._state = "listening"
             self._emit("SpeechTranscript", {"characters": len(self._transcript)})
         return self._transcript
+
+    async def ingest_pcm(self, payload: bytes, *, end: bool = False) -> dict[str, object]:
+        """Decode independent 100ms PCM frames in the configured sherpa provider.
+
+        This path does not promote the microphone to tool authority or replay
+        wake-word audio into ASR. Interrupted TTS is managed separately.
+        """
+        sid = self._require_session()
+        if not hasattr(self._recognizer, "consume_pcm"):
+            raise RuntimeError("Streaming PCM provider is unavailable")
+        started = clock.perf_counter()
+        result = await self._recognizer.consume_pcm(payload, session_id=sid, end=end)
+        if end:
+            self._latency_metrics.record("stt_complete", (clock.perf_counter() - started) * 1000)
+        if result.get("wake_detected"):
+            self._emit("SpeechWakeDetected", {"provider": "sherpa-onnx"})
+        transcript = str(result.get("transcript") or "").strip()[:8000]
+        if transcript and end:
+            async with self._lock:
+                self._transcript = transcript
+                self._emit("SpeechTranscript", {"characters": len(transcript)})
+        return {"wake_detected": bool(result.get("wake_detected")),
+                "transcript": transcript if end else "",
+                "listening": bool(result.get("listening")), "complete": end}
 
     async def speak(self, text: str) -> None:
         session_id = self._require_session()
@@ -242,7 +272,9 @@ class FullDuplexSessionManager:
             await asyncio.gather(previous, return_exceptions=True)
 
         async def playback() -> None:
+            started = clock.perf_counter()
             audio = await self._synthesizer.synthesize(text, session_id=session_id)
+            self._latency_metrics.record("tts_first_audio", (clock.perf_counter() - started) * 1000)
             async with self._lock:
                 if generation != self._generation or self._state != "speaking":
                     return
@@ -283,7 +315,10 @@ class FullDuplexSessionManager:
                 self._emit("SpeechPlayerStopFailed", {})
 
     async def close(self) -> None:
+        sid = self._session_id
         await self.interrupt(reason="session_closed", keep_listening=False)
+        if sid is not None and hasattr(self._recognizer, "close_session"):
+            await self._recognizer.close_session(sid)
         async with self._lock:
             self._state = "idle"
             self._session_id = None
@@ -294,6 +329,14 @@ class FullDuplexSessionManager:
             session_id=self._session_id or "", state=self._state,
             last_transcript=self._transcript, generation=self._generation,
         )
+
+    def latency_snapshot(self) -> dict[str, dict[str, float | int]]:
+        """Measured local samples; these are observations, never latency guarantees."""
+        return self._latency_metrics.snapshot()
+
+    def record_client_latency(self, stage: str, milliseconds: float) -> None:
+        if stage in {"llm_first_token", "browser_first_audio", "end_to_end"}:
+            self._latency_metrics.record(stage, milliseconds)
 
     def _require_session(self) -> str:
         if self._session_id is None or self._state == "idle":
