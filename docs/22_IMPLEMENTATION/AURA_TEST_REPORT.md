@@ -340,3 +340,13 @@ Both features **TESTING/PARTIAL_VERIFIED**, NOT COMPLETED. Source-lock CI passes
 - [Core Assurance 44349038280](https://github.com/ArdaNTM/JAS/actions/runs/44349038280): **2247 passed / 14 skipped**. [Unified Acceptance 44349038075](https://github.com/ArdaNTM/JAS/actions/runs/44349038075): **10 E2E + 9 governance PASS**, `A=9 B1=20 B2=88 COMPLETED=0 ELIGIBLE=0`.
 - Canonical source Release Lock **440 files PASS**, digest `sha256:8abed32da6e4b52f7f80dea68a758af64bdfae6bb9d48e51fa23efb072516f0c`.
 - #67 numerically checked conditional OLS uncertainty and #111 safe literal-only XLSX are **real partial implementations**. #2, #5, #40, #44, #47, #59, #73 remain on their original acceptance gaps. **117 TESTING / 0 COMPLETED / 0 NOT_STARTED** in both authoritative PR #65 and integrated PR #158 tracker; no fabricated independent security or Owner sign-off.
+
+
+## 2026-11-18 — Code-first Group A graph lifecycle and agent receipt integration sync
+
+- PR #158 code `5b441e55ce0b22bc88144fbd22de317036491ae7`; final evidence-document head `bafe8da96068124c6b111eb78dd5c3cf7fd60502`. Shared tracker byte-identical with PR #158.
+- #2: real SQLite/PostgreSQL graph tombstone/restore and atomic durable audit behind existing MCPGateway + consumed HIGH-risk approval. New tests include true PostgreSQL storage, same-scope/foreign principal checks and restart persistence.
+- #59: existing authenticated HMAC Gateway ingress retained; new persistent broker-signed consumption receipts with SQLite atomic consume, tampering and external child-process signer tests. True network/peer identity and independent signed receiver receipts still not proven.
+- [Core Assurance 44365112638](https://github.com/ArdaNTM/JAS/actions/runs/44365112638) **2250 passed / 14 skipped**; [Remote Persistence 44365112329](https://github.com/ArdaNTM/JAS/actions/runs/44365112329) **8 PASS on real PostgreSQL/MinIO**; [Unified Acceptance 44365112370](https://github.com/ArdaNTM/JAS/actions/runs/44365112370) **10 E2E + 9 governance PASS**.
+- 440 canonical source Release Lock **PASS** `sha256:ebcbd0f55845a04119563d976d72951dc506e85c763a8aba32417a4787041ad9`; independent Owner/production full-feature gates remain in tracker and its evidence audit reports `A=9 B1=20 B2=88 COMPLETED=0 ELIGIBLE=0`.
+- **117 TESTING / 0 COMPLETED / 0 NOT_STARTED**. This sync does not erase unimplemented full-feature requirements nor touch B1/B2 classification or `main`.
