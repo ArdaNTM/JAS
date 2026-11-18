@@ -205,3 +205,13 @@ Cumulative Draft PR #144 exact-head Core 1142 passed / 8 skipped, Final Release 
 
 Draft PR #145 / feature #81 HEAD `c1c17a98f61b12d7fbe6921a830bce0bf6da7009`: Core Assurance [44202888251](https://github.com/ArdaNTM/JAS/actions/runs/44202888251) **621 passed, 6 skipped**; Final Release Lock PASS 234 entries `sha256:b953fd48a8abb424c4e0d6ad396551a00033064f98ebbf50cda1c3684a6c7244`; Remote Persistence [44202888287](https://github.com/ArdaNTM/JAS/actions/runs/44202888287) PASS. A true local sparse SAD matcher under separate Gateway ALLOW; no real stereo rig/Owner hardware acceptance.
 Tracker 94 TESTING, 2 RESEARCHING, 21 NOT_STARTED, 0 COMPLETED. Next #95 dynamic live SVG visualizer (Draft PR #146, exact-head CI pending) and remaining device/HUD/OS/agent integrations. Never merge automatically.
+
+## 2026-11-18 — #95 proven server rendering; review-only, 20 pending
+
+PR #145 exact HEAD `c1c17a98f61b12d7fbe6921a830bce0bf6da7009`: [Core 44202888251](https://github.com/ArdaNTM/JAS/actions/runs/44202888251) 621 passed/6 skipped, Final Lock 234 files PASS `sha256:b953fd48a8abb424c4e0d6ad396551a00033064f98ebbf50cda1c3684a6c7244`; [Persistence 44202888287](https://github.com/ArdaNTM/JAS/actions/runs/44202888287) PASS. Already recorded in feature #81 ledger; rechecked against GitHub. No calibrated stereo hardware or Owner approval.
+
+PR #146 exact HEAD `32a2fadf2a84015d5cfc0f3e16b98e3a54ea9063`: [Core 44204212614](https://github.com/ArdaNTM/JAS/actions/runs/44204212614) **1156 passed/8 skipped**, Final Release Lock **PASS**, **261** canonical sources, `sha256:b03cdfcd594751959ed43a1d619e3f13ab2bd583a0b74a94e69d72b7f99e541d`; [Remote Persistence 44204212575](https://github.com/ArdaNTM/JAS/actions/runs/44204212575) **PASS**. Real EventBus numeric latency ring and FastAPI SVG endpoint through protected MCP Gateway; negative auth/injection/provider-bypass tests. Stacked on Draft PR #144, unmerged. Feature #95 moves NOT_STARTED to **TESTING/PARTIAL_VERIFIED**, NOT COMPLETED. Missing native transparent HUD/real Owner/device acceptance.
+
+**Ledger after evidence:** 117 features: **95 TESTING, 20 NOT_STARTED, 2 RESEARCHING, 0 COMPLETED**. Pinned main unchanged, no automatic merge.
+
+Next review groups by technical dependencies: read-only application/terminal discovery (#26/#27), bounded maintenance/workflow admission (#31/#33), authorized remote computer controls (#32), agent development/verification (#45/#51/#55/#60/#61), HAL robotics/laboratory (#75/#87–#91), desktop visualization (#94/#96/#97), game-engine integration (#113). Native device, agent execution and robotics must not inherit permission from visualization or model evidence.

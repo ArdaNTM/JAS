@@ -187,3 +187,9 @@ Green PR #144 covers #112–#143, not open PRs #64–#111 including sealed F2.7 
 
 - Missing real stereo camera capture, timestamp synchronization, rectification/lens calibration and measured depth accuracy. Passing generated-frame unit tests cannot attest physical world geometry.
 - Result remains UNTRUSTED_STEREO_ESTIMATE / safe_for_physical_control=False; no automatic robot, mouse or other physical controls.
+
+## #95 native HUD and event provenance blockers (PR #146)
+
+- Server-side SVG endpoint is real and exact-head CI green, but the Electron transparent multi-monitor visual shell, Windows accessibility, GPU performance, long-session behaviour and physical Owner user acceptance were not measured.
+- Only in-process EventBus source attribution exists; telemetry must remain REDACTED_UNTRUSTED_TELEMETRY. HTTP bearer plus explicit MCP Gateway authorization is required for every render. A preconfigured Owner token/policy is not proof of production enrollment.
+- PR #146 is stacked on #144; current 261-source Final Lock does not cover #145 and older unmerged #64–#111. Do not treat passing branch-specific CI as complete global integration.

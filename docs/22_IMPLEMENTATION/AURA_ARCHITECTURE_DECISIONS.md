@@ -102,3 +102,7 @@ Feature #79 parses strict bounded normalized boxes produced by the same governed
 ## ADR-ENG-024 — local stereo computation is not a physical authorization source
 
 Feature #81 real bounded SAD depth operates on rectified P5 pair bytes with trusted-composition numerical calibration, under existing Core registries and an exact MCP Gateway permission. Depth output is a sparse UNTRUSTED estimate, with no physical-action authority. Numerical consistency cannot replace calibrated camera evidence or human Owner approval.
+
+## ADR-ENG-026 — dynamic SVG cannot confer action authority
+
+Feature #95 is explicitly opt-in (`AURA_LIVE_CHART_ENABLED=1`), read-only and bound to real EventBus/RuntimeProfiler metrics, existing Core registries, PermissionEngine and MCPGateway exact-scope grants. HTTP bearer/principal authentication and Gateway ALLOW must independently succeed per SVG request; direct provider access remains denied. Only trusted numeric samples are converted to static SVG by Core, with CSP and no-store. In-process event attribution is not cryptographic provenance; output stays `REDACTED_UNTRUSTED_TELEMETRY`. Native desktop acceptance and full merged-source lock remain separate gates.
