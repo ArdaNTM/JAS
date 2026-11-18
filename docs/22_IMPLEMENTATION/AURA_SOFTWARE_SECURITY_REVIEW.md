@@ -63,3 +63,12 @@ All changes are on Draft PR #158, with F2.7 PR #64 security files untouched. The
 - Real PostgreSQL graph tests run only in GitHub Remote Persistence's actual postgres:16 service. Local Core CI skips them when `AURA_TEST_DATABASE_URL` is absent; this distinction is reported honestly.
 - Historical PRs #66 and #68 are incorporated as their exact source Git blob variants; #135, #146 and #147 opt-in endpoint/source/test paths are already present as cumulative ancestors. See `AURA_CORE_PROVENANCE_RECONCILIATION.json`.
 - **No Group A record should be marked COMPLETED solely because these tests pass.** Each original full-capability missing component, independent security review, relevant production authorization/Owner acceptance and final CI must be proven separately.
+
+
+## CI verification at exact commit fb7c9a4 — engineering green, acceptance not signed
+
+Verified GitHub Actions commit: `fb7c9a4f3c892972fc6450cc1b7d3412257dc055` (Draft PR #158). Seven workflows succeeded. Core Assurance: **1494 passed, 10 skipped** (run 44252417059). Remote Persistence on GitHub PostgreSQL/MinIO services: **8 passed** (run 44252416999). Unified E2E: **10 passed**, fail-closed A/B ledger: **8 passed**, final 312-file SHA256 Release Lock PASS (run 44252416980). Other Memory/Auth E2E, two subsystem assurance and Windows launcher workflows: PASS.
+
+The *same* first-party ledger audit reports **A=9 / B1=20 / B2=88 / COMPLETED=0 / ELIGIBLE=0**. Verified GitHub review submissions: **no submitted reviews** on either Draft PR #158 or tracker PR #65. This does not prove independent security approval, signed Owner authorization or delivery/retention. Prior outstanding acceptance columns in this review remain open, including authenticated production key custody and real cross-process agent receipts (#59), publisher verification (#40), security-verified source retrieval (#47), assumption validation (#67), production user export/UX (#111), and GDPR erasure/backup lifecycle (#2/#44). No `security_review=PASS` or `acceptance=PASS` should be recorded without supporting independent evidence.
+
+B1 first ten review candidates and source/test gaps: [AURA_B1_FIRST_PACK_REVIEW.md](AURA_B1_FIRST_PACK_REVIEW.md). The first B1 package is planning/review only; it is not eligible for automatic `COMPLETED` transitions.
