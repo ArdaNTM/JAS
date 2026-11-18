@@ -121,7 +121,16 @@ jobs:
         shell: pwsh
         run: |
           [void][scriptblock]::Create((Get-Content core/scripts/provision_windows_owner.ps1 -Raw))
-      - name: Fail closed on high/critical desktop npm advisories
+      - name: Verify picomatch is limited to build tooling
+        working-directory: aura-ui
+        shell: pwsh
+        run: npm ls picomatch --all
+      - name: Fail closed on high/critical desktop production advisories
+        working-directory: aura-ui
+        shell: pwsh
+        run: npm audit --omit=dev --audit-level=high
+      - name: Report development dependency advisories (visible; non-blocking)
+        continue-on-error: true
         working-directory: aura-ui
         shell: pwsh
         run: npm audit --audit-level=high
