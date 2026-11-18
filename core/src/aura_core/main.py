@@ -29,6 +29,9 @@ from aura_core.application.vision_adapters import DesktopScreenCapture, OllamaVi
 from aura_core.application.live_svg_chart import (
     GovernedLiveSVGChart, live_svg_chart_router, register_live_svg_chart,
 )
+from aura_core.application.live_task_panel import (
+    GovernedLiveTaskPanel, live_task_panel_router, register_live_task_panel,
+)
 from aura_core.config.kernel import KernelConfig
 from aura_core.config.storage import StorageMode, storage_mode_from_environment, validate_storage_mode
 from aura_core.enterprise.policy_bundle import PolicyBundle
@@ -477,6 +480,22 @@ def build_app() -> FastAPI:
             gateway, authenticated_principal_id=http_principal_id,
         )
         app.include_router(live_svg_chart_router)
+
+    # Opt-in persisted live task states: HTTP bearer + per-read MCP authorization.
+    app.state.live_task_panel = None
+    app.state.live_task_panel_provider = None
+    if os.getenv("AURA_LIVE_TASK_PANEL_ENABLED", "0").strip().casefold() in {"1", "true", "yes", "on"}:
+        app.state.live_task_panel_provider = register_live_task_panel(
+            services=kernel.service_registry,
+            providers=kernel.provider_registry,
+            capabilities=kernel.capability_registry,
+            event_bus=kernel.event_bus,
+            task_state_machine=task_state_machine,
+        )
+        app.state.live_task_panel = GovernedLiveTaskPanel(
+            gateway, authenticated_principal_id=http_principal_id,
+        )
+        app.include_router(live_task_panel_router)
 
     event_runtime = EventBusRuntime(
         kernel.event_bus,
@@ -944,6 +963,9 @@ def build_app() -> FastAPI:
             chart_provider = getattr(app.state, "live_svg_chart_provider", None)
             if chart_provider is not None:
                 chart_provider.close()
+            task_panel_provider = getattr(app.state, "live_task_panel_provider", None)
+            if task_panel_provider is not None:
+                task_panel_provider.close()
             logger.info(
                 "AURA LIFESPAN SHUTDOWN COMPLETE"
             )
