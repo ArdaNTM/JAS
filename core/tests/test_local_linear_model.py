@@ -46,3 +46,23 @@ def test_predictions_are_only_descriptive_model_outputs():
     assert 0 <= model.r_squared <= 1
     assert model.count == 4
     assert model.to_dict()["untrusted_input"] is True
+
+
+def test_coefficient_uncertainty_matches_independent_ols_arithmetic():
+    import math
+    model = fit_simple_linear_model([0, 1, 2, 3], [1, 2, 2, 4])
+    assert model.slope == pytest.approx(0.9)
+    assert model.intercept == pytest.approx(0.9)
+    assert model.residual_standard_error == pytest.approx(math.sqrt(0.35))
+    assert model.slope_standard_error == pytest.approx(math.sqrt(0.07))
+    assert model.intercept_standard_error == pytest.approx(math.sqrt(0.245))
+    assert model.to_dict()["assumptions_verified"] is False
+    assert "NOT validated" in model.to_dict()["standard_error_assumptions"]
+
+
+def test_two_point_fit_has_no_estimated_uncertainty():
+    model = fit_simple_linear_model([0, 1], [1, 2])
+    assert model.residual_standard_error is None
+    assert model.slope_standard_error is None
+    assert model.intercept_standard_error is None
+    assert model.to_dict()["inferential_claim"] is False

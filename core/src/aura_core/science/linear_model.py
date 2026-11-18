@@ -19,6 +19,8 @@ class LinearModel:
     count: int
     r_squared: float | None
     residual_standard_error: float | None
+    slope_standard_error: float | None = None
+    intercept_standard_error: float | None = None
 
     def predict(self, x: int | float) -> float:
         if type(x) not in (int, float):
@@ -39,6 +41,10 @@ class LinearModel:
             "slope": self.slope, "intercept": self.intercept,
             "count": self.count, "r_squared": self.r_squared,
             "residual_standard_error": self.residual_standard_error,
+            "slope_standard_error": self.slope_standard_error,
+            "intercept_standard_error": self.intercept_standard_error,
+            "standard_error_assumptions": "independent, homoscedastic errors; NOT validated",
+            "assumptions_verified": False,
             "inferential_claim": False, "untrusted_input": True,
         }
 
@@ -70,7 +76,19 @@ def fit_simple_linear_model(
         raise ValueError("non-finite regression result")
     r2 = None if sst == 0 else max(0.0, min(1.0, 1 - sse / sst))
     residual_se = math.sqrt(sse / (n - 2)) if n > 2 else None
+    # Formal OLS uncertainty is conditional on unverified error assumptions.
+    # Two-point fits have no residual degrees of freedom: no fake estimates.
+    slope_se = intercept_se = None
+    if residual_se is not None:
+        root_ssx = math.sqrt(ssx)
+        slope_se = residual_se / root_ssx
+        intercept_se = residual_se * math.hypot(
+            1 / math.sqrt(n), mx / root_ssx,
+        )
+        if not all(math.isfinite(z) for z in (slope_se, intercept_se)):
+            raise ValueError("non-finite model uncertainty")
     return LinearModel(
         slope=slope, intercept=intercept, count=n, r_squared=r2,
         residual_standard_error=residual_se,
+        slope_standard_error=slope_se, intercept_standard_error=intercept_se,
     )

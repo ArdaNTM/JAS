@@ -73,3 +73,55 @@ def test_empty_columns_and_unknown_header_are_not_read():
         table.numeric_summary(column="unknown")
     with pytest.raises(ValueError):
         table.grouped_summary(group_column="a", numeric_column="a")
+
+
+def test_xlsx_export_is_literal_and_formula_injection_resistant():
+    import io
+    from xml.etree import ElementTree
+    from zipfile import ZipFile
+    from aura_core.data_analysis.tabular import export_xlsx_formula_literal
+
+    table = parse_csv_table("name,payload\nAlice,=2+2\nBob,+SUM(1;2)\n")
+    artifact = export_xlsx_formula_literal(table)
+    assert artifact[:2] == b"PK"
+    with ZipFile(io.BytesIO(artifact)) as z:
+        assert set(z.namelist()) == {
+            "[Content_Types].xml", "_rels/.rels", "xl/workbook.xml",
+            "xl/_rels/workbook.xml.rels", "xl/worksheets/sheet1.xml",
+        }
+        document = ElementTree.fromstring(z.read("xl/worksheets/sheet1.xml"))
+    ns = {"x": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
+    assert document.findall(".//x:f", ns) == []
+    cells = document.findall(".//x:c", ns)
+    assert len(cells) == 6 and all(c.get("t") == "inlineStr" for c in cells)
+    assert [c.find("x:is/x:t", ns).text for c in cells] == [
+        "name", "payload", "Alice", "=2+2", "Bob", "+SUM(1;2)",
+    ]
+
+
+def test_xlsx_export_escapes_markup_without_mutating_cells():
+    import io
+    from xml.etree import ElementTree
+    from zipfile import ZipFile
+    from aura_core.data_analysis.tabular import export_xlsx_formula_literal
+
+    table = parse_csv_table('name\n" <unsafe&> "\n')
+    with ZipFile(io.BytesIO(export_xlsx_formula_literal(table))) as z:
+        document = ElementTree.fromstring(z.read("xl/worksheets/sheet1.xml"))
+    ns = {"x": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
+    assert [c.find("x:is/x:t", ns).text for c in document.findall(".//x:c", ns)] == [
+        "name", " <unsafe&> ",
+    ]
+
+
+def test_xlsx_export_rejects_controls_and_bad_dimensions():
+    from aura_core.data_analysis.tabular import LocalTable, export_xlsx_formula_literal
+
+    with pytest.raises(ValueError, match="XML character"):
+        export_xlsx_formula_literal(LocalTable(("safe",), (("\x01",),)))
+    with pytest.raises(ValueError, match="dimensions"):
+        export_xlsx_formula_literal(LocalTable(tuple("c" + str(i) for i in range(33)), ()))
+    with pytest.raises(ValueError, match="width"):
+        export_xlsx_formula_literal(LocalTable(("a", "b"), (("one",),)))
+    with pytest.raises(ValueError, match="cell exceeds"):
+        export_xlsx_formula_literal(LocalTable(("a",), (("x" * 4001,),)))

@@ -9,6 +9,9 @@ import csv
 import io
 import math
 from dataclasses import dataclass
+from itertools import chain
+from xml.sax.saxutils import escape
+from zipfile import ZIP_DEFLATED, ZipFile
 from typing import Any
 
 _MAX_CHARS = 2_000_000
@@ -117,3 +120,92 @@ def parse_csv_table(text: str) -> LocalTable:
     except (csv.Error, UnicodeError) as exc:
         raise ValueError("invalid CSV structure") from exc
     return LocalTable(tuple(header), tuple(rows))
+
+
+def export_xlsx_formula_literal(table: LocalTable) -> bytes:
+    """Serialize already-authorized data as literal-only XLSX, without side effects.
+
+    All cells are inline strings, even if they start with =, +, - or @. This
+    module does not read files, authorize data access or expose download routes.
+    The caller must enforce the existing AURA authorization boundary.
+    """
+    if type(table) is not LocalTable:
+        raise ValueError("validated LocalTable required")
+    columns, rows = table.columns, table.rows
+    if (type(columns) is not tuple or type(rows) is not tuple
+            or not 1 <= len(columns) <= _MAX_COLS
+            or len(rows) > _MAX_ROWS):
+        raise ValueError("XLSX table dimensions exceed limits")
+    if (any(type(c) is not str or not c or len(c) > 120 for c in columns)
+            or len(set(columns)) != len(columns)):
+        raise ValueError("invalid XLSX header")
+    total = 0
+    for n, row in enumerate(chain((columns,), rows)):
+        if type(row) is not tuple or len(row) != len(columns):
+            raise ValueError("XLSX row width mismatch")
+        for value in row:
+            if type(value) is not str or len(value) > (120 if n == 0 else _MAX_CELL_CHARS):
+                raise ValueError("XLSX cell exceeds bounds")
+            if any((ord(c) < 32 and c not in "\t\n\r")
+                   or 0xD800 <= ord(c) <= 0xDFFF
+                   or ord(c) in (0xFFFE, 0xFFFF) for c in value):
+                raise ValueError("invalid XML character in XLSX cell")
+            total += len(value)
+            if total > _MAX_CHARS:
+                raise ValueError("XLSX text budget exceeded")
+
+    types = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+        '<Default Extension="xml" ContentType="application/xml"/>'
+        '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+        '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+        '</Types>'
+    )
+    rels = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'
+        '</Relationships>'
+    )
+    workbook = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"'
+        ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+        '<sheets><sheet name="Data" sheetId="1" r:id="rId1"/></sheets>'
+        '</workbook>'
+    )
+    book_rels = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'
+        '</Relationships>'
+    )
+    buffer = io.BytesIO()
+    with ZipFile(buffer, "w", compression=ZIP_DEFLATED, compresslevel=6) as archive:
+        archive.writestr("[Content_Types].xml", types)
+        archive.writestr("_rels/.rels", rels)
+        archive.writestr("xl/workbook.xml", workbook)
+        archive.writestr("xl/_rels/workbook.xml.rels", book_rels)
+        with archive.open("xl/worksheets/sheet1.xml", "w") as sheet:
+            sheet.write((
+                '<?xml version="1.0" encoding="UTF-8"?>'
+                '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+                '<sheetData>'
+            ).encode("utf-8"))
+            for row_no, row in enumerate(chain((columns,), rows), 1):
+                sheet.write(f'<row r="{row_no}">'.encode("ascii"))
+                for col_no, value in enumerate(row):
+                    col = chr(65 + col_no) if col_no < 26 else "A" + chr(65 + col_no - 26)
+                    cell = (
+                        f'<c r="{col}{row_no}" t="inlineStr">'
+                        f'<is><t xml:space="preserve">{escape(value)}</t></is></c>'
+                    )
+                    sheet.write(cell.encode("utf-8"))
+                sheet.write(b"</row>")
+            sheet.write(b"</sheetData></worksheet>")
+    artifact = buffer.getvalue()
+    if len(artifact) > 8_000_000:
+        raise ValueError("XLSX archive exceeds output budget")
+    return artifact
