@@ -1,0 +1,157 @@
+{
+  "schema": "aura.core-reconciliation.v1",
+  "source_pr": "https://github.com/ArdaNTM/JAS/pull/158",
+  "unified_snapshot": "0eccc2195401d29b91b5cc14a115f86c7341ef24",
+  "baseline_main": "b1ffe6f534ced0d329dae273a4b949a634cb8bfa",
+  "statement": "Source equality or ancestry proves only bounded file/provenance facts, not that every PR's tests and semantics were merged. Diverged refs and nonidentical blobs must be reviewed independently. No F2.7 PR #64 content is added.",
+  "files": [
+    {
+      "path": "core/src/aura_core/main.py",
+      "unified_blob_sha": "230c0302778353dfee62100ab09895629727f9cb",
+      "canonical": "PR #152 cumulative version",
+      "variants": [
+        {
+          "pr": 152,
+          "ref": "ed8c974a0cc16be645a30f9dea97e4c292d35df7",
+          "blob": "230c0302778353dfee62100ab09895629727f9cb",
+          "ancestry": "ancestor",
+          "assessment": "EXACT_MATCH"
+        },
+        {
+          "pr": 150,
+          "ref": "5e0131c465d61d3dfa8a3d86f85e86438195834a",
+          "blob": "94cacd6f1d673120c20efddb96d023e26ddec122",
+          "ancestry": "ancestor",
+          "assessment": "SUPERSEDED_BY_DESCENDANT"
+        },
+        {
+          "pr": 151,
+          "ref": "510ee06a7b9d45a5363ec9f9689854cc3a95315d",
+          "blob": "a0fbe57c6f72491fa5dcbc3123428199a0b29b39",
+          "ancestry": "ancestor",
+          "assessment": "SUPERSEDED_BY_DESCENDANT"
+        },
+        {
+          "pr": 146,
+          "ref": "32a2fadf2a84015d5cfc0f3e16b98e3a54ea9063",
+          "blob": "4860fae4525f44bf38bad3a86be00aa169456ef1",
+          "ancestry": "ancestor",
+          "assessment": "ANCESTRY_INCLUDED_NOT_SAME_BLOB"
+        },
+        {
+          "pr": 147,
+          "ref": "cffca134e19731125a8b14540137e7118759d951",
+          "blob": "64893ba9c2fc8161a98c3a1fd77bb345eba81da2",
+          "ancestry": "ancestor",
+          "assessment": "ANCESTRY_INCLUDED_NOT_SAME_BLOB"
+        },
+        {
+          "pr": 135,
+          "ref": "7e10ca4500ff5b3f3b9e186839790617e6e5bfe6",
+          "blob": "6b786db5b0fad0310eb2fd10aae9252080ef3242",
+          "ancestry": "diverged",
+          "assessment": "UNRESOLVED_PATCH_DIVERGENCE"
+        }
+      ]
+    },
+    {
+      "path": "core/src/aura_core/kernel/permissions.py",
+      "unified_blob_sha": "838bde5cdee731b714a762d3d277c8012837d242",
+      "canonical": "PR #118 exact file",
+      "variants": [
+        {
+          "pr": 118,
+          "ref": "cd1a98e195d5bf8961169dc490dabc62a8c98b1d",
+          "blob": "838bde5cdee731b714a762d3d277c8012837d242",
+          "ancestry": "diverged",
+          "assessment": "EXACT_FILE_MATCH_REPO_TREE_DIVERGED"
+        },
+        {
+          "pr": 157,
+          "ref": "fe53c984c82379abaa2165f872eab11725935f52",
+          "blob": "bdcb7dcf77321767ebd40078508957bc2e34fcbf",
+          "ancestry": "not_checked",
+          "assessment": "DIFFERENT_FILE_SNAPSHOT"
+        }
+      ]
+    },
+    {
+      "path": "core/src/aura_core/mcp/gateway.py",
+      "unified_blob_sha": "d9904d3c039829154315ecbba8d380efd4e5144e",
+      "canonical": "PR #127 exact file",
+      "variants": [
+        {
+          "pr": 127,
+          "ref": "ee68856c548932fe28f0ee0d148670d179fbf32e",
+          "blob": "d9904d3c039829154315ecbba8d380efd4e5144e",
+          "ancestry": "not_checked",
+          "assessment": "EXACT_FILE_MATCH"
+        },
+        {
+          "pr": 157,
+          "ref": "fe53c984c82379abaa2165f872eab11725935f52",
+          "blob": "d9904d3c039829154315ecbba8d380efd4e5144e",
+          "ancestry": "not_checked",
+          "assessment": "EXACT_FILE_MATCH"
+        }
+      ]
+    },
+    {
+      "path": "core/src/aura_core/application/episodic_memory.py",
+      "unified_blob_sha": "41afb22a3e4177d6d08efc29e62e2dfbda257229",
+      "canonical": "PR #117 exact file",
+      "variants": [
+        {
+          "pr": 117,
+          "ref": "f9ea0abb2cf109efd98ba55b245d8816c20865dc",
+          "blob": "41afb22a3e4177d6d08efc29e62e2dfbda257229",
+          "ancestry": "not_checked",
+          "assessment": "EXACT_FILE_MATCH"
+        },
+        {
+          "pr": 157,
+          "ref": "fe53c984c82379abaa2165f872eab11725935f52",
+          "blob": "41afb22a3e4177d6d08efc29e62e2dfbda257229",
+          "ancestry": "not_checked",
+          "assessment": "EXACT_FILE_MATCH"
+        },
+        {
+          "pr": 66,
+          "ref": "028a293616d77cbed810dd20e8a3626e0285f7bf",
+          "blob": "7bb9e321b9369c910567d315272ac9e8aeebc447",
+          "ancestry": "diverged",
+          "assessment": "UNRESOLVED_PATCH_DIVERGENCE"
+        }
+      ]
+    },
+    {
+      "path": "core/src/aura_core/memory/hierarchical_memory.py",
+      "unified_blob_sha": "35002bd26cdecb45fb5394c7a3da3a1bd012701b",
+      "canonical": "PR #157 exact file",
+      "variants": [
+        {
+          "pr": 157,
+          "ref": "fe53c984c82379abaa2165f872eab11725935f52",
+          "blob": "35002bd26cdecb45fb5394c7a3da3a1bd012701b",
+          "ancestry": "not_checked",
+          "assessment": "EXACT_FILE_MATCH"
+        },
+        {
+          "pr": 68,
+          "ref": "8aef48301a6ded514a10b055c4074e38b247a5e2",
+          "blob": "7cf1f82b34f0f33f54eafab0f59d1b9ffe137fa0",
+          "ancestry": "diverged",
+          "assessment": "UNRESOLVED_PATCH_DIVERGENCE"
+        }
+      ]
+    }
+  ],
+  "exact_coverage": "Five sensitive shared-path chosen blobs checked against selected PR snapshots; not a complete PR #66–#157 tree merge.",
+  "remaining": [
+    "Diverged shared path commits PR #135 / #66 / #68 require manual three-way analysis and acceptance tests.",
+    "PR #118 file matches but branch tree diverges: cannot assert all changes merged.",
+    "Canonical PR #150/#151/#152 line is cumulative, but this is not proof of all unlisted PR-specific tests and security semantics.",
+    "PR #64 F2.7 security remains sealed, untouched and outside this review.",
+    "No release Owner signoff or original PR merge performed."
+  ]
+}
