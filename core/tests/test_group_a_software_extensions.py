@@ -264,7 +264,7 @@ def test_csv_gateway_real_xlsx_literal_export_and_streaming():
     denied = invoke(gw, cap, "csv_export_xlsx", "alice", "data/alice",
                     csv_text=csv_text, filename="../../secrets")
     assert denied.decision is AuthorizationDecision.DENY
-    src = (f"value\n{x}\n" for x in range(4000))
+    src = ("value\n" if x == -1 else f"{x}\n" for x in range(-1, 4000))
     summary = scan_csv_numeric_stream(src, numeric_column="value")
     assert summary["count"] == 4000
     assert abs(summary["mean"] - 1999.5) < 1e-8
