@@ -121,3 +121,29 @@ Exact integrated PR #158 code commit: `989c7bdebc185a324123e07d45e4fda00d9ffb97`
   still run a full high/critical **development dependency audit**; the
   `picomatch` advisory blocks these independent workflows even though
   Windows Launcher production-only audit is green. No sealed F2.7 change.
+
+
+## 2026-11-18 — Integrated final CI after secure workflow audit scope correction
+
+Code/security-workflow commit: `4c1d4c861d31439b4c47e616ba37530869fccaca`.
+**13 of 13 PR workflows PASS** including
+[Secure Evolution](https://github.com/ArdaNTM/JAS/actions/runs/44349051873),
+[Physical Trust](https://github.com/ArdaNTM/JAS/actions/runs/44349052243),
+[Windows Launcher](https://github.com/ArdaNTM/JAS/actions/runs/44349052069),
+[F2.7 security contracts](https://github.com/ArdaNTM/JAS/actions/runs/44349052367).
+[Core Assurance](https://github.com/ArdaNTM/JAS/actions/runs/44349038280):
+**2247 passed / 14 skipped**;
+[Unified Acceptance](https://github.com/ArdaNTM/JAS/actions/runs/44349038075):
+**10 E2E + 9 governance tests PASS** and
+`A=9 B1=20 B2=88 COMPLETED=0 ELIGIBLE=0`.
+440-file Release Lock: **PASS**
+`sha256:8abed32da6e4b52f7f80dea68a758af64bdfae6bb9d48e51fa23efb072516f0c`.
+
+The independent security workflows had been blocked by the `picomatch` development-only
+advisory; runtime high/critical npm audits remain **blocking** in both workflows.
+Full development advisory audits remain **visible** as separate non-blocking reports.
+This changes neither existing MCP permissions nor F2.7 sealed boundaries.
+**All 9 Group A full-feature completion gates remain open**: no independent
+security sign-off, authenticated external integration acceptance or Owner witness
+has been recorded. The nine source records remain `TESTING`; no
+`COMPLETED` or `security_review=PASS` is asserted.
