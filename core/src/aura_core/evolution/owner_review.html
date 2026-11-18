@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AURA | Trusted Owner Review</title>
+<link rel="stylesheet" href="/app.css">
+<script src="/app.js" defer></script>
+</head>
+<body>
+<main>
+  <header>
+    <span class="eyebrow">A.U.R.A. / PRIMAL ANCHOR</span>
+    <h1>Trusted Owner Review</h1>
+    <p>Independent local authorization · WebAuthn user verification required</p>
+  </header>
+  <section class="warning">
+    This screen records an <strong>approval or denial</strong> in the owner-protected store.
+    It does <strong>not</strong> load Python, activate a tool, or bypass MCP Gateway.
+    Verify the scope and digest before approving.
+  </section>
+  <section class="toolbar">
+    <span id="status" role="status" aria-live="polite">Reviewing local approvals…</span>
+    <button id="refresh" type="button">Refresh</button>
+  </section>
+  <section aria-label="Pending owner approvals" id="approvals" class="approvals"></section>
+  <footer>Trusted origin: <code>http://localhost:8766</code> · Only a registered passkey can decide.</footer>
+</main>
+</body>
+</html>

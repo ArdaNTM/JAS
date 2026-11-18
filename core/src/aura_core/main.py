@@ -9,6 +9,7 @@ import os
 import re
 from datetime import time
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 
@@ -21,10 +22,16 @@ from aura_core.application.tasks import AgentTaskService
 from aura_core.application.task_memory import TaskMemoryCoordinator
 from aura_core.application.task_state_machine import TaskStateMachine
 from aura_core.application.autonomy_composition import compose_governed_autonomy
+from aura_core.evolution.evolution_gateway import EvolutionReviewGateway
+from aura_core.application.autonomous_adapters import AllowedOperation, CapabilityDrivenPlanner
+from aura_core.application.ollama_completion import OllamaJSONCompletionProvider
+from aura_core.application.stage_c_runtime import StageCLedger, StageCController
+from aura_core.mcp.stage_c_browser import OriginGuard, PlaywrightSessions, BrowserControlMCPProvider
 from aura_core.application.full_duplex_session import (
     EventBusAudioPlayer, FasterWhisperRecognizer, FullDuplexSessionManager,
     GatewaySpeechSynthesizer, ProactiveNotifier, ControlledVisionService,
 )
+from aura_core.voice.sherpa_onnx import SherpaOnnxRecognizer
 from aura_core.application.vision_adapters import DesktopScreenCapture, OllamaVisionProvider
 from aura_core.application.live_svg_chart import (
     GovernedLiveSVGChart, live_svg_chart_router, register_live_svg_chart,
@@ -53,6 +60,7 @@ from aura_core.memory.graph_store import SQLiteGraphStore, PostgreSQLGraphStore
 from aura_core.application.windows_screen_driver import WindowsDesktopInputDriver, DesktopVLMAdapter
 from aura_core.mcp.screen_control_provider import ScreenControlMCPProvider
 from aura_core.mcp.screen_read_provider import ScreenReadMCPProvider
+from aura_core.mcp.hud_media_provider import WikimediaMediaMCPProvider
 from aura_core.providers.local_vision import LocalOllamaVisionProvider
 from aura_core.application.swarm_orchestration import SwarmOrchestrator
 from aura_core.enterprise.postgresql_approval_store import PostgreSQLApprovalStore
@@ -68,6 +76,7 @@ from aura_core.kernel.permissions import (
     AuthorizationDecision,
     AuthorizationLevel,
     PermissionPolicy,
+    RiskLevel,
 )
 from aura_core.kernel.runtime import AuraKernel
 from aura_core.kernel.events import KernelEvent
@@ -92,6 +101,7 @@ from aura_core.research.provider_bootstrap import (
 from aura_core.tts.config import KokoroMCPConfig
 from aura_core.tts.offline_voice import OfflineVoiceConfig
 from aura_core.tts.provider_bootstrap import register_kokoro_mcp
+from aura_core.voice.sherpa_onnx import SherpaOnnxConfig
 
 
 logger = logging.getLogger(
@@ -286,6 +296,43 @@ def build_app() -> FastAPI:
         )
         graph_store = SQLiteGraphStore(graph_path)
 
+    # Stage C opt-in is independent of generic autonomy and never authorizes tools.
+    stage_c_enabled = os.getenv("AURA_STAGE_C_ENABLED", "0").strip() == "1"
+    stage_c_browser_enabled = os.getenv("AURA_STAGE_C_BROWSER_ENABLED", "0").strip() == "1"
+    if stage_c_browser_enabled and not stage_c_enabled:
+        raise RuntimeError("BrowserControl requires AURA_STAGE_C_ENABLED=1")
+    if stage_c_enabled and approval_store is None:
+        raise RuntimeError("Stage C requires the existing fingerprint-bound ApprovalStore")
+    browser_sessions = None
+    browser_provider = None
+    if stage_c_browser_enabled:
+        if os.getenv("AURA_STAGE_C_EGRESS_ISOLATED", "0").strip() != "1":
+            raise RuntimeError("BrowserControl requires explicitly isolated network egress")
+        # Application-only DNS checks do not prevent rebinding. The browser is
+        # fail-closed unless an authenticated pinned-IP CONNECT proxy and
+        # independently enforced OS/VM network isolation are provisioned.
+        if os.getenv("AURA_STAGE_C_EGRESS_FIREWALL_CONFIRMED", "0").strip() != "1":
+            raise RuntimeError("BrowserControl requires operator-verified VM firewall isolation")
+        proxy_server = os.getenv("AURA_STAGE_C_EGRESS_PROXY_URL", "").strip()
+        proxy_token = os.getenv("AURA_STAGE_C_EGRESS_PROXY_TOKEN", "").strip()
+        raw_origins = os.getenv("AURA_STAGE_C_BROWSER_ORIGINS", "")
+        guard = OriginGuard(tuple(v.strip() for v in raw_origins.split(",") if v.strip()))
+        browser_sessions = PlaywrightSessions(
+            guard, proxy_server=proxy_server, proxy_token=proxy_token,
+        )
+        if browser_sessions._proxy is None:
+            raise RuntimeError("BrowserControl requires an authenticated pinned CONNECT proxy")
+        browser_provider = BrowserControlMCPProvider(browser_sessions)
+        kernel.permission_engine.add_policy(PermissionPolicy(
+            policy_id="local-owner:stage-c:browser",
+            policy_version="1.0.0",
+            principal_id=http_principal_id,
+            capability_id="BrowserControl", operation_id="BrowserControl",
+            resource_scope="local_default",
+            authorization_level=AuthorizationLevel.USER_APPROVAL_REQUIRED,
+            decision=AuthorizationDecision.REQUIRE_APPROVAL,
+        ))
+
     # Desktop control is disabled unless explicitly configured with an
     # interactive ApprovalStore. Enabling it on unsupported platforms aborts.
     screen_control_enabled = os.getenv(
@@ -332,7 +379,7 @@ def build_app() -> FastAPI:
             describer=LocalOllamaVisionProvider(
                 model=os.getenv("AURA_VISION_MODEL", "qwen2.5vl:3b"),
                 base_url=os.getenv("AURA_OLLAMA_BASE_URL", "http://127.0.0.1:11434"),
-                timeout=float(os.getenv("AURA_VISION_TIMEOUT_SECONDS", "60")),
+                timeout=float(os.getenv("AURA_VISION_TIMEOUT_SECONDS", "150")),
             ),
         )
         kernel.permission_engine.add_policy(PermissionPolicy(
@@ -344,6 +391,17 @@ def build_app() -> FastAPI:
             authorization_level=AuthorizationLevel.USER_APPROVAL_REQUIRED,
             decision=AuthorizationDecision.REQUIRE_APPROVAL,
         ))
+
+    # Explicit local-owner search is read-only and cannot use screen-derived prompts.
+    kernel.permission_engine.add_policy(PermissionPolicy(
+        policy_id="local-owner:hud-media:search",
+        policy_version="1.0.0",
+        principal_id=http_principal_id,
+        capability_id="HUDMediaSearch", operation_id="HUDMediaSearch",
+        resource_scope="commons_public_query",
+        authorization_level=AuthorizationLevel.READ,
+        decision=AuthorizationDecision.ALLOW,
+    ))
 
     # Register governed MCP adapters through the Kernel registries.
     memory_service = ServiceDefinition(
@@ -404,13 +462,18 @@ def build_app() -> FastAPI:
             ("memory.graph.query", "graph_memory_query", "low", CapabilityCategory.MEMORY),
             ("memory.graph.insert", "graph_memory_insert", "medium", CapabilityCategory.MEMORY),
         )),
+        ("aura.hud-media", "hud_media_mcp", WikimediaMediaMCPProvider(), (
+            ("HUDMediaSearch", "hud_media_search", "low", CapabilityCategory.VISUALIZATION),
+        )),
         ("aura.screen-read", "screen_read_mcp", screen_read_provider, (
             ("ScreenRead", "screen_read", "high", CapabilityCategory.VISION),
         )),
         ("aura.screen-control", "screen_control_mcp", screen_control_provider, (
             ("ScreenControl", "screen_control", "high", CapabilityCategory.AUTOMATION),
         )),
-    ):
+    ) + ((("aura.stage-c.browser-control", "browser_control_mcp", browser_provider, (
+        ("BrowserControl", "browser_action", "high", CapabilityCategory.AUTOMATION),
+    )),) if browser_provider is not None else ()):
         service = ServiceDefinition(
             name=service_name, version="1.0.0", provider="aura",
             category=ServiceCategory.MCP,
@@ -465,6 +528,19 @@ def build_app() -> FastAPI:
     app.state.http_principal_id = http_principal_id
     app.state.approval_store = approval_store
     app.state.gateway_audit_ledger = gateway_audit_ledger
+    # User-opted draft quarantine is DATA only, outside locked JAS sources.
+    # Only the composition root can attach it to the Kernel EventBus.
+    if os.getenv("AURA_EVOLUTION_DRAFTS_ENABLED", "0").strip() == "1":
+        drafts_path = os.getenv("AURA_EVOLUTION_DRAFTS_PATH", "").strip()
+        if not drafts_path:
+            raise RuntimeError("Explicit private evolution draft path is required")
+        app.state.evolution_review_gateway = EvolutionReviewGateway(
+            directory=drafts_path,
+            # The immutable checkout trust root is derived from installed
+            # code, never from an operator override or model-controlled data.
+            checkout_root=Path(__file__).resolve().parents[3],
+            event_bus=kernel.event_bus,
+        )
     app.state.graph_store = graph_store
     app.state.screen_control_enabled = screen_control_enabled
     app.state.screen_read_enabled = screen_read_enabled
@@ -475,6 +551,8 @@ def build_app() -> FastAPI:
     app.state.remote_object_storage = remote_objects
     # Imported skills are declarative proposals only; invocation still requires Gateway authorization.
     app.state.agent_skills_mcp_registry = AgentSkillsMCPRegistry()
+    # Diagnostic only: no automatic microphone, model downloads or external calls.
+    app.state.sherpa_onnx_config = SherpaOnnxConfig.from_env()
 
     # Optional *real* live SVG telemetry: no implicit PermissionEngine ALLOW.
     # Every browser read still requires HTTP bearer auth and exact Gateway policy.
@@ -620,6 +698,40 @@ def build_app() -> FastAPI:
     autonomy = compose_governed_autonomy(kernel=kernel, task_service=task_service)
     app.state.governed_autonomous_loop = autonomy.loop if autonomy is not None else None
     app.state.autonomy_components = autonomy
+    app.state.stage_c_controller = None
+    if stage_c_enabled:
+        if not (screen_control_enabled or stage_c_browser_enabled):
+            raise RuntimeError("Stage C requires at least one explicitly enabled MCP adapter")
+        state_path = os.getenv("AURA_STAGE_C_DB_PATH", "").strip()
+        if not state_path or not os.path.isabs(state_path):
+            raise RuntimeError("AURA_STAGE_C_DB_PATH must be an explicit absolute private path")
+        operations = []
+        if screen_control_enabled:
+            operations.append(AllowedOperation(
+                capability_id="ScreenControl", operation_id="ScreenControl",
+                tool_name="screen_control", risk_level=RiskLevel.HIGH,
+                allowed_argument_keys=frozenset({"action", "x", "y", "text", "key"}),
+                max_attempts=1,
+            ))
+        if stage_c_browser_enabled:
+            operations.append(AllowedOperation(
+                capability_id="BrowserControl", operation_id="BrowserControl",
+                tool_name="browser_action", risk_level=RiskLevel.HIGH,
+                allowed_argument_keys=frozenset({"action", "url", "selector", "text"}),
+                max_attempts=1,
+            ))
+        planner = CapabilityDrivenPlanner(
+            completion_provider=OllamaJSONCompletionProvider(
+                base_url=os.getenv("AURA_OLLAMA_BASE_URL", "http://127.0.0.1:11434"),
+                model=os.getenv("AURA_INFERENCE_MODEL", "qwen3"),
+                timeout_seconds=30,
+            ),
+            operations=operations, max_steps=8, timeout_seconds=30,
+        )
+        app.state.stage_c_controller = StageCController(
+            ledger=StageCLedger(__import__("pathlib").Path(state_path)),
+            gateway=gateway, planner=planner, browser_sessions=browser_sessions,
+        )
 
     vision_enabled = os.getenv("AURA_SCREEN_VISION_ENABLED", "0").strip().casefold() in {"1", "true", "yes", "on"}
     if vision_enabled:
@@ -778,8 +890,10 @@ def build_app() -> FastAPI:
                 tool_name=kokoro_config.tool_name,
                 resource_scope=os.getenv("AURA_SPEECH_RESOURCE_SCOPE", "local_default"),
             )
-            app.state.speech_session_manager = FullDuplexSessionManager(
-                recognizer=FasterWhisperRecognizer(
+            sherpa_health = app.state.sherpa_onnx_config.health()
+            recognizer = (
+                SherpaOnnxRecognizer(app.state.sherpa_onnx_config)
+                if sherpa_health["available"] else FasterWhisperRecognizer(
                     # Offline mode passes an absolute, pre-provisioned model
                     # directory. FasterWhisper therefore has no model-hub fallback.
                     model_size=(
@@ -789,7 +903,10 @@ def build_app() -> FastAPI:
                     ),
                     device=os.getenv("AURA_STT_DEVICE", "cpu"),
                     compute_type=os.getenv("AURA_STT_COMPUTE_TYPE", "int8"),
-                ),
+                )
+            )
+            app.state.speech_session_manager = FullDuplexSessionManager(
+                recognizer=recognizer,
                 synthesizer=app.state.speech_synthesizer,
                 player=EventBusAudioPlayer(kernel.event_bus),
                 event_bus=kernel.event_bus,

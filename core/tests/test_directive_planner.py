@@ -37,3 +37,21 @@ def test_unknown_directive_is_rejected():
         assert "No governed capability" in str(exc)
     else:
         raise AssertionError("Expected ValueError")
+
+def test_conversational_voice_request_routes_to_non_executable_assistant():
+    for phrase in ("AURA tell me a short joke.", "Tell me a short joke",
+                   "AURA, explain why the sky is blue", "Merhaba AURA"):
+        plan = DirectivePlanner().plan(phrase)
+        assert plan.resource_scope == "local-assistant"
+        assert plan.steps == ()
+
+
+def test_instructions_to_operate_computer_are_not_conversation_tools():
+    for phrase in ("AURA delete the backups", "Run arbitrary Python",
+                   "Kahvemi hazırla."):
+        try:
+            DirectivePlanner().plan(phrase)
+        except ValueError as exc:
+            assert "No governed capability" in str(exc)
+        else:
+            raise AssertionError("Unsupported commands must fail closed")
