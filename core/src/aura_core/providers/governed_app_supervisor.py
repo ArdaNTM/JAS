@@ -22,6 +22,7 @@ from uuid import uuid4
 from aura_core.kernel.capabilities import (
     CapabilityCategory, CapabilityDefinition, CapabilityRegistry, ProviderType,
 )
+from aura_core.kernel.events import EventBus, KernelEvent
 from aura_core.kernel.permissions import AuthorizationDecision, RiskLevel
 from aura_core.kernel.services import ServiceCategory, ServiceDefinition, ServiceRegistry
 from aura_core.mcp.dispatch_context import current_dispatch
@@ -131,7 +132,10 @@ class _Process:
 class LocalApplicationSupervisorMCP:
     """Real local process launcher with a private per-provider handle table."""
 
-    def __init__(self, profiles: tuple[TrustedApplication, ...]) -> None:
+    def __init__(self, profiles: tuple[TrustedApplication, ...], event_bus: EventBus) -> None:
+        if not isinstance(event_bus, EventBus):
+            raise TypeError("Existing AURA EventBus required")
+        self._event_bus = event_bus
         if (not isinstance(profiles, tuple) or not 1 <= len(profiles) <= _MAX_PROFILES
                 or any(not isinstance(p, TrustedApplication) for p in profiles)):
             raise ValueError("Trusted immutable composition profiles required")
@@ -228,6 +232,11 @@ class LocalApplicationSupervisorMCP:
             self._handles[instance_id] = _Process(
                 principal_id=principal_id, app_id=app_id, handle=handle,
             )
+        self._event_bus.publish(KernelEvent(
+            event_type="ApplicationStarted", source_component="aura.application.supervisor",
+            payload={"instance_id": instance_id, "app_id": app_id,
+                     "trust": "OWNER_APPROVED_LOCAL_PROCESS"},
+        ))
         return {"instance_id": instance_id, "app_id": app_id, "state": "running"}
 
     def _stop(self, principal_id: str, instance_id: str) -> dict[str, object]:
@@ -249,6 +258,11 @@ class LocalApplicationSupervisorMCP:
             except (OSError, subprocess.TimeoutExpired) as exc:
                 raise ApplicationUnavailable("Owned application stop failed") from exc
             del self._handles[instance_id]
+            self._event_bus.publish(KernelEvent(
+                event_type="ApplicationStopped", source_component="aura.application.supervisor",
+                payload={"instance_id": instance_id, "app_id": instance.app_id,
+                         "trust": "OWNER_APPROVED_LOCAL_PROCESS"},
+            ))
             return {"instance_id": instance_id, "app_id": instance.app_id,
                     "state": "stopped"}
 
@@ -266,17 +280,19 @@ class LocalApplicationSupervisorMCP:
 def register_governed_app_supervisor(
     *, services: ServiceRegistry, providers: ProviderRegistry,
     capabilities: CapabilityRegistry, profiles: tuple[TrustedApplication, ...],
+    event_bus: EventBus,
 ) -> LocalApplicationSupervisorMCP:
     """Explicit trusted composition; no automatic ALLOW policy is installed."""
     if not (isinstance(services, ServiceRegistry)
             and isinstance(providers, ProviderRegistry)
-            and isinstance(capabilities, CapabilityRegistry)):
+            and isinstance(capabilities, CapabilityRegistry)
+            and isinstance(event_bus, EventBus)):
         raise TypeError("Existing Core registries required")
     if any(x.definition.provider_id == _PROVIDER for x in providers.records()):
         raise ValueError("Application supervisor already registered")
     if any(capabilities.providers(k) for k in (_READ, _LAUNCH, _STOP)):
         raise ValueError("Application capabilities are already registered")
-    backend = LocalApplicationSupervisorMCP(profiles)
+    backend = LocalApplicationSupervisorMCP(profiles, event_bus)
     service = services.register(ServiceDefinition(
         name="aura-owned-application-supervisor", version="1.0.0",
         provider="mcp", category=ServiceCategory.MCP,
