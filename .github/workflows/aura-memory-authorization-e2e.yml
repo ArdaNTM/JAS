@@ -1,0 +1,30 @@
+name: AURA Memory & Authorization E2E
+on:
+  pull_request:
+    paths:
+      - "core/**"
+      - "docs/22_IMPLEMENTATION/**"
+      - ".github/workflows/aura-memory-authorization-e2e.yml"
+  push:
+    branches: ["feat/aura-researching-closure"]
+permissions:
+  contents: read
+jobs:
+  memory-gateway-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: core
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v5
+      - name: Install frozen project and test dependencies
+        run: uv sync --frozen --group dev
+      - name: Real SQLite memory and Gateway acceptance cases
+        run: uv run pytest -q --tb=short tests/test_researching_memory_authorization_e2e.py
+      - name: Verify final source lock
+        run: uv run python scripts/verify_final_lock.py
