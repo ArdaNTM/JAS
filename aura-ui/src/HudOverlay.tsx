@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import "./hud.css";
 import { useAuraVoice } from "./voice/useAuraVoice";
+import DynamicHologram3D, { type VisualizationModelId } from "./components/DynamicHologram3D";
+import HudGameStudio from "./components/HudGameStudio";
 
 type HudEvent = {
   event?: string;
@@ -39,6 +41,8 @@ export default function HudOverlay() {
   const [interactive, setInteractive] = useState(false);
   const [title, setTitle] = useState("AURA / HUD STANDBY");
   const [kind, setKind] = useState("object");
+  const [modelId, setModelId] = useState<VisualizationModelId>("procedural-object-v1");
+  const [controlsOpen, setControlsOpen] = useState(false);
   const [question, setQuestion] = useState("Ekranda ne görüyorsun?");
   const [description, setDescription] = useState("");
   const [scanning, setScanning] = useState(false);
@@ -48,8 +52,21 @@ export default function HudOverlay() {
     const text = transcript.trim().slice(0, 100);
     if (!text) return;
     setTitle(text);
-    // Only presentation, never a tool or a screen capture.
-    if (/göster/i.test(text)) {
+    // Closed-set voice routing: presentation ONLY, never ScreenRead or a tool.
+    const spoken = text.toLocaleLowerCase("tr-TR");
+    if (/(oyun|game).*(oluştur|başlat|yap|create|start)/i.test(spoken)) {
+      setKind("game");
+      void postHUD("/api/hud/panel", { title: text, kind: "game" })
+        .catch(() => setError("Oyun paneli yayınlanamadı."));
+    } else if (/(hologram|3d|3b|üç boyut)/i.test(spoken)) {
+      const model: VisualizationModelId = /motor/.test(spoken) ? "motor-v1"
+        : /(dişli|gear)/.test(spoken) ? "gear-v1"
+        : /(küre|sphere)/.test(spoken) ? "sphere-v1" : "procedural-object-v1";
+      setModelId(model);
+      setKind("hologram");
+      void postHUD("/api/hud/panel", { title: text, kind: "hologram" })
+        .catch(() => setError("Hologram yayınlanamadı."));
+    } else if (/göster/i.test(spoken)) {
       void postHUD("/api/hud/panel", { title: text, kind: "object" })
         .catch(() => setError("HUD paneli yayınlanamadı."));
     } else {
@@ -70,7 +87,8 @@ export default function HudOverlay() {
           const label = item.data?.title;
           const type = item.data?.kind;
           if (typeof label === "string") setTitle(label.slice(0, 100));
-          if (typeof type === "string") setKind(type);
+          if (type === "object" || type === "research" || type === "notice" ||
+              type === "hologram" || type === "game") setKind(type);
           setDescription("");
         }
         if (item.event === "HUDVisionScanStarted") setScanning(true);
@@ -121,7 +139,10 @@ export default function HudOverlay() {
         </header>
 
         <div className="hud-visual">
-          <div className="hud-reticle" aria-hidden="true">
+          {kind === "game" ? <HudGameStudio interactive={interactive} /> :
+           kind === "hologram" ? <div className="hud-hologram">
+             <DynamicHologram3D target={title} modelId={modelId} active={true} />
+           </div> : <div className="hud-reticle" aria-hidden="true">
             <span className="ring ring-a" /><span className="ring ring-b" />
             <span className="cross cross-h" /><span className="cross cross-v" />
             <div className="hud-schematic">
@@ -133,7 +154,7 @@ export default function HudOverlay() {
               </svg>
             </div>
             <div className="hud-focus one" /><div className="hud-focus two" />
-          </div>
+          </div>}
           {scanning && <div className="hud-scanline" aria-label="Ekran analizi sürüyor" />}
           <div className="hud-telemetry">
             <span>OBJECT / {kind.toUpperCase()}</span>
@@ -149,12 +170,17 @@ export default function HudOverlay() {
           {error && <div className="hud-error" role="alert">{error}</div>}
         </div>
 
-        {interactive && (
+        {interactive && <button type="button" className="hud-config-toggle" onClick={() => setControlsOpen(value => !value)}>
+          {controlsOpen ? "CLOSE" : "MODES"}
+        </button>}
+        {interactive && controlsOpen && (
           <div className="hud-controls">
             <label>HUD İÇERİĞİ
               <input value={title} maxLength={100} onChange={e => setTitle(e.target.value)} />
             </label>
             <button onClick={() => void displayObject()}>GÖSTER</button>
+            <button onClick={() => { setKind("hologram"); setControlsOpen(false); }}>3D HOLOGRAM</button>
+            <button onClick={() => { setKind("game"); setControlsOpen(false); }}>GAME STUDIO</button>
             <label>EKRAN SORUSU
               <input value={question} maxLength={400} onChange={e => setQuestion(e.target.value)} />
             </label>
@@ -164,7 +190,7 @@ export default function HudOverlay() {
             <button disabled={scanning} onClick={() => void readScreen()}>
               {scanning ? "TARANIYOR" : "EKRANI ONAYLA + OKU"}
             </button>
-            <button className="hud-close" onClick={() => void window.auraDesktop?.hudSetInteractive?.(false)}>
+            <button className="hud-close" onClick={() => { setControlsOpen(false); void window.auraDesktop?.hudSetInteractive?.(false); }}>
               GİZLE KONTROLLERİ
             </button>
           </div>
