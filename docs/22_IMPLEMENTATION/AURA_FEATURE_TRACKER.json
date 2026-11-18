@@ -81,7 +81,8 @@
       "documentation_paths": [
         "docs/06_MEMORY/13_GRAPH_FACT_ERASURE_IMPLEMENTATION.md",
         "docs/22_IMPLEMENTATION/AURA_ACCEPTANCE_GROUPS.json",
-        "docs/22_IMPLEMENTATION/AURA_SOFTWARE_SECURITY_REVIEW.md"
+        "docs/22_IMPLEMENTATION/AURA_SOFTWARE_SECURITY_REVIEW.md",
+        "docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md"
       ],
       "test_commands": [
         "cd core && uv run pytest -q tests/test_graph_fact_erasure.py",
@@ -100,7 +101,7 @@
       "hardware_requirements": "SQLite in CI; live PostgreSQL not tested.",
       "license_review": "NOT_REVIEWED",
       "local_offline": "PARTIAL_VERIFIED",
-      "notes": "[ACCEPTANCE_GROUP=A;PR158_CI_CANDIDATE=YES] PR #71 head e8b7db8bee: Core Assurance 599 passed, 6 skipped; release-lock PASS (https://github.com/ArdaNTM/JAS/actions/runs/43750327501). No user production acceptance or merge. | [GROUP_A_EXACT_HEAD_CI=fb7c9a4f3c892972fc6450cc1b7d3412257dc055;7/7 PASS;Core 1494 PASS/10 SKIP;Remote PG/MinIO 8 PASS;Unified 10+8 PASS;Lock 312 PASS;ELIGIBLE=0;SECURITY_SIGNOFF=ABSENT;OWNER_ACCEPTANCE=ABSENT] | Code candidate PR https://github.com/ArdaNTM/JAS/pull/158; original feature PR retained in pull_request. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED]",
+      "notes": "[ACCEPTANCE_GROUP=A;PR158_CI_CANDIDATE=YES] PR #71 head e8b7db8bee: Core Assurance 599 passed, 6 skipped; release-lock PASS (https://github.com/ArdaNTM/JAS/actions/runs/43750327501). No user production acceptance or merge. | [GROUP_A_EXACT_HEAD_CI=fb7c9a4f3c892972fc6450cc1b7d3412257dc055;7/7 PASS;Core 1494 PASS/10 SKIP;Remote PG/MinIO 8 PASS;Unified 10+8 PASS;Lock 312 PASS;ELIGIBLE=0;SECURITY_SIGNOFF=ABSENT;OWNER_ACCEPTANCE=ABSENT] | Code candidate PR https://github.com/ArdaNTM/JAS/pull/158; original feature PR retained in pull_request. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [OWNER_DECLARATION_2026_11_18] Owner (ArdaNTM) expressly declared product/security acceptance and requested merges in chat; unsigned/unverified as independent repo review; actual missing_components remain unimplemented or unproven, so acceptance=NOT_VERIFIED until verified. See docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md.",
       "existing_jas_state": "Graph store already supported principal-scoped facts and traversal on main; PR #71 extends exact-scoped deletion only.",
       "proposed_technology": "Existing SQLAlchemy, PostgreSQL, SQLite; no new libraries",
       "license_terms": "Existing dependencies/stdlib; formal license assessment pending.",
@@ -242,7 +243,8 @@
       "documentation_paths": [
         "docs/05_AGENTS/TASK_PROGRESS_PROJECTION_IMPLEMENTATION.md",
         "docs/22_IMPLEMENTATION/AURA_ACCEPTANCE_GROUPS.json",
-        "docs/22_IMPLEMENTATION/AURA_SOFTWARE_SECURITY_REVIEW.md"
+        "docs/22_IMPLEMENTATION/AURA_SOFTWARE_SECURITY_REVIEW.md",
+        "docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md"
       ],
       "test_commands": [
         "cd core && uv run pytest -q tests/test_task_status_projection.py",
@@ -261,7 +263,7 @@
       "hardware_requirements": "No new hardware.",
       "license_review": "NOT_REVIEWED",
       "local_offline": "PARTIAL_VERIFIED",
-      "notes": "[ACCEPTANCE_GROUP=A;PR158_CI_CANDIDATE=YES] PR #70 head 82a01dc3ec: Core Assurance 602 passed, 6 skipped; release-lock PASS (https://github.com/ArdaNTM/JAS/actions/runs/43749934249). No user production acceptance or merge. | [GROUP_A_EXACT_HEAD_CI=fb7c9a4f3c892972fc6450cc1b7d3412257dc055;7/7 PASS;Core 1494 PASS/10 SKIP;Remote PG/MinIO 8 PASS;Unified 10+8 PASS;Lock 312 PASS;ELIGIBLE=0;SECURITY_SIGNOFF=ABSENT;OWNER_ACCEPTANCE=ABSENT] | Code candidate PR https://github.com/ArdaNTM/JAS/pull/158; original feature PR retained in pull_request. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED]",
+      "notes": "[ACCEPTANCE_GROUP=A;PR158_CI_CANDIDATE=YES] PR #70 head 82a01dc3ec: Core Assurance 602 passed, 6 skipped; release-lock PASS (https://github.com/ArdaNTM/JAS/actions/runs/43749934249). No user production acceptance or merge. | [GROUP_A_EXACT_HEAD_CI=fb7c9a4f3c892972fc6450cc1b7d3412257dc055;7/7 PASS;Core 1494 PASS/10 SKIP;Remote PG/MinIO 8 PASS;Unified 10+8 PASS;Lock 312 PASS;ELIGIBLE=0;SECURITY_SIGNOFF=ABSENT;OWNER_ACCEPTANCE=ABSENT] | Code candidate PR https://github.com/ArdaNTM/JAS/pull/158; original feature PR retained in pull_request. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [OWNER_DECLARATION_2026_11_18] Owner (ArdaNTM) expressly declared product/security acceptance and requested merges in chat; unsigned/unverified as independent repo review; actual missing_components remain unimplemented or unproven, so acceptance=NOT_VERIFIED until verified. See docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md.",
       "existing_jas_state": "No new scheduler or Kernel execution authority.",
       "proposed_technology": "Existing SQLite TaskStateMachine",
       "license_terms": "Existing dependencies/stdlib; formal license assessment pending.",
@@ -411,7 +413,8 @@
         "docs/06_MEMORY/11_MEMORY_CONFLICT_REVIEW_IMPLEMENTATION.md",
         "docs/22_IMPLEMENTATION/AURA_ACCEPTANCE_GROUPS.json",
         "docs/22_IMPLEMENTATION/AURA_B1_FIRST_PACK_REVIEW.md",
-        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md"
+        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md",
+        "docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md"
       ],
       "test_commands": [
         "cd core && uv run pytest -q tests/test_memory_conflict_candidates.py",
@@ -430,7 +433,7 @@
       "hardware_requirements": "",
       "license_review": "NOT_REVIEWED",
       "local_offline": "PARTIAL_VERIFIED",
-      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] Draft PR #66 latest commit 028a293: 601 passed, 6 skipped; Core Release Lock PASS. Scope isolation regression added, feature not end-to-end accepted. | [B1_FIRST_PACK=REVIEWED_NOT_ACCEPTED;UNIFIED_HEAD=fb7c9a4;EXACT_TEST_PRESENCE_DOCUMENTED] | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED]",
+      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] Draft PR #66 latest commit 028a293: 601 passed, 6 skipped; Core Release Lock PASS. Scope isolation regression added, feature not end-to-end accepted. | [B1_FIRST_PACK=REVIEWED_NOT_ACCEPTED;UNIFIED_HEAD=fb7c9a4;EXACT_TEST_PRESENCE_DOCUMENTED] | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED] | [OWNER_DECLARATION_2026_11_18] Owner (ArdaNTM) expressly declared product/security acceptance and requested merges in chat; unsigned/unverified as independent repo review; actual missing_components remain unimplemented or unproven, so acceptance=NOT_VERIFIED until verified. See docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md.",
       "existing_jas_state": "Existing scoped EpisodicMemoryStore persists fact records; new review-only candidate helper is under draft PR #66, not merged.",
       "proposed_technology": "Existing SQLite and Python standard library; no new external runtime dependency",
       "license_terms": "NOT_ASSESSED",
@@ -526,7 +529,8 @@
         "docs/05_AGENTS/feature-10-62-goal-dag-planning.md",
         "docs/22_IMPLEMENTATION/AURA_ACCEPTANCE_GROUPS.json",
         "docs/22_IMPLEMENTATION/AURA_B1_FIRST_PACK_REVIEW.md",
-        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md"
+        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md",
+        "docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md"
       ],
       "test_commands": [
         "cd core && uv run pytest -q tests/test_goal_planning.py",
@@ -545,7 +549,7 @@
       "hardware_requirements": "No real agent runtime/hardware accepted.",
       "license_review": "NOT_REVIEWED",
       "local_offline": "PARTIAL_VERIFIED",
-      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #97 Core Assurance 608 passed/6 skipped, Release Lock PASS; Remote Persistence PASS. Untrusted claimed completion does not authorize or prove work. | [B1_FIRST_PACK=REVIEWED_NOT_ACCEPTED;UNIFIED_HEAD=fb7c9a4;EXACT_TEST_PRESENCE_DOCUMENTED] | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED]",
+      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #97 Core Assurance 608 passed/6 skipped, Release Lock PASS; Remote Persistence PASS. Untrusted claimed completion does not authorize or prove work. | [B1_FIRST_PACK=REVIEWED_NOT_ACCEPTED;UNIFIED_HEAD=fb7c9a4;EXACT_TEST_PRESENCE_DOCUMENTED] | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED] | [OWNER_DECLARATION_2026_11_18] Owner (ArdaNTM) expressly declared product/security acceptance and requested merges in chat; unsigned/unverified as independent repo review; actual missing_components remain unimplemented or unproven, so acceptance=NOT_VERIFIED until verified. See docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md.",
       "existing_jas_state": "Main has SwarmOrchestrator and task events, but PR #97 adds an independent read-only goal graph evaluator.",
       "proposed_technology": "Python stdlib deterministic DAG validation; no third-party runtime or external service.",
       "license_terms": "No new dependency; broader audit pending.",
@@ -640,7 +644,8 @@
         "docs/05_AGENTS/feature-12-repeat-failure-review.md",
         "docs/22_IMPLEMENTATION/AURA_ACCEPTANCE_GROUPS.json",
         "docs/22_IMPLEMENTATION/AURA_B1_FIRST_PACK_REVIEW.md",
-        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md"
+        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md",
+        "docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md"
       ],
       "test_commands": [
         "cd core && uv run pytest -q core/tests/test_repeat_failure_reviews.py",
@@ -659,7 +664,7 @@
       "hardware_requirements": "No real hardware measured by this PR.",
       "license_review": "NOT_REVIEWED",
       "local_offline": "PARTIAL_VERIFIED",
-      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #79 has successful Core Assurance and release-lock checks (602 passed, 6 skipped); physical hardware, E2E and Owner acceptance remain unverified. | [B1_FIRST_PACK=REVIEWED_NOT_ACCEPTED;UNIFIED_HEAD=fb7c9a4;EXACT_TEST_PRESENCE_DOCUMENTED] | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED]",
+      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #79 has successful Core Assurance and release-lock checks (602 passed, 6 skipped); physical hardware, E2E and Owner acceptance remain unverified. | [B1_FIRST_PACK=REVIEWED_NOT_ACCEPTED;UNIFIED_HEAD=fb7c9a4;EXACT_TEST_PRESENCE_DOCUMENTED] | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED] | [OWNER_DECLARATION_2026_11_18] Owner (ArdaNTM) expressly declared product/security acceptance and requested merges in chat; unsigned/unverified as independent repo review; actual missing_components remain unimplemented or unproven, so acceptance=NOT_VERIFIED until verified. See docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md.",
       "existing_jas_state": "Existing SelfAdaptationEngine 500-observation in-memory ledger; method added in PR #79.",
       "proposed_technology": "Python standard library and existing JAS components",
       "license_terms": "No new external dependency; overall license compliance pending review",
@@ -1183,7 +1188,8 @@
       "documentation_paths": [
         "docs/06_MEMORY/feature-7-21-conversation-review.md",
         "docs/22_IMPLEMENTATION/AURA_ACCEPTANCE_GROUPS.json",
-        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md"
+        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md",
+        "docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md"
       ],
       "test_commands": [
         "cd core && uv run pytest -q core/tests/test_offline_conversation_review.py",
@@ -1202,7 +1208,7 @@
       "hardware_requirements": "No live hardware or production privilege exercised.",
       "license_review": "NOT_REVIEWED",
       "local_offline": "PARTIAL_VERIFIED",
-      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #98 exact-head Core Assurance PASS (607 passed, 6 skipped), Final Release Lock PASS, Remote Persistence Integration PASS. No independent Owner/hardware acceptance; no merge. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED]",
+      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #98 exact-head Core Assurance PASS (607 passed, 6 skipped), Final Release Lock PASS, Remote Persistence Integration PASS. No independent Owner/hardware acceptance; no merge. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED] | [OWNER_DECLARATION_2026_11_18] Owner (ArdaNTM) expressly declared product/security acceptance and requested merges in chat; unsigned/unverified as independent repo review; actual missing_components remain unimplemented or unproven, so acceptance=NOT_VERIFIED until verified. See docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md.",
       "existing_jas_state": "Existing memory modules offer other stores; this slice is volatile and explicitly untrusted.",
       "proposed_technology": "Existing Python standard library and JAS packages; no external credential or paid service.",
       "license_terms": "No new runtime dependencies; repository-wide license assessment pending.",
@@ -1988,7 +1994,8 @@
         "docs/22_IMPLEMENTATION/AURA_GATEWAY_MULTISOURCE_RESEARCH.md",
         "docs/22_IMPLEMENTATION/AURA_ACCEPTANCE_GROUPS.json",
         "docs/22_IMPLEMENTATION/AURA_B1_FIRST_PACK_REVIEW.md",
-        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md"
+        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md",
+        "docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md"
       ],
       "test_commands": [
         "cd core && uv run pytest -q tests/test_gateway_multiquery_research.py",
@@ -2010,7 +2017,7 @@
       "hardware_requirements": "Real network provider and egress policy approval needed; offline simulated Gateway tests only.",
       "license_review": "NOT_APPLICABLE: no new dependencies; live provider licensing and search terms separately pending.",
       "local_offline": "PARTIAL_VERIFIED: deterministic aggregation testable offline with fake MCP provider, real network not tested.",
-      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #113 is a separate later closed duplicate Draft (not authored or merged in this PR); #112 remains authoritative active feature slice. No merge. | [B1_FIRST_PACK=REVIEWED_NOT_ACCEPTED;UNIFIED_HEAD=fb7c9a4;EXACT_TEST_PRESENCE_DOCUMENTED] | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED]",
+      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #113 is a separate later closed duplicate Draft (not authored or merged in this PR); #112 remains authoritative active feature slice. No merge. | [B1_FIRST_PACK=REVIEWED_NOT_ACCEPTED;UNIFIED_HEAD=fb7c9a4;EXACT_TEST_PRESENCE_DOCUMENTED] | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED] | [OWNER_DECLARATION_2026_11_18] Owner (ArdaNTM) expressly declared product/security acceptance and requested merges in chat; unsigned/unverified as independent repo review; actual missing_components remain unimplemented or unproven, so acceptance=NOT_VERIFIED until verified. See docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md.",
       "existing_jas_state": "Main already had MCPResearchSource and SearXNG/DDG fallback research provider but not bounded multiquery provenance across authorized calls.",
       "proposed_technology": "Existing Core MCPGateway, registries, permission engine; Python standard-library URL parsing and dataclasses.",
       "license_terms": "Python stdlib only; network service terms need separate review.",
@@ -2055,7 +2062,8 @@
         "docs/13_RESEARCH/PROVENANCE_REVIEW_IMPLEMENTATION.md",
         "docs/22_IMPLEMENTATION/AURA_ACCEPTANCE_GROUPS.json",
         "docs/22_IMPLEMENTATION/AURA_B1_FIRST_PACK_REVIEW.md",
-        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md"
+        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md",
+        "docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md"
       ],
       "test_commands": [
         "cd core && uv run pytest -q tests/test_research_source_evidence.py",
@@ -2074,7 +2082,7 @@
       "hardware_requirements": "No new hardware.",
       "license_review": "NOT_REVIEWED",
       "local_offline": "PARTIAL_VERIFIED",
-      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #69 head c8d2b859b9: Core Assurance 613 passed, 6 skipped; release-lock PASS (https://github.com/ArdaNTM/JAS/actions/runs/43749688578). No user production acceptance or merge. | [B1_FIRST_PACK=REVIEWED_NOT_ACCEPTED;UNIFIED_HEAD=fb7c9a4;EXACT_TEST_PRESENCE_DOCUMENTED] | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED]",
+      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #69 head c8d2b859b9: Core Assurance 613 passed, 6 skipped; release-lock PASS (https://github.com/ArdaNTM/JAS/actions/runs/43749688578). No user production acceptance or merge. | [B1_FIRST_PACK=REVIEWED_NOT_ACCEPTED;UNIFIED_HEAD=fb7c9a4;EXACT_TEST_PRESENCE_DOCUMENTED] | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED] | [OWNER_DECLARATION_2026_11_18] Owner (ArdaNTM) expressly declared product/security acceptance and requested merges in chat; unsigned/unverified as independent repo review; actual missing_components remain unimplemented or unproven, so acceptance=NOT_VERIFIED until verified. See docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md.",
       "existing_jas_state": "No new Gateway policy or automated browsing.",
       "proposed_technology": "Existing Gateway/MCP result and Python hashlib/urllib",
       "license_terms": "Existing dependencies/stdlib; formal license assessment pending.",
@@ -2113,7 +2121,8 @@
         "docs/13_RESEARCH/MULTISOURCE_COMPARISON_IMPLEMENTATION.md",
         "docs/22_IMPLEMENTATION/AURA_ACCEPTANCE_GROUPS.json",
         "docs/22_IMPLEMENTATION/AURA_B1_FIRST_PACK_REVIEW.md",
-        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md"
+        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md",
+        "docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md"
       ],
       "test_commands": [
         "cd core && uv run pytest -q core/tests/test_cross_capability_comparison.py",
@@ -2132,7 +2141,7 @@
       "hardware_requirements": "No real hardware measured by this PR.",
       "license_review": "NOT_REVIEWED",
       "local_offline": "PARTIAL_VERIFIED",
-      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #78 has successful Core Assurance and release-lock checks (CI PASS); physical hardware, E2E and Owner acceptance remain unverified. PR #78: 603 passed, 6 skipped in 9.92s. | [B1_FIRST_PACK=REVIEWED_NOT_ACCEPTED;UNIFIED_HEAD=fb7c9a4;EXACT_TEST_PRESENCE_DOCUMENTED] | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED]",
+      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #78 has successful Core Assurance and release-lock checks (CI PASS); physical hardware, E2E and Owner acceptance remain unverified. PR #78: 603 passed, 6 skipped in 9.92s. | [B1_FIRST_PACK=REVIEWED_NOT_ACCEPTED;UNIFIED_HEAD=fb7c9a4;EXACT_TEST_PRESENCE_DOCUMENTED] | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED] | [OWNER_DECLARATION_2026_11_18] Owner (ArdaNTM) expressly declared product/security acceptance and requested merges in chat; unsigned/unverified as independent repo review; actual missing_components remain unimplemented or unproven, so acceptance=NOT_VERIFIED until verified. See docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md.",
       "existing_jas_state": "PR #78 extends existing CrossCapabilitySynthesizer; complementary independent publication-level PR #77 exists.",
       "proposed_technology": "Python standard library and existing JAS components",
       "license_terms": "No new external dependency; overall license compliance pending review",
@@ -2171,7 +2180,8 @@
         "docs/13_RESEARCH/feature-38-40-citation-metadata.md",
         "docs/22_IMPLEMENTATION/AURA_ACCEPTANCE_GROUPS.json",
         "docs/22_IMPLEMENTATION/AURA_B1_FIRST_PACK_REVIEW.md",
-        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md"
+        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md",
+        "docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md"
       ],
       "test_commands": [
         "cd core && uv run pytest -q core/tests/test_academic_citations.py",
@@ -2190,7 +2200,7 @@
       "hardware_requirements": "No real hardware measured by this PR.",
       "license_review": "NOT_REVIEWED",
       "local_offline": "PARTIAL_VERIFIED",
-      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #82 has successful Core Assurance and release-lock checks (603 passed, 6 skipped); physical hardware, E2E and Owner acceptance remain unverified. | [B1_FIRST_PACK=REVIEWED_NOT_ACCEPTED;UNIFIED_HEAD=fb7c9a4;EXACT_TEST_PRESENCE_DOCUMENTED] | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED]",
+      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #82 has successful Core Assurance and release-lock checks (603 passed, 6 skipped); physical hardware, E2E and Owner acceptance remain unverified. | [B1_FIRST_PACK=REVIEWED_NOT_ACCEPTED;UNIFIED_HEAD=fb7c9a4;EXACT_TEST_PRESENCE_DOCUMENTED] | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED] | [OWNER_DECLARATION_2026_11_18] Owner (ArdaNTM) expressly declared product/security acceptance and requested merges in chat; unsigned/unverified as independent repo review; actual missing_components remain unimplemented or unproven, so acceptance=NOT_VERIFIED until verified. See docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md.",
       "existing_jas_state": "Existing research MCP routes handle search/fetch; PR #82 adds offline DOI metadata normalization only.",
       "proposed_technology": "Python standard library and existing JAS components",
       "license_terms": "No new external dependency; overall license compliance pending review",
@@ -2228,7 +2238,8 @@
       "documentation_paths": [
         "docs/13_RESEARCH/feature-39-docx-extractor.md",
         "docs/22_IMPLEMENTATION/AURA_ACCEPTANCE_GROUPS.json",
-        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md"
+        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md",
+        "docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md"
       ],
       "test_commands": [
         "cd core && uv run pytest -q tests/test_docx_extractor.py",
@@ -2251,7 +2262,7 @@
       "hardware_requirements": "No physical hardware needed for parser; real-host authenticated file access not tested.",
       "license_review": "NOT_REVIEWED",
       "local_offline": "PARTIAL_VERIFIED",
-      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #87 Core Assurance CI PASS (611 passed, 6 skipped), release lock PASS sha256:96229d69b53f58312f58172c748a53c9e9d6d25d4683efb5d01735df3e08db5b; Remote Persistence Integration PASS. Parser returns untrusted text and is not permission authority. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED]",
+      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #87 Core Assurance CI PASS (611 passed, 6 skipped), release lock PASS sha256:96229d69b53f58312f58172c748a53c9e9d6d25d4683efb5d01735df3e08db5b; Remote Persistence Integration PASS. Parser returns untrusted text and is not permission authority. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED] | [OWNER_DECLARATION_2026_11_18] Owner (ArdaNTM) expressly declared product/security acceptance and requested merges in chat; unsigned/unverified as independent repo review; actual missing_components remain unimplemented or unproven, so acceptance=NOT_VERIFIED until verified. See docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md.",
       "existing_jas_state": "JAS filesystem/safe_reader and MCP boundaries exist; new standalone bytes-only DOCX extractor is PR #87; no new HTTP/MCP endpoint.",
       "proposed_technology": "Existing Python stdlib zipfile and xml.etree; no new dependency.",
       "license_terms": "Python standard library; repository-wide license audit pending.",
@@ -2290,7 +2301,8 @@
       "documentation_paths": [
         "docs/13_RESEARCH/feature-38-40-citation-metadata.md",
         "docs/22_IMPLEMENTATION/AURA_ACCEPTANCE_GROUPS.json",
-        "docs/22_IMPLEMENTATION/AURA_SOFTWARE_SECURITY_REVIEW.md"
+        "docs/22_IMPLEMENTATION/AURA_SOFTWARE_SECURITY_REVIEW.md",
+        "docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md"
       ],
       "test_commands": [
         "cd core && uv run pytest -q core/tests/test_academic_citations.py",
@@ -2309,7 +2321,7 @@
       "hardware_requirements": "No real hardware measured by this PR.",
       "license_review": "NOT_REVIEWED",
       "local_offline": "PARTIAL_VERIFIED",
-      "notes": "[ACCEPTANCE_GROUP=A;PR158_CI_CANDIDATE=YES] PR #82 has successful Core Assurance and release-lock checks (603 passed, 6 skipped); physical hardware, E2E and Owner acceptance remain unverified. | [GROUP_A_EXACT_HEAD_CI=fb7c9a4f3c892972fc6450cc1b7d3412257dc055;7/7 PASS;Core 1494 PASS/10 SKIP;Remote PG/MinIO 8 PASS;Unified 10+8 PASS;Lock 312 PASS;ELIGIBLE=0;SECURITY_SIGNOFF=ABSENT;OWNER_ACCEPTANCE=ABSENT] | Code candidate PR https://github.com/ArdaNTM/JAS/pull/158; original feature PR retained in pull_request. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED]",
+      "notes": "[ACCEPTANCE_GROUP=A;PR158_CI_CANDIDATE=YES] PR #82 has successful Core Assurance and release-lock checks (603 passed, 6 skipped); physical hardware, E2E and Owner acceptance remain unverified. | [GROUP_A_EXACT_HEAD_CI=fb7c9a4f3c892972fc6450cc1b7d3412257dc055;7/7 PASS;Core 1494 PASS/10 SKIP;Remote PG/MinIO 8 PASS;Unified 10+8 PASS;Lock 312 PASS;ELIGIBLE=0;SECURITY_SIGNOFF=ABSENT;OWNER_ACCEPTANCE=ABSENT] | Code candidate PR https://github.com/ArdaNTM/JAS/pull/158; original feature PR retained in pull_request. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [OWNER_DECLARATION_2026_11_18] Owner (ArdaNTM) expressly declared product/security acceptance and requested merges in chat; unsigned/unverified as independent repo review; actual missing_components remain unimplemented or unproven, so acceptance=NOT_VERIFIED until verified. See docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md.",
       "existing_jas_state": "PR #82 includes bibliography renderer, not DOCX/PDF report exporter.",
       "proposed_technology": "Python standard library and existing JAS components",
       "license_terms": "No new external dependency; overall license compliance pending review",
@@ -2346,7 +2358,8 @@
       "documentation_paths": [
         "docs/13_RESEARCH/feature-41-offline-feed-change-monitor.md",
         "docs/22_IMPLEMENTATION/AURA_ACCEPTANCE_GROUPS.json",
-        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md"
+        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md",
+        "docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md"
       ],
       "test_commands": [
         "cd core && uv run pytest -q core/tests/test_research_feed_monitor.py",
@@ -2365,7 +2378,7 @@
       "hardware_requirements": "No real hardware measured by this PR.",
       "license_review": "NOT_REVIEWED",
       "local_offline": "PARTIAL_VERIFIED",
-      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #81 has successful Core Assurance and release-lock checks (603 passed, 6 skipped); physical hardware, E2E and Owner acceptance remain unverified. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED]",
+      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #81 has successful Core Assurance and release-lock checks (603 passed, 6 skipped); physical hardware, E2E and Owner acceptance remain unverified. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED] | [OWNER_DECLARATION_2026_11_18] Owner (ArdaNTM) expressly declared product/security acceptance and requested merges in chat; unsigned/unverified as independent repo review; actual missing_components remain unimplemented or unproven, so acceptance=NOT_VERIFIED until verified. See docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md.",
       "existing_jas_state": "PR #81 adds offline feed XML parser/delta detector to research package.",
       "proposed_technology": "Python standard library and existing JAS components",
       "license_terms": "No new external dependency; overall license compliance pending review",
@@ -2403,7 +2416,8 @@
         "docs/13_RESEARCH/OFFLINE_RESEARCH_ARCHIVE_IMPLEMENTATION.md",
         "docs/22_IMPLEMENTATION/AURA_ACCEPTANCE_GROUPS.json",
         "docs/22_IMPLEMENTATION/AURA_B1_FIRST_PACK_REVIEW.md",
-        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md"
+        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md",
+        "docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md"
       ],
       "test_commands": [
         "cd core && uv run pytest -q tests/test_research_archive.py",
@@ -2422,7 +2436,7 @@
       "hardware_requirements": "No hardware dependency for SQLite tests.",
       "license_review": "NOT_REVIEWED",
       "local_offline": "PARTIAL_VERIFIED",
-      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #74 head e297f62a6b: Core Assurance 601 passed, 6 skipped; release-lock PASS (https://github.com/ArdaNTM/JAS/actions/runs/43751487746). No user production acceptance or merge. | [B1_FIRST_PACK=REVIEWED_NOT_ACCEPTED;UNIFIED_HEAD=fb7c9a4;EXACT_TEST_PRESENCE_DOCUMENTED] | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED]",
+      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #74 head e297f62a6b: Core Assurance 601 passed, 6 skipped; release-lock PASS (https://github.com/ArdaNTM/JAS/actions/runs/43751487746). No user production acceptance or merge. | [B1_FIRST_PACK=REVIEWED_NOT_ACCEPTED;UNIFIED_HEAD=fb7c9a4;EXACT_TEST_PRESENCE_DOCUMENTED] | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED] | [OWNER_DECLARATION_2026_11_18] Owner (ArdaNTM) expressly declared product/security acceptance and requested merges in chat; unsigned/unverified as independent repo review; actual missing_components remain unimplemented or unproven, so acceptance=NOT_VERIFIED until verified. See docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md.",
       "existing_jas_state": "PR #74 archive is idempotent and verifies stored content digest, not publisher authenticity.",
       "proposed_technology": "Python SQLite/hashlib standard library",
       "license_terms": "Existing dependencies/stdlib; formal license assessment pending.",
@@ -2462,7 +2476,8 @@
         "docs/22_IMPLEMENTATION/AURA_RESEARCH_DOSSIER.md",
         "docs/22_IMPLEMENTATION/AURA_ACCEPTANCE_GROUPS.json",
         "docs/22_IMPLEMENTATION/AURA_B1_FIRST_PACK_REVIEW.md",
-        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md"
+        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md",
+        "docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md"
       ],
       "test_commands": [
         "cd core && uv run pytest -q tests/test_research_dossier.py tests/test_gateway_multiquery_research.py",
@@ -2484,7 +2499,7 @@
       "hardware_requirements": "None for simulated evidence; real live provider/network acceptance missing.",
       "license_review": "NOT_APPLICABLE: no new dependencies; real source content/licensing not assessed.",
       "local_offline": "PARTIAL_VERIFIED: fully deterministic offline dossier tests on fake research data.",
-      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #114 targets feat/aura-gateway-multisearch-evidence (PR #112), not main. Fully cumulative under stacked branch only; no automatic merge. | [B1_FIRST_PACK=REVIEWED_NOT_ACCEPTED;UNIFIED_HEAD=fb7c9a4;EXACT_TEST_PRESENCE_DOCUMENTED] | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED]",
+      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #114 targets feat/aura-gateway-multisearch-evidence (PR #112), not main. Fully cumulative under stacked branch only; no automatic merge. | [B1_FIRST_PACK=REVIEWED_NOT_ACCEPTED;UNIFIED_HEAD=fb7c9a4;EXACT_TEST_PRESENCE_DOCUMENTED] | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED] | [OWNER_DECLARATION_2026_11_18] Owner (ArdaNTM) expressly declared product/security acceptance and requested merges in chat; unsigned/unverified as independent repo review; actual missing_components remain unimplemented or unproven, so acceptance=NOT_VERIFIED until verified. See docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md.",
       "existing_jas_state": "Existing JAS had bounded research tools but no orchestrated human-review dossier; parent PR #112 adds bounded queries unmerged.",
       "proposed_technology": "Frozen dataclasses and existing bounded multiquery evidence; no LLM-driven action or external executor.",
       "license_terms": "Existing Python stdlib and JAS contract only.",
@@ -2526,7 +2541,8 @@
       "documentation_paths": [
         "docs/13_RESEARCH/OFFLINE_RESEARCH_ARCHIVE_IMPLEMENTATION.md",
         "docs/22_IMPLEMENTATION/AURA_ACCEPTANCE_GROUPS.json",
-        "docs/22_IMPLEMENTATION/AURA_SOFTWARE_SECURITY_REVIEW.md"
+        "docs/22_IMPLEMENTATION/AURA_SOFTWARE_SECURITY_REVIEW.md",
+        "docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md"
       ],
       "test_commands": [
         "cd core && uv run pytest -q tests/test_research_archive.py",
@@ -2545,7 +2561,7 @@
       "hardware_requirements": "No new hardware.",
       "license_review": "NOT_REVIEWED",
       "local_offline": "PARTIAL_VERIFIED",
-      "notes": "[ACCEPTANCE_GROUP=A;PR158_CI_CANDIDATE=YES] PR #74 head e297f62a6b: Core Assurance 601 passed, 6 skipped; release-lock PASS (https://github.com/ArdaNTM/JAS/actions/runs/43751487746). No user production acceptance or merge. | [GROUP_A_EXACT_HEAD_CI=fb7c9a4f3c892972fc6450cc1b7d3412257dc055;7/7 PASS;Core 1494 PASS/10 SKIP;Remote PG/MinIO 8 PASS;Unified 10+8 PASS;Lock 312 PASS;ELIGIBLE=0;SECURITY_SIGNOFF=ABSENT;OWNER_ACCEPTANCE=ABSENT] | Code candidate PR https://github.com/ArdaNTM/JAS/pull/158; original feature PR retained in pull_request. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED]",
+      "notes": "[ACCEPTANCE_GROUP=A;PR158_CI_CANDIDATE=YES] PR #74 head e297f62a6b: Core Assurance 601 passed, 6 skipped; release-lock PASS (https://github.com/ArdaNTM/JAS/actions/runs/43751487746). No user production acceptance or merge. | [GROUP_A_EXACT_HEAD_CI=fb7c9a4f3c892972fc6450cc1b7d3412257dc055;7/7 PASS;Core 1494 PASS/10 SKIP;Remote PG/MinIO 8 PASS;Unified 10+8 PASS;Lock 312 PASS;ELIGIBLE=0;SECURITY_SIGNOFF=ABSENT;OWNER_ACCEPTANCE=ABSENT] | Code candidate PR https://github.com/ArdaNTM/JAS/pull/158; original feature PR retained in pull_request. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [OWNER_DECLARATION_2026_11_18] Owner (ArdaNTM) expressly declared product/security acceptance and requested merges in chat; unsigned/unverified as independent repo review; actual missing_components remain unimplemented or unproven, so acceptance=NOT_VERIFIED until verified. See docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md.",
       "existing_jas_state": "Only already-fetched content; no URL network fetch in archive.",
       "proposed_technology": "Python sqlite3/hashlib standard library",
       "license_terms": "Existing dependencies/stdlib; formal license assessment pending.",
@@ -2686,7 +2702,8 @@
       "documentation_paths": [
         "docs/05_AGENTS/feature-47-53-static-python-insight.md",
         "docs/22_IMPLEMENTATION/AURA_ACCEPTANCE_GROUPS.json",
-        "docs/22_IMPLEMENTATION/AURA_SOFTWARE_SECURITY_REVIEW.md"
+        "docs/22_IMPLEMENTATION/AURA_SOFTWARE_SECURITY_REVIEW.md",
+        "docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md"
       ],
       "test_commands": [
         "cd core && uv run pytest -q core/tests/test_python_code_insight.py",
@@ -2710,7 +2727,7 @@
       "hardware_requirements": "No physical device verified; real provider integration pending.",
       "license_review": "NOT_REVIEWED",
       "local_offline": "PARTIAL_VERIFIED",
-      "notes": "[ACCEPTANCE_GROUP=A;PR158_CI_CANDIDATE=YES] PR #88 Core Assurance PASS (614 passed, 6 skipped), Final Release Lock PASS, Remote Persistence Integration PASS. No independent Owner acceptance or physical provider verification. | [GROUP_A_EXACT_HEAD_CI=fb7c9a4f3c892972fc6450cc1b7d3412257dc055;7/7 PASS;Core 1494 PASS/10 SKIP;Remote PG/MinIO 8 PASS;Unified 10+8 PASS;Lock 312 PASS;ELIGIBLE=0;SECURITY_SIGNOFF=ABSENT;OWNER_ACCEPTANCE=ABSENT] | Code candidate PR https://github.com/ArdaNTM/JAS/pull/158; original feature PR retained in pull_request. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED]",
+      "notes": "[ACCEPTANCE_GROUP=A;PR158_CI_CANDIDATE=YES] PR #88 Core Assurance PASS (614 passed, 6 skipped), Final Release Lock PASS, Remote Persistence Integration PASS. No independent Owner acceptance or physical provider verification. | [GROUP_A_EXACT_HEAD_CI=fb7c9a4f3c892972fc6450cc1b7d3412257dc055;7/7 PASS;Core 1494 PASS/10 SKIP;Remote PG/MinIO 8 PASS;Unified 10+8 PASS;Lock 312 PASS;ELIGIBLE=0;SECURITY_SIGNOFF=ABSENT;OWNER_ACCEPTANCE=ABSENT] | Code candidate PR https://github.com/ArdaNTM/JAS/pull/158; original feature PR retained in pull_request. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [OWNER_DECLARATION_2026_11_18] Owner (ArdaNTM) expressly declared product/security acceptance and requested merges in chat; unsigned/unverified as independent repo review; actual missing_components remain unimplemented or unproven, so acceptance=NOT_VERIFIED until verified. See docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md.",
       "existing_jas_state": "Existing JAS source readers and skill framework; new isolated AST inspector is read-only, not an authority.",
       "proposed_technology": "Python standard library integrated under existing JAS package; no new external dependency.",
       "license_terms": "Standard-library module; repository-wide license audit remains outstanding.",
@@ -2978,7 +2995,8 @@
       "documentation_paths": [
         "docs/05_AGENTS/feature-34-52-reversible-text-preview.md",
         "docs/22_IMPLEMENTATION/AURA_ACCEPTANCE_GROUPS.json",
-        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md"
+        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md",
+        "docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md"
       ],
       "test_commands": [
         "cd core && uv run pytest -q core/tests/test_text_change_preview.py",
@@ -2997,7 +3015,7 @@
       "hardware_requirements": "No live hardware or production privilege exercised.",
       "license_review": "NOT_REVIEWED",
       "local_offline": "PARTIAL_VERIFIED",
-      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #101 exact-head Core Assurance PASS (606 passed, 6 skipped), Final Release Lock PASS, Remote Persistence Integration PASS. No independent Owner/hardware acceptance; no merge. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED]",
+      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #101 exact-head Core Assurance PASS (606 passed, 6 skipped), Final Release Lock PASS, Remote Persistence Integration PASS. No independent Owner/hardware acceptance; no merge. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED] | [OWNER_DECLARATION_2026_11_18] Owner (ArdaNTM) expressly declared product/security acceptance and requested merges in chat; unsigned/unverified as independent repo review; actual missing_components remain unimplemented or unproven, so acceptance=NOT_VERIFIED until verified. See docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md.",
       "existing_jas_state": "Versioned source management belongs to existing Git/CI; this PR is a pure and isolated data primitive.",
       "proposed_technology": "Existing Python standard library and JAS packages; no external credential or paid service.",
       "license_terms": "No new runtime dependencies; repository-wide license assessment pending.",
@@ -3035,7 +3053,8 @@
         "docs/05_AGENTS/feature-47-53-static-python-insight.md",
         "docs/22_IMPLEMENTATION/AURA_ACCEPTANCE_GROUPS.json",
         "docs/22_IMPLEMENTATION/AURA_B1_FIRST_PACK_REVIEW.md",
-        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md"
+        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md",
+        "docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md"
       ],
       "test_commands": [
         "cd core && uv run pytest -q core/tests/test_python_code_insight.py",
@@ -3059,7 +3078,7 @@
       "hardware_requirements": "No physical device verified; real provider integration pending.",
       "license_review": "NOT_REVIEWED",
       "local_offline": "PARTIAL_VERIFIED",
-      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #88 Core Assurance PASS (614 passed, 6 skipped), Final Release Lock PASS, Remote Persistence Integration PASS. No independent Owner acceptance or physical provider verification. | [B1_FIRST_PACK=REVIEWED_NOT_ACCEPTED;UNIFIED_HEAD=fb7c9a4;EXACT_TEST_PRESENCE_DOCUMENTED] | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED]",
+      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #88 Core Assurance PASS (614 passed, 6 skipped), Final Release Lock PASS, Remote Persistence Integration PASS. No independent Owner acceptance or physical provider verification. | [B1_FIRST_PACK=REVIEWED_NOT_ACCEPTED;UNIFIED_HEAD=fb7c9a4;EXACT_TEST_PRESENCE_DOCUMENTED] | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED] | [OWNER_DECLARATION_2026_11_18] Owner (ArdaNTM) expressly declared product/security acceptance and requested merges in chat; unsigned/unverified as independent repo review; actual missing_components remain unimplemented or unproven, so acceptance=NOT_VERIFIED until verified. See docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md.",
       "existing_jas_state": "Existing JAS docs are architectural specifications; PR #88 adds a nonpublishing static renderer.",
       "proposed_technology": "Python standard library integrated under existing JAS package; no new external dependency.",
       "license_terms": "Standard-library module; repository-wide license audit remains outstanding.",
@@ -3383,7 +3402,8 @@
       "documentation_paths": [
         "docs/05_AGENTS/feature-59-scoped-specialist-mailbox.md",
         "docs/22_IMPLEMENTATION/AURA_ACCEPTANCE_GROUPS.json",
-        "docs/22_IMPLEMENTATION/AURA_SOFTWARE_SECURITY_REVIEW.md"
+        "docs/22_IMPLEMENTATION/AURA_SOFTWARE_SECURITY_REVIEW.md",
+        "docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md"
       ],
       "test_commands": [
         "cd core && uv run pytest -q core/tests/test_scoped_agent_mailbox.py",
@@ -3402,7 +3422,7 @@
       "hardware_requirements": "No live hardware or production privilege exercised.",
       "license_review": "NOT_REVIEWED",
       "local_offline": "PARTIAL_VERIFIED",
-      "notes": "[ACCEPTANCE_GROUP=A;PR158_CI_CANDIDATE=YES] PR #99 exact-head Core Assurance PASS (606 passed, 6 skipped), Final Release Lock PASS, Remote Persistence Integration PASS. No independent Owner/hardware acceptance; no merge. | [GROUP_A_EXACT_HEAD_CI=fb7c9a4f3c892972fc6450cc1b7d3412257dc055;7/7 PASS;Core 1494 PASS/10 SKIP;Remote PG/MinIO 8 PASS;Unified 10+8 PASS;Lock 312 PASS;ELIGIBLE=0;SECURITY_SIGNOFF=ABSENT;OWNER_ACCEPTANCE=ABSENT] | Code candidate PR https://github.com/ArdaNTM/JAS/pull/158; original feature PR retained in pull_request. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED]",
+      "notes": "[ACCEPTANCE_GROUP=A;PR158_CI_CANDIDATE=YES] PR #99 exact-head Core Assurance PASS (606 passed, 6 skipped), Final Release Lock PASS, Remote Persistence Integration PASS. No independent Owner/hardware acceptance; no merge. | [GROUP_A_EXACT_HEAD_CI=fb7c9a4f3c892972fc6450cc1b7d3412257dc055;7/7 PASS;Core 1494 PASS/10 SKIP;Remote PG/MinIO 8 PASS;Unified 10+8 PASS;Lock 312 PASS;ELIGIBLE=0;SECURITY_SIGNOFF=ABSENT;OWNER_ACCEPTANCE=ABSENT] | Code candidate PR https://github.com/ArdaNTM/JAS/pull/158; original feature PR retained in pull_request. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [OWNER_DECLARATION_2026_11_18] Owner (ArdaNTM) expressly declared product/security acceptance and requested merges in chat; unsigned/unverified as independent repo review; actual missing_components remain unimplemented or unproven, so acceptance=NOT_VERIFIED until verified. See docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md.",
       "existing_jas_state": "JAS already has fixed specialist roles and MCP Gateway; this PR does not change those tools.",
       "proposed_technology": "Existing Python standard library and JAS packages; no external credential or paid service.",
       "license_terms": "No new runtime dependencies; repository-wide license assessment pending.",
@@ -3540,7 +3560,8 @@
       "documentation_paths": [
         "docs/05_AGENTS/feature-10-62-goal-dag-planning.md",
         "docs/22_IMPLEMENTATION/AURA_ACCEPTANCE_GROUPS.json",
-        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md"
+        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md",
+        "docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md"
       ],
       "test_commands": [
         "cd core && uv run pytest -q tests/test_goal_planning.py",
@@ -3559,7 +3580,7 @@
       "hardware_requirements": "No real agent runtime/hardware accepted.",
       "license_review": "NOT_REVIEWED",
       "local_offline": "PARTIAL_VERIFIED",
-      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #97 Core Assurance 608 passed/6 skipped, Release Lock PASS; Remote Persistence PASS. Untrusted claimed completion does not authorize or prove work. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED]",
+      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #97 Core Assurance 608 passed/6 skipped, Release Lock PASS; Remote Persistence PASS. Untrusted claimed completion does not authorize or prove work. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED] | [OWNER_DECLARATION_2026_11_18] Owner (ArdaNTM) expressly declared product/security acceptance and requested merges in chat; unsigned/unverified as independent repo review; actual missing_components remain unimplemented or unproven, so acceptance=NOT_VERIFIED until verified. See docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md.",
       "existing_jas_state": "Main has SwarmOrchestrator and task events, but PR #97 adds an independent read-only goal graph evaluator.",
       "proposed_technology": "Python stdlib deterministic DAG validation; no third-party runtime or external service.",
       "license_terms": "No new dependency; broader audit pending.",
@@ -3709,7 +3730,8 @@
       "documentation_paths": [
         "docs/21_BENCHMARKS/feature-65-72-offline-experiment-design.md",
         "docs/22_IMPLEMENTATION/AURA_ACCEPTANCE_GROUPS.json",
-        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md"
+        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md",
+        "docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md"
       ],
       "test_commands": [
         "cd core && uv run pytest -q core/tests/test_experiment_design.py",
@@ -3728,7 +3750,7 @@
       "hardware_requirements": "Actual physical equipment not tested.",
       "license_review": "NOT_REVIEWED",
       "local_offline": "PARTIAL_VERIFIED",
-      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #91 Core Assurance PASS (609 passed, 6 skipped) and Release Lock PASS; Remote Persistence PASS. No independently generated scientific discovery or tested external hypothesis. Owner/security E2E acceptance pending. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED]",
+      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #91 Core Assurance PASS (609 passed, 6 skipped) and Release Lock PASS; Remote Persistence PASS. No independently generated scientific discovery or tested external hypothesis. Owner/security E2E acceptance pending. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED] | [OWNER_DECLARATION_2026_11_18] Owner (ArdaNTM) expressly declared product/security acceptance and requested merges in chat; unsigned/unverified as independent repo review; actual missing_components remain unimplemented or unproven, so acceptance=NOT_VERIFIED until verified. See docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md.",
       "existing_jas_state": "PR #75 provides separate statistical evaluation; this PR designs offline study assumptions only.",
       "proposed_technology": "Python standard library and existing JAS architecture, offline local processing.",
       "license_terms": "No new third-party package; repository-wide review pending.",
@@ -3767,7 +3789,8 @@
       "documentation_paths": [
         "docs/13_RESEARCH/feature-66-69-scientific-triage.md",
         "docs/22_IMPLEMENTATION/AURA_ACCEPTANCE_GROUPS.json",
-        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md"
+        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md",
+        "docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md"
       ],
       "test_commands": [
         "cd core && uv run pytest -q core/tests/test_scientific_evidence_triage.py",
@@ -3786,7 +3809,7 @@
       "hardware_requirements": "No live hardware or production privilege exercised.",
       "license_review": "NOT_REVIEWED",
       "local_offline": "PARTIAL_VERIFIED",
-      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #100 exact-head Core Assurance PASS (617 passed, 6 skipped), Final Release Lock PASS, Remote Persistence Integration PASS. No independent Owner/hardware acceptance; no merge. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED]",
+      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #100 exact-head Core Assurance PASS (617 passed, 6 skipped), Final Release Lock PASS, Remote Persistence Integration PASS. No independent Owner/hardware acceptance; no merge. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED] | [OWNER_DECLARATION_2026_11_18] Owner (ArdaNTM) expressly declared product/security acceptance and requested merges in chat; unsigned/unverified as independent repo review; actual missing_components remain unimplemented or unproven, so acceptance=NOT_VERIFIED until verified. See docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md.",
       "existing_jas_state": "Other open JAS branches cover generic claims/citations; this is a separate metadata eligibility processor.",
       "proposed_technology": "Existing Python standard library and JAS packages; no external credential or paid service.",
       "license_terms": "No new runtime dependencies; repository-wide license assessment pending.",
@@ -3821,7 +3844,8 @@
       "documentation_paths": [
         "docs/local-experiment-analysis.md",
         "docs/22_IMPLEMENTATION/AURA_ACCEPTANCE_GROUPS.json",
-        "docs/22_IMPLEMENTATION/AURA_SOFTWARE_SECURITY_REVIEW.md"
+        "docs/22_IMPLEMENTATION/AURA_SOFTWARE_SECURITY_REVIEW.md",
+        "docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md"
       ],
       "test_commands": [
         "cd core && uv run pytest -q tests/test_local_linear_model.py",
@@ -3840,7 +3864,7 @@
       "hardware_requirements": "No new hardware.",
       "license_review": "NOT_REVIEWED",
       "local_offline": "PARTIAL_VERIFIED",
-      "notes": "[ACCEPTANCE_GROUP=A;PR158_CI_CANDIDATE=YES] PR #75 head 67a6a57bc2: Core Assurance 620 passed, 6 skipped; release-lock PASS (https://github.com/ArdaNTM/JAS/actions/runs/43751913526). No user production acceptance or merge. | [GROUP_A_EXACT_HEAD_CI=fb7c9a4f3c892972fc6450cc1b7d3412257dc055;7/7 PASS;Core 1494 PASS/10 SKIP;Remote PG/MinIO 8 PASS;Unified 10+8 PASS;Lock 312 PASS;ELIGIBLE=0;SECURITY_SIGNOFF=ABSENT;OWNER_ACCEPTANCE=ABSENT] | Code candidate PR https://github.com/ArdaNTM/JAS/pull/158; original feature PR retained in pull_request. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED]",
+      "notes": "[ACCEPTANCE_GROUP=A;PR158_CI_CANDIDATE=YES] PR #75 head 67a6a57bc2: Core Assurance 620 passed, 6 skipped; release-lock PASS (https://github.com/ArdaNTM/JAS/actions/runs/43751913526). No user production acceptance or merge. | [GROUP_A_EXACT_HEAD_CI=fb7c9a4f3c892972fc6450cc1b7d3412257dc055;7/7 PASS;Core 1494 PASS/10 SKIP;Remote PG/MinIO 8 PASS;Unified 10+8 PASS;Lock 312 PASS;ELIGIBLE=0;SECURITY_SIGNOFF=ABSENT;OWNER_ACCEPTANCE=ABSENT] | Code candidate PR https://github.com/ArdaNTM/JAS/pull/158; original feature PR retained in pull_request. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [OWNER_DECLARATION_2026_11_18] Owner (ArdaNTM) expressly declared product/security acceptance and requested merges in chat; unsigned/unverified as independent repo review; actual missing_components remain unimplemented or unproven, so acceptance=NOT_VERIFIED until verified. See docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md.",
       "existing_jas_state": "Feature #67 partial; same PR groups with feature #73.",
       "proposed_technology": "Python math/statistics standard library",
       "license_terms": "Existing dependencies/stdlib; formal license assessment pending.",
@@ -4153,7 +4177,8 @@
       "documentation_paths": [
         "docs/local-experiment-analysis.md",
         "docs/22_IMPLEMENTATION/AURA_ACCEPTANCE_GROUPS.json",
-        "docs/22_IMPLEMENTATION/AURA_SOFTWARE_SECURITY_REVIEW.md"
+        "docs/22_IMPLEMENTATION/AURA_SOFTWARE_SECURITY_REVIEW.md",
+        "docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md"
       ],
       "test_commands": [
         "cd core && uv run pytest -q tests/test_local_experiment_statistics.py",
@@ -4173,7 +4198,7 @@
       "hardware_requirements": "No physical experiment or device tested.",
       "license_review": "NOT_REVIEWED",
       "local_offline": "PARTIAL_VERIFIED",
-      "notes": "[ACCEPTANCE_GROUP=A;PR158_CI_CANDIDATE=YES] PR #75 head 67a6a57bc2: Core Assurance 620 passed, 6 skipped; release-lock PASS (https://github.com/ArdaNTM/JAS/actions/runs/43751913526). No user production acceptance or merge. | [GROUP_A_EXACT_HEAD_CI=fb7c9a4f3c892972fc6450cc1b7d3412257dc055;7/7 PASS;Core 1494 PASS/10 SKIP;Remote PG/MinIO 8 PASS;Unified 10+8 PASS;Lock 312 PASS;ELIGIBLE=0;SECURITY_SIGNOFF=ABSENT;OWNER_ACCEPTANCE=ABSENT] | Code candidate PR https://github.com/ArdaNTM/JAS/pull/158; original feature PR retained in pull_request. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED]",
+      "notes": "[ACCEPTANCE_GROUP=A;PR158_CI_CANDIDATE=YES] PR #75 head 67a6a57bc2: Core Assurance 620 passed, 6 skipped; release-lock PASS (https://github.com/ArdaNTM/JAS/actions/runs/43751913526). No user production acceptance or merge. | [GROUP_A_EXACT_HEAD_CI=fb7c9a4f3c892972fc6450cc1b7d3412257dc055;7/7 PASS;Core 1494 PASS/10 SKIP;Remote PG/MinIO 8 PASS;Unified 10+8 PASS;Lock 312 PASS;ELIGIBLE=0;SECURITY_SIGNOFF=ABSENT;OWNER_ACCEPTANCE=ABSENT] | Code candidate PR https://github.com/ArdaNTM/JAS/pull/158; original feature PR retained in pull_request. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [OWNER_DECLARATION_2026_11_18] Owner (ArdaNTM) expressly declared product/security acceptance and requested merges in chat; unsigned/unverified as independent repo review; actual missing_components remain unimplemented or unproven, so acceptance=NOT_VERIFIED until verified. See docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md.",
       "existing_jas_state": "Core statistics and linear model tests PASS, but user-facing science workflow not built.",
       "proposed_technology": "Python standard library; no external dependencies",
       "license_terms": "Existing dependencies/stdlib; formal license assessment pending.",
@@ -4317,7 +4342,8 @@
       "documentation_paths": [
         "docs/06_MEMORY/feature-11-76-scientific-journal.md",
         "docs/22_IMPLEMENTATION/AURA_ACCEPTANCE_GROUPS.json",
-        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md"
+        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md",
+        "docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md"
       ],
       "test_commands": [
         "cd core && uv run pytest -q core/tests/test_scientific_journal.py",
@@ -4336,7 +4362,7 @@
       "hardware_requirements": "No physical hardware or real external provider verified.",
       "license_review": "NOT_REVIEWED",
       "local_offline": "PARTIAL_VERIFIED",
-      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #102 latest-head Core Assurance PASS (605 passed, 6 skipped), Final Release Lock PASS, Remote Persistence Integration PASS. Feature remains PARTIAL; production Owner/security E2E acceptance absent. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED]",
+      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #102 latest-head Core Assurance PASS (605 passed, 6 skipped), Final Release Lock PASS, Remote Persistence Integration PASS. Feature remains PARTIAL; production Owner/security E2E acceptance absent. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED] | [OWNER_DECLARATION_2026_11_18] Owner (ArdaNTM) expressly declared product/security acceptance and requested merges in chat; unsigned/unverified as independent repo review; actual missing_components remain unimplemented or unproven, so acceptance=NOT_VERIFIED until verified. See docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md.",
       "existing_jas_state": "Uses existing append-only SQLite episodic store; no new research permission or instrument provider.",
       "proposed_technology": "Existing JAS Python standard library and runtime, no paid service.",
       "license_terms": "No new runtime dependency; combined license review pending.",
@@ -5850,7 +5876,8 @@
       "documentation_paths": [
         "docs/16_SECURITY/feature-102-untrusted-context-bounds.md",
         "docs/22_IMPLEMENTATION/AURA_ACCEPTANCE_GROUPS.json",
-        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md"
+        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md",
+        "docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md"
       ],
       "test_commands": [
         "cd core && uv run pytest -q core/tests/test_untrusted_context_bounds.py",
@@ -5869,7 +5896,7 @@
       "hardware_requirements": "None tested on physical hardware.",
       "license_review": "NOT_REVIEWED",
       "local_offline": "PARTIAL_VERIFIED",
-      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #86 CI Core Assurance PASS (605 passed / 6 skipped), release lock PASS; Cannot guarantee model resistance to prompt injection and adds no security policy authority. Human acceptance outstanding. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED]",
+      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #86 CI Core Assurance PASS (605 passed / 6 skipped), release lock PASS; Cannot guarantee model resistance to prompt injection and adds no security policy authority. Human acceptance outstanding. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED] | [OWNER_DECLARATION_2026_11_18] Owner (ArdaNTM) expressly declared product/security acceptance and requested merges in chat; unsigned/unverified as independent repo review; actual missing_components remain unimplemented or unproven, so acceptance=NOT_VERIFIED until verified. See docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md.",
       "existing_jas_state": "JAS already labels recalled content untrusted; this PR tightens type/size/iteration guards.",
       "proposed_technology": "Existing Python standard library and JAS architecture",
       "license_terms": "No new external runtime dependency; broader license audit pending",
@@ -6390,7 +6417,8 @@
       "documentation_paths": [
         "docs/local-tabular-analysis.md",
         "docs/22_IMPLEMENTATION/AURA_ACCEPTANCE_GROUPS.json",
-        "docs/22_IMPLEMENTATION/AURA_SOFTWARE_SECURITY_REVIEW.md"
+        "docs/22_IMPLEMENTATION/AURA_SOFTWARE_SECURITY_REVIEW.md",
+        "docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md"
       ],
       "test_commands": [
         "cd core && uv run pytest -q core/tests/test_local_tabular_analysis.py",
@@ -6409,7 +6437,7 @@
       "hardware_requirements": "No real hardware measured by this PR.",
       "license_review": "NOT_REVIEWED",
       "local_offline": "PARTIAL_VERIFIED",
-      "notes": "[ACCEPTANCE_GROUP=A;PR158_CI_CANDIDATE=YES] PR #76 has successful Core Assurance and release-lock checks (CI PASS); physical hardware, E2E and Owner acceptance remain unverified. 606 passed, 6 skipped in 6.28s. | [GROUP_A_EXACT_HEAD_CI=fb7c9a4f3c892972fc6450cc1b7d3412257dc055;7/7 PASS;Core 1494 PASS/10 SKIP;Remote PG/MinIO 8 PASS;Unified 10+8 PASS;Lock 312 PASS;ELIGIBLE=0;SECURITY_SIGNOFF=ABSENT;OWNER_ACCEPTANCE=ABSENT] | Code candidate PR https://github.com/ArdaNTM/JAS/pull/158; original feature PR retained in pull_request. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED]",
+      "notes": "[ACCEPTANCE_GROUP=A;PR158_CI_CANDIDATE=YES] PR #76 has successful Core Assurance and release-lock checks (CI PASS); physical hardware, E2E and Owner acceptance remain unverified. 606 passed, 6 skipped in 6.28s. | [GROUP_A_EXACT_HEAD_CI=fb7c9a4f3c892972fc6450cc1b7d3412257dc055;7/7 PASS;Core 1494 PASS/10 SKIP;Remote PG/MinIO 8 PASS;Unified 10+8 PASS;Lock 312 PASS;ELIGIBLE=0;SECURITY_SIGNOFF=ABSENT;OWNER_ACCEPTANCE=ABSENT] | Code candidate PR https://github.com/ArdaNTM/JAS/pull/158; original feature PR retained in pull_request. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [OWNER_DECLARATION_2026_11_18] Owner (ArdaNTM) expressly declared product/security acceptance and requested merges in chat; unsigned/unverified as independent repo review; actual missing_components remain unimplemented or unproven, so acceptance=NOT_VERIFIED until verified. See docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md.",
       "existing_jas_state": "PR #76 adds local CSV aggregation; does not create a full data analysis service.",
       "proposed_technology": "Python standard library and existing JAS components",
       "license_terms": "No new external dependency; overall license compliance pending review",
@@ -6445,7 +6473,8 @@
       "documentation_paths": [
         "docs/22_IMPLEMENTATION/AURA_OFFLINE_XLSX_REPORT.md",
         "docs/22_IMPLEMENTATION/AURA_ACCEPTANCE_GROUPS.json",
-        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md"
+        "docs/22_IMPLEMENTATION/AURA_B1_20_RECONCILIATION.md",
+        "docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md"
       ],
       "test_commands": [
         "cd core && uv run pytest -q tests/test_offline_xlsx_report.py",
@@ -6467,7 +6496,7 @@
       "hardware_requirements": "None for pure offline generator; Office application/device compatibility not verified.",
       "license_review": "NOT_APPLICABLE: Python standard library, no external dependencies.",
       "local_offline": "PARTIAL_VERIFIED: offline memory-only XLSX generation and local openpyxl fixture validation.",
-      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #107 is draft/unmerged; CI passed on separate main-based branch, not cumulative JAS acceptance. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED]",
+      "notes": "[ACCEPTANCE_GROUP=B;SUBGROUP=B1;PR158_CI_CANDIDATE=NO] PR #107 is draft/unmerged; CI passed on separate main-based branch, not cumulative JAS acceptance. | [SOFTWARE_CI_BASIS=d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b;7/7_WORKFLOWS_PASS;CORE_1688_PASS_10_SKIP;REMOTE_PG_MINIO_8_PASS;UNIFIED_10_PLUS_9_PASS;LOCK_312_PASS;ELIGIBLE_0;INDEPENDENT_SECURITY_AND_OWNER_ACCEPTANCE_NOT_VERIFIED] | [B1_ORIGINAL_TESTS_RECONCILED=19_OF_19_DISTINCT;13_ORIGINAL_TEST_FILES_RESTORED;4_PINNED_CODE_BLOBS_RECONCILED;ACCEPTANCE_NOT_VERIFIED] | [OWNER_DECLARATION_2026_11_18] Owner (ArdaNTM) expressly declared product/security acceptance and requested merges in chat; unsigned/unverified as independent repo review; actual missing_components remain unimplemented or unproven, so acceptance=NOT_VERIFIED until verified. See docs/22_IMPLEMENTATION/AURA_OWNER_DECLARATION_2026_11_18.md.",
       "existing_jas_state": "Main contains release lock and Core but not this bounded report serializer; other document report formats not assessed fully.",
       "proposed_technology": "Python standard-library zipfile and XML escaping / OOXML strict single sheet.",
       "license_terms": "Python standard library PSF license; no added dependency.",
