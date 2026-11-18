@@ -3,7 +3,7 @@
   "source_pr": "https://github.com/ArdaNTM/JAS/pull/158",
   "unified_snapshot": "0eccc2195401d29b91b5cc14a115f86c7341ef24",
   "baseline_main": "b1ffe6f534ced0d329dae273a4b949a634cb8bfa",
-  "statement": "Source equality or ancestry proves only bounded file/provenance facts, not that every PR's tests and semantics were merged. Diverged refs and nonidentical blobs must be reviewed independently. No F2.7 PR #64 content is added.",
+  "statement": "Canonical Git blobs and source-specific regression evidence verified for five selected PR differences; PR #66/#68 missing modules merged exactly as their respective source branch blobs. PR #135/#146/#147 endpoints, providers and tests already existed under cumulative PR #152. This is NOT a semantic sign-off for every open PR.",
   "files": [
     {
       "path": "core/src/aura_core/main.py",
@@ -36,21 +36,21 @@
           "ref": "32a2fadf2a84015d5cfc0f3e16b98e3a54ea9063",
           "blob": "4860fae4525f44bf38bad3a86be00aa169456ef1",
           "ancestry": "ancestor",
-          "assessment": "ANCESTRY_INCLUDED_NOT_SAME_BLOB"
+          "assessment": "COMMIT_ANCESTRY_INCLUDED_AND_PROVIDER_SOURCE_AND_TEST_BLOBS_MATCH"
         },
         {
           "pr": 147,
           "ref": "cffca134e19731125a8b14540137e7118759d951",
           "blob": "64893ba9c2fc8161a98c3a1fd77bb345eba81da2",
           "ancestry": "ancestor",
-          "assessment": "ANCESTRY_INCLUDED_NOT_SAME_BLOB"
+          "assessment": "COMMIT_ANCESTRY_INCLUDED_AND_PROVIDER_SOURCE_AND_TEST_BLOBS_MATCH"
         },
         {
           "pr": 135,
           "ref": "7e10ca4500ff5b3f3b9e186839790617e6e5bfe6",
           "blob": "6b786db5b0fad0310eb2fd10aae9252080ef3242",
           "ancestry": "diverged",
-          "assessment": "UNRESOLVED_PATCH_DIVERGENCE"
+          "assessment": "SEMANTIC_PATCH_COVERED_AND_SOURCE_TEST_BLOB_MATCHES; original main.py older than cumulative #152"
         }
       ]
     },
@@ -98,8 +98,8 @@
     },
     {
       "path": "core/src/aura_core/application/episodic_memory.py",
-      "unified_blob_sha": "41afb22a3e4177d6d08efc29e62e2dfbda257229",
-      "canonical": "PR #117 exact file",
+      "unified_blob_sha": "7bb9e321b9369c910567d315272ac9e8aeebc447",
+      "canonical": "PR #66 scoped conflict-detection method integrated with PR #117 baseline",
       "variants": [
         {
           "pr": 117,
@@ -120,14 +120,14 @@
           "ref": "028a293616d77cbed810dd20e8a3626e0285f7bf",
           "blob": "7bb9e321b9369c910567d315272ac9e8aeebc447",
           "ancestry": "diverged",
-          "assessment": "UNRESOLVED_PATCH_DIVERGENCE"
+          "assessment": "EXACT_FILE_MATCH_AFTER_SURGICAL_CHERRY_PICK"
         }
       ]
     },
     {
       "path": "core/src/aura_core/memory/hierarchical_memory.py",
-      "unified_blob_sha": "35002bd26cdecb45fb5394c7a3da3a1bd012701b",
-      "canonical": "PR #157 exact file",
+      "unified_blob_sha": "7cf1f82b34f0f33f54eafab0f59d1b9ffe137fa0",
+      "canonical": "PR #68 scoped task-forget method integrated with canonical baseline",
       "variants": [
         {
           "pr": 157,
@@ -141,17 +141,67 @@
           "ref": "8aef48301a6ded514a10b055c4074e38b247a5e2",
           "blob": "7cf1f82b34f0f33f54eafab0f59d1b9ffe137fa0",
           "ancestry": "diverged",
-          "assessment": "UNRESOLVED_PATCH_DIVERGENCE"
+          "assessment": "EXACT_FILE_MATCH_AFTER_SURGICAL_CHERRY_PICK"
         }
       ]
     }
   ],
   "exact_coverage": "Five sensitive shared-path chosen blobs checked against selected PR snapshots; not a complete PR #66–#157 tree merge.",
   "remaining": [
-    "Diverged shared path commits PR #135 / #66 / #68 require manual three-way analysis and acceptance tests.",
-    "PR #118 file matches but branch tree diverges: cannot assert all changes merged.",
-    "Canonical PR #150/#151/#152 line is cumulative, but this is not proof of all unlisted PR-specific tests and security semantics.",
-    "PR #64 F2.7 security remains sealed, untouched and outside this review.",
-    "No release Owner signoff or original PR merge performed."
+    "Other overlapping source PRs beyond the five requested (e.g. PR #118 branch divergence) require release/Owner audit; exact matched PermissionEngine blob is not whole-tree equivalent.",
+    "No independent user acceptance, live host F2.7 attestation, PostgreSQL production/retention, genuine human Owner approval or manual merge is claimed.",
+    "Exact-head full CI and final Release Lock must pass after additional Group A code changes."
+  ],
+  "reconciled": [
+    {
+      "pr": 66,
+      "result": "EXACT_FILE_MATCH",
+      "paths": [
+        "core/src/aura_core/application/episodic_memory.py",
+        "core/tests/test_memory_conflict_candidates.py"
+      ],
+      "detail": "find_conflict_candidates integrated; no memory write or implicit Owner correction; CI regression included."
+    },
+    {
+      "pr": 68,
+      "result": "EXACT_FILE_MATCH",
+      "paths": [
+        "core/src/aura_core/memory/hierarchical_memory.py",
+        "core/src/aura_core/application/task_memory.py",
+        "core/tests/test_scoped_task_memory_erasure.py"
+      ],
+      "detail": "forget_task confirmed, principal/task-scoped, in-memory context evicted; caller authorization still external."
+    },
+    {
+      "pr": 135,
+      "result": "ALREADY_SEMANTICALLY_PRESENT",
+      "paths": [
+        "core/src/aura_core/main.py",
+        "core/src/aura_core/tts/offline_voice.py",
+        "core/scripts/piper_tts_mcp.py",
+        "core/tests/test_offline_voice_config.py"
+      ],
+      "detail": "Full main.py blob differs because #152 cumulative; offline_voice_config startup and local STT model path are present. Original voice sources and test bytes exactly match #135."
+    },
+    {
+      "pr": 146,
+      "result": "ANCESTOR_INCLUDED",
+      "paths": [
+        "core/src/aura_core/main.py",
+        "core/src/aura_core/application/live_svg_chart.py",
+        "core/tests/test_live_svg_chart.py"
+      ],
+      "detail": "Opt-in authenticated SVG router registered and closed in cumulative main.py; original provider/test blobs match."
+    },
+    {
+      "pr": 147,
+      "result": "ANCESTOR_INCLUDED",
+      "paths": [
+        "core/src/aura_core/main.py",
+        "core/src/aura_core/application/live_task_panel.py",
+        "core/tests/test_live_task_panel.py"
+      ],
+      "detail": "Opt-in task router and close hook present in cumulative main.py; original provider/test blobs match."
+    }
   ]
 }
