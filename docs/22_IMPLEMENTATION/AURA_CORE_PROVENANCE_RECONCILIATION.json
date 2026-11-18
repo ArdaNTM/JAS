@@ -1,7 +1,7 @@
 {
   "schema": "aura.core-reconciliation.v1",
   "source_pr": "https://github.com/ArdaNTM/JAS/pull/158",
-  "unified_snapshot": "0eccc2195401d29b91b5cc14a115f86c7341ef24",
+  "unified_snapshot": "fb7c9a4f3c892972fc6450cc1b7d3412257dc055",
   "baseline_main": "b1ffe6f534ced0d329dae273a4b949a634cb8bfa",
   "statement": "Canonical Git blobs and source-specific regression evidence verified for five selected PR differences; PR #66/#68 missing modules merged exactly as their respective source branch blobs. PR #135/#146/#147 endpoints, providers and tests already existed under cumulative PR #152. This is NOT a semantic sign-off for every open PR.",
   "files": [
@@ -150,7 +150,7 @@
   "remaining": [
     "Other overlapping source PRs beyond the five requested (e.g. PR #118 branch divergence) require release/Owner audit; exact matched PermissionEngine blob is not whole-tree equivalent.",
     "No independent user acceptance, live host F2.7 attestation, PostgreSQL production/retention, genuine human Owner approval or manual merge is claimed.",
-    "Exact-head full CI and final Release Lock must pass after additional Group A code changes."
+    "Exact-head software CI and release lock PASS at fb7c9a4; pending independent security/Owner acceptance and verified feature-specific remaining software flows."
   ],
   "reconciled": [
     {
@@ -203,5 +203,30 @@
       ],
       "detail": "Opt-in task router and close hook present in cumulative main.py; original provider/test blobs match."
     }
-  ]
+  ],
+  "ci_verification": {
+    "head_sha": "fb7c9a4f3c892972fc6450cc1b7d3412257dc055",
+    "core_assurance": {
+      "run_id": 44252417059,
+      "result": "PASS",
+      "tests": "1494 passed; 10 skipped"
+    },
+    "remote_persistence": {
+      "run_id": 44252416999,
+      "result": "PASS",
+      "tests": "8 passed on PostgreSQL/MinIO CI services"
+    },
+    "unified_acceptance": {
+      "run_id": 44252416980,
+      "result": "PASS",
+      "tests": "10 cross-module + 8 governance passed",
+      "feature_eligibility": "A=9, B1=20, B2=88, COMPLETED=0, ELIGIBLE=0"
+    },
+    "remaining_workflows": "Memory/Auth E2E, Pack3, Pack4 and Windows launcher all PASS, 7/7",
+    "source_lock": {
+      "source_count": 312,
+      "release_digest": "sha256:5219a9295db66fb910ed2e39eeb77d13241dd8b67eb723f5cdf4dd74985056d0"
+    },
+    "acceptance_limits": "No independent PR review approvals; no real Owner enrollment or production security attestation. CI does not establish feature COMPLETED."
+  }
 }
