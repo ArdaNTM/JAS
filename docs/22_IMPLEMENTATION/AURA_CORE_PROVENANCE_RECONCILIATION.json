@@ -150,7 +150,7 @@
   "remaining": [
     "Other overlapping source PRs beyond the five requested (e.g. PR #118 branch divergence) require release/Owner audit; exact matched PermissionEngine blob is not whole-tree equivalent.",
     "No independent user acceptance, live host F2.7 attestation, PostgreSQL production/retention, genuine human Owner approval or manual merge is claimed.",
-    "Exact-head software CI and release lock PASS at fb7c9a4; pending independent security/Owner acceptance and verified feature-specific remaining software flows."
+    "Exact-head software CI and 312-source release lock PASS at d04e5ae. Feature-level Owner/security, real provider and full capability acceptance still not verified."
   ],
   "reconciled": [
     {
@@ -228,5 +228,49 @@
       "release_digest": "sha256:5219a9295db66fb910ed2e39eeb77d13241dd8b67eb723f5cdf4dd74985056d0"
     },
     "acceptance_limits": "No independent PR review approvals; no real Owner enrollment or production security attestation. CI does not establish feature COMPLETED."
+  },
+  "B1_reconciled_shared_blobs": [
+    {
+      "pr": 69,
+      "feature_id": 36,
+      "path": "core/src/aura_core/research/mcp_source.py",
+      "previous_blob": "e0762fdce759d2bad9e1195d47c7529d7694bba1",
+      "current_blob": "258ddbd85a8890706d6eacc47935936b3522cd6e",
+      "review": "Exact original PR file, baseline blob equality confirmed, bounded search_with_evidence via authorized Gateway"
+    },
+    {
+      "pr": 78,
+      "feature_id": 37,
+      "path": "core/src/aura_core/application/cross_capability_reasoning.py",
+      "previous_blob": "5257e577b97ee03d1b6e8bbc8d352ea2119853a5",
+      "current_blob": "483c17fd3586ccf857f177b25d35ff84dfb6b4a3",
+      "review": "Exact original PR file, baseline blob equality confirmed, strict JSON data, reject arbitrary __str__, no false source fact verification"
+    },
+    {
+      "pr": 79,
+      "feature_id": 12,
+      "path": "core/src/aura_core/application/jarvis_intelligence.py",
+      "previous_blob": "d1a3fa934a25bd674e83cba419e47902de8d703f",
+      "current_blob": "5a10e8d763cf4754600b386e5d63fe43dfbc3f80",
+      "review": "Exact original PR file, baseline blob equality confirmed, bounded repeated-failure review, no automatic strategy execution"
+    },
+    {
+      "pr": 86,
+      "feature_id": 102,
+      "path": "core/src/aura_core/application/context_synthesizer.py",
+      "previous_blob": "7749db2b79585c93b1e15030cd38c7f65d8442ad",
+      "current_blob": "58a85bea9086108e5d2f47b7e52af0de553e44f9",
+      "review": "Exact original PR file, baseline blob equality confirmed, bound hostile memory enumeration and never stringify foreign objects"
+    }
+  ],
+  "B1_code_CI": {
+    "exact_head": "d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b",
+    "all_seven_workflows": "PASS",
+    "core": "1688 passed, 10 skipped",
+    "remote": "8 passed on real PostgreSQL and MinIO GitHub services",
+    "unified": "10 focused E2E + 9 acceptance/negative tests passed",
+    "release_digest": "sha256:b74d03516869af538439a382d281d09c562e428cc30d201a19343502366f8dab",
+    "acceptance_audit": "A=9 B1=20 B2=88 COMPLETED=0 ELIGIBLE=0",
+    "limitations": "No independent PR approvals, feature-level Owner signoff, or complete per-feature functional acceptance"
   }
 }
