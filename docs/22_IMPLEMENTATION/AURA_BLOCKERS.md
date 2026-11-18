@@ -193,3 +193,9 @@ Green PR #144 covers #112–#143, not open PRs #64–#111 including sealed F2.7 
 - Server-side SVG endpoint is real and exact-head CI green, but the Electron transparent multi-monitor visual shell, Windows accessibility, GPU performance, long-session behaviour and physical Owner user acceptance were not measured.
 - Only in-process EventBus source attribution exists; telemetry must remain REDACTED_UNTRUSTED_TELEMETRY. HTTP bearer plus explicit MCP Gateway authorization is required for every render. A preconfigured Owner token/policy is not proof of production enrollment.
 - PR #146 is stacked on #144; current 261-source Final Lock does not cover #145 and older unmerged #64–#111. Do not treat passing branch-specific CI as complete global integration.
+
+## PR #147 #97 dynamic task panel acceptance limits
+
+- Core queries are real and SQL-bound by principal and limited to 64. EventBus notifications do not authorize reads or prove changes; persisted task state is authoritative.
+- No native Electron HUD, cross-process authenticated task push, screen-reader test, Windows render performance or Owner field acceptance. CI PASS is not physical acceptance.
+- #147 stacked on #146/#144; earlier #64–#111 and #145 are not part of the 262-source branch lock.

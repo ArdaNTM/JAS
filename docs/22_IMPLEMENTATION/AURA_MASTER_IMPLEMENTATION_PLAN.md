@@ -215,3 +215,9 @@ PR #146 exact HEAD `32a2fadf2a84015d5cfc0f3e16b98e3a54ea9063`: [Core 44204212614
 **Ledger after evidence:** 117 features: **95 TESTING, 20 NOT_STARTED, 2 RESEARCHING, 0 COMPLETED**. Pinned main unchanged, no automatic merge.
 
 Next review groups by technical dependencies: read-only application/terminal discovery (#26/#27), bounded maintenance/workflow admission (#31/#33), authorized remote computer controls (#32), agent development/verification (#45/#51/#55/#60/#61), HAL robotics/laboratory (#75/#87–#91), desktop visualization (#94/#96/#97), game-engine integration (#113). Native device, agent execution and robotics must not inherit permission from visualization or model evidence.
+
+## 2026-11-18 — #97 live task panel PARTIAL, 19 still NOT_STARTED
+
+Draft PR #147 (#97) exact HEAD `cffca134e19731125a8b14540137e7118759d951`: [Core Assurance run 44216018036](https://github.com/ArdaNTM/JAS/actions/runs/44216018036) **1168 passed, 8 skipped**, Final Release Lock **262 source files PASS**, `sha256:262b06bd84883ee5ffc8626a38b0e1214ce43f26a3b6c3e1f7a2730f6aadfe15`; [Remote Persistence run 44216018010](https://github.com/ArdaNTM/JAS/actions/runs/44216018010) **PASS**. Stacked on Draft PR #146. Real SQLite/PostgreSQL bounded task queries and EventBus task change hints through Core registries, PermissionEngine, MCP Gateway, authenticated FastAPI JSON with negative tests. No automatic task action, raw goals/results or policy grants. No native Electron HUD, independent event provenance, real Owner acceptance or full earlier PR integration. #97 TESTING/PARTIAL_VERIFIED only. Ledger: **19 NOT_STARTED / 96 TESTING / 2 RESEARCHING / 0 COMPLETED**.
+
+Continue remaining work in dependency groups: controlled OS read/execute (#26/#27/#31/#32/#33); code/agent sandbox and independent review (#45/#51/#55/#60/#61); multimodal voice/HUD (#91/#94/#96); laboratory/sensors/robotics (#75/#87/#88/#89/#90); game-engine workflows (#113). Require real host/Owner acceptance.
