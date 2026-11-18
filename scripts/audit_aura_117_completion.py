@@ -30,9 +30,9 @@ def read_json(path: Path) -> dict:
 
 
 def eligible_for_completion(record: dict) -> bool:
-    """Necessary evidence metadata conditions, not an independent attestation."""
+    """A/B1 eligibility only when all existing validation gates pass; never attests Owner approval."""
     return (
-        record.get("id") in SOFTWARE_IDS
+        record.get("id") in SOFTWARE_IDS | B1_IDS
         and record.get("assessment") == "VERIFIED"
         and record.get("acceptance") == "PASS"
         and record.get("security_review") == "PASS"
