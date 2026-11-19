@@ -5,6 +5,12 @@ import sys
 from pathlib import Path
 
 import pytest
+
+pytestmark = pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="Requires separately attested Linux/Ubuntu Unix broker",
+)
+
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 

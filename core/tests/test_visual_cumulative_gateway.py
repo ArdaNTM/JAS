@@ -11,6 +11,7 @@ import asyncio
 import base64
 import hashlib
 import json
+import os
 import struct
 import sys
 import zlib
@@ -44,6 +45,7 @@ from aura_core.application.visual_task_verification import (
 
 _MP4 = b"\x00\x00\x00\x18ftypisom" + b"\x00" * 40
 _JPEG = b"\xff\xd8\xff" + b"x" * 32 + b"\xff\xd9"
+TEST_FFMPEG = r"C:\AURA_TEST_BIN\ffmpeg.exe" if os.name == "nt" else "/usr/bin/ffmpeg"
 
 
 def _png(red: int) -> bytes:
@@ -89,7 +91,7 @@ def test_all_camera_video_image_memory_and_visual_verification_share_real_kernel
             calls.append(("ffmpeg", hashlib.sha256(content).hexdigest()))
             return _JPEG, b""
     async def fake_ffmpeg(*args, **kwargs):
-        assert args[0] == "/usr/bin/ffmpeg"
+        assert args[0] == TEST_FFMPEG
         assert "-protocol_whitelist" in args
         return FFmpeg()
     monkeypatch.setattr(video_module.asyncio, "create_subprocess_exec", fake_ffmpeg)
@@ -103,7 +105,8 @@ def test_all_camera_video_image_memory_and_visual_verification_share_real_kernel
     store = SQLiteVisualMemoryStore(tmp_path / "private-vision.sqlite3")
     pixel = LocalPixelChangeComparator()
     register_local_ollama_vision(services=services, providers=providers, capabilities=caps)
-    register_local_ffmpeg_video(services=services, providers=providers, capabilities=caps)
+    register_local_ffmpeg_video(services=services, providers=providers, capabilities=caps,
+                                executable=TEST_FFMPEG)
     register_local_opencv_camera(services=services, providers=providers,
                                  capabilities=caps, consent_lease=lease)
     register_visual_memory_capabilities(store=store, services=services, capabilities=caps)

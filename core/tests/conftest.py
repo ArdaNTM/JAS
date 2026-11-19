@@ -13,6 +13,13 @@ from pathlib import Path
 import pytest
 
 
+def pytest_make_parametrize_id(config: pytest.Config, val: object, argname: str) -> str | None:
+    """Bound automatic raw-payload IDs before pytest writes PYTEST_CURRENT_TEST."""
+    if isinstance(val, (bytes, bytearray, str, memoryview)) and len(val) > 80:
+        return f"{type(val).__name__}[len={len(val)}]"
+    return None
+
+
 @pytest.fixture
 def owner_private_dir(tmp_path: Path) -> Path:
     destination = tmp_path / "isolated-owner-state"
