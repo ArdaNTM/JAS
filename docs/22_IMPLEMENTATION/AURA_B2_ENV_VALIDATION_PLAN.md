@@ -60,3 +60,23 @@ The **one-command assembler** verifies those independently obtained inputs befor
 ```
 
 Then run the unchanged full runner with both resulting files and the actual Ubuntu VM SSH address. Failure/missing physical signer yields **BLOCKED** and no new trust file. Receipt validation only confirms signatures, freshness and metric thresholds **conditional on an independently audited physical collector**; it never creates an Owner MCP approval, VM security attestation or a simulation exemption.
+
+
+## Software-only bounded v1 completion review candidates (not yet COMPLETED)
+
+Exact combined-source CI on `06cdec4f4d9caa696c9277ffd74014a1624e7288`: Core Assurance **2572 passed / 14 skipped**, Unified Acceptance PASS, 441-source release lock PASS. Among the 15 features covered by the 13 restored tests, the following **12 are candidates for an explicit future narrow-v1 Owner/security review**:
+
+| Candidate IDs | Proven narrow tested behavior | Further acceptance not proven by CI |
+|---|---|---|
+| 3, 4 | Strict persona/initiative input validation | Persistent preference UI, notifications and actual speech UX |
+| 15 | Safe spoken-text normalization | Real acoustic latency/interrupt measurements |
+| 29 | Best-effort disk advisory metrics | Real host disk observation, frontend, thermal/GPU |
+| 30 | Read-only aggregate diagnostic findings | Signed/real host diagnostics, approved remediation |
+| 48, 56 | Bounded descriptive runtime summary | Real task quality and longitudinal baselines |
+| 63 | Scoped Swarm event timing estimates | Independent event authenticity and real provider timing |
+| 103 | Deny-by-default legacy WebSocket shared secret | Production identity, device-bound proof, route acceptance |
+| 105 | Offline backup integrity envelope | Encrypted durable storage, governed restore and recovery drill |
+| 107 | HMAC audit checkpoint metadata | Independent signer/key custody and durable verifier deployment |
+| 115 | Scoped SQLite vocabulary review | UI, authenticated storage, erasure/backup lifecycle |
+
+**This is a review queue, not `ready_for_completion=true`.** All remain `TESTING`, with their original `missing_components` and `known_limitations`. Before any bounded v1 `COMPLETED`, independently verify each exact `technical_goal`, real deny-path tests, signed Owner scope approval, security/license review, and harmonized acceptance validator. #18 (live Kokoro model/audio), #100 (real Owner approval lifecycle) and #101 (Docker isolation) are **not** software-only candidates.
