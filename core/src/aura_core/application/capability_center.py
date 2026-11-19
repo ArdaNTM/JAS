@@ -117,6 +117,19 @@ class FeatureCatalog:
             capabilities.update_health(cap_id, service.service_id,
                                        available=False, healthy=False)
 
+    @staticmethod
+    def _safe_category(category: object) -> tuple[str, bool]:
+        """Accept enum or legacy string metadata without granting execution.
+
+        Dataclass annotations do not coerce runtime values. A malformed
+        category is non-executable in the UI, while the MCP Gateway and
+        PermissionEngine remain the sole dispatch authorization boundary.
+        """
+        try:
+            return CapabilityCategory(category).value, True
+        except (ValueError, TypeError):
+            return "unknown", False
+
     def describe(self, kernel: Any) -> dict[str, Any]:
         cap_registry = getattr(kernel, "capability_registry", None)
         provider_registry = getattr(kernel, "provider_registry", None)
@@ -132,8 +145,9 @@ class FeatureCatalog:
                 provider = provider_registry.get(definition.provider_id)
             except KeyError:
                 continue
+            category, valid_category = self._safe_category(definition.category)
             available = (
-                record.available and record.healthy
+                valid_category and record.available and record.healthy
                 and provider.available and provider.healthy
             )
             registered.add(definition.capability_id)
@@ -142,7 +156,7 @@ class FeatureCatalog:
                 "tool_name": definition.tool_name,
                 "provider_id": definition.provider_id,
                 "risk_level": definition.risk_level,
-                "category": definition.category.value,
+                "category": category,
                 "gateway_registered": bool(available),
                 # A live authorization check is still required at dispatch.
                 "authorization": "required_at_dispatch",
