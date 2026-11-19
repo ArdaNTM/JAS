@@ -415,3 +415,33 @@ Broader unimplemented full-product gates preserved verbatim under
 `known_limitations`. B1 #39 PDF/OCR, B1 #35 live web provider,
 #47 compiler certification and #73 scientific/publisher authenticity
 are *not* claimed implemented. 19 COMPLETED / 98 TESTING.
+
+
+## 2026-11-19 — B1 remaining ten v1 completions and B2 safe readiness tracks
+
+Authoritative owner-scoped bounded v1 `technical_goal` acceptance: Group A
+9/9, Group B1 **20/20** (last ten #42,#43,#52,#53,#62,#65,#66,#76,#102,#112);
+Group B2 **88 TESTING**. All full-product gaps remain described explicitly
+as *unimplemented v2* in individual `known_limitations`, not falsely
+claimed shipped.
+
+[PR #158](https://github.com/ArdaNTM/JAS/pull/158) source head
+`14c97481cbf9ebd077ebe42e0efcce29700959e8`, Core Assurance
+[44427271612](https://github.com/ArdaNTM/JAS/actions/runs/44427271612)
+**2264 PASS/14 SKIP**, Unified Acceptance
+[44427271635](https://github.com/ArdaNTM/JAS/actions/runs/44427271635)
+**10 E2E+11 governance PASS**, exact validator:
+`A=9 B1=20 B2=88 COMPLETED=29 ELIGIBLE=29 B2-Owner=17 B2-Env=71`.
+440-source Release Lock **PASS**
+`sha256:c7224a6685a1461bb30b33d2d3303f0a2951e066c580de6b8940c19caf61c768`.
+
+The old `COMPLETED=9 ELIGIBLE=19` mismatch resulted from the first-party
+validator's printed `COMPLETED` field counting **Group A only**, while
+`ELIGIBLE` already counted both Group A and B1. The amended validator prints
+`total_completed` while separately retaining `group_A_complete`.
+The 88 B2 items remain `subgroup=B2`; the explicit additional
+`b2_acceptance_track` splits into **B2-Owner 17 / B2-Env 71**
+without changing governance cardinalities or granting permission.
+Post-merge check tool is read-only and requires independent Owner/hardware
+acceptance; of 73 distinct tracked B2 test paths, only 51 are presently
+available, so 22 missing must be reported BLOCKED, not PASS.
