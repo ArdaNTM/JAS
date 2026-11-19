@@ -5,7 +5,7 @@
   "generated_at": "2026-11-18T23:18:22.993Z",
   "git_commit": "0136e82d16e80a824db9679618f490a81b29ca77",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:c7224a6685a1461bb30b33d2d3303f0a2951e066c580de6b8940c19caf61c768",
+  "release_digest": "sha256:2e299b1d6c095bb2625da1ba06648a7f82c73b868da81ac2f3de31c98704eca8",
   "file_count": 440,
   "files": [
     {
@@ -674,7 +674,7 @@
     },
     {
       "path": "core/src/aura_core/application/swarm_orchestration.py",
-      "sha256": "5670f0a3241c75312f547235415d204471c3a87b9762721749aa867ba1871792"
+      "sha256": "644c4f5c393c2d380fbae2585936058666e3641ec7c824b92faa7c787e03396c"
     },
     {
       "path": "core/src/aura_core/application/system_telemetry.py",
