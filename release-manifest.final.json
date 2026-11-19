@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-19T03:50:41.079Z",
-  "git_commit": "d93b33c6cb22abcf55a238a1475c2f0bf0ecb5a2",
+  "generated_at": "2026-11-19T03:55:32.194Z",
+  "git_commit": "01ab7ce8f1a790800aed24cc51237177b960a0b0",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:51da70c138e3d75c94a40756e0ad439d7926b702f9090903ed7ae7829c8e00be",
+  "release_digest": "sha256:c12f45147ca243cef2cb2ed1ca1fa7750c553ad37aa49d643bcfc2213c1399ce",
   "file_count": 441,
   "files": [
     {
@@ -246,7 +246,7 @@
     },
     {
       "path": "core/scripts/kokoro_tts_mcp.py",
-      "sha256": "fad3a723f6e7560fb38d8609bf343a4f09138948a982be1e4cee68c234152abf"
+      "sha256": "f757e40d73ed74a8cdbc698895a05bfcb2b2364be97d2df4209c18f30f76bc5d"
     },
     {
       "path": "core/scripts/osworld_gateway_support.py",
@@ -362,7 +362,7 @@
     },
     {
       "path": "core/src/aura_core/application/approval_api.py",
-      "sha256": "5749e7e4113723099d688a77a0bd45a387e55bea4ad98c1fad84cb9647f26cb7"
+      "sha256": "e325fee6f6133be9550a1f804a2cc5008fe5178ac17193e2eef6a9325cc5d049"
     },
     {
       "path": "core/src/aura_core/application/async_work.py",
@@ -562,7 +562,7 @@
     },
     {
       "path": "core/src/aura_core/application/persona_policy.py",
-      "sha256": "a4e234c1330d627c0719f1a6016b856827e486a0e7e3c6a7ecea9492f24ab125"
+      "sha256": "5606546d3c646a84006d70ec8c12f882016e588b54b5f6faf3194595a27f066a"
     },
     {
       "path": "core/src/aura_core/application/physics_simulation.py",
@@ -626,7 +626,7 @@
     },
     {
       "path": "core/src/aura_core/application/sandbox_runner.py",
-      "sha256": "f97440ec7b3acdbb17438e48849a1b86979220ea24a2a5d5c03dc94ec9a59c48"
+      "sha256": "a597c618e65940d069279301dd057e6cbda7acc0c40dec6b5b9a66a399ed92aa"
     },
     {
       "path": "core/src/aura_core/application/self_tool_synthesis.py",
@@ -682,7 +682,7 @@
     },
     {
       "path": "core/src/aura_core/application/system_telemetry.py",
-      "sha256": "c82f49330890aef9228d1c1c3e481155cffbaa457b6fa3bcf9224008161c2667"
+      "sha256": "0bd9090e24d4ca76a4458fe275874c4d75a27ff68da8ce7e9e9d2c208ccf0505"
     },
     {
       "path": "core/src/aura_core/application/task_memory.py",
@@ -1602,7 +1602,7 @@
     },
     {
       "path": "core/src/aura_core/security/auth.py",
-      "sha256": "d0fd842a6b59b99d938375d5722539fe0dd62c233f70e183e6b2f5f175226632"
+      "sha256": "d536c1bb564d40e0d357e834fa5364b53466f10467b4b6a62f5cb425b5238e35"
     },
     {
       "path": "core/src/aura_core/security/http_auth.py",
@@ -1662,7 +1662,7 @@
     },
     {
       "path": "core/src/aura_core/tts/text.py",
-      "sha256": "810181da3cf0be2004b91028b218a310e43c34535cdf93f38f268adf04ca6f90"
+      "sha256": "35c5aae1acda6c42c6b20833866ee226b3ceaadc8c0a73920f6a3a2d3c5c113b"
     },
     {
       "path": "core/src/aura_core/voice/__init__.py",
