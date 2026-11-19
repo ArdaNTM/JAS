@@ -38,6 +38,9 @@ def test_117_features_partition_and_pinned_canonical_sources():
         "total_completed": 46,
         "B2_owner": 17,
         "B2_env": 71,
+        "B2_windows_local": 57,
+        "B2_hyperv_docker": 7,
+        "B2_external_hardware": 7,
         "total_verified_ready": 46,
     }
 
