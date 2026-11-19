@@ -6,7 +6,15 @@ from pathlib import Path
 
 import pytest
 
-from scripts import generate_final_lock as lock
+import importlib.util
+
+ROOT = Path(__file__).resolve().parents[2]
+spec = importlib.util.spec_from_file_location(
+    "aura_release_lock_local_inventory", ROOT / "core/scripts/generate_final_lock.py",
+)
+assert spec is not None and spec.loader is not None
+lock = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(lock)
 
 
 def test_release_inventory_excludes_only_untracked_generated_metadata(tmp_path, monkeypatch):
