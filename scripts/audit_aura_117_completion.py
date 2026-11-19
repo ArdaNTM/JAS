@@ -19,6 +19,11 @@ SOFTWARE_IDS = frozenset({2, 5, 40, 44, 47, 59, 67, 73, 111})
 B1_IDS = frozenset({8, 10, 12, 21, 35, 36, 37, 38, 39, 41, 42, 43, 52, 53, 62, 65, 66, 76, 102, 112})
 B2_TRACKS = frozenset({"B2-Owner", "B2-Env"})
 B2_OWNER_IDS = frozenset({34, 46, 50, 58, 61, 64, 68, 70, 71, 72, 74, 75, 108, 109, 110, 114, 117})
+B2_ENV_SOFTWARE_IDS = frozenset({3, 4, 15, 29, 30, 48, 56, 63, 103, 105, 107, 115})
+B2_ENV_SIMULATION_IDS = frozenset({81, 85, 86, 87, 88, 89, 90})
+B2_ENV_ACCEPTED = B2_ENV_SOFTWARE_IDS | B2_ENV_SIMULATION_IDS
+APPROVED_ENV_MAIN_MERGE = "5e51d3f50b53f482e14e3d1d73a375d08e6e9eb7"
+APPROVED_ENV_REGRESSION_HEAD = "7beeb4a7c95e6b571fddeae95ef5b802b624cd8f"
 APPROVED_MAIN_MERGE = "b09ad74c49ebe1d73e2bb79524c8c8006e2ca40f"
 
 
@@ -35,10 +40,19 @@ def read_json(path: Path) -> dict:
 def eligible_for_completion(record: dict) -> bool:
     """Bounded A/B1/B2-Owner eligibility only; never attests live operation."""
     return (
-        record.get("id") in SOFTWARE_IDS | B1_IDS | B2_OWNER_IDS
+        record.get("id") in SOFTWARE_IDS | B1_IDS | B2_OWNER_IDS | B2_ENV_ACCEPTED
         and (record.get("id") not in B2_OWNER_IDS
              or (APPROVED_MAIN_MERGE in record.get("notes", "")
                  and record.get("known_limitations", "").startswith("V2 /")))
+        and (record.get("id") not in B2_ENV_ACCEPTED or (
+            APPROVED_ENV_MAIN_MERGE in record.get("notes", "")
+            and APPROVED_ENV_REGRESSION_HEAD in record.get("notes", "")
+            and record.get("known_limitations", "").startswith("V2 /")
+            and (record.get("id") not in B2_ENV_SIMULATION_IDS
+                 or ("SIMULATION_ONLY" in record.get("notes", "")
+                     and any(term in record.get("technical_goal", "").lower()
+                             for term in ("synthetic", "simulated"))))
+        ))
         and record.get("assessment") == "VERIFIED"
         and record.get("acceptance") == "PASS"
         and record.get("security_review") == "PASS"
@@ -112,6 +126,17 @@ def validate(tracker: dict, groups: dict, provenance: dict, root: Path = ROOT) -
         raise ValueError("B2-Env Docker trust boundary was reclassified")
     if validation_groups["external_hardware_simulation"] != [81, 85, 86, 87, 88, 89, 90]:
         raise ValueError("B2-Env physical trust boundary was reclassified")
+    # Exact Owner-approved bounded B2-Env v1 subcohorts; never infer real hardware.
+    env_acceptance = groups.get("B2_env_acceptance")
+    if not isinstance(env_acceptance, dict) or (
+        env_acceptance.get("software_ids") != sorted(B2_ENV_SOFTWARE_IDS)
+        or env_acceptance.get("simulation_ids") != sorted(B2_ENV_SIMULATION_IDS)
+        or env_acceptance.get("remaining_ids") != sorted(set(env_ids) - B2_ENV_ACCEPTED)
+        or env_acceptance.get("owner_main_merge") != APPROVED_ENV_MAIN_MERGE
+        or env_acceptance.get("merged_ci_head") != APPROVED_ENV_REGRESSION_HEAD
+        or "NO_PHYSICAL_CERTIFICATION" not in env_acceptance.get("simulation_policy", "")
+    ):
+        raise ValueError("B2-Env Owner v1 acceptance scope/consent mismatch")
     rows = groups.get("records")
     if not isinstance(rows, list) or len(rows) != 117:
         raise ValueError("group records must cover all 117 features")
@@ -126,9 +151,11 @@ def validate(tracker: dict, groups: dict, provenance: dict, root: Path = ROOT) -
             if entry.get("b2_acceptance_track") != expected_track:
                 raise ValueError("B2 readiness/Owner-Env track mismatch")
             if expected_track == "B2-Env":
-                if (entry.get("ready_for_completion") is not False
-                        or record["status"] != "TESTING"):
-                    raise ValueError("B2 readiness: B2-Env must remain fail-closed")
+                accepted_v1 = record["id"] in B2_ENV_ACCEPTED
+                if (entry.get("ready_for_completion") is not accepted_v1
+                        or record["status"] != ("COMPLETED" if accepted_v1 else "TESTING")
+                        or accepted_v1 and not eligible_for_completion(record)):
+                    raise ValueError("B2 readiness: B2-Env v1 status must be evidenced")
             elif (entry.get("ready_for_completion") is not True
                   or record["status"] != "COMPLETED"
                   or not eligible_for_completion(record)):
@@ -171,6 +198,9 @@ def validate(tracker: dict, groups: dict, provenance: dict, root: Path = ROOT) -
         "group_B_testing": sum(f["status"] == "TESTING" for f in features if f["id"] not in SOFTWARE_IDS),
         "total_completed": sum(f["status"] == "COMPLETED" for f in features),
         "B2_owner": len(owner_ids), "B2_env": len(env_ids),
+        "B2_env_software_v1": len(B2_ENV_SOFTWARE_IDS),
+        "B2_env_simulation_v1": len(B2_ENV_SIMULATION_IDS),
+        "B2_env_testing": len(set(env_ids) - B2_ENV_ACCEPTED),
         "B2_windows_local": len(validation_groups["windows_local"]),
         "B2_hyperv_docker": len(validation_groups["hyperv_docker"]),
         "B2_external_hardware": len(validation_groups["external_hardware_simulation"]),

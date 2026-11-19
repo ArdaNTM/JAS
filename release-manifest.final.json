@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-19T03:55:32.194Z",
-  "git_commit": "01ab7ce8f1a790800aed24cc51237177b960a0b0",
+  "generated_at": "2026-11-19T04:21:28.610Z",
+  "git_commit": "5e51d3f50b53f482e14e3d1d73a375d08e6e9eb7",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:c12f45147ca243cef2cb2ed1ca1fa7750c553ad37aa49d643bcfc2213c1399ce",
+  "release_digest": "sha256:6e7cf71a0ae5254b084b25fbc79bc964bd886f27d994e0d4a1bd24e81e408007",
   "file_count": 441,
   "files": [
     {
@@ -230,7 +230,7 @@
     },
     {
       "path": "core/scripts/generate_final_lock.py",
-      "sha256": "329172837eae6c9f86374d3d9e3ba50c0748d2db2eb24f09a225f4ff378c9d70"
+      "sha256": "236151daf2b0bbb3fef94623b6ee7c0cd3bbb5ef1cd27c433b69c4a77ffb28f0"
     },
     {
       "path": "core/scripts/hardware_stage_c_acceptance.py",
@@ -290,7 +290,7 @@
     },
     {
       "path": "core/scripts/verify_final_lock.py",
-      "sha256": "b4e278a5129ec3e7443dce27d60cbc9d7ddd6660a553f6db7358347b00cf4dee"
+      "sha256": "3e87ad380a37c86dc4635ea3355c4217b0f7318bb60a1aa5badc6b5ee4a623b1"
     },
     {
       "path": "core/scripts/verify_physical_hardware.py",

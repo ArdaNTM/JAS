@@ -21,3 +21,25 @@ The single command verifies the 117-feature ledger and canonical source pins, tr
 **Trust limits:** A TCP port check does not authenticate Ubuntu, the `aura-transport` principal or a root-owned broker helper; Docker availability does not prove sandbox isolation; `Get-VM Running` is not an F2.7 signed attestation. Real OSWorld-V2 execution requires the separately governed `core/scripts/run_osworld_v2_live.py` admission gates with signed network isolation and a fresh Owner approval. Do **not** use `--privileged`, bypass MCP Gateway, expose `docker.sock` to `aura-transport`, or change PR #64's sealed contracts. Physical microphone, Windows Hello, display, camera and emergency stop must be witnessed and signed separately. Use `core/scripts/hardware_stage_c_acceptance.py` for review items; only `core/scripts/verify_physical_hardware.py` with independently signed receipts provides cryptographic evidence.
 
 **Expected ledger before B2-Env live acceptance:** `COMPLETED=46 ELIGIBLE=46 TESTING=71` (A 9, B1 20, B2-Owner 17; B2-Env 71 TESTING). The new validator refuses tampered B2 labels, contradictory readiness flags, overlap or missing IDs.
+
+
+## 2026-11-19 — Owner-approved bounded v1, exact new main 5e51d3f
+
+**Signed-off in chat by repo Owner for software/simulation *scope*, not physical lab evidence.**
+
+- B2-Env software-v1 accepted **12**: `3,4,15,29,30,48,56,63,103,105,107,115` — only frozen offline `technical_goal`; actual live UI, model, scheduler, cryptographic custody and production identity require separate v2 acceptance.
+- B2-Env hardware-exception simulation-v1 accepted **7**: `81,85,86,87,88,89,90`. These test artificial frames, inventory/state samples or simulated MQTT transport/attestations in scoped Core paths. They **cannot** verify a physical depth camera, robot motion/estop, homeowner bridge, independently provisioned sensor, or certified safety interlock. Full-product blockers were preserved verbatim in `known_limitations`.
+- B2-Env remaining **52 TESTING**: `windows_local` **45** and `hyperv_docker` **7**. Group indices remain the frozen 57/7/7 partition to preserve original geographic acceptance scope; `B2_env_acceptance` separately records 12/7 signed-off narrow v1 and 52 outstanding.
+- Overall A=9, B1=20, B2-Owner=17, B2-Env accepted-v1=19 => **COMPLETED=65 ELIGIBLE=65 TESTING=52**. Under no circumstances is simulated MQTT or an unsigned pytest JSON file a real hardware certificate or a Gateway tool-authorization token.
+- Owner-merged integration evidence: PR #159 to `main` as `5e51d3f50b53f482e14e3d1d73a375d08e6e9eb7`, 2572 Core PASS/14 SKIP, 13/13 GitHub workflows PASS on source head `7beeb4a7c95e6b571fddeae95ef5b802b624cd8f`; new PR must independently pass current CI before merge.
+
+### One command: real pytest execution, **unsigned software-only** JSON report
+
+After Owner manually merges this follow-up PR and updates `main`:
+
+```powershell
+cd D:\AURA\JAS
+& ".\core\.venv\Scripts\python.exe" ".\core\scripts\b2_postmerge_check.py" --repo-root "." --tests-only --run-pytest --evidence-out "D:\AURA\Trust\b2-env-tests.json"
+```
+
+This runs the **remaining 52 features' deduplicated 50 focused tests** with `pytest -q --tb=short`, audits the 117-feature source pins and canonical release manifest, and atomically writes SHA-256 test-file digests, exact Git HEAD, pytest exit code/summary and explicit `hardware_verified=false` into an **unsigned** JSON record outside the repository. A failed test or failed source/ledger lock gives `BLOCKED`. To narrow tests: add `--group windows_local` (45 features) or `--group hyperv_docker` (7). These are **software regression tests only**; real Windows session, Ubuntu broker and physical hardware acceptance still require existing independently signed security receipts and separate Owner acceptance.
