@@ -55,6 +55,14 @@ def main() -> int:
             or len(locked_paths) != len(expected_paths)
             or manifest.get("file_count") != len(expected_paths)):
         print("FAIL: release lock inventory is incomplete or contains stale entries")
+        extras = sorted(expected_paths - set(locked_paths))
+        stale = sorted(set(locked_paths) - expected_paths)
+        print(f" tracked_tree={len(expected_paths)} manifest={len(locked_paths)} "
+              f"unlocked={len(extras)} stale={len(stale)}")
+        for name in extras[:12]:
+            print(" unlocked: " + name)
+        for name in stale[:12]:
+            print(" stale: " + name)
         return 1
 
     entries: list[tuple[str, str]] = []

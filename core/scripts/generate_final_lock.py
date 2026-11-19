@@ -18,6 +18,9 @@ EXCLUDED_PARTS = {
     "node_modules",
     "dist",
     ".aura-backup",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".tox",
 }
 
 
@@ -40,7 +43,7 @@ def included(path: Path) -> bool:
     if any(part in EXCLUDED_PARTS for part in path.parts):
         return False
 
-    if path.name.endswith(".aura-backup"):
+    if path.name.endswith(".aura-backup") or any(part.endswith(".egg-info") for part in path.parts):
         return False
 
     if path.name.endswith(".pyc"):
@@ -140,8 +143,33 @@ def files_to_hash() -> list[Path]:
                 if included(path)
             )
 
+    # Local editable installs can create untracked *.egg-info metadata under
+    # core/src. The release inventory is the checked-in source set, not build
+    # output. Never silently accept extra executable files in source roots.
+    try:
+        tracked = {
+            (ROOT / raw.decode("utf-8")).resolve()
+            for raw in subprocess.check_output(
+                ["git", "ls-files", "--cached", "-z"], cwd=ROOT,
+            ).split(bytes([0])) if raw
+        }
+    except (OSError, UnicodeError, subprocess.CalledProcessError) as exc:
+        raise RuntimeError("Cannot establish tracked release source inventory") from exc
+
+    # Block unexpected executable content that could be importable/served even
+    # if it was not committed. Benign generated non-code metadata is ignored.
+    executable_suffixes = {".py", ".pyi", ".pyd", ".so", ".dll",
+                           ".exe", ".js", ".jsx", ".ts", ".tsx", ".cjs", ".mjs"}
+    unexpected = sorted(
+        path.relative_to(ROOT).as_posix() for path in result
+        if path.resolve() not in tracked
+        and path.suffix.lower() in executable_suffixes
+    )
+    if unexpected:
+        raise ValueError("Untracked executable release source refused: "
+                         + ", ".join(unexpected[:12]))
     return sorted(
-        set(result),
+        {path for path in result if path.resolve() in tracked},
         key=lambda path: str(path.relative_to(ROOT)).lower(),
     )
 

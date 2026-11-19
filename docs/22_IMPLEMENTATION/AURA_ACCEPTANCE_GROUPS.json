@@ -159,38 +159,27 @@
       "id": 3,
       "group": "B",
       "name": "Tutarlı kişilik ve karakter",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "User preference persistence",
-        "End-to-end voice persona acceptance",
-        "Independent security review not yet recorded",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Software-only bounded-v1, no production/device acceptance. Owner explicit approval after integrated #159 7beeb4a7c95e6b571fddeae95ef5b802b624cd8f CI PASS and main merge 5e51d3f50b53f482e14e3d1d73a375d08e6e9eb7; reviewed negative security tests; outstanding full scope preserved as known_limitations.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "next_pack_readiness": "BOUNDED_SOFTWARE_V1_ACCEPTED;FULL_PRODUCT_NOT_VERIFIED",
+      "indexed_focused_test_status": "PRESENT_ORIGINAL_TESTS_CI_PASS"
     },
     {
       "id": 4,
       "group": "B",
       "name": "Proaktif asistan",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Durable schedule",
-        "Authenticated user preference UI",
-        "Real notification acceptability study",
-        "Independent security review not yet recorded",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Software-only bounded-v1, no production/device acceptance. Owner explicit approval after integrated #159 7beeb4a7c95e6b571fddeae95ef5b802b624cd8f CI PASS and main merge 5e51d3f50b53f482e14e3d1d73a375d08e6e9eb7; reviewed negative security tests; outstanding full scope preserved as known_limitations.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "next_pack_readiness": "BOUNDED_SOFTWARE_V1_ACCEPTED;FULL_PRODUCT_NOT_VERIFIED",
+      "indexed_focused_test_status": "PRESENT_ORIGINAL_TESTS_CI_PASS"
     },
     {
       "id": 5,
@@ -357,20 +346,14 @@
       "id": 15,
       "group": "B",
       "name": "Düşük gecikmeli konuşma",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Real Piper/Kokoro playback latency acceptance",
-        "Streaming interruption acceptance",
-        "Multilingual acoustic assessment",
-        "Independent security review not yet recorded",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Software-only bounded-v1, no production/device acceptance. Owner explicit approval after integrated #159 7beeb4a7c95e6b571fddeae95ef5b802b624cd8f CI PASS and main merge 5e51d3f50b53f482e14e3d1d73a375d08e6e9eb7; reviewed negative security tests; outstanding full scope preserved as known_limitations.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "next_pack_readiness": "BOUNDED_SOFTWARE_V1_ACCEPTED;FULL_PRODUCT_NOT_VERIFIED",
+      "indexed_focused_test_status": "PRESENT_ORIGINAL_TESTS_CI_PASS"
     },
     {
       "id": 16,
@@ -625,39 +608,27 @@
       "id": 29,
       "group": "B",
       "name": "Bilgisayar sağlığı izleme",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Real host disk telemetry acceptance",
-        "GPU and thermal sensing",
-        "Frontend presentation acceptance",
-        "Independent security review not yet recorded",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Software-only bounded-v1, no production/device acceptance. Owner explicit approval after integrated #159 7beeb4a7c95e6b571fddeae95ef5b802b624cd8f CI PASS and main merge 5e51d3f50b53f482e14e3d1d73a375d08e6e9eb7; reviewed negative security tests; outstanding full scope preserved as known_limitations.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "next_pack_readiness": "BOUNDED_SOFTWARE_V1_ACCEPTED;FULL_PRODUCT_NOT_VERIFIED",
+      "indexed_focused_test_status": "PRESENT_ORIGINAL_TESTS_CI_PASS"
     },
     {
       "id": 30,
       "group": "B",
       "name": "Sistem teşhisi",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Authorized user-facing diagnostics route",
-        "Real host log and hardware diagnostics",
-        "Operator reviewed remediation and E2E evidence",
-        "Independent security review not yet recorded",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Software-only bounded-v1, no production/device acceptance. Owner explicit approval after integrated #159 7beeb4a7c95e6b571fddeae95ef5b802b624cd8f CI PASS and main merge 5e51d3f50b53f482e14e3d1d73a375d08e6e9eb7; reviewed negative security tests; outstanding full scope preserved as known_limitations.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "next_pack_readiness": "BOUNDED_SOFTWARE_V1_ACCEPTED;FULL_PRODUCT_NOT_VERIFIED",
+      "indexed_focused_test_status": "PRESENT_ORIGINAL_TESTS_CI_PASS"
     },
     {
       "id": 31,
@@ -891,20 +862,14 @@
       "id": 48,
       "group": "B",
       "name": "Kendi performansını değerlendirme",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "User-task outcome quality metrics",
-        "Longitudinal benchmark/hardware calibration",
-        "Secure owner-facing evaluation dashboard",
-        "Independent security review not yet recorded",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Software-only bounded-v1, no production/device acceptance. Owner explicit approval after integrated #159 7beeb4a7c95e6b571fddeae95ef5b802b624cd8f CI PASS and main merge 5e51d3f50b53f482e14e3d1d73a375d08e6e9eb7; reviewed negative security tests; outstanding full scope preserved as known_limitations.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "next_pack_readiness": "BOUNDED_SOFTWARE_V1_ACCEPTED;FULL_PRODUCT_NOT_VERIFIED",
+      "indexed_focused_test_status": "PRESENT_ORIGINAL_TESTS_CI_PASS"
     },
     {
       "id": 49,
@@ -1018,20 +983,14 @@
       "id": 56,
       "group": "B",
       "name": "Sürekli değerlendirme",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Authenticated ongoing measurement collection",
-        "Reference baselines and trend histories",
-        "Real hardware and task correctness evaluation",
-        "Independent security review not yet recorded",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Software-only bounded-v1, no production/device acceptance. Owner explicit approval after integrated #159 7beeb4a7c95e6b571fddeae95ef5b802b624cd8f CI PASS and main merge 5e51d3f50b53f482e14e3d1d73a375d08e6e9eb7; reviewed negative security tests; outstanding full scope preserved as known_limitations.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "next_pack_readiness": "BOUNDED_SOFTWARE_V1_ACCEPTED;FULL_PRODUCT_NOT_VERIFIED",
+      "indexed_focused_test_status": "PRESENT_ORIGINAL_TESTS_CI_PASS"
     },
     {
       "id": 57,
@@ -1121,20 +1080,14 @@
       "id": 63,
       "group": "B",
       "name": "Ajan performans ölçümü",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Signed event provenance and clock verification",
-        "Real remote provider and tool-execution timing",
-        "Independent latency/outcome benchmarks and agent selection integration",
-        "Independent security review not yet recorded",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Software-only bounded-v1, no production/device acceptance. Owner explicit approval after integrated #159 7beeb4a7c95e6b571fddeae95ef5b802b624cd8f CI PASS and main merge 5e51d3f50b53f482e14e3d1d73a375d08e6e9eb7; reviewed negative security tests; outstanding full scope preserved as known_limitations.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "next_pack_readiness": "BOUNDED_SOFTWARE_V1_ACCEPTED;FULL_PRODUCT_NOT_VERIFIED",
+      "indexed_focused_test_status": "PRESENT_ORIGINAL_TESTS_CI_PASS"
     },
     {
       "id": 64,
@@ -1373,20 +1326,14 @@
       "id": 81,
       "group": "B",
       "name": "3B algılama",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "No actual authenticated stereo camera hardware, frame synchronization, lens rectification, measured calibration accuracy, independent depth ground truth, field latency or Owner acceptance.",
-        "Computed depth samples remain UNTRUSTED_STEREO_ESTIMATE and safe_for_physical_control=False; no robot/computer action authority.",
-        "No combined PR #145 + all earlier open PRs release-lock or physical deployment acceptance.",
-        "Real camera calibration/rectification and sync",
-        "Ground-truth depth benchmark and measured hardware performance",
-        "Explicit Owner acceptance and combined integration",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Simulation-only software-v1, no real robot/HA/stereo/sensor evidence. Owner explicit approval after integrated #159 7beeb4a7c95e6b571fddeae95ef5b802b624cd8f CI PASS and main merge 5e51d3f50b53f482e14e3d1d73a375d08e6e9eb7; reviewed negative security tests; outstanding full scope preserved as known_limitations.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "next_pack_readiness": "SIMULATION_ONLY_V1_ACCEPTED;PHYSICAL_HARDWARE_NOT_VERIFIED",
+      "indexed_focused_test_status": "PRESENT_ORIGINAL_TESTS_CI_PASS"
     },
     {
       "id": 82,
@@ -1449,101 +1396,79 @@
       "id": 85,
       "group": "B",
       "name": "Akıllı ev entegrasyonu",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "No real Home Assistant/Matter/Zigbee/HomeKit bridge, authenticated household ownership, physical device tests or Owner approval.",
-        "Independent Owner identity/device authentication, signed evidence and production trust boundaries missing.",
-        "Real Owner and Gateway appliance integration and source provenance",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Simulation-only software-v1, no real robot/HA/stereo/sensor evidence. Owner explicit approval after integrated #159 7beeb4a7c95e6b571fddeae95ef5b802b624cd8f CI PASS and main merge 5e51d3f50b53f482e14e3d1d73a375d08e6e9eb7; reviewed negative security tests; outstanding full scope preserved as known_limitations.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "next_pack_readiness": "SIMULATION_ONLY_V1_ACCEPTED;PHYSICAL_HARDWARE_NOT_VERIFIED",
+      "indexed_focused_test_status": "PRESENT_ORIGINAL_TESTS_CI_PASS"
     },
     {
       "id": 86,
       "group": "B",
       "name": "Home Assistant entegrasyonu",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "No live HA integration, authenticated token, actual device sensor trust, physical control/Owner action or end-to-end production acceptance.",
-        "Independent Owner identity/device authentication, signed evidence and production trust boundaries missing.",
-        "Real Owner and Gateway appliance integration and source provenance",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Simulation-only software-v1, no real robot/HA/stereo/sensor evidence. Owner explicit approval after integrated #159 7beeb4a7c95e6b571fddeae95ef5b802b624cd8f CI PASS and main merge 5e51d3f50b53f482e14e3d1d73a375d08e6e9eb7; reviewed negative security tests; outstanding full scope preserved as known_limitations.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "next_pack_readiness": "SIMULATION_ONLY_V1_ACCEPTED;PHYSICAL_HARDWARE_NOT_VERIFIED",
+      "indexed_focused_test_status": "PRESENT_ORIGINAL_TESTS_CI_PASS"
     },
     {
       "id": 87,
       "group": "B",
       "name": "Robot kontrolü",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Real robot, emergency-stop interlock, broker-to-device command acknowledgement, authenticated Owner provisioning and physical safety acceptance not performed.",
-        "MCP provider requires explicit registry/bootstrap enrollment after independent review; MQTT send is only submitted_unverified.",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Simulation-only software-v1, no real robot/HA/stereo/sensor evidence. Owner explicit approval after integrated #159 7beeb4a7c95e6b571fddeae95ef5b802b624cd8f CI PASS and main merge 5e51d3f50b53f482e14e3d1d73a375d08e6e9eb7; reviewed negative security tests; outstanding full scope preserved as known_limitations.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "next_pack_readiness": "SIMULATION_ONLY_V1_ACCEPTED;PHYSICAL_HARDWARE_NOT_VERIFIED",
+      "indexed_focused_test_status": "PRESENT_ORIGINAL_TESTS_CI_PASS"
     },
     {
       "id": 88,
       "group": "B",
       "name": "Sensör entegrasyonu",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "No authenticated hardware sensor, key rotation, broker identity audit or live telemetry acceptance.",
-        "Sensor readings must be independently provisioned, and may not replace certified functional-safety sensors.",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Simulation-only software-v1, no real robot/HA/stereo/sensor evidence. Owner explicit approval after integrated #159 7beeb4a7c95e6b571fddeae95ef5b802b624cd8f CI PASS and main merge 5e51d3f50b53f482e14e3d1d73a375d08e6e9eb7; reviewed negative security tests; outstanding full scope preserved as known_limitations.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "next_pack_readiness": "SIMULATION_ONLY_V1_ACCEPTED;PHYSICAL_HARDWARE_NOT_VERIFIED",
+      "indexed_focused_test_status": "PRESENT_ORIGINAL_TESTS_CI_PASS"
     },
     {
       "id": 89,
       "group": "B",
       "name": "Otomasyon senaryoları",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "No real robot automation, watchdog/stop response, failure recovery or site-specific human safety certification.",
-        "No unattended activation or policy grants; Owner must approve and register devices/capabilities.",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Simulation-only software-v1, no real robot/HA/stereo/sensor evidence. Owner explicit approval after integrated #159 7beeb4a7c95e6b571fddeae95ef5b802b624cd8f CI PASS and main merge 5e51d3f50b53f482e14e3d1d73a375d08e6e9eb7; reviewed negative security tests; outstanding full scope preserved as known_limitations.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "next_pack_readiness": "SIMULATION_ONLY_V1_ACCEPTED;PHYSICAL_HARDWARE_NOT_VERIFIED",
+      "indexed_focused_test_status": "PRESENT_ORIGINAL_TESTS_CI_PASS"
     },
     {
       "id": 90,
       "group": "B",
       "name": "Fiziksel eylem doğrulama",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Sensor-attested state does not constitute certified physical action verification or safety-interlock proof.",
-        "No independent live robot, time synchronization, emergency stop or Owner safety acceptance.",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Simulation-only software-v1, no real robot/HA/stereo/sensor evidence. Owner explicit approval after integrated #159 7beeb4a7c95e6b571fddeae95ef5b802b624cd8f CI PASS and main merge 5e51d3f50b53f482e14e3d1d73a375d08e6e9eb7; reviewed negative security tests; outstanding full scope preserved as known_limitations.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "next_pack_readiness": "SIMULATION_ONLY_V1_ACCEPTED;PHYSICAL_HARDWARE_NOT_VERIFIED",
+      "indexed_focused_test_status": "PRESENT_ORIGINAL_TESTS_CI_PASS"
     },
     {
       "id": 91,
@@ -1756,18 +1681,14 @@
       "id": 103,
       "group": "B",
       "name": "Kimlik doğrulama",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Legacy verification helper not proven active in current live WebSocket route; live WebSocketTicketManager already separate.",
-        "No Owner/device identity attestation, authenticated principal enrollment, rotation or deployment acceptance.",
-        "Production identity and credential lifecycle",
-        "Owner device-bound proof and real active route identity verification",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Software-only bounded-v1, no production/device acceptance. Owner explicit approval after integrated #159 7beeb4a7c95e6b571fddeae95ef5b802b624cd8f CI PASS and main merge 5e51d3f50b53f482e14e3d1d73a375d08e6e9eb7; reviewed negative security tests; outstanding full scope preserved as known_limitations.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "next_pack_readiness": "BOUNDED_SOFTWARE_V1_ACCEPTED;FULL_PRODUCT_NOT_VERIFIED",
+      "indexed_focused_test_status": "PRESENT_ORIGINAL_TESTS_CI_PASS"
     },
     {
       "id": 104,
@@ -1791,20 +1712,14 @@
       "id": 105,
       "group": "B",
       "name": "Yedekleme ve kurtarma",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Authenticated and encrypted at-rest backup storage",
-        "Authorized restore and corruption recovery drill",
-        "Owner audit, key rotation, retention/RPO/RTO measurement",
-        "Independent security review not yet recorded",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Software-only bounded-v1, no production/device acceptance. Owner explicit approval after integrated #159 7beeb4a7c95e6b571fddeae95ef5b802b624cd8f CI PASS and main merge 5e51d3f50b53f482e14e3d1d73a375d08e6e9eb7; reviewed negative security tests; outstanding full scope preserved as known_limitations.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "next_pack_readiness": "BOUNDED_SOFTWARE_V1_ACCEPTED;FULL_PRODUCT_NOT_VERIFIED",
+      "indexed_focused_test_status": "PRESENT_ORIGINAL_TESTS_CI_PASS"
     },
     {
       "id": 106,
@@ -1829,19 +1744,14 @@
       "id": 107,
       "group": "B",
       "name": "Bağımsız denetim",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "No independently deployed trusted signer/verifier, externally anchored checkpoint retention, or durable/WORM event sink.",
-        "Missing authenticated end-to-end audit completeness and Owner/prod acceptance.",
-        "Independent durable protected checkpoint sink and signer custody",
-        "Verifier service and audit ingestion principal authentication",
-        "End-to-end Gateway completeness proofs and approved incident recovery process",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Software-only bounded-v1, no production/device acceptance. Owner explicit approval after integrated #159 7beeb4a7c95e6b571fddeae95ef5b802b624cd8f CI PASS and main merge 5e51d3f50b53f482e14e3d1d73a375d08e6e9eb7; reviewed negative security tests; outstanding full scope preserved as known_limitations.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "next_pack_readiness": "BOUNDED_SOFTWARE_V1_ACCEPTED;FULL_PRODUCT_NOT_VERIFIED",
+      "indexed_focused_test_status": "PRESENT_ORIGINAL_TESTS_CI_PASS"
     },
     {
       "id": 108,
@@ -1938,21 +1848,14 @@
       "id": 115,
       "group": "B",
       "name": "Çeviri ve dil öğrenme",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "User-facing voice/UI integration",
-        "Owner-authenticated storage access",
-        "Encrypted memory and journal/backups erasure",
-        "Translation and language teaching assessment",
-        "Independent security review not yet recorded",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Software-only bounded-v1, no production/device acceptance. Owner explicit approval after integrated #159 7beeb4a7c95e6b571fddeae95ef5b802b624cd8f CI PASS and main merge 5e51d3f50b53f482e14e3d1d73a375d08e6e9eb7; reviewed negative security tests; outstanding full scope preserved as known_limitations.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "next_pack_readiness": "BOUNDED_SOFTWARE_V1_ACCEPTED;FULL_PRODUCT_NOT_VERIFIED",
+      "indexed_focused_test_status": "PRESENT_ORIGINAL_TESTS_CI_PASS"
     },
     {
       "id": 116,
@@ -2373,5 +2276,88 @@
       89,
       90
     ]
+  },
+  "B2_env_acceptance": {
+    "software_ids": [
+      3,
+      4,
+      15,
+      29,
+      30,
+      48,
+      56,
+      63,
+      103,
+      105,
+      107,
+      115
+    ],
+    "simulation_ids": [
+      81,
+      85,
+      86,
+      87,
+      88,
+      89,
+      90
+    ],
+    "remaining_ids": [
+      1,
+      6,
+      7,
+      9,
+      11,
+      13,
+      14,
+      16,
+      17,
+      18,
+      19,
+      20,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      31,
+      32,
+      33,
+      45,
+      49,
+      51,
+      54,
+      55,
+      57,
+      60,
+      69,
+      77,
+      78,
+      79,
+      80,
+      82,
+      83,
+      84,
+      91,
+      92,
+      93,
+      94,
+      95,
+      96,
+      97,
+      98,
+      99,
+      100,
+      101,
+      104,
+      106,
+      113,
+      116
+    ],
+    "simulation_policy": "OWNER_EXCEPTION_SIMULATION_ONLY; NO_PHYSICAL_CERTIFICATION; NO_AUTONOMOUS_ACTUATION; FULL_SCOPE_IN_KNOWN_LIMITATIONS",
+    "software_policy": "OWNER_APPROVED_BOUNDED_OFFLINE_V1; NO_PRODUCTION_OR_DEVICE_ACCEPTANCE",
+    "owner_main_merge": "5e51d3f50b53f482e14e3d1d73a375d08e6e9eb7",
+    "merged_ci_head": "7beeb4a7c95e6b571fddeae95ef5b802b624cd8f"
   }
 }

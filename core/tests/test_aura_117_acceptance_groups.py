@@ -34,14 +34,17 @@ def test_117_features_partition_and_pinned_canonical_sources():
         "group_B1": 20,
         "group_B2": 88,
         "group_A_complete": 9,
-        "group_B_testing": 71,
-        "total_completed": 46,
+        "group_B_testing": 52,
+        "total_completed": 65,
         "B2_owner": 17,
         "B2_env": 71,
+        "B2_env_software_v1": 12,
+        "B2_env_simulation_v1": 7,
+        "B2_env_testing": 52,
         "B2_windows_local": 57,
         "B2_hyperv_docker": 7,
         "B2_external_hardware": 7,
-        "total_verified_ready": 46,
+        "total_verified_ready": 65,
     }
 
 
@@ -55,7 +58,7 @@ def test_group_a_owner_frozen_v1_is_evidenced_but_future_scope_not_certified():
             assert record["blockers"] == []
             assert "V2" in record["known_limitations"]
     for record in tracker["features"]:
-        if record["id"] not in audit.SOFTWARE_IDS | audit.B1_IDS | audit.B2_OWNER_IDS:
+        if record["id"] not in audit.SOFTWARE_IDS | audit.B1_IDS | audit.B2_OWNER_IDS | audit.B2_ENV_ACCEPTED:
             assert record["status"] == "TESTING"
 
 
@@ -138,9 +141,10 @@ def test_last_ten_B1_bounded_v1_and_b2_remain_unready():
             assert not item["missing_components"] and not item["blockers"]
             assert groups["records"][item["id"] - 1]["ready_for_completion"] is True
         if item["id"] in groups["B2_env_ids"]:
-            assert item["status"] == "TESTING"
-            assert not audit.eligible_for_completion(item)
-            assert groups["records"][item["id"] - 1]["ready_for_completion"] is False
+            accepted = item["id"] in audit.B2_ENV_ACCEPTED
+            assert item["status"] == ("COMPLETED" if accepted else "TESTING")
+            assert audit.eligible_for_completion(item) is accepted
+            assert groups["records"][item["id"] - 1]["ready_for_completion"] is accepted
         if item["id"] in groups["B2_owner_ids"]:
             assert item["status"] == "COMPLETED"
             assert audit.eligible_for_completion(item)
@@ -214,8 +218,9 @@ def test_b2_env_three_way_review_partition_does_not_grant_acceptance():
         "external_hardware_simulation": 7,
     }
     for item_id in groups["B2_env_ids"]:
-        assert tracker["features"][item_id - 1]["status"] == "TESTING"
-        assert groups["records"][item_id - 1]["ready_for_completion"] is False
+        accepted = item_id in audit.B2_ENV_ACCEPTED
+        assert tracker["features"][item_id - 1]["status"] == ("COMPLETED" if accepted else "TESTING")
+        assert groups["records"][item_id - 1]["ready_for_completion"] is accepted
     for action in ("overlap", "lost", "hardware_mislabel"):
         bad = copy.deepcopy(groups)
         if action == "overlap":
@@ -228,3 +233,35 @@ def test_b2_env_three_way_review_partition_does_not_grant_acceptance():
             bad["B2_env_validation_groups"]["windows_local"].sort()
         with pytest.raises(ValueError, match="B2-Env"):
             audit.validate(tracker, bad, provenance)
+
+
+def test_b2_env_owner_approved_v1_is_explicitly_narrow_and_tamper_resistant():
+    tracker, groups, provenance = load()
+    assert set(groups["B2_env_acceptance"]["software_ids"]) == audit.B2_ENV_SOFTWARE_IDS
+    assert set(groups["B2_env_acceptance"]["simulation_ids"]) == audit.B2_ENV_SIMULATION_IDS
+    for item_id in audit.B2_ENV_ACCEPTED:
+        item = tracker["features"][item_id - 1]
+        assert audit.eligible_for_completion(item)
+        assert item["status"] == "COMPLETED"
+        assert item["known_limitations"].startswith("V2 /")
+        if item_id in audit.B2_ENV_SIMULATION_IDS:
+            assert "SIMULATION_ONLY" in item["notes"]
+            assert "physical" in item["known_limitations"].lower()
+    for item_id in set(groups["B2_env_ids"]) - audit.B2_ENV_ACCEPTED:
+        assert tracker["features"][item_id - 1]["status"] == "TESTING"
+    fake = copy.deepcopy(tracker)
+    for item_id in (3, 81):
+        fake = copy.deepcopy(tracker)
+        fake["features"][item_id - 1]["notes"] = fake["features"][item_id - 1]["notes"].replace(
+            audit.APPROVED_ENV_MAIN_MERGE, "0" * 40
+        )
+        with pytest.raises(ValueError, match="B2 readiness"):
+            audit.validate(fake, groups, provenance)
+    fake = copy.deepcopy(groups)
+    fake["B2_env_acceptance"]["simulation_ids"].pop()
+    with pytest.raises(ValueError, match="B2-Env Owner"):
+        audit.validate(tracker, fake, provenance)
+    fake = copy.deepcopy(tracker)
+    fake["features"][81 - 1]["hardware_review"] = "NOT_REVIEWED"
+    with pytest.raises(ValueError, match="B2 readiness"):
+        audit.validate(fake, groups, provenance)
