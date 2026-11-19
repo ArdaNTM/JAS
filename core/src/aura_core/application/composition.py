@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 from fastapi import FastAPI
 from starlette.routing import WebSocketRoute
 
@@ -77,7 +79,14 @@ def create_composed_app(
         broker = LiveEventBroker()
         app.state.live_events = broker
 
-    app.state.ws_ticket_manager = WebSocketTicketManager()
+    # WebSocket is an optional transport: a missing secret must not prevent
+    # the authenticated HTTP API from starting. No token means no ticket
+    # issuer; /api/ws/ticket returns 503 and WebSocket routes reject clients.
+    # A configured but invalid secret still raises in WebSocketTicketManager.
+    ws_secret = os.getenv("AURA_EVENT_STREAM_TOKEN")
+    app.state.ws_ticket_manager = (
+        WebSocketTicketManager(secret=ws_secret) if ws_secret else None
+    )
 
     app.include_router(health_router)
     app.include_router(provider_diagnostics_router)
