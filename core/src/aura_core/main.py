@@ -15,6 +15,7 @@ from fastapi import FastAPI
 
 from aura_core.agent.runtime import AgentExecutor
 from aura_core.application.composition import create_composed_app
+from aura_core.application.capability_center import FeatureCatalog, router as capability_center_router
 from aura_core.application.event_bus_runtime import EventBusRuntime
 from aura_core.application.event_driven_orchestration import EventDrivenOrchestrationCoordinator
 from aura_core.application.capability_discovery import DynamicCapabilityDiscovery
@@ -172,6 +173,17 @@ def build_app() -> FastAPI:
         raise RuntimeError(
             "AURA kernel registries were not initialized"
         )
+
+    # Explicitly index all 117 bounded-v1 source features without pretending
+    # they are active MCP tools. Informational CapabilityRegistry entries are
+    # non-resolvable; executable providers are attached only by their actual
+    # existing register_* implementations, with no implicit policy grant.
+    feature_catalog = FeatureCatalog()
+    feature_catalog.register(
+        services=kernel.service_registry,
+        providers=kernel.provider_registry,
+        capabilities=kernel.capability_registry,
+    )
 
     visualization_service_id = "aura:visualization_planner:0.1.0"
     kernel.service_registry.register(
@@ -524,6 +536,8 @@ def build_app() -> FastAPI:
         storage_mode=storage_mode,
     )
 
+    app.state.feature_catalog = feature_catalog
+    app.include_router(capability_center_router)
     app.state.http_bearer_token = http_bearer_token
     app.state.http_principal_id = http_principal_id
     app.state.approval_store = approval_store

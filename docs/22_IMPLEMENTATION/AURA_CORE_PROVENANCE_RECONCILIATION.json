@@ -7,7 +7,7 @@
   "files": [
     {
       "path": "core/src/aura_core/main.py",
-      "unified_blob_sha": "dc3a92e30dc1af23cb6d562ea05a6b1ab7eca9f1",
+      "unified_blob_sha": "1003869772bf0eb15568b8960589d4165f5b67f0",
       "canonical": "PR #158 merged main e9c68dd with PR #158 aa7b6b3, preserved governed core registrations; pending exact-head CI and security review",
       "variants": [
         {
@@ -58,6 +58,13 @@
           "blob": "6b786db5b0fad0310eb2fd10aae9252080ef3242",
           "ancestry": "diverged",
           "assessment": "SEMANTIC_PATCH_COVERED_AND_SOURCE_TEST_BLOB_MATCHES; original main.py older than cumulative #152"
+        },
+        {
+          "pr": 162,
+          "ref": "d723d3464b837f7a2c9d9a349571a99fbcda290f",
+          "blob": "1003869772bf0eb15568b8960589d4165f5b67f0",
+          "ancestry": "current_branch",
+          "assessment": "BOUNDED_CATALOG_REGISTRATION_ONLY_NO_PERMISSION_OR_GATEWAY_SEALED_CHANGE;REQUIRES_EXACT_HEAD_CI"
         }
       ]
     },
