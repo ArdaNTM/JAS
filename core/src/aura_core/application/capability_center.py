@@ -50,7 +50,7 @@ _FEATURE_BINDINGS: dict[int, tuple[str, ...]] = {
     24: ("ScreenControl",),
     25: ("filesystem.read_test_data",),
     35: ("internet.search",),
-    95: ("GatewayLatencySVG",),
+    95: ("visualization.telemetry.read",),
 }
 _SOURCE_FILE = Path(__file__).with_name("feature_index.json")
 _SOURCE_CAPABILITY = "aura.feature."
