@@ -49,7 +49,7 @@ def eligible_for_completion(record: dict) -> bool:
         and (record.get("id") not in B2_OWNER_IDS
              or (APPROVED_MAIN_MERGE in record.get("notes", "")
                  and record.get("known_limitations", "").startswith("V2 /")))
-        and (record.get("id") not in B2_ENV_ACCEPTED or (
+        and (record.get("id") not in (B2_ENV_SOFTWARE_IDS | B2_ENV_SIMULATION_IDS) or (
             APPROVED_ENV_MAIN_MERGE in record.get("notes", "")
             and APPROVED_ENV_REGRESSION_HEAD in record.get("notes", "")
             and record.get("known_limitations", "").startswith("V2 /")
