@@ -1,0 +1,283 @@
+{
+  "schema": "aura.core-reconciliation.v1",
+  "source_pr": "https://github.com/ArdaNTM/JAS/pull/158",
+  "unified_snapshot": "19baa60b1139b519947270654d0c0fd59fb2516c",
+  "baseline_main": "b1ffe6f534ced0d329dae273a4b949a634cb8bfa",
+  "statement": "Canonical Git blobs and source-specific regression evidence verified for five selected PR differences; PR #66/#68 missing modules merged exactly as their respective source branch blobs. PR #135/#146/#147 endpoints, providers and tests already existed under cumulative PR #152. This is NOT a semantic sign-off for every open PR. Post-F2.7 integration: canonical main.py was merged from PR #158 and main; source pin rebased to exact blob dc3a92e3 (no automatic feature completion).",
+  "files": [
+    {
+      "path": "core/src/aura_core/main.py",
+      "unified_blob_sha": "dc3a92e30dc1af23cb6d562ea05a6b1ab7eca9f1",
+      "canonical": "PR #158 merged main e9c68dd with PR #158 aa7b6b3, preserved governed core registrations; pending exact-head CI and security review",
+      "variants": [
+        {
+          "pr": 158,
+          "ref": "19baa60b1139b519947270654d0c0fd59fb2516c",
+          "blob": "dc3a92e30dc1af23cb6d562ea05a6b1ab7eca9f1",
+          "ancestry": "two-parent-main-merge",
+          "assessment": "RECONCILED_SOURCE_PIN_CI_PENDING"
+        },
+        {
+          "pr": 152,
+          "ref": "ed8c974a0cc16be645a30f9dea97e4c292d35df7",
+          "blob": "230c0302778353dfee62100ab09895629727f9cb",
+          "ancestry": "ancestor",
+          "assessment": "EXACT_MATCH"
+        },
+        {
+          "pr": 150,
+          "ref": "5e0131c465d61d3dfa8a3d86f85e86438195834a",
+          "blob": "94cacd6f1d673120c20efddb96d023e26ddec122",
+          "ancestry": "ancestor",
+          "assessment": "SUPERSEDED_BY_DESCENDANT"
+        },
+        {
+          "pr": 151,
+          "ref": "510ee06a7b9d45a5363ec9f9689854cc3a95315d",
+          "blob": "a0fbe57c6f72491fa5dcbc3123428199a0b29b39",
+          "ancestry": "ancestor",
+          "assessment": "SUPERSEDED_BY_DESCENDANT"
+        },
+        {
+          "pr": 146,
+          "ref": "32a2fadf2a84015d5cfc0f3e16b98e3a54ea9063",
+          "blob": "4860fae4525f44bf38bad3a86be00aa169456ef1",
+          "ancestry": "ancestor",
+          "assessment": "COMMIT_ANCESTRY_INCLUDED_AND_PROVIDER_SOURCE_AND_TEST_BLOBS_MATCH"
+        },
+        {
+          "pr": 147,
+          "ref": "cffca134e19731125a8b14540137e7118759d951",
+          "blob": "64893ba9c2fc8161a98c3a1fd77bb345eba81da2",
+          "ancestry": "ancestor",
+          "assessment": "COMMIT_ANCESTRY_INCLUDED_AND_PROVIDER_SOURCE_AND_TEST_BLOBS_MATCH"
+        },
+        {
+          "pr": 135,
+          "ref": "7e10ca4500ff5b3f3b9e186839790617e6e5bfe6",
+          "blob": "6b786db5b0fad0310eb2fd10aae9252080ef3242",
+          "ancestry": "diverged",
+          "assessment": "SEMANTIC_PATCH_COVERED_AND_SOURCE_TEST_BLOB_MATCHES; original main.py older than cumulative #152"
+        }
+      ]
+    },
+    {
+      "path": "core/src/aura_core/kernel/permissions.py",
+      "unified_blob_sha": "838bde5cdee731b714a762d3d277c8012837d242",
+      "canonical": "PR #118 exact file",
+      "variants": [
+        {
+          "pr": 118,
+          "ref": "cd1a98e195d5bf8961169dc490dabc62a8c98b1d",
+          "blob": "838bde5cdee731b714a762d3d277c8012837d242",
+          "ancestry": "diverged",
+          "assessment": "EXACT_FILE_MATCH_REPO_TREE_DIVERGED"
+        },
+        {
+          "pr": 157,
+          "ref": "fe53c984c82379abaa2165f872eab11725935f52",
+          "blob": "bdcb7dcf77321767ebd40078508957bc2e34fcbf",
+          "ancestry": "not_checked",
+          "assessment": "DIFFERENT_FILE_SNAPSHOT"
+        }
+      ]
+    },
+    {
+      "path": "core/src/aura_core/mcp/gateway.py",
+      "unified_blob_sha": "d9904d3c039829154315ecbba8d380efd4e5144e",
+      "canonical": "PR #127 exact file",
+      "variants": [
+        {
+          "pr": 127,
+          "ref": "ee68856c548932fe28f0ee0d148670d179fbf32e",
+          "blob": "d9904d3c039829154315ecbba8d380efd4e5144e",
+          "ancestry": "not_checked",
+          "assessment": "EXACT_FILE_MATCH"
+        },
+        {
+          "pr": 157,
+          "ref": "fe53c984c82379abaa2165f872eab11725935f52",
+          "blob": "d9904d3c039829154315ecbba8d380efd4e5144e",
+          "ancestry": "not_checked",
+          "assessment": "EXACT_FILE_MATCH"
+        }
+      ]
+    },
+    {
+      "path": "core/src/aura_core/application/episodic_memory.py",
+      "unified_blob_sha": "7bb9e321b9369c910567d315272ac9e8aeebc447",
+      "canonical": "PR #66 scoped conflict-detection method integrated with PR #117 baseline",
+      "variants": [
+        {
+          "pr": 117,
+          "ref": "f9ea0abb2cf109efd98ba55b245d8816c20865dc",
+          "blob": "41afb22a3e4177d6d08efc29e62e2dfbda257229",
+          "ancestry": "not_checked",
+          "assessment": "EXACT_FILE_MATCH"
+        },
+        {
+          "pr": 157,
+          "ref": "fe53c984c82379abaa2165f872eab11725935f52",
+          "blob": "41afb22a3e4177d6d08efc29e62e2dfbda257229",
+          "ancestry": "not_checked",
+          "assessment": "EXACT_FILE_MATCH"
+        },
+        {
+          "pr": 66,
+          "ref": "028a293616d77cbed810dd20e8a3626e0285f7bf",
+          "blob": "7bb9e321b9369c910567d315272ac9e8aeebc447",
+          "ancestry": "diverged",
+          "assessment": "EXACT_FILE_MATCH_AFTER_SURGICAL_CHERRY_PICK"
+        }
+      ]
+    },
+    {
+      "path": "core/src/aura_core/memory/hierarchical_memory.py",
+      "unified_blob_sha": "7cf1f82b34f0f33f54eafab0f59d1b9ffe137fa0",
+      "canonical": "PR #68 scoped task-forget method integrated with canonical baseline",
+      "variants": [
+        {
+          "pr": 157,
+          "ref": "fe53c984c82379abaa2165f872eab11725935f52",
+          "blob": "35002bd26cdecb45fb5394c7a3da3a1bd012701b",
+          "ancestry": "not_checked",
+          "assessment": "EXACT_FILE_MATCH"
+        },
+        {
+          "pr": 68,
+          "ref": "8aef48301a6ded514a10b055c4074e38b247a5e2",
+          "blob": "7cf1f82b34f0f33f54eafab0f59d1b9ffe137fa0",
+          "ancestry": "diverged",
+          "assessment": "EXACT_FILE_MATCH_AFTER_SURGICAL_CHERRY_PICK"
+        }
+      ]
+    }
+  ],
+  "exact_coverage": "Five sensitive shared-path chosen blobs checked against selected PR snapshots; not a complete PR #66–#157 tree merge.",
+  "remaining": [
+    "Other overlapping source PRs beyond the five requested (e.g. PR #118 branch divergence) require release/Owner audit; exact matched PermissionEngine blob is not whole-tree equivalent.",
+    "No independent user acceptance, live host F2.7 attestation, PostgreSQL production/retention, genuine human Owner approval or manual merge is claimed.",
+    "Exact-head software CI and 312-source release lock PASS at d04e5ae. Feature-level Owner/security, real provider and full capability acceptance still not verified."
+  ],
+  "reconciled": [
+    {
+      "pr": 66,
+      "result": "EXACT_FILE_MATCH",
+      "paths": [
+        "core/src/aura_core/application/episodic_memory.py",
+        "core/tests/test_memory_conflict_candidates.py"
+      ],
+      "detail": "find_conflict_candidates integrated; no memory write or implicit Owner correction; CI regression included."
+    },
+    {
+      "pr": 68,
+      "result": "EXACT_FILE_MATCH",
+      "paths": [
+        "core/src/aura_core/memory/hierarchical_memory.py",
+        "core/src/aura_core/application/task_memory.py",
+        "core/tests/test_scoped_task_memory_erasure.py"
+      ],
+      "detail": "forget_task confirmed, principal/task-scoped, in-memory context evicted; caller authorization still external."
+    },
+    {
+      "pr": 135,
+      "result": "ALREADY_SEMANTICALLY_PRESENT",
+      "paths": [
+        "core/src/aura_core/main.py",
+        "core/src/aura_core/tts/offline_voice.py",
+        "core/scripts/piper_tts_mcp.py",
+        "core/tests/test_offline_voice_config.py"
+      ],
+      "detail": "Full main.py blob differs because #152 cumulative; offline_voice_config startup and local STT model path are present. Original voice sources and test bytes exactly match #135."
+    },
+    {
+      "pr": 146,
+      "result": "ANCESTOR_INCLUDED",
+      "paths": [
+        "core/src/aura_core/main.py",
+        "core/src/aura_core/application/live_svg_chart.py",
+        "core/tests/test_live_svg_chart.py"
+      ],
+      "detail": "Opt-in authenticated SVG router registered and closed in cumulative main.py; original provider/test blobs match."
+    },
+    {
+      "pr": 147,
+      "result": "ANCESTOR_INCLUDED",
+      "paths": [
+        "core/src/aura_core/main.py",
+        "core/src/aura_core/application/live_task_panel.py",
+        "core/tests/test_live_task_panel.py"
+      ],
+      "detail": "Opt-in task router and close hook present in cumulative main.py; original provider/test blobs match."
+    }
+  ],
+  "ci_verification": {
+    "head_sha": "fb7c9a4f3c892972fc6450cc1b7d3412257dc055",
+    "core_assurance": {
+      "run_id": 44252417059,
+      "result": "PASS",
+      "tests": "1494 passed; 10 skipped"
+    },
+    "remote_persistence": {
+      "run_id": 44252416999,
+      "result": "PASS",
+      "tests": "8 passed on PostgreSQL/MinIO CI services"
+    },
+    "unified_acceptance": {
+      "run_id": 44252416980,
+      "result": "PASS",
+      "tests": "10 cross-module + 8 governance passed",
+      "feature_eligibility": "A=9, B1=20, B2=88, COMPLETED=0, ELIGIBLE=0"
+    },
+    "remaining_workflows": "Memory/Auth E2E, Pack3, Pack4 and Windows launcher all PASS, 7/7",
+    "source_lock": {
+      "source_count": 312,
+      "release_digest": "sha256:5219a9295db66fb910ed2e39eeb77d13241dd8b67eb723f5cdf4dd74985056d0"
+    },
+    "acceptance_limits": "No independent PR review approvals; no real Owner enrollment or production security attestation. CI does not establish feature COMPLETED."
+  },
+  "B1_reconciled_shared_blobs": [
+    {
+      "pr": 69,
+      "feature_id": 36,
+      "path": "core/src/aura_core/research/mcp_source.py",
+      "previous_blob": "e0762fdce759d2bad9e1195d47c7529d7694bba1",
+      "current_blob": "258ddbd85a8890706d6eacc47935936b3522cd6e",
+      "review": "Exact original PR file, baseline blob equality confirmed, bounded search_with_evidence via authorized Gateway"
+    },
+    {
+      "pr": 78,
+      "feature_id": 37,
+      "path": "core/src/aura_core/application/cross_capability_reasoning.py",
+      "previous_blob": "5257e577b97ee03d1b6e8bbc8d352ea2119853a5",
+      "current_blob": "483c17fd3586ccf857f177b25d35ff84dfb6b4a3",
+      "review": "Exact original PR file, baseline blob equality confirmed, strict JSON data, reject arbitrary __str__, no false source fact verification"
+    },
+    {
+      "pr": 79,
+      "feature_id": 12,
+      "path": "core/src/aura_core/application/jarvis_intelligence.py",
+      "previous_blob": "d1a3fa934a25bd674e83cba419e47902de8d703f",
+      "current_blob": "5a10e8d763cf4754600b386e5d63fe43dfbc3f80",
+      "review": "Exact original PR file, baseline blob equality confirmed, bounded repeated-failure review, no automatic strategy execution"
+    },
+    {
+      "pr": 86,
+      "feature_id": 102,
+      "path": "core/src/aura_core/application/context_synthesizer.py",
+      "previous_blob": "7749db2b79585c93b1e15030cd38c7f65d8442ad",
+      "current_blob": "58a85bea9086108e5d2f47b7e52af0de553e44f9",
+      "review": "Exact original PR file, baseline blob equality confirmed, bound hostile memory enumeration and never stringify foreign objects"
+    }
+  ],
+  "B1_code_CI": {
+    "exact_head": "d04e5aeeadac4c6d7305f6d0fd076a6a2ef99c7b",
+    "all_seven_workflows": "PASS",
+    "core": "1688 passed, 10 skipped",
+    "remote": "8 passed on real PostgreSQL and MinIO GitHub services",
+    "unified": "10 focused E2E + 9 acceptance/negative tests passed",
+    "release_digest": "sha256:b74d03516869af538439a382d281d09c562e428cc30d201a19343502366f8dab",
+    "acceptance_audit": "A=9 B1=20 B2=88 COMPLETED=0 ELIGIBLE=0",
+    "limitations": "No independent PR approvals, feature-level Owner signoff, or complete per-feature functional acceptance"
+  }
+}

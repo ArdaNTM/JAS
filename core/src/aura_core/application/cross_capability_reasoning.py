@@ -2,8 +2,51 @@
 from __future__ import annotations
 
 import json
+import math
+import re
 from dataclasses import dataclass
 from typing import Any
+
+
+_KEY = re.compile(r"^[a-z][a-z0-9_.-]{0,79}$")
+
+
+def _check_result(value: Any) -> None:
+    """Bound tool evidence and never coerce unknown objects via __str__."""
+    active: set[int] = set()
+    steps = 0
+
+    def walk(item: Any, depth: int) -> None:
+        nonlocal steps
+        steps += 1
+        if depth > 12 or steps > 4000:
+            raise ValueError("evidence exceeds depth/node limit")
+        if item is None or type(item) in (bool, int, str):
+            if type(item) is str and len(item) > 12000:
+                raise ValueError("evidence text exceeds limit")
+            return
+        if type(item) is float:
+            if not math.isfinite(item):
+                raise ValueError("non-finite evidence value")
+            return
+        if type(item) not in (list, dict):
+            raise ValueError("unsupported evidence object type")
+        if id(item) in active or len(item) > 1000:
+            raise ValueError("cyclic or oversized evidence")
+        active.add(id(item))
+        try:
+            if type(item) is dict:
+                for key, nested in item.items():
+                    if type(key) is not str or len(key) > 200:
+                        raise ValueError("invalid evidence key")
+                    walk(nested, depth + 1)
+            else:
+                for nested in item:
+                    walk(nested, depth + 1)
+        finally:
+            active.remove(id(item))
+
+    walk(value, 0)
 
 
 @dataclass(frozen=True, slots=True)
@@ -28,6 +71,72 @@ class CrossCapabilitySynthesizer:
     from caller-side execution that has already traversed MCPGateway.
     """
 
+    def compare_literal_claims(
+        self, *, evidence: list[CapabilityEvidence], limit: int = 20,
+    ) -> dict[str, Any]:
+        """Compare pre-structured literal claims; never assert factual truth."""
+        if type(limit) is not int or not 1 <= limit <= 50:
+            raise ValueError("claim limit must be in 1..50")
+        if type(evidence) is not list or not 2 <= len(evidence) <= 16:
+            raise ValueError("comparison needs 2..16 evidence records")
+        indexed: dict[str, dict[str, str]] = {}
+        seen: set[tuple[str, str]] = set()
+        for item in evidence:
+            if (type(item) is not CapabilityEvidence
+                    or type(item.provider_id) is not str
+                    or not 1 <= len(item.provider_id.strip()) <= 120
+                    or type(item.capability_id) is not str
+                    or not 1 <= len(item.capability_id.strip()) <= 120):
+                raise ValueError("invalid capability/provider identity")
+            identity = (item.provider_id, item.capability_id)
+            if identity in seen:
+                raise ValueError("duplicate capability/provider evidence")
+            seen.add(identity)
+            _check_result(item.result)
+            if type(item.result) is not dict:
+                raise ValueError("structured claim object required")
+            claims = item.result.get("claims")
+            if type(claims) is not list or len(claims) > 100:
+                raise ValueError("invalid claim list")
+            for claim in claims:
+                if (type(claim) is not dict or set(claim) != {"key", "value"}
+                        or type(claim["key"]) is not str
+                        or not _KEY.fullmatch(claim["key"])):
+                    raise ValueError("invalid claim structure")
+                value = claim["value"]
+                if (type(value) not in (bool, int, float, str)
+                        or (type(value) is str and len(value) > 160)
+                        or (type(value) is float and not math.isfinite(value))):
+                    raise ValueError("invalid literal claim value")
+                literal = json.dumps(value, ensure_ascii=False, allow_nan=False)
+                providers = indexed.setdefault(claim["key"], {})
+                previous = providers.get(item.provider_id)
+                if previous is not None and previous != literal:
+                    raise ValueError("ambiguous claims within one provider")
+                providers[item.provider_id] = literal
+        if len(indexed) > limit:
+            raise ValueError("claim key count exceeds limit")
+        output = []
+        for claim_key, providers in sorted(indexed.items()):
+            count = len(providers)
+            status = (
+                "insufficient_sources" if count < 2 else
+                "literal_agreement" if len(set(providers.values())) == 1 else
+                "literal_disagreement"
+            )
+            output.append({
+                "claim_key": claim_key, "status": status,
+                "source_count": count,
+                "provider_literals": dict(sorted(providers.items())),
+                "untrusted": True, "fact_verified": False,
+                "source_independence_verified": False,
+            })
+        return {
+            "claims": output, "compared_claim_keys": len(output),
+            "tool_execution": "not_performed",
+            "verification": "not_performed",
+        }
+
     def prepare(self, *, objective: str, evidence: list[CapabilityEvidence]) -> dict[str, Any]:
         objective = objective.strip()
         if not objective or len(objective) > 4000:
@@ -43,8 +152,12 @@ class CrossCapabilitySynthesizer:
             if key in seen:
                 raise ValueError("duplicate capability/provider evidence entry")
             seen.add(key)
+            _check_result(item.result)
             try:
-                serialized = json.dumps(item.result, ensure_ascii=False, default=str)
+                serialized = json.dumps(
+                    item.result, ensure_ascii=False, allow_nan=False,
+                    sort_keys=True, separators=(",", ":"),
+                )
             except (TypeError, ValueError) as exc:
                 raise ValueError("evidence result is not serializable") from exc
             if len(serialized) > 12000:

@@ -129,6 +129,23 @@ class PostgreSQLTaskStateMachine:
             rows = result.mappings().all()
         return tuple(self._record(row) for row in rows)
 
+    async def list_tasks_limited(
+        self, *, principal_id: str, limit: int = 64,
+    ) -> tuple[TaskStateRecord, ...]:
+        """Bounded, principal-scoped Postgres read for the live status panel."""
+        if not isinstance(principal_id, str) or not principal_id.strip():
+            raise ValueError("Principal is required")
+        if type(limit) is not int or not 1 <= limit <= 64:
+            raise ValueError("Task panel limit must be between 1 and 64")
+        async with self._engine.connect() as conn:
+            result = await conn.execute(text("""
+                SELECT * FROM aura_orchestration_tasks
+                WHERE principal_id=:principal
+                ORDER BY updated_at DESC, task_id DESC LIMIT :limit
+            """), {"principal": principal_id, "limit": limit})
+            rows = result.mappings().all()
+        return tuple(self._record(row) for row in rows)
+
     async def transition(self, task_id: str, *, principal_id: str, target: TaskState,
                          result_summary: str | None = None, error: str | None = None) -> TaskStateRecord:
         async with self._engine.begin() as conn:

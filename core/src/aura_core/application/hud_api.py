@@ -15,7 +15,7 @@ import sys
 import time
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, ConfigDict, Field
 
 from aura_core.enterprise.approval_store import ApprovalStatus
@@ -33,7 +33,7 @@ router = APIRouter(prefix="/api/hud", tags=["local-hud"])
 class HUDPanelRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     title: str = Field(min_length=1, max_length=100)
-    kind: str = Field(default="object", pattern="^(object|research|notice)$")
+    kind: str = Field(default="object", pattern="^(object|research|notice|hologram|game)$")
 
 
 class HUDMediaRequest(BaseModel):
@@ -215,6 +215,20 @@ async def show_hud_panel(
         payload={"title": body.title, "kind": body.kind},
     ))
     return {"status": "display_queued"}
+
+
+
+@router.get("/game/project")
+async def get_game_project(
+    request: Request,
+    seed: int = Query(default=31415, ge=1, le=2**31 - 1),
+    target_count: int = Query(default=6, ge=1, le=24),
+    principal_id: str = Depends(authenticated_principal),
+) -> dict[str, object]:
+    """Generate a pure-data local Three.js game prototype; no tool execution."""
+    require_local_http_request(request)
+    from aura_core.application.hud_game_blueprint import generate_local_game
+    return generate_local_game(seed, target_count).as_json()
 
 
 @router.post("/screen/read")

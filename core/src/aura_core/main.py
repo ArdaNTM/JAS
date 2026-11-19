@@ -33,6 +33,23 @@ from aura_core.application.full_duplex_session import (
 )
 from aura_core.voice.sherpa_onnx import SherpaOnnxRecognizer
 from aura_core.application.vision_adapters import DesktopScreenCapture, OllamaVisionProvider
+from aura_core.application.live_svg_chart import (
+    GovernedLiveSVGChart, live_svg_chart_router, register_live_svg_chart,
+)
+from aura_core.application.live_task_panel import (
+    GovernedLiveTaskPanel, live_task_panel_router, register_live_task_panel,
+)
+from aura_core.providers.managed_applications_mcp import (
+    GovernedManagedApplications, load_managed_app_manifest,
+    managed_applications_router, register_managed_applications,
+)
+from aura_core.providers.docker_terminal_mcp import (
+    GovernedDockerTerminal, load_terminal_config, register_docker_terminal,
+    terminal_router,
+)
+from aura_core.application.governed_command_sequences import (
+    GovernedCommandSequences, register_command_sequences, sequence_router,
+)
 from aura_core.config.kernel import KernelConfig
 from aura_core.config.storage import StorageMode, storage_mode_from_environment, validate_storage_mode
 from aura_core.enterprise.policy_bundle import PolicyBundle
@@ -82,6 +99,7 @@ from aura_core.research.provider_bootstrap import (
     install_local_research_policies,
 )
 from aura_core.tts.config import KokoroMCPConfig
+from aura_core.tts.offline_voice import OfflineVoiceConfig
 from aura_core.tts.provider_bootstrap import register_kokoro_mcp
 from aura_core.voice.sherpa_onnx import SherpaOnnxConfig
 
@@ -205,6 +223,7 @@ def build_app() -> FastAPI:
     )
     research_config = ResearchMCPConfig.from_env()
     kokoro_config = KokoroMCPConfig.from_env()
+    offline_voice_config = OfflineVoiceConfig.from_environment()
     filesystem_config = LocalFilesystemMCPConfig.from_env()
     research_tools = MCPToolRegistry()
     tts_tools = MCPToolRegistry()
@@ -535,6 +554,103 @@ def build_app() -> FastAPI:
     # Diagnostic only: no automatic microphone, model downloads or external calls.
     app.state.sherpa_onnx_config = SherpaOnnxConfig.from_env()
 
+    # Optional *real* live SVG telemetry: no implicit PermissionEngine ALLOW.
+    # Every browser read still requires HTTP bearer auth and exact Gateway policy.
+    app.state.live_svg_chart = None
+    app.state.live_svg_chart_provider = None
+    if os.getenv("AURA_LIVE_CHART_ENABLED", "0").strip().casefold() in {"1", "true", "yes", "on"}:
+        app.state.live_svg_chart_provider = register_live_svg_chart(
+            services=kernel.service_registry,
+            providers=kernel.provider_registry,
+            capabilities=kernel.capability_registry,
+            event_bus=kernel.event_bus,
+        )
+        app.state.live_svg_chart = GovernedLiveSVGChart(
+            gateway, authenticated_principal_id=http_principal_id,
+        )
+        app.include_router(live_svg_chart_router)
+
+    # Opt-in persisted live task states: HTTP bearer + per-read MCP authorization.
+    app.state.live_task_panel = None
+    app.state.live_task_panel_provider = None
+    if os.getenv("AURA_LIVE_TASK_PANEL_ENABLED", "0").strip().casefold() in {"1", "true", "yes", "on"}:
+        app.state.live_task_panel_provider = register_live_task_panel(
+            services=kernel.service_registry,
+            providers=kernel.provider_registry,
+            capabilities=kernel.capability_registry,
+            event_bus=kernel.event_bus,
+            task_state_machine=task_state_machine,
+        )
+        app.state.live_task_panel = GovernedLiveTaskPanel(
+            gateway, authenticated_principal_id=http_principal_id,
+        )
+        app.include_router(live_task_panel_router)
+
+    # Real managed local applications: opt-in, pinned trusted manifest and
+    # existing human-reviewed one-shot Gateway approval store. No auto policy.
+    app.state.managed_applications = None
+    app.state.managed_applications_provider = None
+    if os.getenv("AURA_MANAGED_APPLICATIONS_ENABLED", "0").strip().casefold() in {"1", "true", "yes", "on"}:
+        if http_bearer_token is None or approval_store is None:
+            raise RuntimeError("Managed applications require HTTP Owner bearer and durable approval store")
+        manifest_path = os.getenv("AURA_MANAGED_APPLICATIONS_MANIFEST", "")
+        trusted_apps = load_managed_app_manifest(manifest_path)
+        app.state.managed_applications_provider = register_managed_applications(
+            services=kernel.service_registry,
+            providers=kernel.provider_registry,
+            capabilities=kernel.capability_registry,
+            specifications=trusted_apps,
+            event_bus=kernel.event_bus,
+        )
+        app.state.managed_applications = GovernedManagedApplications(
+            gateway, authenticated_principal_id=http_principal_id,
+        )
+        app.include_router(managed_applications_router)
+
+    # #27 strictly opt-in offline Docker terminal, no shell or implicit grants.
+    # Windows requires separately attested Owner broker; configuration fails closed.
+    app.state.governed_terminal = None
+    app.state.terminal_provider = None
+    app.state.terminal_command_ids = ()
+    if os.getenv("AURA_DOCKER_TERMINAL_ENABLED", "0").strip().casefold() in {"1", "true", "yes", "on"}:
+        if http_bearer_token is None or approval_store is None:
+            raise RuntimeError("Terminal requires authenticated Owner and durable approval store")
+        engine, fixed_commands = load_terminal_config(os.getenv("AURA_DOCKER_TERMINAL_CONFIG", ""))
+        app.state.terminal_provider = register_docker_terminal(
+            services=kernel.service_registry,
+            providers=kernel.provider_registry,
+            capabilities=kernel.capability_registry,
+            event_bus=kernel.event_bus, engine=engine, commands=fixed_commands,
+        )
+        app.state.governed_terminal = GovernedDockerTerminal(
+            gateway, principal_id=http_principal_id,
+        )
+        app.state.terminal_command_ids = tuple(command.command_id for command in fixed_commands)
+        app.include_router(terminal_router)
+
+    # #33 explicitly stepped persistent command DAG. No background execution.
+    # Each action crosses BOTH its own Gateway scope and the #27 terminal
+    # command's independently consumed one-shot human approval.
+    app.state.command_sequence_provider = None
+    app.state.governed_command_sequences = None
+    if os.getenv("AURA_COMMAND_SEQUENCES_ENABLED", "0").strip().casefold() in {"1", "true", "yes", "on"}:
+        if app.state.governed_terminal is None:
+            raise RuntimeError("Command sequences require enabled governed Docker terminal")
+        raw_sequence_key = os.getenv("AURA_COMMAND_SEQUENCE_HMAC_KEY", "")
+        if len(raw_sequence_key) != 64 or not re.fullmatch("[0-9a-fA-F]{64}", raw_sequence_key):
+            raise RuntimeError("Command sequences need an independent 32-byte Owner HMAC key")
+        app.state.command_sequence_provider = register_command_sequences(
+            services=kernel.service_registry, providers=kernel.provider_registry,
+            capabilities=kernel.capability_registry, event_bus=kernel.event_bus,
+            tasks=task_state_machine, terminal=app.state.governed_terminal,
+            hmac_key=bytes.fromhex(raw_sequence_key),
+            allowed_command_ids=app.state.terminal_command_ids,
+        )
+        app.state.governed_command_sequences = GovernedCommandSequences(
+            gateway, principal_id=http_principal_id,
+        )
+        app.include_router(sequence_router)
+
     event_runtime = EventBusRuntime(
         kernel.event_bus,
         enabled=os.getenv("AURA_EVENT_RUNTIME_ENABLED", "1").strip().casefold()
@@ -778,7 +894,13 @@ def build_app() -> FastAPI:
             recognizer = (
                 SherpaOnnxRecognizer(app.state.sherpa_onnx_config)
                 if sherpa_health["available"] else FasterWhisperRecognizer(
-                    model_size=os.getenv("AURA_STT_MODEL", "small"),
+                    # Offline mode passes an absolute, pre-provisioned model
+                    # directory. FasterWhisper therefore has no model-hub fallback.
+                    model_size=(
+                        offline_voice_config.stt_model_path
+                        if offline_voice_config is not None
+                        else os.getenv("AURA_STT_MODEL", "small")
+                    ),
                     device=os.getenv("AURA_STT_DEVICE", "cpu"),
                     compute_type=os.getenv("AURA_STT_COMPUTE_TYPE", "int8"),
                 )
@@ -1031,6 +1153,15 @@ def build_app() -> FastAPI:
                         except Exception:
                             logger.exception("Local persistence shutdown failed")
 
+            chart_provider = getattr(app.state, "live_svg_chart_provider", None)
+            if chart_provider is not None:
+                chart_provider.close()
+            task_panel_provider = getattr(app.state, "live_task_panel_provider", None)
+            if task_panel_provider is not None:
+                task_panel_provider.close()
+            managed_apps_provider = getattr(app.state, "managed_applications_provider", None)
+            if managed_apps_provider is not None:
+                managed_apps_provider.close()
             logger.info(
                 "AURA LIFESPAN SHUTDOWN COMPLETE"
             )

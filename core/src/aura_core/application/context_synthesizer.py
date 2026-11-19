@@ -30,7 +30,9 @@ class ContextSynthesizer:
         max_research_chars: int = 12000,
         memory_selection: str = "chronological",
     ) -> None:
-        if memory_selection not in {"chronological", "relevance"}:
+        if type(max_memory_chars) is not int or type(max_research_chars) is not int:
+            raise ValueError("context budgets must be integer values")
+        if type(memory_selection) is not str or memory_selection not in {"chronological", "relevance"}:
             raise ValueError("Unsupported context selection mode")
         self.max_memory_chars = max(256, min(max_memory_chars, 12000))
         self.max_research_chars = max(512, min(max_research_chars, 24000))
@@ -49,7 +51,10 @@ class ContextSynthesizer:
         for index, value in enumerate(memories):
             if index >= 128:
                 break
-            item = str(value).strip()[:2000]
+            # Reject hostile provider objects rather than invoking their __str__.
+            if type(value) is not str:
+                continue
+            item = value.strip()[:2000]
             if not item or item.casefold() in seen:
                 continue
             seen.add(item.casefold())
@@ -66,16 +71,28 @@ class ContextSynthesizer:
         research_context: str = "",
         tone: str = "adaptive",
     ) -> SynthesizedContext:
-        if tone not in {"adaptive", "concise", "warm", "formal", "light"}:
+        # Provider inputs are untrusted references, not executable instructions.
+        if type(message) is not str or not message.strip() or len(message) > 32768:
+            raise ValueError("bounded nonempty message required")
+        if type(research_context) is not str or len(research_context) > 128000:
+            raise ValueError("bounded research text required")
+        if type(tone) is not str or tone not in {"adaptive", "concise", "warm", "formal", "light"}:
             tone = "adaptive"
+        try:
+            memory_iter = iter(memories)
+        except TypeError as exc:
+            raise ValueError("memories must be iterable") from exc
+        from itertools import islice
         memory_lines: list[str] = []
         used = 0
         selection = (
-            self._relevant_memories(message, memories)
-            if self.memory_selection == "relevance" else memories
+            self._relevant_memories(message, memory_iter)
+            if self.memory_selection == "relevance" else memory_iter
         )
-        for item in selection:
-            clean = str(item).strip()
+        for item in islice(selection, 128):
+            if type(item) is not str:
+                continue
+            clean = item.strip()
             if not clean:
                 continue
             remaining = self.max_memory_chars - used

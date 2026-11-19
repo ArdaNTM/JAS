@@ -1,0 +1,316 @@
+# AURA test report — Phase 0
+
+- Intended test command: `cd core && uv run pytest -q tests/test_feature_tracker_validation.py`.
+- Intended CI: `AURA Core Assurance` (PR touching `core/tests/**`), which also executes the complete Core suite and release lock verifier.
+- Status at initial commit: **PENDING**, not PASS. CI outcomes and local evidence must be recorded by a later reviewed commit or PR update.
+- Hardware, voice, external services and OSWorld live benchmark: **NOT RUN** in this PR.
+
+## Verified GitHub Actions — PR #65
+
+- [AURA Core Assurance PR run](https://github.com/ArdaNTM/JAS/actions/runs/43745529567): **success** (initial commit).
+- [Remote Persistence Integration PR run](https://github.com/ArdaNTM/JAS/actions/runs/43745529502): **success** (initial commit).
+- The new schema extension above changes the validator and tests; its latest commit requires a **fresh CI run**. Previous green results do not automatically validate later commits.
+- [Feature #8 PR #66 Core Assurance](https://github.com/ArdaNTM/JAS/actions/runs/43746019527): **success**, 600 passed / 6 skipped, release-lock PASS. This is branch-specific evidence and does not merge #66 into #65 or main.
+
+## Updated evidence — 2026-11-15
+
+- PR #65 expanded tracker (previous commit `93222c7`): [Core Assurance](https://github.com/ArdaNTM/JAS/actions/runs/43746384078) PASS — **601 passed, 6 skipped**, Release Lock PASS; [Persistence Integration](https://github.com/ArdaNTM/JAS/actions/runs/43746384109) PASS.
+- PR #66 latest exact-principal-scope fix `028a293`: [Core Assurance](https://github.com/ArdaNTM/JAS/actions/runs/43746729604) PASS — **601 passed, 6 skipped**, Release Lock PASS; [Persistence Integration](https://github.com/ArdaNTM/JAS/actions/runs/43746729566) PASS.
+- The present new hardening commit updates the validator; its CI must complete before claiming a green final head.
+
+## CI tracker gate and new telemetry candidate
+
+- Added `python ../scripts/validate_aura_feature_tracker.py` to Core Assurance CI; documentation and validator edits now trigger the workflow.
+- PR #67 disk telemetry feature is in test; do not claim real-hardware PASS from synthetic psutil probes.
+
+## Verified telemetry feature CI
+
+- [PR #67 AURA Core Assurance](https://github.com/ArdaNTM/JAS/actions/runs/43747432323): **success** — 605 passed, 6 skipped; release lock `sha256:8e6d62146366aaf0416e2ef8fa3696289c54c713b16ff11b7a98548da60b6484` PASS.
+- [PR #67 Remote Persistence Integration](https://github.com/ArdaNTM/JAS/actions/runs/43747432309): **success**.
+- No physical-host disk accuracy test, system service activation, or production rollout in PR #67.
+
+## Verified CI evidence for continuation PRs #68–#75
+
+| PR | Head commit | Core result | Core CI link |
+| --- | --- | --- | --- |
+| #68 | `8aef48301a6d` | 600 passed, 6 skipped; release lock PASS | [Actions](https://github.com/ArdaNTM/JAS/actions/runs/43749348883) |
+| #69 | `c8d2b859b9ad` | 613 passed, 6 skipped; release lock PASS | [Actions](https://github.com/ArdaNTM/JAS/actions/runs/43749688578) |
+| #70 | `82a01dc3ec23` | 602 passed, 6 skipped; release lock PASS | [Actions](https://github.com/ArdaNTM/JAS/actions/runs/43749934249) |
+| #71 | `e8b7db8beef8` | 599 passed, 6 skipped; release lock PASS | [Actions](https://github.com/ArdaNTM/JAS/actions/runs/43750327501) |
+| #72 | `fb76d221381e` | 613 passed, 6 skipped; release lock PASS | [Actions](https://github.com/ArdaNTM/JAS/actions/runs/43750536172) |
+| #73 | `a1568cdcf248` | 600 passed, 6 skipped; release lock PASS | [Actions](https://github.com/ArdaNTM/JAS/actions/runs/43750908801) |
+| #74 | `e297f62a6bcc` | 601 passed, 6 skipped; release lock PASS | [Actions](https://github.com/ArdaNTM/JAS/actions/runs/43751487746) |
+| #75 | `67a6a57bc2e2` | 620 passed, 6 skipped; release lock PASS | [Actions](https://github.com/ArdaNTM/JAS/actions/runs/43751913526) |
+
+All documented PR heads passed their Core Assurance workflow and release-lock verifier. Each has a separate Remote Persistence Integration workflow (successful at the time of this update). Test counts are **per isolated branch**, not cumulative; unmerged code from other branches is not in each run. No physical/hardware testing or production merge is inferred.
+
+## Verified GitHub Actions — follow-up PRs #76–#83
+
+Each entry records Core Assurance success, full pytest and Final Release Lock on the PR's independent head. These are **not cumulative test counts**.
+
+| PR | Actions | Core result |
+| --- | --- | --- |
+| #76 | [Core Assurance](https://github.com/ArdaNTM/JAS/actions/runs/43752921155) | PASS |
+| #77 | [Core Assurance](https://github.com/ArdaNTM/JAS/actions/runs/43753417472) | PASS |
+| #78 | [Core Assurance](https://github.com/ArdaNTM/JAS/actions/runs/43753581818) | PASS |
+| #79 | [Core Assurance](https://github.com/ArdaNTM/JAS/actions/runs/43753780847) | PASS |
+| #80 | [Core Assurance](https://github.com/ArdaNTM/JAS/actions/runs/43754154784) | PASS |
+| #81 | [Core Assurance](https://github.com/ArdaNTM/JAS/actions/runs/43754964413) | PASS |
+| #82 | [Core Assurance](https://github.com/ArdaNTM/JAS/actions/runs/43755206129) | PASS |
+| #83 | [Core Assurance](https://github.com/ArdaNTM/JAS/actions/runs/43755492865) | PASS |
+
+Detailed observed counts: #77 606 passed/6 skipped, #79 602/6, #80 603/6, #81 603/6, #82 603/6, #83 610/6. #76 and #78 CI success verified; count omitted when not separately extracted.
+No real physical hardware attestation, external API validity or production release is inferred.
+
+## Verified Core Assurance — PRs #84–#86
+
+| PR | Exact head | Full Core test result | Core actions |
+| --- | --- | --- | --- |
+| #84 | `6533e49a915b` | 606 passed, 6 skipped; Release Lock PASS | https://github.com/ArdaNTM/JAS/actions/runs/43756314062 |
+| #85 | `923118435ca0` | 601 passed, 6 skipped; Release Lock PASS | https://github.com/ArdaNTM/JAS/actions/runs/43756823784 |
+| #86 | `a4a156b42ae8` | 605 passed, 6 skipped; Release Lock PASS | https://github.com/ArdaNTM/JAS/actions/runs/43757162780 |
+
+Remote Persistence PR workflows: #84 run 43756314100 PASS; #85 run 43756823780 PASS; #86 run 43757162764 PASS. These test counts are independent branches, NOT cumulative. No hardware/real-owner acceptance.
+
+## PR #87 DOCX extraction verified on exact branch head
+
+| PR | Head | Core Assurance | Remote Persistence |
+| --- | --- | --- | --- |
+| [#87](https://github.com/ArdaNTM/JAS/pull/87) | `97d39e6c5736` | [PASS 611 passed / 6 skipped; Final Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43765869144) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43765869141) |
+
+Real DOCX input was created as in-memory OOXML fixtures; no production-host/file authorization or hardware acceptance was run. Benchmarks and test counts from independent PR branches are not additive.
+
+## Verified GitHub Actions — PR #88 and #89
+
+| PR | Exact head commit | Core result | Remote Persistence |
+| --- | --- | --- | --- |
+| [#88](https://github.com/ArdaNTM/JAS/pull/88) | `03657e6f9d67` | [614 passed, 6 skipped; Release Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43766456114) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43766456072) |
+| [#89](https://github.com/ArdaNTM/JAS/pull/89) | `dc98aede3a37` | [605 passed, 6 skipped; Release Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43766833934) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43766833912) |
+
+These are per-branch isolated runs; they are not additive. Static Python inspection does not execute user code or certify security. ICS parsing does not authenticate calendar providers or support recurring/TZID expansion.
+
+## Verified current GitHub Actions — PRs #90–#92
+
+| PR | Exact head commit | Core Assurance and Final Release Lock | Remote Persistence |
+| --- | --- | --- | --- |
+| [#90](https://github.com/ArdaNTM/JAS/pull/90) | `3279fe5238f5` | [609 passed / 6 skipped, Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43767731030) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43767731049) |
+| [#91](https://github.com/ArdaNTM/JAS/pull/91) | `e7b08362dad8` | [609 passed / 6 skipped, Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43767935571) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43767935585) |
+| [#92](https://github.com/ArdaNTM/JAS/pull/92) | `bb650fa3cc6c` | [612 passed / 6 skipped, Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43768319906) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43768319983) |
+
+Counts belong to separate PR branch runs and do not add up to a cumulative integrated test count. All remain PARTIAL and no production or physical verification is inferred.
+
+## Verified GitHub Actions — PRs #93 and #94
+
+| PR | Exact head | Full Core Assurance and Release Lock | Remote Persistence |
+| --- | --- | --- | --- |
+| [#93](https://github.com/ArdaNTM/JAS/pull/93) | `4f51ca9976d3` | [602 passed, 6 skipped; Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43770040681) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43770040680) |
+| [#94](https://github.com/ArdaNTM/JAS/pull/94) | `4c4a63553188` | [607 passed, 6 skipped; Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43770389240) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43770389219) |
+
+Independent PR heads, not combined/cumulative or real-provider acceptance.
+
+## Verified GitHub Actions — PR #95–#96
+
+| PR | Exact head | Full Core Assurance and Release Lock | Remote Persistence |
+| --- | --- | --- | --- |
+| [#95](https://github.com/ArdaNTM/JAS/pull/95) | `4963b5b85b8a` | [602 passed, 6 skipped; Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43770863374) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43770863380) |
+| [#96](https://github.com/ArdaNTM/JAS/pull/96) | `5721ec91e06b` | [607 passed, 6 skipped; Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43771211785) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43771211803) |
+
+These independent CI executions are not combined; no hardware, Owner or signed audit acceptance is inferred.
+
+## PR #97 exact-head CI evidence
+
+| PR | Commit | Core Assurance | Remote Persistence |
+| --- | --- | --- | --- |
+| [#97](https://github.com/ArdaNTM/JAS/pull/97) | `1e2980c16457` | [608 passed / 6 skipped; Release Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43771769354) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43771769447) |
+
+No distributed task execution, Owner approval, real hardware or actual goal achievement is inferred.
+
+## Verified exact-head CI — PRs #98–#101
+
+| PR | Exact head | Core Assurance + Final Release Lock | Remote Persistence |
+| --- | --- | --- | --- |
+| [#98](https://github.com/ArdaNTM/JAS/pull/98) | `f77b68f25c16` | [607 passed, 6 skipped; Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43774000863) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43774000872) |
+| [#99](https://github.com/ArdaNTM/JAS/pull/99) | `6a089da47024` | [606 passed, 6 skipped; Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43774156154) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43774156162) |
+| [#100](https://github.com/ArdaNTM/JAS/pull/100) | `1c04ffb4bc58` | [617 passed, 6 skipped; Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43774460559) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43774460548) |
+| [#101](https://github.com/ArdaNTM/JAS/pull/101) | `a01f8512232b` | [606 passed, 6 skipped; Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43774776859) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43774776881) |
+
+Each branch is tested separately against old main; counts are not cumulative or integrated. There is no real Owner, model, signed execution, lab or hardware acceptance.
+
+## Latest exact-head verified GitHub Actions — PR #102–#104
+
+| PR | Head | Core Assurance / Final Release Lock | Remote Persistence |
+| --- | --- | --- | --- |
+| [#102](https://github.com/ArdaNTM/JAS/pull/102) | `0c65a0409616` | [605 passed, 6 skipped; Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43775435288) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43775435294) |
+| [#103](https://github.com/ArdaNTM/JAS/pull/103) | `e5f4432142d0` | [605 passed, 6 skipped; Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43775656063) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43775656036) |
+| [#104](https://github.com/ArdaNTM/JAS/pull/104) | `1c3a201ba4db` | [615 passed, 6 skipped; Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43776008643) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43776008617) |
+
+The runs are independent branch checks, not an integrated combined acceptance.
+
+## PR #105 independently verified exact-head CI
+
+| PR | Commit | Core Assurance + Release Lock | Remote Persistence |
+| --- | --- | --- | --- |
+| [#105](https://github.com/ArdaNTM/JAS/pull/105) | `6fa9f155a757` | [603 passed, 6 skipped; Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43776433513) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43776433459) |
+
+Registry health-state unit integration is not a signed Owner or real-world agent acceptance.
+
+## PR #106 exact-head CI — independent audit checkpoint partial
+
+| PR | Commit | Core Assurance + Final Release Lock | Remote Persistence |
+| --- | --- | --- | --- |
+| [#106](https://github.com/ArdaNTM/JAS/pull/106) | `a145504a3ce80b496333169bb393b3ed42b1848b` | [599 passed, 6 skipped; Release Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43778641345) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43778641265) |
+
+Negative security tests: wrong signing key/scope, forged checkpoint MAC, record tampering, re-chaining, rollback/truncation, invalid input. Local isolated harness 7 passed. This is a separate branch, **not** cumulative integration or independent external signer acceptance. Production custody and WORM tests remain missing.
+
+## Exact-head independent CI evidence — PR #107–#108
+
+| PR | Head | Core Assurance + Release Lock | Remote Persistence |
+| --- | --- | --- | --- |
+| [#107](https://github.com/ArdaNTM/JAS/pull/107) | `02f0ab2f2421` | [600 passed, 6 skipped; lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43779626496) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43779626363) |
+| [#108](https://github.com/ArdaNTM/JAS/pull/108) | `46b1660bc95f` | [598 passed, 6 skipped; lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43780300467) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43780300516) |
+
+#107 isolated local 8-pass + openpyxl load validation is not CI. #108 Core tests include real PermissionEngine and registry, approval store, FastAPI TestClient checks. These runs are isolated branches, not cumulative acceptance or proof of trustworthy Owner identity.
+
+## PR #109–#110 exact-head evidence
+
+| PR | Head | Core and Final Release Lock | Persistence |
+| --- | --- | --- | --- |
+| [#109](https://github.com/ArdaNTM/JAS/pull/109) | `da5e2948079c` | [601 passed, 6 skipped; lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43781476118) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43781476157) |
+| [#110](https://github.com/ArdaNTM/JAS/pull/110) | `019b62e327b2` | [605 passed, 6 skipped; lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43781719023) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43781719040) |
+
+#109 initial head failed manifest byte digest (subsequently corrected); final CI PASS. #110 tests use a fake process, not real Docker; no physical isolation claims. Independent PR-head passes are not merged acceptance.
+
+## PR #111 final-head multi-platform proof (feature #18 partial)
+
+| Exact head | Core and source lock | Persistence | Windows launcher |
+| --- | --- | --- | --- |
+| [#111 / `595215246cf6`](https://github.com/ArdaNTM/JAS/pull/111) | [618 passed, 6 skipped; lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43782633134) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43782633127) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43782633130) |
+
+Earlier head Core failed two MCP v2 test model naming assertions; fixed in the final head. Tests use fake KPipeline and fake soundfile; no hardware model synthesis claim. Release lock includes both guard and executable provider script.
+
+## PR #112 + dependent PR #114 exact-head proof
+
+| PR | Head | Core and Final Release Lock | Persistence | Merge dependency |
+| --- | --- | --- | --- | --- |
+| [#112](https://github.com/ArdaNTM/JAS/pull/112) | `dcc4efd85446` | [618 passed 6 skipped; Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43783579312) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43783579268) | main baseline, Owner review |
+| [#114](https://github.com/ArdaNTM/JAS/pull/114) | `e8e971ff4909` | [628 passed 6 skipped; Lock PASS](https://github.com/ArdaNTM/JAS/actions/runs/43784049881) | [PASS](https://github.com/ArdaNTM/JAS/actions/runs/43784049895) | stacked on #112, Owner review |
+
+Fake provider/Gateway test fixture is not real SearXNG/web proof; per-query authorization is tested with real JAS registries and PermissionEngine. #114 dossier always flags untrusted evidence and requires human review.
+
+## PR #116 and #117 exact-head CI
+| PR | Core Assurance | Final Release Lock | Persistence |
+|---|---|---|---|
+| #116 (2020122bd0e2) | 598 passed, 6 skipped (run 43785154055) | PASS | PASS (43785154014) |
+| #117 (f9ea0abb2cf1) | 602 passed, 6 skipped (run 43785548012) | PASS | PASS (43785547988) |
+Sources: https://github.com/ArdaNTM/JAS/actions/runs/43785154055 and https://github.com/ArdaNTM/JAS/actions/runs/43785548012
+Runs are isolated PR head checks, not merged integration or production/hardware acceptance.
+
+## PR #118 and #119 exact-head CI evidence
+| PR | Core Assurance | Release Lock | Remote Persistence |
+|---|---|---|---|
+| #118 (cd1a98e195d5) | 605 passed, 6 skipped (run 43786822015) | PASS sha256:021868bed33dbb9bf75a8c9fcb0de675b288c049b894aa50d43cdc66c521051a | PASS (43786822032) |
+| #119 (2cace2cc4927) | 619 passed, 6 skipped (run 43787305752) | PASS sha256:713f7063f04f322f8ecafc9a5a3ddcb60504dab7bf3f7a1e57015343a5fba3ea | PASS (43787305867) |
+Run URLs: https://github.com/ArdaNTM/JAS/actions/runs/43786822015 and https://github.com/ArdaNTM/JAS/actions/runs/43787305752
+Neither run establishes hardware/Owner acceptance. #119 is stacked on unmerged #117.
+
+## Exact-head PR #120 Core and Release Lock
+PR #120 head 74aa91567bc561f3c884c19e3d6b00336e42f976 Core Assurance [run 43788402100](https://github.com/ArdaNTM/JAS/actions/runs/43788402100) 597 passed / 6 skipped, Release Lock PASS sha256:5258fbba7743aee83f74de39661cba4c2b2a7965f05770a916a3c4575bf596ca; Remote Persistence [run 43788402101](https://github.com/ArdaNTM/JAS/actions/runs/43788402101) PASS. Async fake-recognizer/player race fixtures, not real audio hardware proof.
+
+## PR #121/#122 independent exact-head Core and release lock
+| PR | HEAD | Core Assurance | Final Lock | Other CI |
+|---|---|---|---|---|
+| #121 | 59be3ffc0fb0 | 620 passed, 6 skipped (43788533848) | PASS | Persistence PASS (43788533895) |
+| #122 | 5224ac9f97d3 | 616 passed, 6 skipped (43788947660) | PASS | Persistence PASS (43788947692); Windows launcher PASS (43788947683) |
+Evidence: https://github.com/ArdaNTM/JAS/actions/runs/43788533848 and https://github.com/ArdaNTM/JAS/actions/runs/43788947660. Neither CI run tests actual microphones/model files or combined PR integration.
+
+## PR #123–#126 exact-head independent evidence
+- PR #124 HEAD 58c1b6bef2cf21ff2ef362b6a1a1760e2b1c8011: feature #20 PARTIAL; Core 618 passed/6 skipped, Final Release Lock PASS, Persistence PASS; No actual environmental sound model, hardware microphone/consent UI or production wiring. https://github.com/ArdaNTM/JAS/actions/runs/43789297469
+- PR #125 HEAD 52e9bba04363c8f1f76ad3374866a9d9af85fbac: feature #28 PARTIAL; Core 622 passed/6 skipped, Final Release Lock PASS, Persistence PASS; No real Electron/native display bridge, DPI hardware or HUD windows. https://github.com/ArdaNTM/JAS/actions/runs/43789685660
+- PR #126 HEAD b7f8509436755620163504ec23a2ad1d2a90b1df: feature #92 PARTIAL; Core 648 passed/6 skipped, Final Release Lock PASS, Persistence PASS; No real HUD window rendering, OS input or device/hotplug acceptance. https://github.com/ArdaNTM/JAS/actions/runs/43790466164
+- PR #123 HEAD c395721dcc0a3b5743b8ae74f87b01d11d7911fc: feature #93 PARTIAL; Core 601 passed/6 skipped, Final Release Lock PASS, Persistence PASS; No production app composition wiring, live HUD widget or hardware telemetry acceptance. https://github.com/ArdaNTM/JAS/actions/runs/43789150380
+All tests run in separate GitHub branches; none proves live audio/desktop hardware or combined merge state.
+
+## PR #127 exact-head verification — feature #54 PARTIAL
+Core run https://github.com/ArdaNTM/JAS/actions/runs/43791155108: 618 passed / 6 skipped; Final Release Lock PASS digest sha256:2292eb093fd99515f9b9a763f5fc813472ad13aa5845db57a35431bb8f8b6a30. Persistence https://github.com/ArdaNTM/JAS/actions/runs/43791155045: PASS. Networkless fake MCP transport, real registry/PermissionEngine/Gateway. No live provider acceptance.
+
+## PR #128–129 exact-head CI evidence
+- Draft PR #128, HEAD 12a08718d42b4f26593b099a2b87152f86803a4d, #85 TESTING/PARTIAL: Core 609 passed/6 skipped, lock PASS, Persistence PASS. No real Home Assistant/Matter/Zigbee/HomeKit bridge, authenticated household ownership, physical device tests or Owner approval. https://github.com/ArdaNTM/JAS/actions/runs/43792527756
+- Draft PR #129, HEAD 82e4883bb0ef3ab855a42e004f9ae26f531a425f, #86 TESTING/PARTIAL: Core 629 passed/6 skipped, lock PASS, Persistence PASS. No live HA integration, authenticated token, actual device sensor trust, physical control/Owner action or end-to-end production acceptance. https://github.com/ArdaNTM/JAS/actions/runs/43792885209
+#128 final lock sha256:cfc508ab7888e7ec095145e0e30a86eb3c6923a9e6a9db74495d88f4cd674df4; #129 stacked full 235-source lock sha256:dea49a6e3e51ce01311cfe2f49f7eda394cbd5792a04d9e99eeb7e64fd4629a2. No real home devices tested.
+
+## PR #130 exact-head verification
+Core run https://github.com/ArdaNTM/JAS/actions/runs/43793662855: 633 passed, 6 skipped, Final Release Lock PASS digest sha256:fc6280614c58cb575e44a9cb8163d0d8a63df62142f392300f07a88160859468. Persistence run https://github.com/ArdaNTM/JAS/actions/runs/43793662847 PASS. Tests cover real registries and NO_PROVENANCE SkillValidator denial. No real provider call, execution, sandbox or hardware.
+
+## Exact-head #135 hotfix and #136 multi-PR integration CI
+
+| PR | Exact head | Core | Final Release Lock | Other workflows |
+| --- | --- | --- | --- | --- |
+| [#135](https://github.com/ArdaNTM/JAS/pull/135) | `7e10ca4500ff` | 599 passed / 6 skipped | PASS (234 source files, sha256:6af648fb50b923cfb05111286f1754dd0b23eea1adfd09471aac0cccfaf48870) | Persistence, Windows PASS |
+| [#136](https://github.com/ArdaNTM/JAS/pull/136) | `91afeb0298ce` | 969 passed / 6 skipped ([run 43798715015](https://github.com/ArdaNTM/JAS/actions/runs/43798715015)) | PASS (253 sources, sha256:9ea3b86ab4e8a777adaacd8f824e626c426ced250389314c30e9c30f1a0cccca) | [Persistence 43798715007](https://github.com/ArdaNTM/JAS/actions/runs/43798715007) PASS, [Windows 43798715049](https://github.com/ArdaNTM/JAS/actions/runs/43798715049) PASS |
+
+#136 adds four actual cross-module tests covering SQLite+PermissionEngine, two separate Gateway-authorized Home reads, display EventBus->HUD plan and WAV prosody DSP->generation-safe speech session. Existing integrated 969 tests exclude 6 skipped and cannot prove real microphones, Owner identity, hardware, earlier PR #64–#111 or production acceptance.
+
+## PR #137/#138/#139 exact-head model/OCR evidence
+
+- Draft PR #137, #77, HEAD `b07d37b240a15b837b8362be253633643a0894c0`: 628 passed / 6 skipped (Core [43799634157](https://github.com/ArdaNTM/JAS/actions/runs/43799634157)), Final Release Lock **PASS** sha256:479a81bf6cedba045074fbbee5192e842d905b3b588d680b760b99c16312ea62, Persistence [43799634160](https://github.com/ArdaNTM/JAS/actions/runs/43799634160) **PASS**. No real Qwen-VL model weights/GPU throughput, image parser hardening, signed Owner consent/device UI or live model hardware evidence.
+- Draft PR #139, #79, HEAD `7c1aa87b73fc0ea8000870a8ca7e44a7ba523134`: 646 passed / 6 skipped (Core [43800598686](https://github.com/ArdaNTM/JAS/actions/runs/43800598686)), Final Release Lock **PASS** sha256:35cd8317518abdedac16879a3f2f498614bb4bac5a84a053855d304a917f1d1b, Persistence [43800598856](https://github.com/ArdaNTM/JAS/actions/runs/43800598856) **PASS**. Model-generated boxes not calibrated, ground-truth checked or measured on real camera/screen; no actionable target or hardware acceptance.
+- Draft PR #138, #80, HEAD `c239a5d29e097474f7f2cfa06f1433abc745d92f`: 656 passed / 7 skipped (Core [43800651799](https://github.com/ArdaNTM/JAS/actions/runs/43800651799)), Final Release Lock **PASS** sha256:bf8ae8ede65609510437afe986a0997e42b0812e737543a6632f317b79e56712, Persistence [43800651766](https://github.com/ArdaNTM/JAS/actions/runs/43800651766) **PASS**. Optional live OCR smoke skipped when Tesseract/English traineddata/font are missing; no deployed Windows trusted binary and Turkish traineddata/hardware/Owner quality evidence.
+
+#137 real local Ollama HTTP client under Gateway tested with `httpx.MockTransport`; #138 real Tesseract `create_subprocess_exec` contract and optional live CLI smoke (one more skip overall); #139 strict model JSON box evidence. CI PASS does **not** imply model weights/devices available in production. Source-lock branches independent, #138/#139 both depend on #137.
+
+## PR #140 exact-head video and visual model integration
+
+[Core Assurance run 43815356004](https://github.com/ArdaNTM/JAS/actions/runs/43815356004): **652 passed, 7 skipped**; Final Release Lock PASS, digest sha256:8b0f3c29b6558bf4fbb8e5e82d03e92370bb70e87faffb7a29cfead3f7d79bb8. [Persistence run 43815355926](https://github.com/ArdaNTM/JAS/actions/runs/43815355926): PASS. Separate Core PermissionEngine grants verified for video decode and model; no hardware model or production Windows codec acceptance.
+
+## PR #141 exact-head persistence and image-model gateway evidence
+
+[Core run 43816476060](https://github.com/ArdaNTM/JAS/actions/runs/43816476060): 644 passed / 6 skipped; Final Lock 235 entries PASS sha256:56545f6889f1dc37473d9c7580e7d64d9caa0a7edd20970f6893ba91298cab46. [Remote Persistence 43816476084](https://github.com/ArdaNTM/JAS/actions/runs/43816476084): PASS. Real SQLite writes/queries/deletes and Core/Gateway policy denial are tested; actual Windows Owner storage and model hardware not accepted.
+
+## PR #142 final exact-head Core and Camera privacy CI
+
+[Core run 43817947944](https://github.com/ArdaNTM/JAS/actions/runs/43817947944): **650 passed, 6 skipped**, Final Release Lock PASS sha256:d8d8ffb390ce5584c765ba92d89835fdb6bf3e781a9b74b7404b0466fd7130d2. [Persistence 43817947929](https://github.com/ArdaNTM/JAS/actions/runs/43817947929): PASS. Uses deterministic cv2 device stand-in; actual camera/Owner identity not verified. Direct MCP Gateway attempted without a live Owner lease is rejected by the **provider**, not just the facade.
+
+## PR #143 exact-head Pillow visual task verification
+
+[Core run 43818878842](https://github.com/ArdaNTM/JAS/actions/runs/43818878842): **628 passed, 7 skipped**, Final Lock PASS sha256:17342ebe4ce497ce345ceed8c25dbe7f0c214127954f8bb4367387d2c512d5ff. [Persistence run 43818878960](https://github.com/ArdaNTM/JAS/actions/runs/43818878960): PASS. Real PNG/Pillow differences and bounded model Gateway testing; skipped dependencies/actual camera/Owner review remain separate evidence gaps.
+
+## #143 correction and PR #144 exact-head cumulative CI
+
+PR #143 HEAD 0b573d4fa156763cb36d093eefd61733780cb6af: [Core 43820291972](https://github.com/ArdaNTM/JAS/actions/runs/43820291972) 654 passed/6 skipped, Release Lock PASS sha256:77cfbb79f7faeaaba033e15e75a7711d03537324896891708332b5dfc8815684; Persistence 43820291834 PASS. Previously 628/7 did not run Pillow-dependent test module: not accepted as real pixel test proof; now fully executed standard-library PNG tests.
+
+PR #144 HEAD 022dac012bfe5da971bab864a688de7a7e63a003: [Core 43820949320](https://github.com/ArdaNTM/JAS/actions/runs/43820949320) **1142 passed/8 skipped**, Release Lock **260 canonical source files PASS** sha256:162e7c5d31e88ea5ce2dee3a86d6058a3ce9d4d8b46b40606ede62ea587a905e; [Persistence 43820949194](https://github.com/ArdaNTM/JAS/actions/runs/43820949194) PASS; [Windows 43820949124](https://github.com/ArdaNTM/JAS/actions/runs/43820949124) PASS. No hardware model/Owner production acceptance or #64–#111 cumulative security proof.
+
+## PR #145 exact-head proof (feature #81)
+
+Draft PR #145 / feature #81 HEAD `c1c17a98f61b12d7fbe6921a830bce0bf6da7009`: Core Assurance [44202888251](https://github.com/ArdaNTM/JAS/actions/runs/44202888251) **621 passed, 6 skipped**; Final Release Lock PASS 234 entries `sha256:b953fd48a8abb424c4e0d6ad396551a00033064f98ebbf50cda1c3684a6c7244`; Remote Persistence [44202888287](https://github.com/ArdaNTM/JAS/actions/runs/44202888287) PASS. A true local sparse SAD matcher under separate Gateway ALLOW; no real stereo rig/Owner hardware acceptance.
+CI uses genuinely executed 5×5 block-matching/metric-depth algorithm, real registries/PermissionEngine/MCPGateway. Not a physical stereo camera test; no proof of sensor calibration or robot actuation.
+
+## Exact-head PR #145/#146 final verification (2026-11-18)
+
+PR #145 exact HEAD `c1c17a98f61b12d7fbe6921a830bce0bf6da7009`: [Core 44202888251](https://github.com/ArdaNTM/JAS/actions/runs/44202888251) 621 passed/6 skipped, Final Lock 234 files PASS `sha256:b953fd48a8abb424c4e0d6ad396551a00033064f98ebbf50cda1c3684a6c7244`; [Persistence 44202888287](https://github.com/ArdaNTM/JAS/actions/runs/44202888287) PASS. Already recorded in feature #81 ledger; rechecked against GitHub. No calibrated stereo hardware or Owner approval.
+
+PR #146 exact HEAD `32a2fadf2a84015d5cfc0f3e16b98e3a54ea9063`: [Core 44204212614](https://github.com/ArdaNTM/JAS/actions/runs/44204212614) **1156 passed/8 skipped**, Final Release Lock **PASS**, **261** canonical sources, `sha256:b03cdfcd594751959ed43a1d619e3f13ab2bd583a0b74a94e69d72b7f99e541d`; [Remote Persistence 44204212575](https://github.com/ArdaNTM/JAS/actions/runs/44204212575) **PASS**. Real EventBus numeric latency ring and FastAPI SVG endpoint through protected MCP Gateway; negative auth/injection/provider-bypass tests. Stacked on Draft PR #144, unmerged. Feature #95 moves NOT_STARTED to **TESTING/PARTIAL_VERIFIED**, NOT COMPLETED. Missing native transparent HUD/real Owner/device acceptance.
+
+**Ledger after evidence:** 117 features: **95 TESTING, 20 NOT_STARTED, 2 RESEARCHING, 0 COMPLETED**. Pinned main unchanged, no automatic merge.
+
+## PR #147 exact-head live task panel and 262-source lock
+
+Draft PR #147 (#97) exact HEAD `cffca134e19731125a8b14540137e7118759d951`: [Core Assurance run 44216018036](https://github.com/ArdaNTM/JAS/actions/runs/44216018036) **1168 passed, 8 skipped**, Final Release Lock **262 source files PASS**, `sha256:262b06bd84883ee5ffc8626a38b0e1214ce43f26a3b6c3e1f7a2730f6aadfe15`; [Remote Persistence run 44216018010](https://github.com/ArdaNTM/JAS/actions/runs/44216018010) **PASS**. Stacked on Draft PR #146. Real SQLite/PostgreSQL bounded task queries and EventBus task change hints through Core registries, PermissionEngine, MCP Gateway, authenticated FastAPI JSON with negative tests. No automatic task action, raw goals/results or policy grants. No native Electron HUD, independent event provenance, real Owner acceptance or full earlier PR integration. #97 TESTING/PARTIAL_VERIFIED only. Ledger: **19 NOT_STARTED / 96 TESTING / 2 RESEARCHING / 0 COMPLETED**.
+
+## 2026-11-18 — cumulative visual/stereo/task integration Draft #148
+
+Draft PR #148 exact HEAD `0b15247365ae9f9bd16eaf2f4cc38dc4a0e7e36c`, stacked on #147 and cumulatively including #145 stereo, #146 live SVG and #147 real task panel atop #144: [Core run 44217066647](https://github.com/ArdaNTM/JAS/actions/runs/44217066647) **1200 passed / 8 skipped**, 263 canonical-source Final Release Lock **PASS** `sha256:aefde5998dac9499f7cb7926477281eba0cd62525124a98bdbecf878d386591c`; [Remote Persistence run 44217066618](https://github.com/ArdaNTM/JAS/actions/runs/44217066618) **PASS**. Three new cross-module tests verify a real SAD depth/Gateway call, Gateway profiler → EventBus → live SVG, persisted SQLite → task panel, exact separate authorization scopes, no stereo-driven task or physical actions. No actual camera calibration/Owner hardware acceptance. #64–#111 not integrated, no merge, no COMPLETED. 19 NOT_STARTED / 96 TESTING / 2 RESEARCHING / 0 COMPLETED.
+
+## #26 PR #149/#150 real subprocess and exact-head CI acceptance only for TESTING
+
+Draft [PR #150](https://github.com/ArdaNTM/JAS/pull/150) exact HEAD `5e0131c465d61d3dfa8a3d86f85e86438195834a`: [Core Assurance 44219669406](https://github.com/ArdaNTM/JAS/actions/runs/44219669406) **1214 passed / 8 skipped**, Final Release Lock **264 canonical sources PASS** `sha256:069790490687180e704474f41d8f59853e4b0e74bc55bcda66b498991365676b`, [Remote Persistence 44219669405](https://github.com/ArdaNTM/JAS/actions/runs/44219669405) **PASS**. Real local process lifecycle, fixed SHA256-pinned trusted executable catalog, per-operation HIGH-risk one-shot Owner approvals, current_dispatch, bounded sanitized environment, at most eight children, authenticated HTTP and positive/negative subprocess and security tests. Draft [PR #149](https://github.com/ArdaNTM/JAS/pull/149) alternate exact HEAD `a98c0ddf534142de0142f8328119f5a216aa79e5`: [Core 44219573520](https://github.com/ArdaNTM/JAS/actions/runs/44219573520) **1210 passed / 8 skipped**, Final Lock `sha256:ee275d2a9c82dfcc019b813e05c0a7b749ff7260d176d8323677b8972ff85882` PASS, [Persistence 44219573560](https://github.com/ArdaNTM/JAS/actions/runs/44219573560) PASS. **Alternative competing implementations: do not merge #149 and #150 together without reconciliation.** Windows Operator manifest is fail-closed pending Owner NTFS ACL, code-signing, GUI/hardware and process-tree validation. **#26 TESTING/PARTIAL_VERIFIED only**; no COMPLETED/Owner acceptance. Tracker: 117 features: **97 TESTING, 18 NOT_STARTED, 2 RESEARCHING, 0 COMPLETED**. Main pinned and unchanged.
+
+## #151/#152 Core/Persistence/Final Lock exact-head evidence and real Docker smoke limitation
+
+#149 is SUPERSEDED REVIEW ONLY. The canonical #26 architecture is [Draft PR #150](https://github.com/ArdaNTM/JAS/pull/150); its exact-head CI previously PASS. Do not merge both.
+
+[Draft PR #151](https://github.com/ArdaNTM/JAS/pull/151) (#27) exact HEAD `510ee06a7b9d45a5363ec9f9689854cc3a95315d`: [Core 44223986550](https://github.com/ArdaNTM/JAS/actions/runs/44223986550) **1224 passed / 9 skipped**, Final Release Lock **PASS 265 canonical source files** `sha256:0d3a71e1bb8505a8324684dbc4d957947f849871a0491858da258df5e6ee9cb4`; [Remote Persistence 44223986569](https://github.com/ArdaNTM/JAS/actions/runs/44223986569) **PASS**. Real CLI path, immutable digest-pinned offline image/argv policy, transient no-network/no-bind Docker tmpfs, separate consumed Owner approval and auth FastAPI. **Live Docker preloaded-image smoke SKIPPED** (one of nine skipped), no independent daemon/broker attestation.
+
+[Draft PR #152](https://github.com/ArdaNTM/JAS/pull/152) (#33) exact HEAD `ed8c974a0cc16be645a30f9dea97e4c292d35df7`: [Core 44225173373](https://github.com/ArdaNTM/JAS/actions/runs/44225173373) **1232 passed / 9 skipped**, Final Release Lock **PASS 266 canonical source files** `sha256:17afbbba2a850e7fb749b8f15715885d63b944e939fc33d301eaf305fcd38f49`; [Remote Persistence 44225173688](https://github.com/ArdaNTM/JAS/actions/runs/44225173688) **PASS**. Real SQLite TaskStateMachine dependency/HMAC verification, nested Gateway exact policy and human terminal consent, no auto progress; success-flow external execution replaced in unit test, Docker success unproven.
+
+Both features **TESTING/PARTIAL_VERIFIED**, NOT COMPLETED. Source-lock CI passes on their stacked branches, but not older unmerged #64–#111, no physical Owner/Windows or sealed Docker broker authorization. Ledger **99 TESTING, 16 NOT_STARTED, 2 RESEARCHING, 0 COMPLETED**.

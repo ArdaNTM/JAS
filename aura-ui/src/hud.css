@@ -62,3 +62,17 @@ html:has(.hud-root),body:has(.hud-root),body:has(.hud-root) #root {
 .hud-schematic span{display:block;font-size:7px;letter-spacing:.09em;color:#64aabb}
 @keyframes aura-drift{to{transform:translateY(-3px);filter:drop-shadow(0 0 13px #00dbffab)}}
 @media(prefers-reduced-motion:reduce){.hud-schematic svg{animation:none}}
+
+/* Pack 4: real local 3D modes stay inside the click-through HUD viewport. */
+.hud-hologram { position:relative; height:100%; overflow:hidden; }
+.hud-hologram > div { width:100%; max-width:none; }
+.hud-hologram [aria-label^="Interactive 3D visualization"] {
+  height:164px !important;
+  width:100%;
+  border-radius:0;
+}
+.hud-visual button { cursor:pointer; font:9px Consolas,monospace; color:#9beaf7;
+  border:1px solid #227b9c; border-radius:4px; background:#08253c; }
+.hud-config-toggle { position:absolute; right:18px; top:42px; z-index:12;
+  padding:4px 8px; font:9px Consolas,monospace; color:#bbfaff;
+  background:#051927de; border:1px solid #269abe; border-radius:5px; cursor:pointer; }

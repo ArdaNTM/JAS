@@ -1,0 +1,47 @@
+# AURA 29 software acceptance gaps — exact PR #65 index, 2026-11-18
+
+**Authoritative basis:** `docs/22_IMPLEMENTATION/AURA_FEATURE_TRACKER.json` from PR #65 / synchronized Draft PR #158, same individual feature IDs; not a replacement definition of done. This is a **fail-closed implementation backlog**, not a test/Owner certification receipt. The user's declared Owner acceptance was recorded separately in `AURA_OWNER_DECLARATION_2026_11_18.md`. The 29 features still have real `missing_components`; the automated validator correctly returns `ELIGIBLE=0`.
+
+**Last verified exact-head CI:** PR #158 `47ec68db107bdc054856f03d3d4a993408e00ea7`, 7/7 PASS (Core 1688 pass / 10 skip; Remote PostgreSQL/MinIO 8 pass; unified E2E 10 pass and governance 9 pass). Passing a component test does not imply feature-wide production acceptance. PR #64 `19a9c0a77ac7d6285c5d334064cd5c18567cc31d` is a separate, sealed F2.7 runtime; no live-host attestation is inferred.
+
+| ID | Group | Feature | **Still required before VERIFIED/COMPLETED** | Current blockers (if separate) |
+|---:|---|---|---|---|
+| 2 | A | İlişkisel bilgi grafiği | Authorized user-facing erasure workflow; Production PostgreSQL retention/erasure and restore acceptance; Graph relation/version cleanup | — |
+| 5 | A | Hedef ve görev yönetimi | Authenticated UI/API integration; Authenticated long-term goal UX and accepted scoped planning lifecycle; End-to-end user acceptance | — |
+| 8 | B1 | Hafıza çelişkilerini tespit etme | Human-approved correction workflow; Temporal/source-confidence reasoning; UI review and independent acceptance | — |
+| 10 | B1 | Uzun vadeli hedef ve planlama | Owner-approved persistent goals and scoped progress record; Independent task completion receipts; Deadline/resource planning and real execution feedback | — |
+| 12 | B1 | Geçmiş hatalardan öğrenme | Per-principal durable outcome isolation; Longitudinal evidence of improved task outcomes; Approved improvement integration | — |
+| 21 | B1 | Konuşma geçmişi | Authenticated persistent conversation journal; Encryption, retention, backup/privacy erasure lifecycle; End-to-end user controls and device sync | — |
+| 35 | B1 | Gelişmiş web araştırması | Hardened live research network/SSRF/redirect provider; Owner-authorized external search and fetch safety; Source credibility and production end-to-end verification | Existing local_research_mcp.py live network fetch SSRF/DNS rebinding/redirect/response-size and logging controls unreviewed.; No real SearXNG/browser/web provider live acceptance, legal API terms or Owner-approved egress. |
+| 36 | B1 | Kaynak doğrulama | Independent page fetch and content verification; Publisher/date trust checks; DNS and redirect egress enforcement | — |
+| 37 | B1 | Çok kaynaklı karşılaştırma | Consolidate PR #77 and #78 boundaries without duplicate runtime authority; Prove independent publication identity; Integrate under authorized research Gateway + review UX | — |
+| 38 | B1 | Akademik araştırma | Authorized OpenAlex/Crossref retrieval integration; DOI verification and provenance/recency; Full academic discovery acceptance | — |
+| 39 | B1 | PDF ve belge analizi | PDF processing; OCR/rendered layout analysis; Authorized file pipeline and UI; Corpus-based security evaluation | No PDF/OCR support; No authenticated filesystem-to-DOCX integration; No adversarial real-world DOCX corpus or Owner acceptance |
+| 40 | A | Araştırma raporu oluşturma | Publisher-authenticated source-backed report authoring and independent citation checks; Authenticated end-to-end document export/download delivery; Owner-verified citation provenance and acceptance | — |
+| 41 | B1 | Yeni gelişmeleri takip etme | Principal-scoped persisted feed snapshots; Explicitly approved scheduler/notifications; Live transport and publisher attestation | — |
+| 42 | B1 | Araştırma hafızası | Authenticated source archive UI; Encryption and key rotation; Remote/backup synchronization | — |
+| 43 | B1 | Derin araştırma modu | Governed model planning and re-query decisions; Real source trust and contradiction verification; Approved production review and synthesis workflow | Depends on parent Draft PR #112; must review/merge parent before dependent work.; No genuine autonomous question decomposition/LLM synthesis, independent real-source verification, live provider or Owner acceptance. |
+| 44 | A | Kaynak arşivleme | Authenticated archive UI and verified Gateway-backed content retrieval; Retention/backup lifecycle; PDF/archive format handling | — |
+| 47 | A | Mimari analiz | Authorized repository retrieval integration; Compiler-verified cross-language architecture graph and dependency resolution; Independent code review and security verdict; UI/Owner acceptance | Authorized repository retrieval integration; Cross-language and cross-file architecture graph; Independent code review and security verdict; UI/Owner acceptance |
+| 52 | B1 | Sürümleme ve geri alma | Actual Git version/branch management and conflict resolution; PermissionEngine/MCP-governed persistent writes; Atomic rollback, verified restore and signed Owner acceptance | — |
+| 53 | B1 | Dokümantasyon üretimi | Authenticated repo integration; Versioned documentation publication/preview; Reference diagrams and human editorial review; End-to-end acceptance | Authenticated repo integration; Versioned documentation publication/preview; Reference diagrams and human editorial review; End-to-end acceptance |
+| 59 | A | Ajanlar arası iletişim | Live provisioned agent identities and authenticated cross-process delivery with verified receipts; Durable cross-process transport, retry and independent receipts; Security and multi-agent live E2E acceptance | — |
+| 62 | B1 | Görev koordinasyonu | Authenticated agent assignment and scheduling; MCP/PermissionEngine-authorized execution integration; Real cancellation/recovery and coordination acceptance | — |
+| 65 | B1 | Hipotez üretimi | Grounded literature, provenance, measured scientific novelty; Scientific validation and independent subject matter review | — |
+| 66 | B1 | Literatür taraması | Authorized live bibliographic/full-text retrieval; Qualitative and methodology screening, peer review; Independent citation authentication and researcher acceptance | — |
+| 67 | A | Matematiksel modelleme | Independent OLS assumption validation and appropriate uncertainty review; Real science data and result provenance; Independent scientific reproducibility review | — |
+| 73 | A | Deney sonuçlarını analiz etme | Authenticated, provenance-verified scientific dataset ingestion; Scientific validation and experiment design; End-to-end report integration | — |
+| 76 | B1 | Bilimsel keşif hafızası | Verified scientific publisher and experiment provenance; Actual independent discovery validation and review; Encrypted durable memory, deletion, duplication and audit recovery | — |
+| 102 | B1 | Prompt injection koruması | Adversarial model/tool evaluation; Gateway argument taint testing; Multilingual prompt injection evaluation; Trusted retrieval source isolation | — |
+| 111 | A | Veri analizi | Authenticated file ingestion and permissions; Real production streaming performance and memory-pressure acceptance; Authenticated spreadsheet download/UI with formula-literal XLSX | — |
+| 112 | B1 | Rapor ve sunum üretimi | Authorized report export route and UX; Additional DOCX/PDF/PPTX renderers and templates; Cross-client and production owner acceptance | No authenticated integration and authorized export/storage/download route.; DOCX/PDF/PPTX output, large data, Office compatibility and Owner production acceptance missing. |
+
+## Defensible evidence rules
+
+1. **Code and regression:** verify every original acceptance criterion against the real Kernel/ServiceRegistry/CapabilityRegistry/ProviderRegistry/PermissionEngine/EventBus/MCP Gateway path. Actual production input/output and negative security paths must pass; no stub/mock substitution or fictitious hardware.
+2. **Reviewer signoff:** record an individually reviewed security decision for each changed principal identity, HMAC key custody, ACL/network boundary, privacy lifecycle, external-source integrity, and cross-process behavior. A green CI job and unverified free-form Owner chat declaration alone do not prove that code or full security properties exist.
+3. **Acceptance gate:** preserve `missing_components` and `blockers` until each named deliverable exists and has exact code paths, a passing acceptance test, relevant review receipts, and, where necessary, a real provider/hardware/Owner witness. Set `assessment=VERIFIED`, `acceptance=PASS`, `security_review=PASS`, then `COMPLETED` **only if the existing validator accepts the entire record**.
+4. **No scope laundering:** #35/#36/#38/#39/#41/#43/#66 require live external retrieval/PDF or genuine source verification; #21/#42/#76 require cryptographic privacy/backup; #59 requires real cross-process agent identities. Labeling these B1 candidates does not remove the original real-world acceptance requirements.
+5. **CI is not a substitute for release readiness:** F2.7 sealed PR #64 must retain `deny_only` and its independent off-host approval gates even after a source merge.
+
+**Conclusion:** 0/29 are fully completion-eligible under their original full-scope criteria as of this review. This is not a refusal of the Owner's product vision; it is exact accounting of missing code, test and independent review evidence.

@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "core/**"
+      - "docs/22_IMPLEMENTATION/**"
+      - "scripts/validate_aura_feature_tracker.py"
       - ".github/workflows/aura-core-assurance.yml"
   push:
     branches:
@@ -11,6 +13,8 @@ on:
       - "feat/**"
     paths:
       - "core/**"
+      - "docs/22_IMPLEMENTATION/**"
+      - "scripts/validate_aura_feature_tracker.py"
       - ".github/workflows/aura-core-assurance.yml"
   workflow_dispatch:
 
@@ -46,6 +50,8 @@ jobs:
       - name: Compile Core sources and tests
         run: uv run python -m compileall -q src tests
       - name: Run Core unit tests
-        run: uv run pytest -q
+        run: uv run pytest -q --tb=short
+      - name: Validate 117-feature engineering acceptance ledger
+        run: uv run python ../scripts/validate_aura_feature_tracker.py
       - name: Verify complete production release lock
         run: uv run python scripts/verify_final_lock.py

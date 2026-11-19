@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { useAuraVoice } from "./voice/useAuraVoice";
 import { useContinuousAuraVoice } from "./voice/useContinuousAuraVoice";
+import DynamicHologram3D, { type VisualizationModelId } from "./components/DynamicHologram3D";
+import HudGameStudio from "./components/HudGameStudio";
 import "./hud.css";
 
 type Region = {
@@ -59,6 +61,15 @@ function splitShowRequest(transcript: string): string[] {
     .filter(Boolean).slice(0, 5);
 }
 
+function localVisualizationModel(title: string): VisualizationModelId {
+  // A closed set of illustrative local models; no model choice grants tool permission.
+  const request = title.toLocaleLowerCase("tr-TR");
+  return /motor/.test(request) ? "motor-v1"
+    : /(dişli|gear)/.test(request) ? "gear-v1"
+    : /(küre|sphere)/.test(request) ? "sphere-v1"
+    : "procedural-object-v1";
+}
+
 function Schematic({ title }: { title: string }) {
   return <div className="hud-schematic" aria-label={"Temsili teknik çizim: " + title}>
     <svg viewBox="0 0 320 125" role="img" aria-label="Genel nesne şeması; gerçek CAD veya fotoğraf değil">
@@ -101,6 +112,18 @@ export default function HudOverlay() {
     }
   }, []);
 
+  const publishVisualization = useCallback(async (title: string, kind: "game" | "hologram") => {
+    // The HUD remains a presentation surface. Only the authenticated Core endpoint
+    // can create a panel; it must pass the existing PermissionEngine/MCP Gateway.
+    const bounded = title.trim().slice(0, 100);
+    if (!bounded) return;
+    try {
+      await postHUD<{ status: string }>("/api/hud/panel", { title: bounded, kind });
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Görselleştirme paneli açılamadı");
+    }
+  }, []);
+
   const readScreen = useCallback(async (prompt: string, session?: { token: string; until: number; remaining: number }) => {
     setError(""); setScanning(true);
     try {
@@ -140,7 +163,11 @@ export default function HudOverlay() {
     const phrase = transcript.trim();
     const command = wakeRequired ? /(?:^|\s)aura[\s,:;.!?-]*(.*)$/i.exec(phrase)?.[1]?.trim() : phrase;
     if (!command) return;
-    if (/\b(göster|show)\b/i.test(command)) {
+    if (/(oyun|game).*(oluştur|başlat|yap|create|start)/i.test(command)) {
+      void publishVisualization(command, "game");
+    } else if (/(hologram|3d|3b|üç boyut)/i.test(command)) {
+      void publishVisualization(command, "hologram");
+    } else if (/\b(göster|show)\b/i.test(command)) {
       for (const name of splitShowRequest(command)) void publishObject(name);
     } else if (/ekran.*(oku|analiz|tara)|screen.*(read|analy[sz]e)/i.test(command)) {
       setQuestion(command.slice(0, 400));
@@ -239,7 +266,10 @@ export default function HudOverlay() {
           onClick={() => void window.auraDesktop?.hudDismissPanel?.(panel.id)}>×</button>}
       </header>
       <div className="hud-float-title">{panel.title}</div>
-      {panel.media ? <div className="hud-media">
+      {panel.kind === "game" ? <HudGameStudio interactive={Boolean(scene?.interactive)} /> :
+       panel.kind === "hologram" ? <div className="hud-hologram">
+         <DynamicHologram3D target={panel.title} modelId={localVisualizationModel(panel.title)} active={true} />
+       </div> : panel.media ? <div className="hud-media">
         <img src={panel.media.url} alt={panel.title + " — Wikimedia Commons görseli"}
           referrerPolicy="no-referrer" loading="lazy" />
         <div className="hud-media-meta">{panel.media.license} · {panel.media.artist || "Wikimedia Commons"}</div>
@@ -257,6 +287,8 @@ export default function HudOverlay() {
         onChange={e => setTopic(e.target.value)} /></label>
       <button onClick={() => splitShowRequest(topic).forEach(name => void publishObject(name))}>
         GÖRSEL BUL + HOLOGRAM AÇ</button>
+      <button onClick={() => void publishVisualization(topic, "hologram")}>3D HOLOGRAM</button>
+      <button onClick={() => void publishVisualization(topic, "game")}>GAME STUDIO</button>
       <small>Görsel araması yalnızca açık isteğinizle Wikimedia Commons'a gider.</small>
       <label>SCREENREAD QUESTION <input maxLength={400} value={question}
         onChange={e => setQuestion(e.target.value)} /></label>
