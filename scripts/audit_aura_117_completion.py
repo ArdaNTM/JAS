@@ -93,6 +93,25 @@ def validate(tracker: dict, groups: dict, provenance: dict, root: Path = ROOT) -
         raise ValueError("B2-Owner/B2-Env partition must cover exactly 88 records")
     if set(owner_ids) != B2_OWNER_IDS:
         raise ValueError("B2-Owner frozen cohort mismatch")
+    # B2-Env validation locations are scheduling targets, never acceptances.
+    validation_groups = groups.get("B2_env_validation_groups")
+    expected_groups = ("windows_local", "hyperv_docker", "external_hardware_simulation")
+    if type(validation_groups) is not dict or set(validation_groups) != set(expected_groups):
+        raise ValueError("B2-Env validation groups absent or incomplete")
+    group_ids = []
+    for key in expected_groups:
+        assigned = validation_groups[key]
+        if (type(assigned) is not list
+                or any(type(item) is not int for item in assigned)
+                or assigned != sorted(set(assigned))):
+            raise ValueError("B2-Env validation group IDs invalid")
+        group_ids.extend(assigned)
+    if len(group_ids) != len(set(group_ids)) or set(group_ids) != set(env_ids):
+        raise ValueError("B2-Env validation groups overlap or are incomplete")
+    if validation_groups["hyperv_docker"] != [25, 27, 33, 45, 51, 60, 101]:
+        raise ValueError("B2-Env Docker trust boundary was reclassified")
+    if validation_groups["external_hardware_simulation"] != [81, 85, 86, 87, 88, 89, 90]:
+        raise ValueError("B2-Env physical trust boundary was reclassified")
     rows = groups.get("records")
     if not isinstance(rows, list) or len(rows) != 117:
         raise ValueError("group records must cover all 117 features")
@@ -152,6 +171,9 @@ def validate(tracker: dict, groups: dict, provenance: dict, root: Path = ROOT) -
         "group_B_testing": sum(f["status"] == "TESTING" for f in features if f["id"] not in SOFTWARE_IDS),
         "total_completed": sum(f["status"] == "COMPLETED" for f in features),
         "B2_owner": len(owner_ids), "B2_env": len(env_ids),
+        "B2_windows_local": len(validation_groups["windows_local"]),
+        "B2_hyperv_docker": len(validation_groups["hyperv_docker"]),
+        "B2_external_hardware": len(validation_groups["external_hardware_simulation"]),
         "total_verified_ready": sum(eligible_for_completion(f) for f in features),
     }
 

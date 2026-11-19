@@ -43,14 +43,24 @@ def load_b2(repo: Path) -> tuple[dict, dict]:
         for i in env
     ):
         raise ValueError("B2-Env records are not fail-closed")
+    validation_groups = catalog.get("B2_env_validation_groups")
+    if (type(validation_groups) is not dict or
+            set(validation_groups) != {"windows_local", "hyperv_docker", "external_hardware_simulation"}
+            or any(type(items) is not list or items != sorted(set(items)) for items in validation_groups.values())
+            or sorted(sum((items for items in validation_groups.values()), []))
+                != catalog["B2_env_ids"]):
+        raise ValueError("B2-Env validation groups must partition 71 uncompleted IDs")
     return tracker, catalog
 
 
-def focused_tests(repo: Path, tracker: dict, catalog: dict) -> tuple[tuple[str, ...], tuple[str, ...]]:
+def focused_tests(repo: Path, tracker: dict, catalog: dict, *, target_ids: list[int] | None = None) -> tuple[tuple[str, ...], tuple[str, ...]]:
     """Discover present focus tests AND retain missing identities as blockers."""
     selected: set[str] = set()
     missing: set[str] = set()
-    for i in catalog["B2_env_ids"]:
+    selected_ids = catalog["B2_env_ids"] if target_ids is None else target_ids
+    if not set(selected_ids).issubset(catalog["B2_env_ids"]):
+        raise ValueError("B2-Env target IDs out of bounds")
+    for i in selected_ids:
         row = tracker["features"][i - 1]
         if not row["test_commands"]:
             raise ValueError(f"B2 feature #{i} lacks focused regression tests")
@@ -128,15 +138,25 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--vm-name", default="AURA-Broker-Lab")
     parser.add_argument("--hardware-evidence", type=Path)
     parser.add_argument("--trusted-public-keys", type=Path)
+    parser.add_argument("--group", choices=(
+        "all", "windows_local", "hyperv_docker", "external_hardware_simulation"
+    ), default="all", help="Scope focused test selection; no release approval inferred")
+    parser.add_argument("--tests-only", action="store_true",
+                        help="Run scoped regressions/source validation; no hardware or Owner proof")
     parser.add_argument("--list-only", action="store_true",
                         help="Offline test discovery only; no live probes or tests")
     args = parser.parse_args(argv)
+    if args.list_only and args.tests_only:
+        parser.error("--list-only and --tests-only are mutually exclusive")
+    if args.group != "all" and not (args.list_only or args.tests_only):
+        parser.error("Scoped --group must be combined with --list-only or --tests-only")
     repo = args.repo_root.resolve()
     if not 1 <= args.ubuntu_port <= 65535:
         parser.error("invalid Ubuntu port")
     try:
         tracker, catalog = load_b2(repo)
-        paths, missing_tests = focused_tests(repo, tracker, catalog)
+        target_ids = None if args.group == "all" else catalog["B2_env_validation_groups"][args.group]
+        paths, missing_tests = focused_tests(repo, tracker, catalog, target_ids=target_ids)
     except (OSError, ValueError, KeyError, TypeError) as exc:
         print(f"B2 CHECKLIST ERROR: {exc}")
         return 2
@@ -168,6 +188,9 @@ def main(argv: list[str] | None = None) -> int:
     all_pass = all(run_check(name, cmd, cwd=repo / "core") for name, cmd in checks)
     if missing_tests:
         all_pass = False
+    if args.tests_only:
+        print("Software regression only: physical/Owner acceptance NOT VERIFIED")
+        return 0 if all_pass else 2
     environment_ok = preflight(
         ubuntu_host=args.ubuntu_host, ubuntu_port=args.ubuntu_port,
         vm_name=args.vm_name)

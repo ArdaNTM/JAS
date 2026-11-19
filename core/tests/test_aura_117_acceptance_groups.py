@@ -201,3 +201,27 @@ def test_b2_owner_v1_requires_real_merge_pin_and_review_evidence():
     fake["features"][first]["security_review"] = "NOT_REVIEWED"
     with pytest.raises(ValueError, match="B2-Owner"):
         audit.validate(fake, groups, provenance)
+
+
+def test_b2_env_three_way_review_partition_does_not_grant_acceptance():
+    tracker, groups, provenance = load()
+    sections = groups["B2_env_validation_groups"]
+    assert {name: len(ids) for name, ids in sections.items()} == {
+        "windows_local": 57, "hyperv_docker": 7,
+        "external_hardware_simulation": 7,
+    }
+    for item_id in groups["B2_env_ids"]:
+        assert tracker["features"][item_id - 1]["status"] == "TESTING"
+        assert groups["records"][item_id - 1]["ready_for_completion"] is False
+    for action in ("overlap", "lost", "hardware_mislabel"):
+        bad = copy.deepcopy(groups)
+        if action == "overlap":
+            bad["B2_env_validation_groups"]["windows_local"].append(25)
+        elif action == "lost":
+            bad["B2_env_validation_groups"]["hyperv_docker"].pop()
+        else:
+            bad["B2_env_validation_groups"]["external_hardware_simulation"].remove(90)
+            bad["B2_env_validation_groups"]["windows_local"].append(90)
+            bad["B2_env_validation_groups"]["windows_local"].sort()
+        with pytest.raises(ValueError, match="B2-Env"):
+            audit.validate(tracker, bad, provenance)

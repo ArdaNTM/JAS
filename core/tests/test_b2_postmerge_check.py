@@ -47,3 +47,17 @@ def test_b2_source_and_test_list_cannot_be_spoofed_or_escape_scope():
 def test_list_only_rejects_invalid_ubuntu_port_without_live_probe():
     with pytest.raises(SystemExit):
         b2.main(["--list-only", "--ubuntu-port", "0"])
+
+
+def test_three_way_test_inventory_has_no_missing_sources_and_is_not_hardware_acceptance():
+    tracker, groups = b2.load_b2(ROOT)
+    union = set()
+    for key, count in (("windows_local", 57), ("hyperv_docker", 7),
+                       ("external_hardware_simulation", 7)):
+        ids = groups["B2_env_validation_groups"][key]
+        assert len(ids) == count
+        present, missing = b2.focused_tests(ROOT, tracker, groups, target_ids=ids)
+        assert missing == ()
+        assert present
+        union.update(ids)
+    assert union == set(groups["B2_env_ids"])

@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-18T23:18:22.993Z",
-  "git_commit": "0136e82d16e80a824db9679618f490a81b29ca77",
+  "generated_at": "2026-11-19T03:50:41.079Z",
+  "git_commit": "d93b33c6cb22abcf55a238a1475c2f0bf0ecb5a2",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:2e299b1d6c095bb2625da1ba06648a7f82c73b868da81ac2f3de31c98704eca8",
-  "file_count": 440,
+  "release_digest": "sha256:51da70c138e3d75c94a40756e0ad439d7926b702f9090903ed7ae7829c8e00be",
+  "file_count": 441,
   "files": [
     {
       "path": ".gitattributes",
@@ -307,6 +307,10 @@
     {
       "path": "core/src/aura_core/acceptance/__init__.py",
       "sha256": "50911aebb490f21ec4001003dc03e5ce6391a763295a81a8d2274d6d9548f922"
+    },
+    {
+      "path": "core/src/aura_core/acceptance/b2_evidence_bundle.py",
+      "sha256": "e91e7c67beeecb9f6896308e4a82a8ad51740bb7c83f46af4bc36c661acc9beb"
     },
     {
       "path": "core/src/aura_core/acceptance/hardware_gate.py",
@@ -970,7 +974,7 @@
     },
     {
       "path": "core/src/aura_core/kernel/diagnostics.py",
-      "sha256": "3567c4d96f42cf3001d327a739ff3275b230ffc7e625b97868346937ce27000e"
+      "sha256": "558d2696bb022a7bed3477cad7999ab87618340485d7db84de5329d224708ab2"
     },
     {
       "path": "core/src/aura_core/kernel/events.py",
