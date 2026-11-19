@@ -62,11 +62,3 @@ Rebuild/review the final candidate from a true merged tree. The release-lock gen
 After the integrated #158 branch is verified green and GitHub confirms `mergeable=true` against the then-current `main`, the Owner can merge #158 manually. Finally review #65 (now overlap-source matched with #158), revalidate tracker and merge #65 manually. No existing 29 feature record is `COMPLETED` without exact missing-component implementation evidence and an accepted validator receipt. Closing earlier Draft PRs requires a separate complete source/ancestry reconciliation, not a blanket archival assumption.
 
 **No zero-conflict guarantee is claimed** until the *actual* post-#64 merge simulation, full CI and final lock succeed on the exact candidate tree.
-
-
-## Post-merge status — 2026-11-18 (supersedes earlier PR #64 preflight assumption)
-
-- PR #64 is now merged into `main` at `e9c68dd1269e42df1731eac4d4b8acbfa9675ca7`.
-- PR #158 reconciled the six independently changed runtime/UI source files, integrated the seventh overlapping manifest, and generated the **440-entry** combined lock; current head `e61ea6b812c315f5d0d7d2b5af20a2dd8b5a9493`. [Core Assurance](https://github.com/ArdaNTM/JAS/actions/runs/44342538435), [Unified Acceptance](https://github.com/ArdaNTM/JAS/actions/runs/44342537621), [Windows Launcher](https://github.com/ArdaNTM/JAS/actions/runs/44342554891) pass. This is **source integration readiness**, not approval of nine outstanding feature acceptance records.
-- PR #65 tracker and PR #158 tracker remain byte-identical; all 117 features are `TESTING`, and eligible/completed remain `0/0`. Other independent security audit workflows are not silently declared green or bypassed.
-- No approval is granted here to merge PR #158 or PR #65; the Owner retains that decision.

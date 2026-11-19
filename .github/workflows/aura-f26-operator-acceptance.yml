@@ -1,0 +1,35 @@
+name: AURA F2.6 Offline Operator Acceptance
+on:
+  pull_request:
+    paths:
+      - "scripts/Invoke-AuraF26PinnedAudit.ps1"
+      - ".github/workflows/aura-f26-operator-acceptance.yml"
+      - "docs/aura-f26-operator-acceptance.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  operator-script-static:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Windows PowerShell 5.1 syntax and fail-closed static self-test
+        shell: pwsh
+        run: |
+          $file = (Resolve-Path 'scripts/Invoke-AuraF26PinnedAudit.ps1').Path
+          $tokens = $null
+          $parseErrors = $null
+          $ast = [System.Management.Automation.Language.Parser]::ParseFile($file, [ref]$tokens, [ref]$parseErrors)
+          if ($parseErrors.Count -ne 0) {
+            $parseErrors | ForEach-Object { Write-Error $_ }
+            exit 1
+          }
+          & "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $file -SelfTest
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $source = Get-Content -LiteralPath $file -Raw
+          foreach ($forbidden in @('New-Service', 'sc.exe create', 'Enable-LocalUser', 'New-LocalUser', 'Start-Service')) {
+            if ($source.Contains($forbidden)) { throw "Mutating provisioning command unexpectedly present" }
+          }

@@ -65,6 +65,22 @@ class TaskMemoryCoordinator:
         self._save(principal_id, task_id, context, state=state)
         self._contexts.pop((principal_id, task_id), None)
 
+    def forget_task(
+        self, *, principal_id: str, task_id: str, confirmed: bool = False
+    ) -> tuple[int, int]:
+        """Erase persisted task data and evict this task's in-memory context.
+
+        No HTTP route, policy grant, or implicit Owner approval is created.
+        The authenticated application boundary is responsible for approval.
+        """
+        principal = self.store._validate_scope(principal_id, "principal_id")
+        task = self.store._validate_scope(task_id, "task_id")
+        deleted = self.store.forget_task(
+            principal_id=principal, task_id=task, confirmed=confirmed
+        )
+        self._contexts.pop((principal, task), None)
+        return deleted
+
     def _save(self, principal_id: str, task_id: str, context: WorkingContext, *, state: str) -> None:
         self.store.save_checkpoint(
             principal_id=principal_id, task_id=task_id,

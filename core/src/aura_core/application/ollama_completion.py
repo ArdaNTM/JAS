@@ -13,6 +13,7 @@ class OllamaJSONCompletionProvider:
     def __init__(
         self, *, base_url: str = "http://127.0.0.1:11434",
         model: str = "qwen3", timeout_seconds: float = 30.0,
+        trust_env: bool = True,
     ) -> None:
         if not base_url.startswith(("http://127.0.0.1", "http://localhost", "https://")):
             raise ValueError("Ollama endpoint must be loopback HTTP or HTTPS")
@@ -21,10 +22,11 @@ class OllamaJSONCompletionProvider:
         self._base_url = base_url.rstrip("/")
         self._model = model
         self._timeout = timeout_seconds
+        self._trust_env = trust_env
 
     async def complete_json(self, *, system_prompt: str, user_prompt: str) -> Mapping[str, Any]:
         timeout = httpx.Timeout(self._timeout)
-        async with httpx.AsyncClient(timeout=timeout) as client:
+        async with httpx.AsyncClient(timeout=timeout, trust_env=self._trust_env) as client:
             response = await client.post(
                 f"{self._base_url}/api/chat",
                 json={

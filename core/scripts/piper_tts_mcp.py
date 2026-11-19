@@ -124,7 +124,23 @@ async def handle_call_tool(ctx: ServerRequestContext, params: types.CallToolRequ
         )
 
 
+def validate_configuration() -> None:
+    """Load and cache the configured local ONNX voice before MCP readiness."""
+    global _cached_voice, _cached_identity
+    model, config = _voice_paths()
+    try:
+        from piper import PiperVoice
+    except ImportError as exc:
+        raise RuntimeError("Piper selected but piper-tts is not installed in the Core Python environment.") from exc
+    identity = (str(model.resolve()), str(config.resolve()))
+    with _voice_lock:
+        if _cached_voice is None or _cached_identity != identity:
+            _cached_voice = PiperVoice.load(str(model), config_path=str(config))
+            _cached_identity = identity
+
+
 async def main() -> None:
+    await asyncio.to_thread(validate_configuration)
     server = Server(
         "aura-piper-tts",
         on_list_tools=handle_list_tools,

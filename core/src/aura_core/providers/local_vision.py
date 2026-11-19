@@ -46,6 +46,7 @@ class LocalOllamaVisionProvider:
                 json={
                     "model": self.model,
                     "stream": False,
+                    "format": "json",
                     "messages": [{"role": "user", "content": prompt, "images": [encoded]}],
                     "options": {"temperature": 0},
                 },

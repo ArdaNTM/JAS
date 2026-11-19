@@ -1,0 +1,34 @@
+# SHA-256 release-lock inputs must have identical bytes on Windows and Unix.
+# Binary assets stay binary: text=auto only normalizes files detected as text.
+.gitattributes text eol=lf
+core/src/** text=auto eol=lf
+core/scripts/** text=auto eol=lf
+core/tests/test_real_hardware_osworld.py text eol=lf
+core/tests/test_osworld_secure_live.py text eol=lf
+core/tests/test_owner_enrollment.py text eol=lf
+core/tests/test_audit_broker_*.py text eol=lf
+aura-ui/src/** text=auto eol=lf
+aura-ui/package.json text eol=lf
+aura-ui/package-lock.json text eol=lf
+aura-ui/vite.config.ts text eol=lf
+core/frontend/package.json text eol=lf
+core/frontend/package-lock.json text eol=lf
+aura-ui/electron-main.cjs text eol=lf
+aura-ui/electron-preload.cjs text eol=lf
+aura-ui/public/aura-pcm-worklet.js text eol=lf
+core/pyproject.toml text eol=lf
+core/uv.lock text eol=lf
+.github/workflows/*.yml text eol=lf
+
+# Preserve native Windows batch semantics, where applicable.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# F2.7 release-critical Windows script and historical JSON bytes.
+scripts/Invoke-AuraF27OfflinePromotion.ps1 text eol=lf
+scripts/Test-AuraF27SealedRuntimeToken.ps1 text eol=lf
+release-manifest.f26.json text eol=lf
+docs/aura-f27-operator-acceptance.md text eol=lf
+scripts/Invoke-AuraF27BuildRuntime.ps1 text eol=lf
+scripts/verify_f27_runtime_imports.py text eol=lf
+scripts/Test-AuraF27NativeRuntimeToken.ps1 text eol=lf

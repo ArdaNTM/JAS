@@ -76,4 +76,4 @@ jobs:
       - name: Install locked project and test dependencies
         run: uv sync --frozen --group dev
       - name: Run real PostgreSQL and MinIO integration tests
-        run: uv run --with minio pytest -q tests/test_remote_persistence_integration.py
+        run: uv run --with minio pytest -q --tb=short tests/test_remote_persistence_integration.py tests/test_remote_graph_group_a.py

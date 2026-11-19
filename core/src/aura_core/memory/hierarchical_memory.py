@@ -226,6 +226,31 @@ class SQLiteEpisodicMemory:
             raise ValueError("checkpoint state must be an object")
         return value
 
+    def forget_task(
+        self, *, principal_id: str, task_id: str, confirmed: bool = False
+    ) -> tuple[int, int]:
+        """Erase one exact principal/task scope, including its checkpoint.
+
+        This is a low-level persistence primitive, not an authorization
+        decision. Callers must authenticate the principal and obtain explicit
+        user approval before setting confirmed=True. Neither operation
+        reads or modifies another principal's scoped records.
+        """
+        principal = self._validate_scope(principal_id, "principal_id")
+        task = self._validate_scope(task_id, "task_id")
+        if confirmed is not True:
+            raise PermissionError("explicit task erasure confirmation is required")
+        with self._connect() as db:
+            records = db.execute(
+                "DELETE FROM episodic_records WHERE principal_id = ? AND task_id = ?",
+                (principal, task),
+            ).rowcount
+            checkpoints = db.execute(
+                "DELETE FROM task_checkpoints WHERE principal_id = ? AND task_id = ?",
+                (principal, task),
+            ).rowcount
+        return records, checkpoints
+
     @staticmethod
     def _validate_scope(value: str, name: str) -> str:
         if not isinstance(value, str) or not value.strip() or len(value) > 200:

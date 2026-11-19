@@ -4,6 +4,8 @@ from typing import Any
 
 from aura_core.kernel.permissions import RiskLevel
 from aura_core.mcp.gateway import MCPGatewayRequest
+from aura_core.kernel.permissions import AuthorizationDecision
+from .evidence import collect_search_evidence
 
 
 class MCPResearchSource:
@@ -48,6 +50,24 @@ class MCPResearchSource:
         return await self.gateway.invoke(
             request
         )
+
+    async def search_with_evidence(
+        self, *, principal_id: str, query: str, resource_scope: str,
+        risk_level: RiskLevel, task_id: str, limit: int = 10,
+    ) -> tuple[Any, tuple[dict[str, Any], ...]]:
+        """Preserve the Gateway decision; decorate only authorized results.
+
+        This does not issue additional tool requests or alter search policies.
+        """
+        if type(limit) is not int or not 1 <= limit <= 25:
+            raise ValueError("source evidence limit must be 1..25")
+        response = await self.search(
+            principal_id=principal_id, query=query,
+            resource_scope=resource_scope, risk_level=risk_level, task_id=task_id,
+        )
+        if response.decision is not AuthorizationDecision.ALLOW:
+            return response, ()
+        return response, collect_search_evidence(response.result, limit=limit)
 
     async def fetch(
         self,
