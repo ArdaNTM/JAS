@@ -109,7 +109,7 @@ def validate(tracker: dict, groups: dict, provenance: dict, root: Path = ROOT) -
             if expected_track == "B2-Env":
                 if (entry.get("ready_for_completion") is not False
                         or record["status"] != "TESTING"):
-                    raise ValueError("B2-Env readiness must remain fail-closed")
+                    raise ValueError("B2 readiness: B2-Env must remain fail-closed")
             elif (entry.get("ready_for_completion") is not True
                   or record["status"] != "COMPLETED"
                   or not eligible_for_completion(record)):
