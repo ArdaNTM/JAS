@@ -17,6 +17,7 @@ GROUPS = ROOT / "docs/22_IMPLEMENTATION/AURA_ACCEPTANCE_GROUPS.json"
 PROVENANCE = ROOT / "docs/22_IMPLEMENTATION/AURA_CORE_PROVENANCE_RECONCILIATION.json"
 SOFTWARE_IDS = frozenset({2, 5, 40, 44, 47, 59, 67, 73, 111})
 B1_IDS = frozenset({8, 10, 12, 21, 35, 36, 37, 38, 39, 41, 42, 43, 52, 53, 62, 65, 66, 76, 102, 112})
+B2_TRACKS = frozenset({"B2-Owner", "B2-Env"})
 
 
 def read_json(path: Path) -> dict:
@@ -78,6 +79,13 @@ def validate(tracker: dict, groups: dict, provenance: dict, root: Path = ROOT) -
     b2_ids = sorted(set(b_ids) - B1_IDS)
     if groups.get("B2_ids") != b2_ids or set(b_ids) != B1_IDS | set(b2_ids):
         raise ValueError("B1/B2 subgroups do not partition all B features")
+    owner_ids, env_ids = groups.get("B2_owner_ids"), groups.get("B2_env_ids")
+    if (type(owner_ids) is not list or type(env_ids) is not list
+            or owner_ids != sorted(set(owner_ids))
+            or env_ids != sorted(set(env_ids))
+            or set(owner_ids) & set(env_ids)
+            or set(owner_ids) | set(env_ids) != set(b2_ids)):
+        raise ValueError("B2-Owner/B2-Env partition must cover exactly 88 records")
     rows = groups.get("records")
     if not isinstance(rows, list) or len(rows) != 117:
         raise ValueError("group records must cover all 117 features")
@@ -87,6 +95,14 @@ def validate(tracker: dict, groups: dict, provenance: dict, root: Path = ROOT) -
         if (entry.get("id") != record["id"] or entry.get("name") != record["name"]
                 or entry.get("group") != expected_group or entry.get("subgroup") != subgroup):
             raise ValueError("feature grouping does not match authoritative tracker")
+        if subgroup == "B2":
+            expected_track = "B2-Owner" if record["id"] in owner_ids else "B2-Env"
+            if (entry.get("b2_acceptance_track") != expected_track
+                    or entry.get("ready_for_completion") is not False
+                    or record["status"] != "TESTING"):
+                raise ValueError("B2 readiness/Owner-Env track must remain fail-closed")
+        elif "b2_acceptance_track" in entry:
+            raise ValueError("non-B2 feature must not have B2 readiness track")
         expected_marker = f"[ACCEPTANCE_GROUP={expected_group};"
         if not isinstance(record.get("notes"), str) or not record["notes"].startswith(expected_marker):
             raise ValueError("authoritative feature tracker missing Group A/B classification")
@@ -121,6 +137,8 @@ def validate(tracker: dict, groups: dict, provenance: dict, root: Path = ROOT) -
         "group_B2": 117 - len(SOFTWARE_IDS) - len(B1_IDS),
         "group_A_complete": sum(f["status"] == "COMPLETED" for f in features if f["id"] in SOFTWARE_IDS),
         "group_B_testing": sum(f["status"] == "TESTING" for f in features if f["id"] not in SOFTWARE_IDS),
+        "total_completed": sum(f["status"] == "COMPLETED" for f in features),
+        "B2_owner": len(owner_ids), "B2_env": len(env_ids),
         "total_verified_ready": sum(eligible_for_completion(f) for f in features),
     }
 
@@ -132,7 +150,7 @@ def main() -> int:
         print(f"FAIL: {exc}")
         return 2
     print("PASS: 117-feature A/B inventory and canonical source blob pins validated")
-    print("A={group_A} B1={group_B1} B2={group_B2} COMPLETED={group_A_complete} ELIGIBLE={total_verified_ready}".format(**summary))
+    print("A={group_A} B1={group_B1} B2={group_B2} COMPLETED={total_completed} ELIGIBLE={total_verified_ready} B2-Owner={B2_owner} B2-Env={B2_env}".format(**summary))
     return 0
 
 

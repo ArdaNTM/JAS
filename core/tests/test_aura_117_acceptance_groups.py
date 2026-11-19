@@ -34,8 +34,11 @@ def test_117_features_partition_and_pinned_canonical_sources():
         "group_B1": 20,
         "group_B2": 88,
         "group_A_complete": 9,
-        "group_B_testing": 98,
-        "total_verified_ready": 19,
+        "group_B_testing": 88,
+        "total_completed": 29,
+        "B2_owner": 17,
+        "B2_env": 71,
+        "total_verified_ready": 29,
     }
 
 
@@ -99,9 +102,9 @@ def test_B1_frozen_v1_completion_requires_all_existing_gates():
 def test_marking_unready_feature_completed_fails_closed():
     tracker, groups, provenance = load()
     fake = copy.deepcopy(tracker)
-    assert fake["features"][41]["status"] == "TESTING"  # #42 remains B1 unready.
-    fake["features"][41]["status"] = "COMPLETED"
-    with pytest.raises(ValueError, match="unproven"):
+    assert fake["features"][0]["status"] == "TESTING"  # #1 remains B2 unready.
+    fake["features"][0]["status"] = "COMPLETED"
+    with pytest.raises(ValueError, match="B2 readiness"):
         audit.validate(fake, groups, provenance)
 
 
@@ -120,6 +123,38 @@ def test_completed_metadata_never_substitutes_missing_security_or_e2e():
     fake["security_review"] = "PASS"
     assert audit.eligible_for_completion(fake)
 
+
+
+def test_last_ten_B1_bounded_v1_and_b2_remain_unready():
+    tracker, groups, _ = load()
+    last = {42, 43, 52, 53, 62, 65, 66, 76, 102, 112}
+    for item in tracker["features"]:
+        if item["id"] in last:
+            assert item["status"] == "COMPLETED"
+            assert audit.eligible_for_completion(item)
+            assert not item["missing_components"] and not item["blockers"]
+            assert groups["records"][item["id"] - 1]["ready_for_completion"] is True
+        if item["id"] in groups["B2_ids"]:
+            assert item["status"] == "TESTING"
+            assert not audit.eligible_for_completion(item)
+            assert groups["records"][item["id"] - 1]["ready_for_completion"] is False
+
+
+def test_b2_partition_tamper_and_spoofed_ready_fail_closed():
+    tracker, groups, provenance = load()
+    bad = copy.deepcopy(groups)
+    bad["B2_env_ids"].append(bad["B2_owner_ids"][0])
+    with pytest.raises(ValueError, match="B2-Owner/B2-Env"):
+        audit.validate(tracker, bad, provenance)
+    bad = copy.deepcopy(groups)
+    target_id = bad["B2_owner_ids"][0]
+    bad["records"][target_id - 1]["b2_acceptance_track"] = "B2-Env"
+    with pytest.raises(ValueError, match="B2 readiness"):
+        audit.validate(tracker, bad, provenance)
+    bad = copy.deepcopy(groups)
+    bad["records"][target_id - 1]["ready_for_completion"] = True
+    with pytest.raises(ValueError, match="B2 readiness"):
+        audit.validate(tracker, bad, provenance)
 
 def test_source_pin_mismatch_rejected_before_feature_completion():
     tracker, groups, provenance = load()
