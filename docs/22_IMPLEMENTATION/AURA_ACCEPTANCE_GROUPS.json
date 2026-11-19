@@ -716,20 +716,14 @@
       "id": 34,
       "group": "B",
       "name": "İşlem geçmişi ve geri alma",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Authenticated per-file operation history and Owner approval",
-        "Actual atomic filesystem undo, retention and signed logs",
-        "Live task/OS rollback testing and recovery evidence",
-        "Independent security review not yet recorded",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Owner-approved strictly bounded offline v1 technical_goal, source integrated into main via #158 b09ad74c49ebe1d73e2bb79524c8c8006e2ca40f, original tests restored and exact-head 2390-test CI passed in #65; full-product and live scope deferred to known_limitations.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "No live Windows/Ubuntu/Docker/physical dependency identified for this bounded read-only software slice; main merge and explicit Owner review remain pending. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Owner"
+      "b2_acceptance_track": "B2-Owner",
+      "next_pack_readiness": "BOUNDED_V1_OWNER_APPROVED; FOCUSED_TEST_PRESENT; CI_PASS; LIVE_SCOPE_DEFERRED",
+      "indexed_focused_test_status": "PRESENT_PINNED_SOURCE_AND_CI_PASS"
     },
     {
       "id": 35,
@@ -874,20 +868,14 @@
       "id": 46,
       "group": "B",
       "name": "Hata bulma ve düzeltme",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Real repo/CI-authorized source retrieval",
-        "Complete bug detection or independent analysis accuracy",
-        "Actual privileged fix/testing/PR workflow and security acceptance",
-        "Independent security review not yet recorded",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Owner-approved strictly bounded offline v1 technical_goal, source integrated into main via #158 b09ad74c49ebe1d73e2bb79524c8c8006e2ca40f, original tests restored and exact-head 2390-test CI passed in #65; full-product and live scope deferred to known_limitations.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "No live Windows/Ubuntu/Docker/physical dependency identified for this bounded read-only software slice; main merge and explicit Owner review remain pending. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Owner"
+      "b2_acceptance_track": "B2-Owner",
+      "next_pack_readiness": "BOUNDED_V1_OWNER_APPROVED; FOCUSED_TEST_PRESENT; CI_PASS; LIVE_SCOPE_DEFERRED",
+      "indexed_focused_test_status": "PRESENT_PINNED_SOURCE_AND_CI_PASS"
     },
     {
       "id": 47,
@@ -940,20 +928,14 @@
       "id": 50,
       "group": "B",
       "name": "Otomatik test üretimi",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Independent contract expectations and actual coverage metrics",
-        "Owner-approved sandbox execution and isolated environment",
-        "End-to-end automatic test-generation acceptance and code review",
-        "Independent security review not yet recorded",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Owner-approved strictly bounded offline v1 technical_goal, source integrated into main via #158 b09ad74c49ebe1d73e2bb79524c8c8006e2ca40f, original tests restored and exact-head 2390-test CI passed in #65; full-product and live scope deferred to known_limitations.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "No live Windows/Ubuntu/Docker/physical dependency identified for this bounded read-only software slice; main merge and explicit Owner review remain pending. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Owner"
+      "b2_acceptance_track": "B2-Owner",
+      "next_pack_readiness": "BOUNDED_V1_OWNER_APPROVED; FOCUSED_TEST_PRESENT; CI_PASS; LIVE_SCOPE_DEFERRED",
+      "indexed_focused_test_status": "PRESENT_PINNED_SOURCE_AND_CI_PASS"
     },
     {
       "id": 51,
@@ -1074,20 +1056,14 @@
       "id": 58,
       "group": "B",
       "name": "Ajan yöneticisi",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Authenticated Owner mission approval",
-        "Independent outcome verification",
-        "Adversarial multi-agent E2E and concurrency tests",
-        "Independent security review not yet recorded",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Owner-approved strictly bounded offline v1 technical_goal, source integrated into main via #158 b09ad74c49ebe1d73e2bb79524c8c8006e2ca40f, original tests restored and exact-head 2390-test CI passed in #65; full-product and live scope deferred to known_limitations.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "No live Windows/Ubuntu/Docker/physical dependency identified for this bounded read-only software slice; main merge and explicit Owner review remain pending. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Owner"
+      "b2_acceptance_track": "B2-Owner",
+      "next_pack_readiness": "BOUNDED_V1_OWNER_APPROVED; FOCUSED_TEST_PRESENT; CI_PASS; LIVE_SCOPE_DEFERRED",
+      "indexed_focused_test_status": "PRESENT_PINNED_SOURCE_AND_CI_PASS"
     },
     {
       "id": 59,
@@ -1120,18 +1096,14 @@
       "id": 61,
       "group": "B",
       "name": "Paralel çalışma",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Parallelism currently covers local untrusted inference proposals, not parallel authorized shell/tool execution.",
-        "No concurrency saturation test on local Ollama hardware or Owner acceptance.",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Owner-approved strictly bounded offline v1 technical_goal, source integrated into main via #158 b09ad74c49ebe1d73e2bb79524c8c8006e2ca40f, original tests restored and exact-head 2390-test CI passed in #65; full-product and live scope deferred to known_limitations.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "No live Windows/Ubuntu/Docker/physical dependency identified for this bounded read-only software slice; main merge and explicit Owner review remain pending. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Owner"
+      "b2_acceptance_track": "B2-Owner",
+      "next_pack_readiness": "BOUNDED_V1_OWNER_APPROVED; FOCUSED_TEST_PRESENT; CI_PASS; LIVE_SCOPE_DEFERRED",
+      "indexed_focused_test_status": "PRESENT_PINNED_SOURCE_AND_CI_PASS"
     },
     {
       "id": 62,
@@ -1168,20 +1140,14 @@
       "id": 64,
       "group": "B",
       "name": "Dinamik uzmanlaşma",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Governed creation/rotation of new specialized profiles or providers",
-        "Owner-approved role/policy lifecycle",
-        "Real dynamic skill runtime benchmarking and acceptance",
-        "Independent security review not yet recorded",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Owner-approved strictly bounded offline v1 technical_goal, source integrated into main via #158 b09ad74c49ebe1d73e2bb79524c8c8006e2ca40f, original tests restored and exact-head 2390-test CI passed in #65; full-product and live scope deferred to known_limitations.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "No live Windows/Ubuntu/Docker/physical dependency identified for this bounded read-only software slice; main merge and explicit Owner review remain pending. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Owner"
+      "b2_acceptance_track": "B2-Owner",
+      "next_pack_readiness": "BOUNDED_V1_OWNER_APPROVED; FOCUSED_TEST_PRESENT; CI_PASS; LIVE_SCOPE_DEFERRED",
+      "indexed_focused_test_status": "PRESENT_PINNED_SOURCE_AND_CI_PASS"
     },
     {
       "id": 65,
@@ -1221,20 +1187,14 @@
       "id": 68,
       "group": "B",
       "name": "Fizik simülasyonu",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Independent numerical convergence/uncertainty checks",
-        "Real verified physical parameters and calibration",
-        "Broader physics models, laboratory acceptance",
-        "Independent security review not yet recorded",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Owner-approved strictly bounded offline v1 technical_goal, source integrated into main via #158 b09ad74c49ebe1d73e2bb79524c8c8006e2ca40f, original tests restored and exact-head 2390-test CI passed in #65; full-product and live scope deferred to known_limitations.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "No live Windows/Ubuntu/Docker/physical dependency identified for this bounded read-only software slice; main merge and explicit Owner review remain pending. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Owner"
+      "b2_acceptance_track": "B2-Owner",
+      "next_pack_readiness": "BOUNDED_V1_OWNER_APPROVED; FOCUSED_TEST_PRESENT; CI_PASS; LIVE_SCOPE_DEFERRED",
+      "indexed_focused_test_status": "PRESENT_PINNED_SOURCE_AND_CI_PASS"
     },
     {
       "id": 69,
@@ -1259,58 +1219,40 @@
       "id": 70,
       "group": "B",
       "name": "CAD tasarımı",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Editable parametric CAD operations and full geometric feature set",
-        "User visualization/authoring workflows",
-        "Physical tolerances, design verification and manufacturing acceptance",
-        "Independent security review not yet recorded",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Owner-approved strictly bounded offline v1 technical_goal, source integrated into main via #158 b09ad74c49ebe1d73e2bb79524c8c8006e2ca40f, original tests restored and exact-head 2390-test CI passed in #65; full-product and live scope deferred to known_limitations.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "No live Windows/Ubuntu/Docker/physical dependency identified for this bounded read-only software slice; main merge and explicit Owner review remain pending. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Owner"
+      "b2_acceptance_track": "B2-Owner",
+      "next_pack_readiness": "BOUNDED_V1_OWNER_APPROVED; FOCUSED_TEST_PRESENT; CI_PASS; LIVE_SCOPE_DEFERRED",
+      "indexed_focused_test_status": "PRESENT_PINNED_SOURCE_AND_CI_PASS"
     },
     {
       "id": 71,
       "group": "B",
       "name": "Mühendislik simülasyonu",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Independent FEA/engineering solver acceptance",
-        "Real geometry, units and tolerance enforcement",
-        "Hardware verification and design safety signoff",
-        "Independent security review not yet recorded",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Owner-approved strictly bounded offline v1 technical_goal, source integrated into main via #158 b09ad74c49ebe1d73e2bb79524c8c8006e2ca40f, original tests restored and exact-head 2390-test CI passed in #65; full-product and live scope deferred to known_limitations.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "No live Windows/Ubuntu/Docker/physical dependency identified for this bounded read-only software slice; main merge and explicit Owner review remain pending. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Owner"
+      "b2_acceptance_track": "B2-Owner",
+      "next_pack_readiness": "BOUNDED_V1_OWNER_APPROVED; FOCUSED_TEST_PRESENT; CI_PASS; LIVE_SCOPE_DEFERRED",
+      "indexed_focused_test_status": "PRESENT_PINNED_SOURCE_AND_CI_PASS"
     },
     {
       "id": 72,
       "group": "B",
       "name": "Deney planlama",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Ethics/Owner study approval and proper randomization protocol",
-        "Power analysis and data collection",
-        "Real laboratory design acceptance, sensors/actuators",
-        "Independent security review not yet recorded",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Owner-approved strictly bounded offline v1 technical_goal, source integrated into main via #158 b09ad74c49ebe1d73e2bb79524c8c8006e2ca40f, original tests restored and exact-head 2390-test CI passed in #65; full-product and live scope deferred to known_limitations.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "No live Windows/Ubuntu/Docker/physical dependency identified for this bounded read-only software slice; main merge and explicit Owner review remain pending. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Owner"
+      "b2_acceptance_track": "B2-Owner",
+      "next_pack_readiness": "BOUNDED_V1_OWNER_APPROVED; FOCUSED_TEST_PRESENT; CI_PASS; LIVE_SCOPE_DEFERRED",
+      "indexed_focused_test_status": "PRESENT_PINNED_SOURCE_AND_CI_PASS"
     },
     {
       "id": 73,
@@ -1326,37 +1268,27 @@
       "id": 74,
       "group": "B",
       "name": "Prototip tasarımı",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Prototype design UX and material selection",
-        "Slicing/tolerance/load evaluation",
-        "Hardware test, manufacturing approval and safeguards",
-        "Independent security review not yet recorded",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Owner-approved strictly bounded offline v1 technical_goal, source integrated into main via #158 b09ad74c49ebe1d73e2bb79524c8c8006e2ca40f, original tests restored and exact-head 2390-test CI passed in #65; full-product and live scope deferred to known_limitations.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "No live Windows/Ubuntu/Docker/physical dependency identified for this bounded read-only software slice; main merge and explicit Owner review remain pending. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Owner"
+      "b2_acceptance_track": "B2-Owner",
+      "next_pack_readiness": "BOUNDED_V1_OWNER_APPROVED; FOCUSED_TEST_PRESENT; CI_PASS; LIVE_SCOPE_DEFERRED",
+      "indexed_focused_test_status": "PRESENT_PINNED_SOURCE_AND_CI_PASS"
     },
     {
       "id": 75,
       "group": "B",
       "name": "Otonom laboratuvar entegrasyonu",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "No physical laboratory instrumentation, sensor driver, interlock, broker policy or signed Operator/Owner acceptance.",
-        "Only offline mathematical experiment batching is verified, not autonomous wet/physical lab integration.",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Owner-approved strictly bounded offline v1 technical_goal, source integrated into main via #158 b09ad74c49ebe1d73e2bb79524c8c8006e2ca40f, original tests restored and exact-head 2390-test CI passed in #65; full-product and live scope deferred to known_limitations.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "No live Windows/Ubuntu/Docker/physical dependency identified for this bounded read-only software slice; main merge and explicit Owner review remain pending. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Owner"
+      "b2_acceptance_track": "B2-Owner",
+      "next_pack_readiness": "BOUNDED_V1_OWNER_APPROVED; FOCUSED_TEST_PRESENT; CI_PASS; LIVE_SCOPE_DEFERRED",
+      "indexed_focused_test_status": "PRESENT_PINNED_SOURCE_AND_CI_PASS"
     },
     {
       "id": 76,
@@ -1915,61 +1847,40 @@
       "id": 108,
       "group": "B",
       "name": "E-posta yönetimi",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Authenticated inbox/provider integration",
-        "Send/modify/delete approval boundaries",
-        "Antivirus, HTML safety and phishing checks",
-        "Privacy/Owner E2E acceptance",
-        "Independent security review not yet recorded",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Owner-approved strictly bounded offline v1 technical_goal, source integrated into main via #158 b09ad74c49ebe1d73e2bb79524c8c8006e2ca40f, original tests restored and exact-head 2390-test CI passed in #65; full-product and live scope deferred to known_limitations.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "No live Windows/Ubuntu/Docker/physical dependency identified for this bounded read-only software slice; main merge and explicit Owner review remain pending. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Owner"
+      "b2_acceptance_track": "B2-Owner",
+      "next_pack_readiness": "BOUNDED_V1_OWNER_APPROVED; FOCUSED_TEST_PRESENT; CI_PASS; LIVE_SCOPE_DEFERRED",
+      "indexed_focused_test_status": "PRESENT_PINNED_SOURCE_AND_CI_PASS"
     },
     {
       "id": 109,
       "group": "B",
       "name": "Takvim yönetimi",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "OAuth/Google/Apple calendar integration",
-        "Recurring event and timezone expansion",
-        "Principal authentication and action approval",
-        "Actual calendar writes/reminders and end-to-end review",
-        "Independent security review not yet recorded",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Owner-approved strictly bounded offline v1 technical_goal, source integrated into main via #158 b09ad74c49ebe1d73e2bb79524c8c8006e2ca40f, original tests restored and exact-head 2390-test CI passed in #65; full-product and live scope deferred to known_limitations.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "No live Windows/Ubuntu/Docker/physical dependency identified for this bounded read-only software slice; main merge and explicit Owner review remain pending. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Owner"
+      "b2_acceptance_track": "B2-Owner",
+      "next_pack_readiness": "BOUNDED_V1_OWNER_APPROVED; FOCUSED_TEST_PRESENT; CI_PASS; LIVE_SCOPE_DEFERRED",
+      "indexed_focused_test_status": "PRESENT_PINNED_SOURCE_AND_CI_PASS"
     },
     {
       "id": 110,
       "group": "B",
       "name": "Dosya ve medya yönetimi",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Full media format support (JPEG/MP4/WebP etc.)",
-        "Sandboxed full-file decoder and malware validation",
-        "Authorized user-facing file management and media operations",
-        "Full end-to-end acceptance",
-        "Independent security review not yet recorded",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Owner-approved strictly bounded offline v1 technical_goal, source integrated into main via #158 b09ad74c49ebe1d73e2bb79524c8c8006e2ca40f, original tests restored and exact-head 2390-test CI passed in #65; full-product and live scope deferred to known_limitations.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "No live Windows/Ubuntu/Docker/physical dependency identified for this bounded read-only software slice; main merge and explicit Owner review remain pending. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Owner"
+      "b2_acceptance_track": "B2-Owner",
+      "next_pack_readiness": "BOUNDED_V1_OWNER_APPROVED; FOCUSED_TEST_PRESENT; CI_PASS; LIVE_SCOPE_DEFERRED",
+      "indexed_focused_test_status": "PRESENT_PINNED_SOURCE_AND_CI_PASS"
     },
     {
       "id": 111,
@@ -2014,20 +1925,14 @@
       "id": 114,
       "group": "B",
       "name": "3B modelleme",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "3D editor, transforms and procedural mesh library",
-        "Material/texturing, actual rendering and file management",
-        "Real independent geometry/manufacturing acceptance",
-        "Independent security review not yet recorded",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Owner-approved strictly bounded offline v1 technical_goal, source integrated into main via #158 b09ad74c49ebe1d73e2bb79524c8c8006e2ca40f, original tests restored and exact-head 2390-test CI passed in #65; full-product and live scope deferred to known_limitations.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "No live Windows/Ubuntu/Docker/physical dependency identified for this bounded read-only software slice; main merge and explicit Owner review remain pending. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Owner"
+      "b2_acceptance_track": "B2-Owner",
+      "next_pack_readiness": "BOUNDED_V1_OWNER_APPROVED; FOCUSED_TEST_PRESENT; CI_PASS; LIVE_SCOPE_DEFERRED",
+      "indexed_focused_test_status": "PRESENT_PINNED_SOURCE_AND_CI_PASS"
     },
     {
       "id": 115,
@@ -2072,20 +1977,14 @@
       "id": 117,
       "group": "B",
       "name": "Otomatik raporlama",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Recurring/triggered scheduling with explicit Owner opt-in",
-        "Approved delivery and recipient controls",
-        "Signed data provenance and production reporting E2E",
-        "Independent security review not yet recorded",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Owner-approved strictly bounded offline v1 technical_goal, source integrated into main via #158 b09ad74c49ebe1d73e2bb79524c8c8006e2ca40f, original tests restored and exact-head 2390-test CI passed in #65; full-product and live scope deferred to known_limitations.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "No live Windows/Ubuntu/Docker/physical dependency identified for this bounded read-only software slice; main merge and explicit Owner review remain pending. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Owner"
+      "b2_acceptance_track": "B2-Owner",
+      "next_pack_readiness": "BOUNDED_V1_OWNER_APPROVED; FOCUSED_TEST_PRESENT; CI_PASS; LIVE_SCOPE_DEFERRED",
+      "indexed_focused_test_status": "PRESENT_PINNED_SOURCE_AND_CI_PASS"
     }
   ],
   "B1_ids": [

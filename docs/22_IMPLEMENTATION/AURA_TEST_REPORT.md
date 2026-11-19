@@ -314,3 +314,11 @@ Draft [PR #150](https://github.com/ArdaNTM/JAS/pull/150) exact HEAD `5e0131c465d
 [Draft PR #152](https://github.com/ArdaNTM/JAS/pull/152) (#33) exact HEAD `ed8c974a0cc16be645a30f9dea97e4c292d35df7`: [Core 44225173373](https://github.com/ArdaNTM/JAS/actions/runs/44225173373) **1232 passed / 9 skipped**, Final Release Lock **PASS 266 canonical source files** `sha256:17afbbba2a850e7fb749b8f15715885d63b944e939fc33d301eaf305fcd38f49`; [Remote Persistence 44225173688](https://github.com/ArdaNTM/JAS/actions/runs/44225173688) **PASS**. Real SQLite TaskStateMachine dependency/HMAC verification, nested Gateway exact policy and human terminal consent, no auto progress; success-flow external execution replaced in unit test, Docker success unproven.
 
 Both features **TESTING/PARTIAL_VERIFIED**, NOT COMPLETED. Source-lock CI passes on their stacked branches, but not older unmerged #64–#111, no physical Owner/Windows or sealed Docker broker authorization. Ledger **99 TESTING, 16 NOT_STARTED, 2 RESEARCHING, 0 COMPLETED**.
+
+
+
+## 2026-11-19 — PR #65 B2-Owner bounded v1 evidence and main-conflict resolution
+
+Owner merged PR #64 as `e9c68dd1269e42df1731eac4d4b8acbfa9675ca7`, then PR #158 as `b09ad74c49ebe1d73e2bb79524c8c8006e2ca40f` into `main`. PR #65 synchronized to `main` with two-parent `b7dd5f72a41ec96501e29bf18eb6ca0b2e4b6833`; conflict resolutions for this report and merge preflight used the latest `main` versions. Nine original focused B2-Owner tests were restored (zero dummy tests). Their initial run detected **7 actual Swarm #58 fail-open bugs**, not ignored; the fix in `2ca63ca3c7892fa481e844ffd87e45f580bfd56f` validated entire plans and arguments before EventBus emission/MCP Gateway invocation.
+
+**Exact-head security regression:** [Core Assurance run 44450746726](https://github.com/ArdaNTM/JAS/actions/runs/44450746726) 2390 passed / 14 skipped, **440-file release lock PASS** `sha256:2e299b1d6c095bb2625da1ba06648a7f82c73b868da81ac2f3de31c98704eca8`. Completion pertains exclusively to the 17 original narrow offline `technical_goal` definitions; real tool Owner authorization remains MCP Gateway-only. Group A 9 + B1 20 + bounded B2-Owner 17 = **46 COMPLETED/46 ELIGIBLE**, B2-Env 71 **TESTING**. No live Windows/Hyper-V Ubuntu/Docker, external service, physical lab or production integration acceptance is claimed.

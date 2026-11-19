@@ -3,7 +3,7 @@
 Run on the Owner's actual Windows host AFTER explicitly merging the approved
 PRs and pulling main. The script cannot enroll Owner identity, sign evidence,
 modify firewall/ACL/Hyper-V, start a VM, access Docker socket through transport,
-or claim any of the 88 B2 capabilities have passed live acceptance.
+or claim any of the 71 B2-Env capabilities have passed live acceptance.
 """
 from __future__ import annotations
 
@@ -30,13 +30,19 @@ def load_b2(repo: Path) -> tuple[dict, dict]:
     if len(b2) != 88 or owner & env or owner | env != b2:
         raise ValueError("incomplete or overlapping B2 Owner/Env partition")
     if any(
-        tracker["features"][i - 1]["status"] != "TESTING"
-        or catalog["records"][i - 1].get("b2_acceptance_track")
-        != ("B2-Owner" if i in owner else "B2-Env")
-        or catalog["records"][i - 1]["ready_for_completion"] is not False
-        for i in b2
+        tracker["features"][i - 1]["status"] != "COMPLETED"
+        or catalog["records"][i - 1].get("b2_acceptance_track") != "B2-Owner"
+        or catalog["records"][i - 1]["ready_for_completion"] is not True
+        for i in owner
     ):
-        raise ValueError("B2 records are not fail-closed")
+        raise ValueError("B2-Owner bounded v1 completion records inconsistent")
+    if any(
+        tracker["features"][i - 1]["status"] != "TESTING"
+        or catalog["records"][i - 1].get("b2_acceptance_track") != "B2-Env"
+        or catalog["records"][i - 1]["ready_for_completion"] is not False
+        for i in env
+    ):
+        raise ValueError("B2-Env records are not fail-closed")
     return tracker, catalog
 
 
@@ -44,7 +50,7 @@ def focused_tests(repo: Path, tracker: dict, catalog: dict) -> tuple[tuple[str, 
     """Discover present focus tests AND retain missing identities as blockers."""
     selected: set[str] = set()
     missing: set[str] = set()
-    for i in catalog["B2_ids"]:
+    for i in catalog["B2_env_ids"]:
         row = tracker["features"][i - 1]
         if not row["test_commands"]:
             raise ValueError(f"B2 feature #{i} lacks focused regression tests")
@@ -135,7 +141,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"B2 CHECKLIST ERROR: {exc}")
         return 2
     print(f"B2-Owner={len(catalog['B2_owner_ids'])} B2-Env={len(catalog['B2_env_ids'])}; "
-          f"88 TESTING; {len(paths)} present and {len(missing_tests)} MISSING unique focused test files")
+          f"71 TESTING (B2-Env only); {len(paths)} present and {len(missing_tests)} MISSING unique focused test files")
     if missing_tests:
         print("B2 regression acceptance BLOCKED: " + ", ".join(missing_tests))
     if args.list_only:
@@ -180,8 +186,8 @@ def main(argv: list[str] | None = None) -> int:
     else:
         print("Physical hardware receipts: NOT VERIFIED (no signed evidence provided)")
         environment_ok = False
-    print("Owner-only B2 release approvals: PENDING independent human review")
-    print("All 88 B2 remain TESTING; a green preflight is NEVER live acceptance.")
+    print("B2-Owner bounded offline v1: 17 COMPLETED; live production acceptance not inferred")
+    print("All 71 B2-Env remain TESTING; a green preflight is NEVER live acceptance.")
     return 0 if all_pass and environment_ok else 2
 
 

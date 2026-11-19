@@ -18,6 +18,8 @@ PROVENANCE = ROOT / "docs/22_IMPLEMENTATION/AURA_CORE_PROVENANCE_RECONCILIATION.
 SOFTWARE_IDS = frozenset({2, 5, 40, 44, 47, 59, 67, 73, 111})
 B1_IDS = frozenset({8, 10, 12, 21, 35, 36, 37, 38, 39, 41, 42, 43, 52, 53, 62, 65, 66, 76, 102, 112})
 B2_TRACKS = frozenset({"B2-Owner", "B2-Env"})
+B2_OWNER_IDS = frozenset({34, 46, 50, 58, 61, 64, 68, 70, 71, 72, 74, 75, 108, 109, 110, 114, 117})
+APPROVED_MAIN_MERGE = "b09ad74c49ebe1d73e2bb79524c8c8006e2ca40f"
 
 
 def read_json(path: Path) -> dict:
@@ -31,9 +33,12 @@ def read_json(path: Path) -> dict:
 
 
 def eligible_for_completion(record: dict) -> bool:
-    """A/B1 eligibility only when all existing validation gates pass; never attests Owner approval."""
+    """Bounded A/B1/B2-Owner eligibility only; never attests live operation."""
     return (
-        record.get("id") in SOFTWARE_IDS | B1_IDS
+        record.get("id") in SOFTWARE_IDS | B1_IDS | B2_OWNER_IDS
+        and (record.get("id") not in B2_OWNER_IDS
+             or (APPROVED_MAIN_MERGE in record.get("notes", "")
+                 and record.get("known_limitations", "").startswith("V2 /")))
         and record.get("assessment") == "VERIFIED"
         and record.get("acceptance") == "PASS"
         and record.get("security_review") == "PASS"
@@ -86,6 +91,8 @@ def validate(tracker: dict, groups: dict, provenance: dict, root: Path = ROOT) -
             or set(owner_ids) & set(env_ids)
             or set(owner_ids) | set(env_ids) != set(b2_ids)):
         raise ValueError("B2-Owner/B2-Env partition must cover exactly 88 records")
+    if set(owner_ids) != B2_OWNER_IDS:
+        raise ValueError("B2-Owner frozen cohort mismatch")
     rows = groups.get("records")
     if not isinstance(rows, list) or len(rows) != 117:
         raise ValueError("group records must cover all 117 features")
@@ -97,10 +104,16 @@ def validate(tracker: dict, groups: dict, provenance: dict, root: Path = ROOT) -
             raise ValueError("feature grouping does not match authoritative tracker")
         if subgroup == "B2":
             expected_track = "B2-Owner" if record["id"] in owner_ids else "B2-Env"
-            if (entry.get("b2_acceptance_track") != expected_track
-                    or entry.get("ready_for_completion") is not False
-                    or record["status"] != "TESTING"):
-                raise ValueError("B2 readiness/Owner-Env track must remain fail-closed")
+            if entry.get("b2_acceptance_track") != expected_track:
+                raise ValueError("B2 readiness/Owner-Env track mismatch")
+            if expected_track == "B2-Env":
+                if (entry.get("ready_for_completion") is not False
+                        or record["status"] != "TESTING"):
+                    raise ValueError("B2 readiness: B2-Env must remain fail-closed")
+            elif (entry.get("ready_for_completion") is not True
+                  or record["status"] != "COMPLETED"
+                  or not eligible_for_completion(record)):
+                raise ValueError("B2-Owner bounded v1 completion evidence incomplete")
         elif "b2_acceptance_track" in entry:
             raise ValueError("non-B2 feature must not have B2 readiness track")
         expected_marker = f"[ACCEPTANCE_GROUP={expected_group};"
