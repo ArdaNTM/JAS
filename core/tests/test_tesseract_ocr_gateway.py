@@ -21,6 +21,8 @@ from aura_core.mcp.provider import ProviderRegistry
 
 _PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 32
 
+TEST_TESSERACT = r"C:\AURA_TEST_BIN\tesseract.exe" if os.name == "nt" else "/usr/bin/tesseract"
+
 
 class _FakeProcess:
     returncode = 0
@@ -55,7 +57,7 @@ def _setup(monkeypatch, *, decision=None, fake_result=b"AURA\n"):
     caps = CapabilityRegistry(services)
     provider = register_local_tesseract_ocr(
         services=services, providers=providers, capabilities=caps,
-        executable="/usr/bin/tesseract",
+        executable=TEST_TESSERACT,
     )
     engine = PermissionEngine(caps)
     if decision is not None:
@@ -85,7 +87,7 @@ def test_authorized_gateway_uses_real_subprocess_command_contract(monkeypatch):
     assert len(result.image_sha256) == 64
     assert len(calls) == 2
     executable, args, kwargs = calls[0][1][0], calls[0][1][1:], calls[0][2]
-    assert executable == "/usr/bin/tesseract"
+    assert executable == TEST_TESSERACT
     assert args == ("stdin", "stdout", "-l", "eng", "--psm", "6")
     assert kwargs["env"] == {"LANG": "C.UTF-8", "LC_ALL": "C.UTF-8"}
     assert calls[1] == ("stdin", _PNG)
@@ -212,7 +214,7 @@ def test_no_implicit_permission_or_second_registration(monkeypatch):
         register_local_tesseract_ocr(
             services=providers._service_registry,
             providers=providers, capabilities=caps,
-            executable="/usr/bin/tesseract",
+            executable=TEST_TESSERACT,
         )
     assert len(caps.records()) == 1
     assert len(providers.records()) == 1

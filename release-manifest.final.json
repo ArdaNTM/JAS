@@ -5,7 +5,7 @@
   "generated_at": "2026-11-19T07:08:05.113Z",
   "git_commit": "19da39d819cefce0dff6c9f4b5ce7dd963288018",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:1712f4ed3d57e0068c60dad6cca8fabc622121af8529a48ba83e4f1ebdf7b752",
+  "release_digest": "sha256:0d93b0c680f09f663680f7e05ee61c6572e0d9996cfc22840d3820923e793f40",
   "file_count": 444,
   "files": [
     {
@@ -54,7 +54,7 @@
     },
     {
       "path": "aura-ui/package-lock.json",
-      "sha256": "a7914bdeb0588a4fba88049ea89bc230a64137ec0b4c2bc5d0213ac9bcbe229f"
+      "sha256": "6d0ec0a5a2b30ec6df0516c60c6d5b8b2b3fe596c495e43af133d2394fab760e"
     },
     {
       "path": "aura-ui/package.json",
@@ -190,7 +190,7 @@
     },
     {
       "path": "aura-ui/vite.config.ts",
-      "sha256": "5ac19494d115c1282739f722ae8dc0856a1efc55e83a4ce90af16ef24896876c"
+      "sha256": "27085ebb1f98527a6924ab5d631b05ebcbea574430077237ba4942f2a9e77925"
     },
     {
       "path": "core/frontend/package-lock.json",
@@ -962,7 +962,7 @@
     },
     {
       "path": "core/src/aura_core/filesystem/docx_extractor.py",
-      "sha256": "6968f61ac322d762b162d88e2222d833e98cfd5d36b99554fe9243d418e055ed"
+      "sha256": "53febd6da5b13d02ab6cb7784a40150044fee06ac8cc03be7e95995c18676c6d"
     },
     {
       "path": "core/src/aura_core/filesystem/media_header.py",
@@ -1734,7 +1734,7 @@
     },
     {
       "path": "core/tests/test_audit_broker_ubuntu_transport.py",
-      "sha256": "b12093284e1da509528397d60ab0b01206758e1f813db8a5099a02b89d97602f"
+      "sha256": "4d10bdd7956e4e63b6452042f093d0d4017c88db4a7e3ebcedf8096758969728"
     },
     {
       "path": "core/tests/test_audit_broker_vm_executor.py",

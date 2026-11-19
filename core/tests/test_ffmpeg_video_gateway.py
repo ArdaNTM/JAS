@@ -2,6 +2,7 @@
 import asyncio
 import base64
 import json
+import os
 import shutil
 import subprocess
 from types import SimpleNamespace
@@ -27,6 +28,8 @@ from aura_core.mcp.provider import ProviderRegistry
 
 _MP4 = b"\x00\x00\x00\x18ftypisom" + b"\x00" * 40
 _JPEG = b"\xff\xd8\xff" + b"j" * 32 + b"\xff\xd9"
+
+TEST_FFMPEG = r"C:\AURA_TEST_BIN\ffmpeg.exe" if os.name == "nt" else "/usr/bin/ffmpeg"
 
 
 class _FakeProcess:
@@ -79,7 +82,10 @@ def _system(monkeypatch, *, allow_video=True, allow_image=True, frames=None,
     services = ServiceRegistry()
     caps = CapabilityRegistry(services)
     providers = ProviderRegistry(services)
-    video = register_local_ffmpeg_video(services=services, capabilities=caps, providers=providers)
+    video = register_local_ffmpeg_video(
+        services=services, capabilities=caps, providers=providers,
+        executable=TEST_FFMPEG,
+    )
     vision = register_local_ollama_vision(services=services, capabilities=caps, providers=providers)
     engine = PermissionEngine(caps)
     for enabled, cap, scope in (
@@ -120,7 +126,7 @@ def test_full_authorized_ffmpeg_and_ollama_dispatches_with_distinct_permissions(
     assert len(model_calls) == 2
     assert len(trace) == 2
     cmd = trace[0][1]
-    assert cmd[0] == "/usr/bin/ffmpeg"
+    assert cmd[0] == TEST_FFMPEG
     assert "-protocol_whitelist" in cmd and "pipe" in cmd
     assert "pipe:0" in cmd and "pipe:1" in cmd
     assert cmd[cmd.index("-vf") + 1] == "fps=1/5,scale=480:-2"

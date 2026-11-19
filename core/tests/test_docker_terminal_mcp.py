@@ -56,6 +56,7 @@ def _setup(tmp_path, decision=None):
     return bus, backend, permissions, approvals, GovernedDockerTerminal(gateway, principal_id="owner")
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Requires separately attested Linux/Ubuntu Unix broker")
 def test_real_pinned_runtime_cli_is_invoked_only_after_consumed_approval(tmp_path):
     # sys.executable is a real OS binary but NOT Docker; the Popen execution
     # contract is exercised without claiming that this test proves isolation.
@@ -78,6 +79,7 @@ def test_real_pinned_runtime_cli_is_invoked_only_after_consumed_approval(tmp_pat
 
 
 @pytest.mark.parametrize("decision", [None, AuthorizationDecision.DENY])
+@pytest.mark.skipif(sys.platform == "win32", reason="Requires separately attested Linux/Ubuntu Unix broker")
 def test_no_policy_or_denied_never_dispatches(tmp_path, decision):
     _, _, engine, approvals, owner = _setup(tmp_path, decision)
     try:
@@ -88,6 +90,7 @@ def test_no_policy_or_denied_never_dispatches(tmp_path, decision):
         approvals.close()
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Requires separately attested Linux/Ubuntu Unix broker")
 def test_unconsumed_approval_never_executes(tmp_path):
     _, _, engine, approvals, owner = _setup(tmp_path, AuthorizationDecision.REQUIRE_APPROVAL)
     try:
@@ -98,6 +101,7 @@ def test_unconsumed_approval_never_executes(tmp_path):
         approvals.close()
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Requires separately attested Linux/Ubuntu Unix broker")
 def test_direct_provider_bypass_and_user_command_injection_denied(tmp_path):
     _, backend, _, approvals, owner = _setup(tmp_path, AuthorizationDecision.REQUIRE_APPROVAL)
     try:
@@ -124,12 +128,14 @@ def test_no_unpinned_images_or_arbitrary_argv():
         TerminalCommand("../../breakout", IMAGE, ("pwd",))
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Requires separately attested Linux/Ubuntu Unix broker")
 def test_tampered_host_cli_is_refused(tmp_path):
     cli = Path(sys.executable).resolve()
     with pytest.raises(ValueError):
         DockerSandboxEngine(docker_executable=str(cli), docker_sha256="0" * 64)
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Requires separately attested Linux/Ubuntu Unix broker")
 def test_real_docker_engine_offline_when_preloaded_and_allowed(tmp_path):
     """An optional live engine contract; absence is a documented acceptance gate."""
     image = os.environ.get("AURA_TEST_TERMINAL_PINNED_IMAGE", "")
@@ -170,6 +176,7 @@ def test_operator_manifest_has_private_mode_and_fixed_digest(tmp_path):
             load_terminal_config(str(manifest))
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Requires separately attested Linux/Ubuntu Unix broker")
 def test_authenticated_http_never_infers_policy_or_accepts_arbitrary_shell(tmp_path):
     _, _, policy, approvals, owner = _setup(tmp_path, AuthorizationDecision.REQUIRE_APPROVAL)
     app = FastAPI()
@@ -201,6 +208,7 @@ def test_authenticated_http_never_infers_policy_or_accepts_arbitrary_shell(tmp_p
         approvals.close()
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Requires separately attested Linux/Ubuntu Unix broker")
 def test_http_disabled_and_wrong_principal_fail_closed(tmp_path):
     _, _, engine, approvals, owner = _setup(tmp_path, AuthorizationDecision.REQUIRE_APPROVAL)
     app = FastAPI()

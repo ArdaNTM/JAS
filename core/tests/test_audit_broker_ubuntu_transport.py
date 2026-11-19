@@ -13,6 +13,7 @@ import subprocess
 import sys
 from tempfile import TemporaryDirectory
 import unittest
+import pytest
 from unittest.mock import Mock, patch
 from types import SimpleNamespace
 
@@ -187,6 +188,7 @@ class TransportProtocolTests(unittest.TestCase):
             self.assertIn(option, joined)
         self.assertNotIn("docker.exe", joined)
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Requires separately attested Linux/Ubuntu Unix broker")
     def test_deny_only_cannot_activate_remote_ssh_even_with_fake_runner(self):
         data = BrokerServicePolicy(
             "S-1-5-21-1-2-3-1001", "S-1-5-21-1-2-3-1002",
@@ -528,6 +530,7 @@ class UbuntuSCMActivationGateTests(unittest.TestCase):
         with self.assertRaises(BrokerDenied):
             host.require_operator_approved_ubuntu_activation(data)
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Requires separately attested Linux/Ubuntu Unix broker")
     def test_forged_audit_only_policy_is_not_operator_approval(self):
         data = BrokerServicePolicy(
             "S-1-5-21-1-2-3-1001", "S-1-5-21-1-2-3-1002",
@@ -546,6 +549,7 @@ class UbuntuSCMActivationGateTests(unittest.TestCase):
             scm.assert_not_called()
             ssh.assert_not_called()
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Requires separately attested Linux/Ubuntu Unix broker")
     def test_ssh_runner_not_called_even_with_fabricated_audit_only(self):
         fake = BrokerServicePolicy(
             "S-1-5-21-1-2-3-1001", "S-1-5-21-1-2-3-1002",

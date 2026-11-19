@@ -80,7 +80,9 @@ def extract_docx_text(
             known: dict[str, zipfile.ZipInfo] = {}
             uncompressed = 0
             for item in members:
-                name = item.filename
+                # ZipInfo.filename may normalize backslashes on Windows.
+                # orig_filename retains the raw ZIP name for traversal checks.
+                name = item.orig_filename
                 parts = name.rstrip("/").split("/")
                 if (
                     not name or len(name) > 256 or "\\" in name

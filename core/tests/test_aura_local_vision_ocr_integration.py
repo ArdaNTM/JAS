@@ -7,6 +7,7 @@ external on-device Ollama server and Tesseract subprocess are simulated in CI.
 import asyncio
 import base64
 import json
+import os
 from types import SimpleNamespace
 
 import httpx
@@ -29,6 +30,7 @@ from aura_core.mcp.provider import ProviderRegistry
 from aura_core.mcp.gateway import MCPGateway
 
 _IMAGE = b"\x89PNG\r\n\x1a\n" + b"\x00" * 24
+TEST_TESSERACT = r"C:\AURA_TEST_BIN\tesseract.exe" if os.name == "nt" else "/usr/bin/tesseract"
 
 
 def _runtime(monkeypatch):
@@ -55,7 +57,7 @@ def _runtime(monkeypatch):
             calls["ocr"] += 1
             return b"UNTRUSTED IMAGE TEXT\n", b""
     async def fake_exec(*args, **kwargs):
-        assert args == ("/usr/bin/tesseract", "stdin", "stdout", "-l", "eng", "--psm", "6")
+        assert args == (TEST_TESSERACT, "stdin", "stdout", "-l", "eng", "--psm", "6")
         assert kwargs["env"]["LC_ALL"] == "C.UTF-8"
         return FakeOCRProcess()
     monkeypatch.setattr("aura_core.providers.tesseract_ocr_mcp.asyncio.create_subprocess_exec", fake_exec)
@@ -64,7 +66,8 @@ def _runtime(monkeypatch):
     providers = ProviderRegistry(services)
     capabilities = CapabilityRegistry(services)
     register_local_ollama_vision(services=services, providers=providers, capabilities=capabilities)
-    register_local_tesseract_ocr(services=services, providers=providers, capabilities=capabilities)
+    register_local_tesseract_ocr(services=services, providers=providers, capabilities=capabilities,
+                                 executable=TEST_TESSERACT)
     permissions = PermissionEngine(capabilities)
     gateway = MCPGateway(capabilities, providers, permissions)
     model = GovernedImageUnderstanding(gateway, authenticated_principal_id="owner")

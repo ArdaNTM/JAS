@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import io
+import os
 import stat
 import zipfile
 
@@ -74,8 +75,17 @@ def test_empty_and_non_docx_payload_rejected():
 def test_zip_slip_paths_rejected(bad):
     inputs = parts()
     inputs[bad] = "unsafe"
+    blob = package(inputs)
+    if os.name == "nt" and "\\" in bad:
+        # Windows zipfile normalizes the writer's backslashes. Patch both
+        # ZIP header names with equal-length raw bytes to test the actual
+        # hostile archive instead of a sanitized archive created by Python.
+        normalized = bad.replace("\\", "/").encode("ascii")
+        raw_name = bad.encode("ascii")
+        assert blob.count(normalized) == 2
+        blob = blob.replace(normalized, raw_name)
     with pytest.raises(ValueError, match="unsafe"):
-        extract_docx_text(package(inputs))
+        extract_docx_text(blob)
 
 
 def test_duplicate_paths_and_symlink_rejected():
