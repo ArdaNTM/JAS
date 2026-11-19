@@ -64,7 +64,7 @@ def test_approval_queue_reads_pending_records_from_approval_store() -> None:
     )
 
     assert response.status_code == 200
-    assert [item["approval_id"] for item in response.json()] == ["visible", "another-principal"]
+    assert [item["approval_id"] for item in response.json()] == ["visible"]  # No cross-principal disclosure without explicit PermissionEngine allow.
     assert all(item["status"] == "pending" for item in response.json())
 
 

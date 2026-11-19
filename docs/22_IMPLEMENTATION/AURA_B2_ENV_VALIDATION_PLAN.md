@@ -1,0 +1,82 @@
+# B2-Env 71-feature post-merge validation plan
+
+Baseline: Owner-merged `main` `b83689381cec291a5d72299c8d8f985c6e7c5753`; B2-Owner=17 bounded v1 COMPLETED; **all 71 B2-Env remain TESTING**. This file is a scheduling inventory, not a waiver, permission grant, hardware test result, or release signoff.
+
+## Three-way disjoint validation cohort
+
+| Test location | IDs | Count | Evidence boundary |
+|---|---|---:|---|
+| Windows + local Ollama, audio, UI and offline Core | `1, 3, 4, 6, 7, 9, 11, 13, 14, 15, 16, 17, 18, 19, 20, 22, 23, 24, 26, 28, 29, 30, 31, 32, 48, 49, 54, 55, 56, 57, 63, 69, 77, 78, 79, 80, 82, 83, 84, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 103, 104, 105, 106, 107, 113, 115, 116` | 57 | Actual Windows session, speech/models, Owner device/ACL when relevant, plus scoped regression |
+| Hyper-V Ubuntu / Docker in isolated AURA-Broker-Lab | `25, 27, 33, 45, 51, 60, 101` | 7 | Actual sandbox / POSIX descriptor, broker isolation, no privileged socket or Gateway bypass |
+| Missing dedicated physical hardware; simulation **only** | `81, 85, 86, 87, 88, 89, 90` | 7 | Stereo rig, Home Assistant bridge, robotic actuators and trusted sensors; no real-device acceptance possible by simulation |
+
+**Hardware exception policy:** The Owner can explicitly approve a *separate, scoped software-only simulation* acceptance track after signed review of actual negative cases, and after updating the technical_goal to a simulation-only promise. It cannot attest a physical robot, stereo rig, Home Assistant device, sensor or safety interlock, and **cannot silently mark these seven physical features COMPLETED**. Original `missing_components` and outstanding hardware acceptance continue to block full scope.
+
+## Restored source-pinned tests
+
+Exact original Git blobs restored without fabricated positive hardware evidence:
+
+| Test | Feature IDs | Original source commit |
+|---|---|---|
+| `test_persona_initiative_validation.py` | 3, 4 | `fb76d221381ec6304758d063e387f20ec8f98650` |
+| `test_tts_text_safety.py` | 15 | `a1568cdcf248e6f6992fa5e0355e032a84394f86` |
+| `test_kokoro_voice_controls.py` | 18 | `595215246cf60c2a0a27cc5acf6131c1491be952` |
+| `test_disk_health_telemetry.py` | 29 | `517aacecf257435b4085261642ac1cc5b5f0bf02` |
+| `test_system_diagnosis.py` | 30 | `0a9ebb18f480690e1eaed2a91b45ef5335d7c9d7` |
+| `test_runtime_evaluation_summary.py` | 48, 56 | `4717161b9bf077dd32de69d8e20d5163eb7c9cf6` |
+| `test_specialist_performance.py` | 63 | `e5f4432142d0da302c4398e6e95a4a514af87205` |
+| `test_approval_review_authorization.py` | 100 | `46b1660bc95ff909cb5409f3b651c4030067d5ed` |
+| `test_sandbox_output_guard.py` | 101 | `019b62e327b21bb3c1538cac7dafa3a2eab6ad78` |
+| `test_legacy_ws_auth.py` | 103 | `da5e2948079c36dcbf2e59ad47c5b6b11d7c3e90` |
+| `test_offline_backup_integrity.py` | 105 | `3279fe5238f532ad21ee0bd919da970c401408ce` |
+| `test_audit_checkpoint.py` | 107 | `a145504a3ce80b496333169bb393b3ed42b1848b` |
+| `test_offline_language_learning.py` | 115 | `6533e49a915bdf1d43b3e3cf6eb192d676b9bcc2` |
+
+The original #30 `DiagnosticsService.diagnose` read-only aggregate function was missing from the integrated main and must be restored exactly from its pinned PR. This does not authorize remediation.
+
+## Windows PowerShell after Owner manually merges this PR
+
+From `D:\AURA\JAS`:
+
+```powershell
+git switch main
+git pull --ff-only origin main
+& ".\core\.venv\Scripts\python.exe" ".\core\scripts\b2_postmerge_check.py" --list-only
+& ".\core\.venv\Scripts\python.exe" ".\core\scripts\b2_postmerge_check.py" --group windows_local --tests-only
+& ".\core\.venv\Scripts\python.exe" ".\core\scripts\b2_postmerge_check.py" --group hyperv_docker --tests-only
+& ".\core\.venv\Scripts\python.exe" ".\core\scripts\b2_postmerge_check.py" --group external_hardware_simulation --tests-only
+```
+
+All three `--tests-only` steps are **offline regression evidence, not a physical acceptance claim**. Follow Windows real Ollama/audio/UI tests and Ubuntu/Docker supervised broker tests separately under existing PermissionEngine/MCP Gateway policy. The sole final full live preflight remains `core/scripts/b2_postmerge_check.py` without `--tests-only`, and it refuses to claim physical success without independently signed receipts.
+
+## Physical evidence: single **assembly** command, not self-signing
+
+The JAS repository deliberately has **no private key generator or physical attestation signer**. A physically separate trusted Windows-lab principal must collect all six real observations and sign each receipt according to `SignedHardwareEvidence.signing_payload()` (Ed25519, domain-separated) within one hour. Its provisioned signer key must be custody-audited and its **public** key pinned *out of band* before collecting evidence. Expected receipt filenames in `D:\AURA\Trust\PhysicalLab\receipts`: `webauthn_uv.json`, `microphone_latency.json`, `voice_barge_in.json`, `hud_multimonitor.json`, `hud_negative_coords.json`, `emergency_stop.json`. Each contains all exact `SignedHardwareEvidence` fields with real measured metrics, independent signature, unique nonce and common run UUID. No fixed signatures, generated placeholders, mock devices or invented measurements are accepted.
+
+The **one-command assembler** verifies those independently obtained inputs before creating both files in the trust directory:
+
+```powershell
+& ".\core\.venv\Scripts\python.exe" -m aura_core.acceptance.b2_evidence_bundle --receipt-dir "D:\AURA\Trust\PhysicalLab\receipts" --pin-source "D:\AURA\Trust\PhysicalLab\preapproved-public-keys.json" --evidence-output "D:\AURA\Trust\PhysicalLab\SIGNED_EVIDENCE.json" --public-keys-output "D:\AURA\Trust\PhysicalLab\PINNED_PUBLIC_KEYS.json"
+```
+
+Then run the unchanged full runner with both resulting files and the actual Ubuntu VM SSH address. Failure/missing physical signer yields **BLOCKED** and no new trust file. Receipt validation only confirms signatures, freshness and metric thresholds **conditional on an independently audited physical collector**; it never creates an Owner MCP approval, VM security attestation or a simulation exemption.
+
+
+## Software-only bounded v1 completion review candidates (not yet COMPLETED)
+
+Exact combined-source CI on `06cdec4f4d9caa696c9277ffd74014a1624e7288`: Core Assurance **2572 passed / 14 skipped**, Unified Acceptance PASS, 441-source release lock PASS. Among the 15 features covered by the 13 restored tests, the following **12 are candidates for an explicit future narrow-v1 Owner/security review**:
+
+| Candidate IDs | Proven narrow tested behavior | Further acceptance not proven by CI |
+|---|---|---|
+| 3, 4 | Strict persona/initiative input validation | Persistent preference UI, notifications and actual speech UX |
+| 15 | Safe spoken-text normalization | Real acoustic latency/interrupt measurements |
+| 29 | Best-effort disk advisory metrics | Real host disk observation, frontend, thermal/GPU |
+| 30 | Read-only aggregate diagnostic findings | Signed/real host diagnostics, approved remediation |
+| 48, 56 | Bounded descriptive runtime summary | Real task quality and longitudinal baselines |
+| 63 | Scoped Swarm event timing estimates | Independent event authenticity and real provider timing |
+| 103 | Deny-by-default legacy WebSocket shared secret | Production identity, device-bound proof, route acceptance |
+| 105 | Offline backup integrity envelope | Encrypted durable storage, governed restore and recovery drill |
+| 107 | HMAC audit checkpoint metadata | Independent signer/key custody and durable verifier deployment |
+| 115 | Scoped SQLite vocabulary review | UI, authenticated storage, erasure/backup lifecycle |
+
+**This is a review queue, not `ready_for_completion=true`.** All remain `TESTING`, with their original `missing_components` and `known_limitations`. Before any bounded v1 `COMPLETED`, independently verify each exact `technical_goal`, real deny-path tests, signed Owner scope approval, security/license review, and harmonized acceptance validator. #18 (live Kokoro model/audio), #100 (real Owner approval lifecycle) and #101 (Docker isolation) are **not** software-only candidates.
