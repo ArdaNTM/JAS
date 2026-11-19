@@ -380,3 +380,57 @@ export function observePrefetchPattern(body: {
 export function getPrefetchProposals(principalId: string, limit = 20): Promise<{ items: Record<string, unknown>[]; count: number }> {
   return request("/api/prefetch/proposals?principal_id=" + encodeURIComponent(principalId) + "&limit=" + limit);
 }
+
+
+export interface CenterFeature {
+  id: number;
+  name: string;
+  category: string;
+  phase: number;
+  status: "source_complete_bounded_v1";
+  runtime_status: "metadata_only" | "mcp_registered";
+  mcp_capability_ids: string[];
+}
+
+export interface CenterTool {
+  capability_id: string;
+  tool_name: string;
+  provider_id: string;
+  risk_level: "low" | "medium" | "high" | "critical";
+  category: string;
+  gateway_registered: boolean;
+  authorization: "required_at_dispatch";
+}
+
+export interface CapabilityCenterResponse {
+  schema: "aura.capability-center.v1";
+  feature_count: number;
+  features: CenterFeature[];
+  tools: CenterTool[];
+  policy: string;
+}
+
+export interface CenterInvocationResult {
+  status: "executed" | "denied" | "approval_required";
+  result: unknown;
+  approval_id: string | null;
+  reason: string;
+}
+
+/** Source index and actual live MCP registrations, never an authorization claim. */
+export function getCapabilityCenter(): Promise<CapabilityCenterResponse> {
+  return request<CapabilityCenterResponse>("/api/capabilities/center");
+}
+
+/** Exact server-owned tool binding through the existing Kernel MCP Gateway. */
+export function invokeCapabilityTool(body: {
+  capability_id: string;
+  resource_scope: string;
+  arguments: Record<string, unknown>;
+  approval_id?: string;
+}): Promise<CenterInvocationResult> {
+  return request<CenterInvocationResult>("/api/capabilities/center/invoke", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}

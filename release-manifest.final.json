@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-19T05:22:50.205Z",
-  "git_commit": "2efa8bb44a08a7930dae956bc337c10b3691c359",
+  "generated_at": "2026-11-19T06:13:31.965Z",
+  "git_commit": "149c27e4400b1d1d5cc9b1a1c40b78166c64b580",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:6ebf0c962ece1ca8fa6940ebbfcc9ecdb82595ce6ea30326083e1631716a3212",
-  "file_count": 441,
+  "release_digest": "sha256:a846fefe03a3242d6ee58ab05b1a50f8febc2c71d5e2e2c51751980bb6595d55",
+  "file_count": 444,
   "files": [
     {
       "path": ".gitattributes",
@@ -66,7 +66,7 @@
     },
     {
       "path": "aura-ui/src/api/client.ts",
-      "sha256": "af6adf1a4eaa7fa82554c33a12ec2ea04031c1fad965efc2c9a0c4f3c9cc05de"
+      "sha256": "a81c163285d7aa5cf5977e1b1fdbe8edced75735294a371d50d90f9dce1aaf7f"
     },
     {
       "path": "aura-ui/src/api/contracts.ts",
@@ -78,7 +78,7 @@
     },
     {
       "path": "aura-ui/src/App.tsx",
-      "sha256": "6160a4a83cf03856e28b49e78da2030a2fac9c27725330032c88320b6c0829ad"
+      "sha256": "8111a7dee363c230fb16df42b878ce36db79d4f292d118667ae5d05481a422e9"
     },
     {
       "path": "aura-ui/src/assets/hero.png",
@@ -103,6 +103,10 @@
     {
       "path": "aura-ui/src/components/ArcReactor3D.tsx",
       "sha256": "0e75c2d49b308a1b9bb25f6549c2941da83c4d1b092de2a7451da4592f759e01"
+    },
+    {
+      "path": "aura-ui/src/components/CapabilityAndToolCenter.tsx",
+      "sha256": "11ed5c96bc3d7de8f74d5b84c71c9331a35f12c55d137c34d7d629ec9ec405b8"
     },
     {
       "path": "aura-ui/src/components/CapabilityWorkbench.tsx",
@@ -393,6 +397,10 @@
       "sha256": "7a1f2792ab02d2b2f5cf7add57174080ea97331ee8b513e9a60269fcb1e44c4a"
     },
     {
+      "path": "core/src/aura_core/application/capability_center.py",
+      "sha256": "7b7303ec75ee88bed3a1267500018c42d91ccfd57539ca9c7ebebc2f9f28b5d6"
+    },
+    {
       "path": "core/src/aura_core/application/capability_discovery.py",
       "sha256": "88b89fdf53ec5bf6e2f02ff4ddfd3ad392a28180cbbff4178a6e10ea956c8b4d"
     },
@@ -451,6 +459,10 @@
     {
       "path": "core/src/aura_core/application/experiment_design.py",
       "sha256": "bbe6c36ffa2f13a44a4fe1066cc4200aaa34b06fef6c1e5865b5bf3d9f2e76d6"
+    },
+    {
+      "path": "core/src/aura_core/application/feature_index.json",
+      "sha256": "da5f91deebc7dca3c76e2a22dc933364ae9adcd12371aeb3d3a1a4cfdeaf25c0"
     },
     {
       "path": "core/src/aura_core/application/full_duplex_session.py",
@@ -1114,7 +1126,7 @@
     },
     {
       "path": "core/src/aura_core/main.py",
-      "sha256": "06969f2928b21dbace3250405bb1b61eedcfac75e3a74fea6dd67e32852608ec"
+      "sha256": "b32526e17f736e682d2445d26836b2e0dea3fe863cc30b6ec6e675c4dd896279"
     },
     {
       "path": "core/src/aura_core/mcp/__init__.py",

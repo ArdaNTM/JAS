@@ -1,6 +1,7 @@
 import ArcReactor3D from "./components/ArcReactor3D";
 import DynamicHologram3D from "./components/DynamicHologram3D";
 import CapabilityWorkbench from "./components/CapabilityWorkbench";
+import CapabilityAndToolCenter from "./components/CapabilityAndToolCenter";
 import EvolutionReviewPanel from "./components/EvolutionReviewPanel";
 import StageCControlPanel from "./components/StageCControlPanel";
 import { useCallback, useEffect, useState } from "react";
@@ -127,6 +128,7 @@ type VisualizationModelId =
   | "sphere-v1"
   | "motor-v1";
 export default function App() {
+  const [mainView, setMainView] = useState<"capabilities" | "hud">("capabilities");
   const [researchOutput, setResearchOutput] =
     useState<unknown>(null);
 
@@ -529,7 +531,17 @@ export default function App() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 text-[9px] tracking-[.18em]">
+          <div className="flex flex-wrap items-center justify-end gap-3 text-[9px] tracking-[.18em]">
+            <button type="button" onClick={() => setMainView("capabilities")}
+              aria-pressed={mainView === "capabilities"}
+              className={mainView === "capabilities" ? "rounded border border-cyan-600 px-3 py-2 text-cyan-200" : "rounded border border-cyan-950 px-3 py-2 text-slate-500"}>
+              YETENEK MERKEZİ
+            </button>
+            <button type="button" onClick={() => setMainView("hud")}
+              aria-pressed={mainView === "hud"}
+              className={mainView === "hud" ? "rounded border border-cyan-600 px-3 py-2 text-cyan-200" : "rounded border border-cyan-950 px-3 py-2 text-slate-500"}>
+              HUD
+            </button>
             <span
               className={[
                 "h-1.5 w-1.5 rounded-full",
@@ -542,6 +554,12 @@ export default function App() {
           </div>
         </header>
 
+        {mainView === "capabilities" ? (
+          <CapabilityAndToolCenter onInsertDirective={(value) => {
+            setCommand(value);
+            setError(null);
+          }} />
+        ) : (
         <main className="grid flex-1 grid-cols-1 items-center gap-8 py-8 lg:grid-cols-[230px_minmax(400px,1fr)_270px]">
 
           <aside className="order-2 lg:order-1">
@@ -685,6 +703,7 @@ export default function App() {
             </div>
           </aside>
         </main>
+        )}
 
         <FullDuplexPanel voice={fullDuplex} goal={command} />
 
