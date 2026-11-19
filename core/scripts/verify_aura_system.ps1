@@ -24,8 +24,47 @@ function Add-NotConfigured([string]$Name, [string]$Detail) {
     Add-Result $Name "NOT CONFIGURED" $Detail
 }
 
+
+function Write-Section([string]$Title) {
+    [Console]::Out.Flush()
+    [Console]::Error.Flush()
+    Write-Host "`n=== $Title ===" -ForegroundColor Cyan
+}
+
+function Invoke-LoggedNative([string]$LogPath, [scriptblock]$Command) {
+    $previousErrorActionPreference = $ErrorActionPreference
+    $nativeExit = 1
+    try {
+        # Windows PowerShell 5.1 promotes native stderr to ErrorRecord;
+        # convert it to printable text without discarding native exit status.
+        $ErrorActionPreference = "Continue"
+        [Console]::Out.Flush()
+        [Console]::Error.Flush()
+        & $Command 2>&1 |
+            ForEach-Object {
+                if ($_ -is [System.Management.Automation.ErrorRecord]) {
+                    $_.ToString()
+                } else {
+                    [string]$_
+                }
+            } |
+            Tee-Object -FilePath $LogPath |
+            Out-Host
+        $nativeExit = $LASTEXITCODE
+    } finally {
+        [Console]::Out.Flush()
+        [Console]::Error.Flush()
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+    if ($nativeExit -ne 0) {
+        throw "Native command exit=$nativeExit (see $LogPath)"
+    }
+}
+
 $Core = Join-Path $Root "core"
 $Ui = Join-Path $Root "aura-ui"
+$LogDir = Join-Path $env:LOCALAPPDATA "AURA\diagnostics"
+New-Item -ItemType Directory -Path $LogDir -Force | Out-Null
 $Python = Join-Path $Core ".venv\Scripts\python.exe"
 $env:PYTHONPATH = Join-Path $Core "src"
 $env:AURA_MODEL = if ($env:AURA_MODEL) { $env:AURA_MODEL } else { "qwen3:4b-instruct-2507-q4_K_M" }
@@ -63,12 +102,28 @@ if ($StartContainers) {
 
 if ($pythonReady) {
     Run-Pass "Python compile" { & $Python -m compileall -q (Join-Path $Core "src"); if ($LASTEXITCODE) { throw "compileall failed" } }
-    Run-Pass "Python tests" { Push-Location $Core; try { & $Python -m pytest -q; if ($LASTEXITCODE) { throw "pytest failed" } } finally { Pop-Location } }
+    Write-Section "2. PYTEST GERCEK HATA (F/E) RAPORU"
+    Run-Pass "Python tests" {
+        Push-Location $Core
+        try {
+            if (-not (Test-Command "uv")) { throw "uv is required for the test environment" }
+            Invoke-LoggedNative -LogPath (Join-Path $LogDir "pytest-full.log") -Command {
+                uv run pytest -q --tb=short --junitxml="$LogDir\pytest-junit.xml"
+            }
+        } finally { Pop-Location }
+    }
     Run-Pass "Diagnostics CLI" { & $Python (Join-Path $Core "scripts\aura_diagnostics.py") | Out-Null; if ($LASTEXITCODE) { throw "diagnostics CLI failed" } }
 }
 
-Run-Pass "Frontend build" { Push-Location $Ui; try { npm run build; if ($LASTEXITCODE) { throw "frontend build failed" } } finally { Pop-Location } }
+Write-Section "3. FRONTEND BUILD"
+Run-Pass "Frontend build" {
+    Push-Location $Ui
+    try {
+        Invoke-LoggedNative -LogPath (Join-Path $LogDir "frontend-build.log") -Command { npm run build }
+    } finally { Pop-Location }
+}
 
+Write-Section "4. CANLI UYGULAMA VE HTTP KONTROLU"
 if ($pythonReady) {
     $server = $null
     try {
@@ -76,7 +131,17 @@ if ($pythonReady) {
         $deadline = (Get-Date).AddSeconds(30)
         do { Start-Sleep -Milliseconds 300; try { $live = Invoke-RestMethod "http://127.0.0.1:8765/api/health/live" -TimeoutSec 2; $apiReady = $live.status -eq "ok" } catch { $apiReady = $false } } while (-not $apiReady -and (Get-Date) -lt $deadline)
         if (-not $apiReady) { throw "Backend did not answer /api/health/live within 30 seconds" }
-        Run-Pass "Backend live HTTP" { foreach ($path in "/api/health", "/api/health/live", "/api/diagnostics/providers") { Invoke-RestMethod "http://127.0.0.1:8765$path" -TimeoutSec 5 | Out-Null } }
+        Run-Pass "Backend live HTTP" { foreach ($path in "/health", "/api/health", "/api/health/live", "/api/diagnostics/providers") { Invoke-RestMethod "http://127.0.0.1:8765$path" -TimeoutSec 5 | Out-Null } }
+        Run-Pass "Backend readiness HTTP" {
+            Invoke-RestMethod "http://127.0.0.1:8765/api/health/ready" -TimeoutSec 5 | Out-Null
+        }
+        if ($env:AURA_API_BEARER_TOKEN) {
+            Run-Pass "Capability Center HTTP" {
+                Invoke-RestMethod "http://127.0.0.1:8765/api/capabilities/proposals" -Headers @{ Authorization = "Bearer $env:AURA_API_BEARER_TOKEN" } -TimeoutSec 5 | Out-Null
+            }
+        } else {
+            Add-NotConfigured "Capability Center HTTP" "AURA_API_BEARER_TOKEN is absent; protected HTTP remains fail-closed."
+        }
         Run-Pass "WebSocket live events" {
             $ticket = (Invoke-RestMethod "http://127.0.0.1:8765/api/ws/ticket" -Method Post -TimeoutSec 5).ticket
             $node = 'const t=process.argv[1];const w=new WebSocket(`ws://127.0.0.1:8765/api/ws/events?ticket=${encodeURIComponent(t)}`);const x=setTimeout(()=>{console.error("timeout");process.exit(1)},5000);w.onmessage=e=>{if(JSON.parse(e.data).event!=="AURA_CONNECTED")process.exit(1);clearTimeout(x);w.close();process.exit(0)};w.onerror=()=>process.exit(1);'

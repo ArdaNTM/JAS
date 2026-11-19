@@ -5,7 +5,7 @@
   "generated_at": "2026-11-19T07:08:05.113Z",
   "git_commit": "19da39d819cefce0dff6c9f4b5ce7dd963288018",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:1712f4ed3d57e0068c60dad6cca8fabc622121af8529a48ba83e4f1ebdf7b752",
+  "release_digest": "sha256:6d2ba88f298d9329a6ba74bc7febf3ead7f2bb9c3614ae85d56e0d1ec224a52b",
   "file_count": 444,
   "files": [
     {
@@ -190,7 +190,7 @@
     },
     {
       "path": "aura-ui/vite.config.ts",
-      "sha256": "5ac19494d115c1282739f722ae8dc0856a1efc55e83a4ce90af16ef24896876c"
+      "sha256": "27085ebb1f98527a6924ab5d631b05ebcbea574430077237ba4942f2a9e77925"
     },
     {
       "path": "core/frontend/package-lock.json",

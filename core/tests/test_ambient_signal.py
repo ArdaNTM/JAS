@@ -29,7 +29,7 @@ def test_bounded_quiet_activity_clipping_signal_metrics():
 @pytest.mark.parametrize("audio", [
     b"", b"\x00", b"\x00\x00" * 159, b"\x00\x00" * 32001,
     b"\x00\x00" * 160 + b"\x00", bytearray(b"\x00" * 320), "no", None,
-])
+], ids=["empty", "single-byte", "below-min-samples", "above-max-samples", "odd-byte-count", "mutable-bytearray", "string-input", "none-input"])
 def test_invalid_or_unbounded_audio_rejected(audio):
     with pytest.raises(ValueError):
         analyze_pcm16_signal(audio)

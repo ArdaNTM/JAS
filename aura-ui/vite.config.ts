@@ -78,6 +78,28 @@ export default defineConfig(({ mode }) => {
         },
       },
     ],
+    build: {
+      rolldownOptions: {
+        output: {
+          codeSplitting: {
+            groups: [
+              {
+                name: "react-vendor",
+                test: /node_modules[\\/](?:react|react-dom|scheduler)[\\/]/,
+                priority: 30,
+                maxSize: 400_000,
+              },
+              {
+                name: "three-vendor",
+                test: /node_modules[\\/]three[\\/]/,
+                priority: 20,
+                maxSize: 400_000,
+              },
+            ],
+          },
+        },
+      },
+    },
     server: {
       host: "127.0.0.1",
       port: uiPort,
