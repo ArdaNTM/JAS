@@ -3,7 +3,7 @@
 Run on the Owner's actual Windows host AFTER explicitly merging the approved
 PRs and pulling main. The script cannot enroll Owner identity, sign evidence,
 modify firewall/ACL/Hyper-V, start a VM, access Docker socket through transport,
-or claim any of the remaining 52 B2-Env capabilities have passed live acceptance.
+or claim any of the 71 B2-Env capabilities passed live physical acceptance.
 """
 from __future__ import annotations
 
@@ -24,7 +24,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 V1_SOFTWARE = frozenset({3, 4, 15, 29, 30, 48, 56, 63, 103, 105, 107, 115})
 V1_SIMULATION = frozenset({81, 85, 86, 87, 88, 89, 90})
-V1_ACCEPTED = V1_SOFTWARE | V1_SIMULATION
+V1_FINAL_WINDOWS = frozenset({1, 6, 7, 9, 11, 13, 14, 16, 17, 18, 19, 20, 22, 23, 24, 26, 28, 31, 32, 49, 54, 55, 57, 69, 77, 78, 79, 80, 82, 83, 84, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 104, 106, 113, 116})
+V1_FINAL_HYPERV = frozenset({25, 27, 33, 45, 51, 60, 101})
+V1_ACCEPTED = V1_SOFTWARE | V1_SIMULATION | V1_FINAL_WINDOWS | V1_FINAL_HYPERV
 _TEST_PATH = re.compile(r"(?:core/)?tests/[A-Za-z0-9_./-]+\.py")
 
 
@@ -48,6 +50,9 @@ def load_b2(repo: Path) -> tuple[dict, dict]:
             or acceptance.get("software_ids") != sorted(V1_SOFTWARE)
             or acceptance.get("simulation_ids") != sorted(V1_SIMULATION)
             or acceptance.get("remaining_ids") != sorted(env - V1_ACCEPTED)
+            or acceptance.get("windows_local_v1_ids") != sorted(V1_FINAL_WINDOWS)
+            or acceptance.get("hyperv_docker_v1_ids") != sorted(V1_FINAL_HYPERV)
+            or V1_ACCEPTED != env
             or "NO_PHYSICAL_CERTIFICATION" not in acceptance.get("simulation_policy", "")):
         raise ValueError("B2-Env v1 acceptance cohort must remain pinned")
     if any(
@@ -64,7 +69,7 @@ def load_b2(repo: Path) -> tuple[dict, dict]:
             or any(type(items) is not list or items != sorted(set(items)) for items in validation_groups.values())
             or sorted(sum((items for items in validation_groups.values()), []))
                 != catalog["B2_env_ids"]):
-        raise ValueError("B2-Env validation groups must partition 71 uncompleted IDs")
+        raise ValueError("B2-Env validation groups must partition 71 governed IDs")
     return tracker, catalog
 
 
@@ -78,8 +83,9 @@ def focused_tests(repo: Path, tracker: dict, catalog: dict, *, target_ids: list[
     """Discover present focus tests AND retain missing identities as blockers."""
     selected: set[str] = set()
     missing: set[str] = set()
-    pending = set(pending_env_ids(tracker, catalog))
-    selected_ids = sorted(pending) if target_ids is None else [i for i in target_ids if i in pending]
+    # Preserve access to all 64 pinned regression suites even after bounded-v1
+    # completion; a green test can never claim hardware/production acceptance.
+    selected_ids = catalog["B2_env_ids"] if target_ids is None else target_ids
     if target_ids is not None and not set(target_ids).issubset(catalog["B2_env_ids"]):
         raise ValueError("B2-Env target IDs out of bounds")
     for i in selected_ids:
@@ -264,9 +270,9 @@ def main(argv: list[str] | None = None) -> int:
         print(f"B2 CHECKLIST ERROR: {exc}")
         return 2
     pending_ids = pending_env_ids(tracker, catalog)
-    selected_ids = pending_ids if args.group == "all" else [
-        i for i in catalog["B2_env_validation_groups"][args.group] if i in pending_ids
-    ]
+    selected_ids = catalog["B2_env_ids"] if args.group == "all" else (
+        catalog["B2_env_validation_groups"][args.group]
+    )
     print(f"B2-Owner={len(catalog['B2_owner_ids'])} B2-Env={len(catalog['B2_env_ids'])}; "
           f"{len(pending_ids)} TESTING (B2-Env only); {len(paths)} present and {len(missing_tests)} MISSING unique focused test files")
     if missing_tests:
@@ -334,7 +340,7 @@ def main(argv: list[str] | None = None) -> int:
         print("Physical hardware receipts: NOT VERIFIED (no signed evidence provided)")
         environment_ok = False
     print("B2-Owner bounded offline v1: 17 COMPLETED; live production acceptance not inferred")
-    print(f"All {len(pending_ids)} remaining B2-Env are TESTING; a green preflight is NEVER live acceptance.")
+    print(f"Remaining {len(pending_ids)} B2-Env are TESTING; bounded v1 is not live production or physical acceptance.")
     return 0 if all_pass and environment_ok else 2
 
 

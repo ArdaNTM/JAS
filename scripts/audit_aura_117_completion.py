@@ -21,7 +21,12 @@ B2_TRACKS = frozenset({"B2-Owner", "B2-Env"})
 B2_OWNER_IDS = frozenset({34, 46, 50, 58, 61, 64, 68, 70, 71, 72, 74, 75, 108, 109, 110, 114, 117})
 B2_ENV_SOFTWARE_IDS = frozenset({3, 4, 15, 29, 30, 48, 56, 63, 103, 105, 107, 115})
 B2_ENV_SIMULATION_IDS = frozenset({81, 85, 86, 87, 88, 89, 90})
-B2_ENV_ACCEPTED = B2_ENV_SOFTWARE_IDS | B2_ENV_SIMULATION_IDS
+B2_ENV_FINAL_WINDOWS_IDS = frozenset({1, 6, 7, 9, 11, 13, 14, 16, 17, 18, 19, 20, 22, 23, 24, 26, 28, 31, 32, 49, 54, 55, 57, 69, 77, 78, 79, 80, 82, 83, 84, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 104, 106, 113, 116})
+B2_ENV_FINAL_HYPERV_IDS = frozenset({25, 27, 33, 45, 51, 60, 101})
+B2_ENV_FINAL_ACCEPTED = B2_ENV_FINAL_WINDOWS_IDS | B2_ENV_FINAL_HYPERV_IDS
+B2_ENV_ACCEPTED = B2_ENV_SOFTWARE_IDS | B2_ENV_SIMULATION_IDS | B2_ENV_FINAL_ACCEPTED
+APPROVED_FINAL_MAIN_MERGE = "2efa8bb44a08a7930dae956bc337c10b3691c359"
+APPROVED_FINAL_CI_HEAD = "8e6e9a90998f5dee7b3c18a4de849180a4bd5a52"
 APPROVED_ENV_MAIN_MERGE = "5e51d3f50b53f482e14e3d1d73a375d08e6e9eb7"
 APPROVED_ENV_REGRESSION_HEAD = "7beeb4a7c95e6b571fddeae95ef5b802b624cd8f"
 APPROVED_MAIN_MERGE = "b09ad74c49ebe1d73e2bb79524c8c8006e2ca40f"
@@ -44,7 +49,7 @@ def eligible_for_completion(record: dict) -> bool:
         and (record.get("id") not in B2_OWNER_IDS
              or (APPROVED_MAIN_MERGE in record.get("notes", "")
                  and record.get("known_limitations", "").startswith("V2 /")))
-        and (record.get("id") not in B2_ENV_ACCEPTED or (
+        and (record.get("id") not in (B2_ENV_SOFTWARE_IDS | B2_ENV_SIMULATION_IDS) or (
             APPROVED_ENV_MAIN_MERGE in record.get("notes", "")
             and APPROVED_ENV_REGRESSION_HEAD in record.get("notes", "")
             and record.get("known_limitations", "").startswith("V2 /")
@@ -52,6 +57,15 @@ def eligible_for_completion(record: dict) -> bool:
                  or ("SIMULATION_ONLY" in record.get("notes", "")
                      and any(term in record.get("technical_goal", "").lower()
                              for term in ("synthetic", "simulated"))))
+        ))
+        and (record.get("id") not in B2_ENV_FINAL_ACCEPTED or (
+            APPROVED_FINAL_MAIN_MERGE in record.get("notes", "")
+            and APPROVED_FINAL_CI_HEAD in record.get("notes", "")
+            and record.get("known_limitations", "").startswith("V2 /")
+            and "NO_PHYSICAL_OR_BROKER_ATTESTATION" in record.get("notes", "")
+            and ("WINDOWS_LOCAL_V1" in record.get("notes", "")
+                 if record.get("id") in B2_ENV_FINAL_WINDOWS_IDS
+                 else "HYPERV_DOCKER_V1" in record.get("notes", ""))
         ))
         and record.get("assessment") == "VERIFIED"
         and record.get("acceptance") == "PASS"
@@ -132,6 +146,14 @@ def validate(tracker: dict, groups: dict, provenance: dict, root: Path = ROOT) -
         env_acceptance.get("software_ids") != sorted(B2_ENV_SOFTWARE_IDS)
         or env_acceptance.get("simulation_ids") != sorted(B2_ENV_SIMULATION_IDS)
         or env_acceptance.get("remaining_ids") != sorted(set(env_ids) - B2_ENV_ACCEPTED)
+        or env_acceptance.get("windows_local_v1_ids") != sorted(B2_ENV_FINAL_WINDOWS_IDS)
+        or env_acceptance.get("hyperv_docker_v1_ids") != sorted(B2_ENV_FINAL_HYPERV_IDS)
+        or B2_ENV_FINAL_WINDOWS_IDS != (set(validation_groups["windows_local"]) - B2_ENV_SOFTWARE_IDS)
+        or B2_ENV_FINAL_HYPERV_IDS != set(validation_groups["hyperv_docker"])
+        or env_acceptance.get("final_owner_main_merge") != APPROVED_FINAL_MAIN_MERGE
+        or env_acceptance.get("final_linux_ci_head") != APPROVED_FINAL_CI_HEAD
+        or env_acceptance.get("local_report_signature_status") != "UNSIGNED_OWNER_REPORTED_NOT_IN_REPOSITORY"
+        or len(B2_ENV_ACCEPTED) != 71
         or env_acceptance.get("owner_main_merge") != APPROVED_ENV_MAIN_MERGE
         or env_acceptance.get("merged_ci_head") != APPROVED_ENV_REGRESSION_HEAD
         or "NO_PHYSICAL_CERTIFICATION" not in env_acceptance.get("simulation_policy", "")
@@ -201,6 +223,10 @@ def validate(tracker: dict, groups: dict, provenance: dict, root: Path = ROOT) -
         "B2_env_software_v1": len(B2_ENV_SOFTWARE_IDS),
         "B2_env_simulation_v1": len(B2_ENV_SIMULATION_IDS),
         "B2_env_testing": len(set(env_ids) - B2_ENV_ACCEPTED),
+        "B2_env_final_windows_v1": len(B2_ENV_FINAL_WINDOWS_IDS),
+        "B2_env_final_hyperv_v1": len(B2_ENV_FINAL_HYPERV_IDS),
+        "total_testing": sum(f["status"] == "TESTING" for f in features),
+        "total_not_started": sum(f["status"] == "NOT_STARTED" for f in features),
         "B2_windows_local": len(validation_groups["windows_local"]),
         "B2_hyperv_docker": len(validation_groups["hyperv_docker"]),
         "B2_external_hardware": len(validation_groups["external_hardware_simulation"]),
@@ -215,7 +241,7 @@ def main() -> int:
         print(f"FAIL: {exc}")
         return 2
     print("PASS: 117-feature A/B inventory and canonical source blob pins validated")
-    print("A={group_A} B1={group_B1} B2={group_B2} COMPLETED={total_completed} ELIGIBLE={total_verified_ready} B2-Owner={B2_owner} B2-Env={B2_env}".format(**summary))
+    print("A={group_A} B1={group_B1} B2={group_B2} COMPLETED={total_completed} ELIGIBLE={total_verified_ready} TESTING={total_testing} NOT_STARTED={total_not_started} B2-Owner={B2_owner} B2-Env={B2_env}".format(**summary))
     return 0
 
 

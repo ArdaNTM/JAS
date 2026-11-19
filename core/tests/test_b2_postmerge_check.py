@@ -20,13 +20,13 @@ def test_readonly_postmerge_focus_inventory_and_unverified_owner_requirements(ca
     tests, missing = b2.focused_tests(ROOT, tracker, groups)
     assert len(groups["B2_owner_ids"]) == 17
     assert len(groups["B2_env_ids"]) == 71
-    assert len(tests) == 50 and len(tests) == len(set(tests))
+    assert len(tests) == 64 and len(tests) == len(set(tests))
     assert missing == ()  # Every original B2-Env focus test is now present.
-    assert "tests/test_subsystem_pack3.py" not in tests  # Simulation-v1 accepted; never physical proof.
+    assert "tests/test_subsystem_pack3.py" in tests  # Simulation regression, never physical proof.
     assert "tests/test_subsystem_pack4.py" in tests
     assert b2.main(["--repo-root", str(ROOT), "--list-only"]) == 0
     out = capsys.readouterr().out
-    assert "52 TESTING" in out
+    assert "0 TESTING" in out
     assert "B2 hardware/Owner evidence NOT evaluated" in out
 
 
@@ -58,10 +58,7 @@ def test_three_way_test_inventory_has_no_missing_sources_and_is_not_hardware_acc
         assert len(ids) == count
         present, missing = b2.focused_tests(ROOT, tracker, groups, target_ids=ids)
         assert missing == ()
-        if key == "external_hardware_simulation":
-            assert present == ()  # All 7 are simulation-v1, not hardware acceptance.
-        else:
-            assert present
+        assert present  # Historical focus regressions remain accessible post-v1.
         union.update(ids)
     assert union == set(groups["B2_env_ids"])
 
@@ -71,8 +68,8 @@ def test_scoped_pytest_json_evidence_stays_unsigned_and_fail_closed(tmp_path, mo
 
     tracker, groups = b2.load_b2(ROOT)
     outstanding = b2.pending_env_ids(tracker, groups)
-    assert len(outstanding) == 52
-    assert not set(outstanding) & b2.V1_ACCEPTED
+    assert len(outstanding) == 0
+    assert len(b2.V1_ACCEPTED) == 71
     assert not set(outstanding) & set(
         groups["B2_env_validation_groups"]["external_hardware_simulation"]
     )

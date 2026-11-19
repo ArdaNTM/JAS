@@ -130,20 +130,14 @@
       "id": 1,
       "group": "B",
       "name": "Kalıcı kişisel hafıza",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Production Owner authentication for SQLiteApprovalStore.decide and independent security review are not evidenced; unmerged PR and no Owner release acceptance.",
-        "Full chat/semantic memory retention/export/deletion lifecycle, production encryption/NTFS ACL, crash recovery and PostgreSQL migration acceptance not verified.",
-        "Cross-branch source-path integration is green but does not attest every conflicting, unmerged PR implementation.",
-        "Authenticated Owner approval decision lifecycle",
-        "Independent privacy and Windows NTFS ACL acceptance",
-        "End-to-end production memory migration/retention acceptance",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 2,
@@ -195,39 +189,27 @@
       "id": 6,
       "group": "B",
       "name": "Bağlam farkındalığı",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Verified active-window awareness",
-        "End-to-end model context prioritization",
-        "Owner-assessed multimodal situation awareness",
-        "Independent security review not yet recorded",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 7,
       "group": "B",
       "name": "Konuşmaları hafızaya dönüştürme",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Authenticated speaker and Owner consent receipts",
-        "Reviewed promotion into encrypted scoped durable memory",
-        "Replica/backup erasure and live E2E acceptance",
-        "Independent security review not yet recorded",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 8,
@@ -246,20 +228,14 @@
       "id": 9,
       "group": "B",
       "name": "Hafızayı düzeltme ve unutma",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Authenticated Owner approval receipt",
-        "WAL/backup/Qdrant/PostgreSQL propagation",
-        "Auditable redacted erasure proof",
-        "Independent security review not yet recorded",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 10,
@@ -278,20 +254,14 @@
       "id": 11,
       "group": "B",
       "name": "Çevrimdışı hafıza ve çekirdek",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Independent Owner authentication and signed consent",
-        "Encrypted-at-rest memory, WAL/backup erasure, retention",
-        "Full offline Core/memory E2E and physical acceptance",
-        "Independent security review not yet recorded",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 12,
@@ -310,37 +280,27 @@
       "id": 13,
       "group": "B",
       "name": "Uyandırma kelimesi",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "This recognizes explicit phrases only after offline STT text; no acoustic always-listening wake-word model or hardware/VAD tests.",
-        "Not mounted into trusted FullDuplexSessionManager/Owner microphone UI; upstream authentication and consent enforcement unverified.",
-        "Real acoustic wake-word model and sample/VAD evaluation",
-        "Trusted speech UI and Owner consent lifecycle",
-        "Live hardware/false-positive privacy acceptance",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 14,
       "group": "B",
       "name": "Doğal ve kesilebilir konuşma",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "No real microphone, TTS hardware, model quality, diarization or voice identity tests",
-        "No full Owner-authenticated deployed session lifecycle, wake word, human-level turn taking or UI/device privacy acceptance",
-        "Real microphone/audio hardware acceptance",
-        "Full wake word, interruption latency and speaker identity evaluation",
-        "Owner-authenticated deployed voice lifecycle",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 15,
@@ -359,99 +319,66 @@
       "id": 16,
       "group": "B",
       "name": "Konuşmacı tanıma",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Acoustic accuracy, SpeechBrain/PyTorch model loading and model license not yet validated on a target host.",
-        "The optional SpeechBrain + PyTorch stack and compatible local model directory must be provisioned by deployment.",
-        "No durable speaker identity or cross-session matching; this slice intentionally provides anonymous session diarization only.",
-        "No live FullDuplexSessionManager stream integration or consent UI.",
-        "Optional dependency/model provisioning and license verification",
-        "Live FullDuplexSessionManager stream integration",
-        "Acoustic accuracy and latency evaluation",
-        "Explicit user-facing microphone/voice consent integration",
-        "Independent security review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 17,
       "group": "B",
       "name": "Duygu ve konuşma biçimi ipuçları",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Core Assurance and final release-lock CI pending.",
-        "Only uncompressed PCM WAV is analyzed; existing STT accepts additional encoded formats.",
-        "Service registration is available but root composition does not yet automatically instantiate and inject the analyzer.",
-        "No multilingual acoustic calibration, independently validated emotion model, or user-facing prosody controls.",
-        "Automatic root composition registration and manager injection",
-        "Decode/resample integration for non-WAV formats accepted by STT",
-        "Real audio corpus, multilingual calibration and performance benchmark",
-        "User-facing controls and downstream TTS prosody adaptation",
-        "Independent security review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 18,
       "group": "B",
       "name": "Ses özelleştirme",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "No real Kokoro weights/audio-device synthesis or physical microphone tests, model voice list and provenance not verified live.",
-        "No Owner-approved end-to-end live voice customization UX or multilingual/audio quality latency acceptance.",
-        "Real model-weight and voice availability acceptance",
-        "Owner-facing voice selection persistence and device tests",
-        "Multilingual/pitch/environment-specific customization and production quality benchmarking",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 19,
       "group": "B",
       "name": "Çok dilli konuşma",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Preview only; current bootstrap selects a single provider, not live simultaneous Turkish/English conversational routing.",
-        "No real Kokoro/Piper voice weights, language detection, acoustic quality, mobile/desktop device and Owner acceptance.",
-        "Real simultaneous bilingual provider registration",
-        "Language detection and speech session routing",
-        "Model/voice licenses and Owner hardware acceptance",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 20,
       "group": "B",
       "name": "Ortam sesi algılama",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "No actual environmental sound model, hardware microphone/consent UI or production wiring",
-        "No real authenticated Owner/hardware end-to-end production acceptance or approved cumulative integration across unmerged PR locks.",
-        "Approved production composition, cross-PR source lock and Owner verification",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Specific missing local prerequisite is recorded under known_limitations; Linux CI is not equivalent to real Windows broker/device acceptance.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 21,
@@ -469,140 +396,92 @@
       "id": 22,
       "group": "B",
       "name": "Tamamen çevrimdışı ses sistemi",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Exact-head Core Assurance and release-lock CI pending.",
-        "Compatible local faster-whisper model and Turkish Piper ONNX voice must be provisioned; acoustic quality and startup latency are not yet measured.",
-        "Piper package and pretrained model licensing must be reviewed before deployment.",
-        "No physical microphone/audio-device validation; offline scope is the STT/TTS voice path, not the entire AURA process.",
-        "Real local audio device, model weights, Owner consent, Windows Piper latency and end-to-end acoustic quality remain unverified.",
-        "Cumulative PR #136 covers PR #112-135 only, not PR #64-111 or real physical hardware.",
-        "Target-host local faster-whisper model loading and accuracy evaluation",
-        "Piper voice weight licensing",
-        "Microphone/audio hardware acceptance",
-        "Network trace proving no outbound voice inference traffic",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 23,
       "group": "B",
       "name": "Masaüstü farkındalığı",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Windows native API path not exercised on Windows CI or physical desktop.",
-        "No user-facing authenticated route or consent UX; callers must supply existing principal and PermissionEngine policy.",
-        "Non-Windows provider, multi-monitor inventory, screenshot/OCR and desktop history are not implemented.",
-        "Authenticated user-facing endpoint and explicit consent UI",
-        "Non-Windows providers and multi-monitor inventory",
-        "Windows target-device integration and Owner acceptance",
-        "Independent security review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 24,
       "group": "B",
       "name": "Fare ve klavye kontrolü",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Windows SendInput behavior has not been exercised on a physical Windows desktop.",
-        "Interactive approval-store lifecycle and Owner acceptance remain deployment validation gates.",
-        "Physical Windows target validation",
-        "User-facing approval UX/Owner acceptance",
-        "E2E Gateway approval-to-driver test using live approval store",
-        "Independent security review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 25,
       "group": "B",
       "name": "Dosya yönetimi",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Windows NTFS native handle/reparse-race acceptance missing",
-        "Complete file manager/Owner-granted write/delete integration missing",
-        "Windows native file-handle security",
-        "Full file-management authorization and Owner tests",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded HYPERV_DOCKER_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "HYPERV_DOCKER_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 26,
       "group": "B",
       "name": "Uygulama yönetimi",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Windows manifest loading currently fails closed until independent verified Owner NTFS ACL configuration; real Windows desktop application launch and Owner identity acceptance missing.",
-        "No Authenticode code signing/immutable argv target attestation, kernel process isolation, descendant process-tree/Job Objects, independently measured host performance or production recovery.",
-        "SHA256 hashing before launch cannot eliminate replacement-after-hash races; scripts/config referenced by fixed argv must receive separate provenance.",
-        "Draft PR #149 is an alternative supervisor implementation on the same #148 base and MUST NOT be merged alongside #150 without deliberate reconciliation.",
-        "Combined source release lock still excludes older unmerged #64–#111 F2.7/security group; no global deployment/Owner acceptance.",
-        "Owner-attested Windows NTFS ACL manifest trust and code-signing",
-        "Windows desktop/GUI lifecycle acceptance, Job Objects, descendant teardown",
-        "Full #64–#150 cumulative security/release lock and Owner production acceptance",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 27,
       "group": "B",
       "name": "Terminal kontrolü",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Real Docker isolation smoke test skipped without independently preloaded digest-pinned image; no real container execution success or output attested.",
-        "AURA's access to privileged Docker daemon/socket not independently protected under sealed F2.7 #64 Owner broker boundary. No auto docker-group privilege.",
-        "Windows Owner/Ubuntu broker attestation, image signature verification, production audit and device performance missing.",
-        "The branch release lock covers #150 + #151 stacked tree only, not all older unmerged #64–#111 and feature acceptance.",
-        "Independently protected Docker daemon/broker identity under F2.7 security",
-        "Actual pinned-image container smoke and image signing/attestation",
-        "Windows Owner and combined #64–#152 source lock acceptance",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded HYPERV_DOCKER_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Specific missing local prerequisite is recorded under known_limitations; Linux CI is not equivalent to real Windows broker/device acceptance.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "HYPERV_DOCKER_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 28,
       "group": "B",
       "name": "Çoklu monitör farkındalığı",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "No real Electron/native display bridge, DPI hardware or HUD windows",
-        "No real authenticated Owner/hardware end-to-end production acceptance or approved cumulative integration across unmerged PR locks.",
-        "Approved production composition, cross-PR source lock and Owner verification",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 29,
@@ -634,54 +513,40 @@
       "id": 31,
       "group": "B",
       "name": "Bakım otomasyonu",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Only read-only telemetry scheduling is implemented; no authorized maintenance repair actions or daemon bootstrap.",
-        "No live host/background deployment, recovery or Owner acceptance evidence.",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 32,
       "group": "B",
       "name": "Uzaktan bilgisayar kontrolü",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "No authenticated remote network transport, device enrollment or credential rotation lifecycle.",
-        "No Windows/Ubuntu broker, live remote Owner approval and cross-device penetration acceptance; sealed F2.7 #64 remains untouched.",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 33,
       "group": "B",
       "name": "Çok adımlı bilgisayar görevleri",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Real Docker-successful multi-step workflow not shown: positive success branch uses a test replacement for external executor; #27 OCI live smoke skipped.",
-        "Cross-process atomicity for multi-step creation and external action vs DB update not guaranteed; ambiguous RUNNING requires manual Owner review.",
-        "No background progression, Windows native computer UI, full Owner session/hardware and cross-PR #64–#152 security release acceptance.",
-        "Full real Docker Engine successful workflow with audited broker",
-        "Atomic multi-process plan/recovery and Owner state reconciliation",
-        "Windows native GUI and full F2.7/#64–#152 cumulative acceptance",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded HYPERV_DOCKER_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Specific missing local prerequisite is recorded under known_limitations; Linux CI is not equivalent to real Windows broker/device acceptance.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "HYPERV_DOCKER_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 34,
@@ -822,18 +687,14 @@
       "id": 45,
       "group": "B",
       "name": "Otonom yazılım geliştirme",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "No end-to-end autonomous bug-fix/iteration/commit workflow or approved live inference session.",
-        "No real Docker successful execution, independent security acceptance or Owner merge approval.",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded HYPERV_DOCKER_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "HYPERV_DOCKER_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 46,
@@ -875,19 +736,14 @@
       "id": 49,
       "group": "B",
       "name": "Yeni beceri ve iş akışı oluşturma",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "No authenticated Owner/sandbox/replay/promotion flow or actual Gateway execution integration; generated candidate is deliberately non-executable.",
-        "Provider category/low risk metadata does not independently prove remote tool cannot mutate resources; real tool policies and schemas require separate authorization.",
-        "Authenticated Owner skill editor and explicit confirmation",
-        "Independent replay sandbox and provider safe schema verification",
-        "Approved Core Gateway execution and promotion audit",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 50,
@@ -906,18 +762,14 @@
       "id": 51,
       "group": "B",
       "name": "İzole geliştirme ve simülasyon",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "No independently attested digest-pinned Docker daemon/container smoke or kernel isolation evidence.",
-        "Security integration and physical execution acceptance not verified.",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded HYPERV_DOCKER_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "HYPERV_DOCKER_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 52,
@@ -948,36 +800,27 @@
       "id": 54,
       "group": "B",
       "name": "GitHub yönetimi",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "No live registered GitHub MCP provider with authenticated OAuth/PAT credential and Owner-approved app composition.",
-        "Read-only PR metadata is not full GitHub management; actual repo mutations/merges, real rate limits and production acceptance absent.",
-        "Authenticated GitHub provider credentials and explicit read-only policies",
-        "Owner/broker identity, production activation and live remote tests",
-        "Full GitHub management actions with separate security review",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 55,
       "group": "B",
       "name": "Birden fazla kodlama ajanı",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "No end-to-end sustained team coding workflow or independently reviewed agent quality on live Ollama.",
-        "No Owner production acceptance.",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 56,
@@ -996,20 +839,14 @@
       "id": 57,
       "group": "B",
       "name": "Uzman ajanlar",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Authenticated specialist identities",
-        "MCP/Owner-governed real tool execution",
-        "Live expert specialization outcome verification",
-        "Independent security review not yet recorded",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 58,
@@ -1038,18 +875,14 @@
       "id": 60,
       "group": "B",
       "name": "Bağımsız doğrulama ajanı",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Caller identity/approval provisioning and independent test provenance require external authenticated Owner workflow.",
-        "No live Docker verification job or independently attested security boundary acceptance.",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded HYPERV_DOCKER_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "HYPERV_DOCKER_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 61,
@@ -1153,20 +986,14 @@
       "id": 69,
       "group": "B",
       "name": "Malzeme araştırması",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Calibrated reliable material data and publisher provenance",
-        "Engineering uncertainty and statistical assessment",
-        "Independent manufacturing/material suitability testing",
-        "Independent security review not yet recorded",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 70,
@@ -1259,68 +1086,53 @@
       "id": 77,
       "group": "B",
       "name": "Görüntü anlama",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "No real Qwen-VL model weights/GPU throughput, image parser hardening, signed Owner consent/device UI or live model hardware evidence.",
-        "Real Owner identity and signed desktop/mobile capture consent + production device integration still missing.",
-        "Production registered policy, end-to-end authenticated UI and hardware acceptance",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 78,
       "group": "B",
       "name": "Video analizi",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Live Windows FFmpeg/codec installation, OS sandbox and malformed decoder input isolation not independently assessed.",
-        "Actual Qwen-VL model weights, user media consent capture/UI, GPU throughput and per-frame image quality not verified.",
-        "Stacked PR #140 depends on #137 and requires Owner-approved cumulative integration; simulated codec/HTTP tests cannot be full hardware acceptance.",
-        "Live OS FFmpeg sandbox/hardening and codec security",
-        "Real Ollama/VL model weights and GPU test",
-        "Owner consent UI and telemetry acceptance",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Specific missing local prerequisite is recorded under known_limitations; Linux CI is not equivalent to real Windows broker/device acceptance.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 79,
       "group": "B",
       "name": "Nesne tespiti",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Model-generated boxes not calibrated, ground-truth checked or measured on real camera/screen; no actionable target or hardware acceptance.",
-        "Real Owner identity and signed desktop/mobile capture consent + production device integration still missing.",
-        "Production registered policy, end-to-end authenticated UI and hardware acceptance",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 80,
       "group": "B",
       "name": "OCR",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Optional live OCR smoke skipped when Tesseract/English traineddata/font are missing; no deployed Windows trusted binary and Turkish traineddata/hardware/Owner quality evidence.",
-        "Real Owner identity and signed desktop/mobile capture consent + production device integration still missing.",
-        "Production registered policy, end-to-end authenticated UI and hardware acceptance",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Specific missing local prerequisite is recorded under known_limitations; Linux CI is not equivalent to real Windows broker/device acceptance.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 81,
@@ -1339,58 +1151,40 @@
       "id": 82,
       "group": "B",
       "name": "Görsel hafıza",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Actual Owner Windows NTFS ACL, disk encryption, SQLite WAL/backup/snapshot security and secure deletion must be reviewed; descriptions stored as unencrypted text.",
-        "Live Qwen-VL model and consented screen/camera flow, UI retrieval/deletion, performance and data lifecycle acceptance absent.",
-        "PR #141 stacked on #137; no Owner-approved merged integration with earlier open PRs.",
-        "Windows ACL and on-disk encryption/backup review",
-        "Real consented capture and Ollama model weights",
-        "User-facing memory lifecycle controls",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 83,
       "group": "B",
       "name": "Canlı kamera",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Real physical Windows webcam, device driver provenance, Owner-authenticated consent UI/session and camera privacy indicators unverified.",
-        "cv2 optional installation and native helper isolation absent; asyncio.to_thread timeout cannot kill a stuck OS driver.",
-        "Separate real local Qwen-VL model weights and actual camera image quality/performance not validated; stacked on #137.",
-        "Owner-authenticated camera consent UI/broker",
-        "Native isolated camera helper and Windows driver acceptance",
-        "Real video device/model verification",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 84,
       "group": "B",
       "name": "Görsel görev doğrulama",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Pixel differences and local model text cannot independently verify task success, causation, human intent or correct physical action.",
-        "Real captured before/after owner provenance, OpenCV camera or screen source, device lighting/calibration and actual Ollama weights and performance not validated.",
-        "Combined integration with #79 detector/#80 OCR/#83 camera, F2.7 and Owner human review UI absent; Pillow optional in CI.",
-        "Real authenticated Owner camera/screen before/after capture",
-        "Semantic task benchmark and independent verification",
-        "Human-approved outcome UI and model hardware throughput",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 85,
@@ -1474,196 +1268,144 @@
       "id": 91,
       "group": "B",
       "name": "Gelişmiş HUD",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Full multi-monitor Electron/Windows visual regression and GPU live performance acceptance not performed.",
-        "HUD runtime UX and accessibility require human acceptance.",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 92,
       "group": "B",
       "name": "Çok ekranlı HUD",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "No real HUD window rendering, OS input or device/hotplug acceptance",
-        "No real authenticated Owner/hardware end-to-end production acceptance or approved cumulative integration across unmerged PR locks.",
-        "Approved production composition, cross-PR source lock and Owner verification",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 93,
       "group": "B",
       "name": "Canlı sistem durumu",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "No production app composition wiring, live HUD widget or hardware telemetry acceptance",
-        "No real authenticated Owner/hardware end-to-end production acceptance or approved cumulative integration across unmerged PR locks.",
-        "Approved production composition, cross-PR source lock and Owner verification",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 94,
       "group": "B",
       "name": "Sesli arayüz kontrolü",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Live microphone/ASR Turkish-English quality, wake-word accuracy and user opt-in acceptance not verified.",
-        "Speech cannot authorize OS/robot or remote operations.",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 95,
       "group": "B",
       "name": "Dinamik görselleştirme",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "No native multi-monitor Electron HUD window, cross-process telemetry bus, live desktop rendering, accessibility or Windows GPU/long-session performance measurements.",
-        "Actual Owner bearer/policy configuration, physical deployment, independent event provenance and Owner acceptance not established.",
-        "Stacked on unmerged PR #144; no combined #64–#111 + #145 + #146 source-lock/security acceptance.",
-        "Native Electron floating/multi-monitor HUD render and live user acceptance",
-        "Cross-process authenticated event provenance and production Owner token/policy",
-        "Benchmarked long-session/GPU accessibility and integrated #64–#146 release acceptance",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 96,
       "group": "B",
       "name": "3B holografik nesneler",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "WebGL rendering validated by TypeScript build, not a live graphical GPU screenshot/Windows HUD acceptance.",
-        "No real CAD hologram or physical volumetric display claims.",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 97,
       "group": "B",
       "name": "Canlı görev paneli",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "No native Electron transparent multi-monitor task panel UI, real accessibility/GPU/performance or Owner acceptance.",
-        "No independently authenticated cross-process EventBus provenance; event hints do not attest durable task state.",
-        "Stacked Draft PR #147 on #146/#144; no full integration with older PR #64–#111 and #145.",
-        "Native Electron task panel and multi-monitor UI/acceptance",
-        "Authenticated cross-process task change delivery",
-        "Full older PR and #145/#147 integrated release lock, Owner acceptance",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 98,
       "group": "B",
       "name": "Açıklanabilir işlem geçmişi",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Authenticated principal-scoped audit storage",
-        "Independent signed execution receipts",
-        "Owner-visible action history UI and real-world E2E acceptance",
-        "Independent security review not yet recorded",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 99,
       "group": "B",
       "name": "Yetki seviyeleri",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "SQLiteApprovalStore decision caller's approver_id is not independently authenticated; requires Owner-authenticated approval management and security signoff.",
-        "F2.7 PR #64 sealed broker/Owner boundary remains unmerged and its production credential/SCM/Windows live acceptance unverified.",
-        "Full cross-provider/scoped policies and multi-process denial audit were not independently accepted across all unmerged PRs.",
-        "Independent Owner credential verification and trusted approval",
-        "F2.7 live broker/Windows acceptance",
-        "All-provider authorization negative-path review",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 100,
       "group": "B",
       "name": "İşlem onayı",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Approval router may not be mounted into production composition root; end-to-end activation missing.",
-        "Authenticated human/Owner identity assurance and device verification are unproven; no explicit live policy enrollment.",
-        "Authenticated Owner reviewer enrollment and trusted UI",
-        "Composition-root policy registration and governed deployment",
-        "Real end-to-end Gateway approval consumption acceptance",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 101,
       "group": "B",
       "name": "Sandbox",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "No live Docker host escape, cgroup, network isolation or supply-chain acceptance tests; fake-process simulation cannot prove physical isolation.",
-        "No end-to-end Owner/MCP Gateway integration acceptance or F2.7 hardware proof.",
-        "Real Docker OSWorld security acceptance",
-        "Container image provenance and sandbox escape tests",
-        "Owner/Gateway end-to-end isolated execution acceptance",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded HYPERV_DOCKER_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "HYPERV_DOCKER_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 102,
@@ -1694,19 +1436,14 @@
       "id": 104,
       "group": "B",
       "name": "Güvenli hafıza",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "SQLite at rest cleartext; no authenticated OS/TPM key custody or secure backups",
-        "Optional adapter not wired to all production routes and Owner identity",
-        "Authenticated composition root",
-        "Encrypted storage and key lifecycle",
-        "Owner/hardware/backup acceptance",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 105,
@@ -1725,20 +1462,14 @@
       "id": 106,
       "group": "B",
       "name": "Değiştirilemeyen güvenlik çekirdeği",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Externally protected signer/key, anti-replay monotonic anchor, baseline rotation and hardware immutable trust root not implemented",
-        "Opt-in Gateway guard not wired to every existing production execution path; unwrapped gateway remains accessible",
-        "Registry snapshots are non-atomic across service/provider/policy locks; real Owner/F2.7 integration missing",
-        "Independent key custody, anti-replay and baseline rotation",
-        "Enforced application-wide Gateway guard and Owner proof",
-        "TPM/UEFI protected boot and host security integration",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 107,
@@ -1818,18 +1549,14 @@
       "id": 113,
       "group": "B",
       "name": "Oyun geliştirme",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Scope is a bounded playable game prototype, not a complete AI game engine/project lifecycle.",
-        "Live Electron user testing, assets/editor persistence beyond JSON export, and Owner product acceptance not verified.",
-        "OSS/model license review not yet recorded",
-        "Hardware applicability review not yet recorded",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 114,
@@ -1861,20 +1588,14 @@
       "id": 116,
       "group": "B",
       "name": "Kişisel bilgi merkezi",
-      "criterion": "Full feature requires an external, live environment, Owner-controlled lifecycle, manual merge/independent review, or other acceptance not proven by isolated core CI.",
-      "outstanding_gates": [
-        "Depends on unmerged PR #117 authenticated governed memory adapter",
-        "Only read-only lexical episodic memory; no files/mail/other source integration or Owner UI",
-        "SQLite plaintext, storage key/backup/production identity acceptance outstanding",
-        "Authenticated UI and all-source knowledge indexing",
-        "Encrypted secure backups and key lifecycle",
-        "Full Owner privacy and production acceptance",
-        "Feature-specific end-to-end acceptance not verified"
-      ],
-      "ready_for_completion": false,
+      "criterion": "Bounded WINDOWS_LOCAL_V1 offline source-level acceptance on Owner-merged main 2efa8bb44a08a7930dae956bc337c10b3691c359; GitHub Linux CI 8e6e9a90998f5dee7b3c18a4de849180a4bd5a52: 2576 PASS / 14 skipped and 12/12 workflows PASS; Owner-reported Windows 643 tests and locally runnable Hyper-V/Docker 55 tests PASS. Actual independent host/environment activation and hardware behavior are deferred to v2.",
+      "outstanding_gates": [],
+      "ready_for_completion": true,
       "subgroup": "B2",
       "subgroup_basis": "Real Windows/Hyper-V Ubuntu/Docker, external provider, model/audio/video/device, or host-backed acceptance remains pending; read-only preflight is not attestation. Existing gates remain unproven.",
-      "b2_acceptance_track": "B2-Env"
+      "b2_acceptance_track": "B2-Env",
+      "indexed_focused_test_status": "SOURCE_TESTS_CI_PASS;HOST_NOT_ATTESTED",
+      "next_pack_readiness": "WINDOWS_LOCAL_V1_BOUNDED_V1_OWNER_ACCEPTED;EXTERNAL_HOST_DEPLOYMENT_NOT_VERIFIED"
     },
     {
       "id": 117,
@@ -2301,7 +2022,12 @@
       89,
       90
     ],
-    "remaining_ids": [
+    "remaining_ids": [],
+    "simulation_policy": "OWNER_EXCEPTION_SIMULATION_ONLY; NO_PHYSICAL_CERTIFICATION; NO_AUTONOMOUS_ACTUATION; FULL_SCOPE_IN_KNOWN_LIMITATIONS",
+    "software_policy": "OWNER_APPROVED_BOUNDED_OFFLINE_V1; NO_PRODUCTION_OR_DEVICE_ACCEPTANCE",
+    "owner_main_merge": "5e51d3f50b53f482e14e3d1d73a375d08e6e9eb7",
+    "merged_ci_head": "7beeb4a7c95e6b571fddeae95ef5b802b624cd8f",
+    "windows_local_v1_ids": [
       1,
       6,
       7,
@@ -2317,20 +2043,14 @@
       22,
       23,
       24,
-      25,
       26,
-      27,
       28,
       31,
       32,
-      33,
-      45,
       49,
-      51,
       54,
       55,
       57,
-      60,
       69,
       77,
       78,
@@ -2349,15 +2069,27 @@
       98,
       99,
       100,
-      101,
       104,
       106,
       113,
       116
     ],
-    "simulation_policy": "OWNER_EXCEPTION_SIMULATION_ONLY; NO_PHYSICAL_CERTIFICATION; NO_AUTONOMOUS_ACTUATION; FULL_SCOPE_IN_KNOWN_LIMITATIONS",
-    "software_policy": "OWNER_APPROVED_BOUNDED_OFFLINE_V1; NO_PRODUCTION_OR_DEVICE_ACCEPTANCE",
-    "owner_main_merge": "5e51d3f50b53f482e14e3d1d73a375d08e6e9eb7",
-    "merged_ci_head": "7beeb4a7c95e6b571fddeae95ef5b802b624cd8f"
+    "hyperv_docker_v1_ids": [
+      25,
+      27,
+      33,
+      45,
+      51,
+      60,
+      101
+    ],
+    "final_owner_main_merge": "2efa8bb44a08a7930dae956bc337c10b3691c359",
+    "final_linux_ci_head": "8e6e9a90998f5dee7b3c18a4de849180a4bd5a52",
+    "final_software_scope": "OWNER_APPROVED_BOUNDED_SOURCE_V1; 45 WINDOWS + 7 HYPERV; LOCAL_PREREQUISITE_FAILS_REMAIN_IN_KNOWN_LIMITATIONS; NO_LIVE_DEVICE_OR_BROKER_ATTESTATION",
+    "local_reports_owner_reported": [
+      "D:\\AURA\\Trust\\windows_local_evidence.json",
+      "D:\\AURA\\Trust\\hyperv_docker_evidence.json"
+    ],
+    "local_report_signature_status": "UNSIGNED_OWNER_REPORTED_NOT_IN_REPOSITORY"
   }
 }

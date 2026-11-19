@@ -2,15 +2,15 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-19T04:21:28.610Z",
-  "git_commit": "5e51d3f50b53f482e14e3d1d73a375d08e6e9eb7",
+  "generated_at": "2026-11-19T05:22:50.205Z",
+  "git_commit": "2efa8bb44a08a7930dae956bc337c10b3691c359",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:6e7cf71a0ae5254b084b25fbc79bc964bd886f27d994e0d4a1bd24e81e408007",
+  "release_digest": "sha256:6ebf0c962ece1ca8fa6940ebbfcc9ecdb82595ce6ea30326083e1631716a3212",
   "file_count": 441,
   "files": [
     {
       "path": ".gitattributes",
-      "sha256": "81e7f861928e093d02849ea196a61af8114640dea784fbf5482c4f5ec6694d22"
+      "sha256": "b731f317404d39ab56346844b2581dd6abaadb167962b63c4d9b2df0c44b18e9"
     },
     {
       "path": ".github/workflows/aura-f27-offline.yml",

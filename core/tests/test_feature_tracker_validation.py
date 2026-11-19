@@ -42,7 +42,9 @@ def test_reordering_or_duplicate_id_fails_closed():
 
 def test_completion_requires_real_evidence():
     doc = load()
-    doc["features"][0]["status"] = "COMPLETED"
+    # All 117 now have bounded-v1 completion; revoking a required check
+    # must still fail closed rather than depending on an outdated TESTING item.
+    doc["features"][0]["security_review"] = "NOT_REVIEWED"
     with pytest.raises(ValueError, match="without evidence"):
         module.validate(doc)
 
@@ -87,6 +89,7 @@ def test_completed_feature_must_have_security_and_acceptance_evidence():
     item["pull_request"] = "https://github.com/ArdaNTM/JAS/pull/66"
     item["code_paths"] = ["core/src/example.py"]
     item["test_commands"] = ["pytest"]
+    item["security_review"] = "NOT_REVIEWED"  # Exact Owner scope cannot waive the security gate.
     with pytest.raises(ValueError, match="without evidence"):
         module.validate(doc)
 
@@ -103,6 +106,8 @@ def test_completed_requires_license_hardware_and_explicit_criteria():
         "technical_goal": "A specific goal", "acceptance_criteria": "A passed check",
         "blockers": [], "missing_components": [],  # Synthetic accepted record, not the real tracker.
         "security_test_criteria": "No unauthorized dispatch",
+        "license_review": "NOT_REVIEWED",
+        "hardware_review": "NOT_REVIEWED",
     })
     with pytest.raises(ValueError, match="without evidence"):
         module.validate(doc)
