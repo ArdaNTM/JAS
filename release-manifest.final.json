@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-19T06:44:24.305Z",
-  "git_commit": "62941fe8b3fa732263fdef3d45fc6ed1a5e66ff6",
+  "generated_at": "2026-11-19T07:08:05.113Z",
+  "git_commit": "19da39d819cefce0dff6c9f4b5ce7dd963288018",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:eb7556da619948d279396dae64de5af2d395fbfa90b011613e4cad3cf9199afd",
+  "release_digest": "sha256:1712f4ed3d57e0068c60dad6cca8fabc622121af8529a48ba83e4f1ebdf7b752",
   "file_count": 444,
   "files": [
     {
@@ -410,7 +410,7 @@
     },
     {
       "path": "core/src/aura_core/application/composition.py",
-      "sha256": "b1ae4e8bc1aaa735152b21d5411df2fd5a46a41419cefcaf82e64e0064b4988a"
+      "sha256": "ebe47263983ff5d790dd98dc70f7d2f06abe9038ee158197b27d357f89d8d6e0"
     },
     {
       "path": "core/src/aura_core/application/context_aware_stt.py",
