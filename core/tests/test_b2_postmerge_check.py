@@ -26,14 +26,14 @@ def test_readonly_postmerge_focus_inventory_and_unverified_owner_requirements(ca
     assert "tests/test_subsystem_pack4.py" in tests
     assert b2.main(["--repo-root", str(ROOT), "--list-only"]) == 0
     out = capsys.readouterr().out
-    assert "88 TESTING" in out
+    assert "71 TESTING" in out
     assert "B2 hardware/Owner evidence NOT evaluated" in out
 
 
 def test_b2_source_and_test_list_cannot_be_spoofed_or_escape_scope():
     tracker, groups = b2.load_b2(ROOT)
     forged = copy.deepcopy(tracker)
-    one = groups["B2_owner_ids"][0]
+    one = groups["B2_env_ids"][0]
     forged["features"][one - 1]["test_commands"][0] = "cd core && uv run pytest -q tests/../../secret.py"
     with pytest.raises(ValueError):
         b2.focused_tests(ROOT, forged, groups)

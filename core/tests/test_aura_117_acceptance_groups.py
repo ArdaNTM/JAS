@@ -34,11 +34,11 @@ def test_117_features_partition_and_pinned_canonical_sources():
         "group_B1": 20,
         "group_B2": 88,
         "group_A_complete": 9,
-        "group_B_testing": 88,
-        "total_completed": 29,
+        "group_B_testing": 71,
+        "total_completed": 46,
         "B2_owner": 17,
         "B2_env": 71,
-        "total_verified_ready": 29,
+        "total_verified_ready": 46,
     }
 
 
@@ -52,7 +52,7 @@ def test_group_a_owner_frozen_v1_is_evidenced_but_future_scope_not_certified():
             assert record["blockers"] == []
             assert "V2" in record["known_limitations"]
     for record in tracker["features"]:
-        if record["id"] not in audit.SOFTWARE_IDS | audit.B1_IDS:
+        if record["id"] not in audit.SOFTWARE_IDS | audit.B1_IDS | audit.B2_OWNER_IDS:
             assert record["status"] == "TESTING"
 
 
@@ -134,10 +134,14 @@ def test_last_ten_B1_bounded_v1_and_b2_remain_unready():
             assert audit.eligible_for_completion(item)
             assert not item["missing_components"] and not item["blockers"]
             assert groups["records"][item["id"] - 1]["ready_for_completion"] is True
-        if item["id"] in groups["B2_ids"]:
+        if item["id"] in groups["B2_env_ids"]:
             assert item["status"] == "TESTING"
             assert not audit.eligible_for_completion(item)
             assert groups["records"][item["id"] - 1]["ready_for_completion"] is False
+        if item["id"] in groups["B2_owner_ids"]:
+            assert item["status"] == "COMPLETED"
+            assert audit.eligible_for_completion(item)
+            assert groups["records"][item["id"] - 1]["ready_for_completion"] is True
 
 
 def test_b2_partition_tamper_and_spoofed_ready_fail_closed():
@@ -152,8 +156,13 @@ def test_b2_partition_tamper_and_spoofed_ready_fail_closed():
     with pytest.raises(ValueError, match="B2 readiness"):
         audit.validate(tracker, bad, provenance)
     bad = copy.deepcopy(groups)
-    bad["records"][target_id - 1]["ready_for_completion"] = True
-    with pytest.raises(ValueError, match="B2 readiness"):
+    bad["records"][target_id - 1]["ready_for_completion"] = False
+    with pytest.raises(ValueError, match="B2-Owner"):
+        audit.validate(tracker, bad, provenance)
+    bad = copy.deepcopy(groups)
+    env_target = bad["B2_env_ids"][0]
+    bad["records"][env_target - 1]["ready_for_completion"] = True
+    with pytest.raises(ValueError, match="B2-Env"):
         audit.validate(tracker, bad, provenance)
 
 def test_source_pin_mismatch_rejected_before_feature_completion():
@@ -170,3 +179,25 @@ def test_source_path_escape_fails_closed():
     fake["files"][0]["path"] = "core/src/aura_core/../../secret"
     with pytest.raises(ValueError, match="invalid tracked source path"):
         audit.validate(tracker, groups, fake)
+
+
+
+def test_b2_owner_v1_requires_real_merge_pin_and_review_evidence():
+    tracker, groups, provenance = load()
+    for owner_id in groups["B2_owner_ids"]:
+        item = tracker["features"][owner_id - 1]
+        assert item["status"] == "COMPLETED"
+        assert audit.eligible_for_completion(item)
+        assert item["known_limitations"].startswith("V2 /")
+        assert audit.APPROVED_MAIN_MERGE in item["notes"]
+        assert item["missing_components"] == []
+    fake = copy.deepcopy(tracker)
+    first = groups["B2_owner_ids"][0] - 1
+    fake["features"][first]["notes"] = fake["features"][first]["notes"].replace(
+        audit.APPROVED_MAIN_MERGE, "0" * 40)
+    with pytest.raises(ValueError, match="B2-Owner"):
+        audit.validate(fake, groups, provenance)
+    fake = copy.deepcopy(tracker)
+    fake["features"][first]["security_review"] = "NOT_REVIEWED"
+    with pytest.raises(ValueError, match="B2-Owner"):
+        audit.validate(fake, groups, provenance)

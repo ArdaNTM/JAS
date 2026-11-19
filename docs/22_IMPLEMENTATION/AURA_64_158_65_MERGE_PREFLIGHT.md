@@ -62,3 +62,12 @@ Rebuild/review the final candidate from a true merged tree. The release-lock gen
 After the integrated #158 branch is verified green and GitHub confirms `mergeable=true` against the then-current `main`, the Owner can merge #158 manually. Finally review #65 (now overlap-source matched with #158), revalidate tracker and merge #65 manually. No existing 29 feature record is `COMPLETED` without exact missing-component implementation evidence and an accepted validator receipt. Closing earlier Draft PRs requires a separate complete source/ancestry reconciliation, not a blanket archival assumption.
 
 **No zero-conflict guarantee is claimed** until the *actual* post-#64 merge simulation, full CI and final lock succeed on the exact candidate tree.
+
+
+
+## 2026-11-19 — Actual Owner merge sequence and PR #65 resolution
+
+- Owner merged sealed PR #64 into `main` as `e9c68dd1269e42df1731eac4d4b8acbfa9675ca7`; owner merged unified PR #158 into `main` as `b09ad74c49ebe1d73e2bb79524c8c8006e2ca40f`. This GitHub merge evidence supersedes historical preflight *future-tense* text above.
+- PR #65 synchronized by a real two-parent merge commit `b7dd5f72a41ec96501e29bf18eb6ca0b2e4b6833` using these **two conflicting documentation files from updated main**, not the stale PR #65 variants. All other 16 previously shared governance blobs were byte-identical.
+- Nine previously missing original B2-Owner-focused regression tests restored from original pinned source commits. This exposed seven real fail-open Swarm #58 regressions; hardened all-or-nothing pre-dispatch validation at `2ca63ca3c7892fa481e844ffd87e45f580bfd56f`, updated only the affected source and canonical 440-file lock.
+- Exact-head Core Assurance [44450746726](https://github.com/ArdaNTM/JAS/actions/runs/44450746726): **2390 PASS / 14 SKIP**, 440-file Release Lock PASS. Owner-frozen bounded v1 B2-Owner=17 now accepted; **all B2-Env=71 still TESTING**, without physical/production attestation. Follow only explicit Owner PR #65 merge, not auto-merge.
