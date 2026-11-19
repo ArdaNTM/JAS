@@ -20,8 +20,8 @@ def test_readonly_postmerge_focus_inventory_and_unverified_owner_requirements(ca
     tests, missing = b2.focused_tests(ROOT, tracker, groups)
     assert len(groups["B2_owner_ids"]) == 17
     assert len(groups["B2_env_ids"]) == 71
-    assert len(tests) >= 40 and len(tests) == len(set(tests))
-    assert len(missing) >= 1  # Missing original B2 tests are never fabricated.
+    assert len(tests) == 64 and len(tests) == len(set(tests))
+    assert missing == ()  # Every original B2-Env focus test is now present.
     assert "tests/test_subsystem_pack3.py" in tests
     assert "tests/test_subsystem_pack4.py" in tests
     assert b2.main(["--repo-root", str(ROOT), "--list-only"]) == 0
