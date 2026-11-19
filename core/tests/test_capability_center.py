@@ -173,3 +173,58 @@ def test_bad_json_tool_schema_and_unknown_mcp_do_not_dispatch():
                           headers=headers())
     assert missing.status_code == 404
     assert tool.calls == 0
+
+
+def test_center_get_200_from_core_cwd_with_string_category_metadata(monkeypatch):
+    """Reproduces .value AttributeError when a live MCP uses a plain str.
+
+    CapabilityDefinition is a dataclass: category annotations do not coerce
+    categories. External/legacy registrations may supply their wire value.
+    A GET request must never invoke a provider or grant permissions.
+    """
+    monkeypatch.chdir(ROOT / "core")
+    client, center, caps, engine, tool = configured_center()
+    caps.register(CapabilityDefinition(
+        capability_id="demo.legacy.read", name="Legacy MCP category",
+        version="1.0.0", description="Legacy string-backed category",
+        provider_id="aura.test.safe-read", provider_type=ProviderType.MCP,
+        category="diagnostics", tool_name="read_snapshot",
+        risk_level="low", required_permissions=frozenset({"demo.legacy.read"}),
+    ))
+    response = client.get("/api/capabilities/center", headers=headers())
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["feature_count"] == 117
+    assert len(payload["features"]) == 117
+    assert {item["capability_id"]: item["category"] for item in payload["tools"]} == {
+        "demo.safe.read": "diagnostics", "demo.legacy.read": "diagnostics",
+    }
+    assert tool.calls == 0
+    assert engine.audit_records() == ()
+
+
+def test_invalid_category_metadata_does_not_promote_tool_to_available():
+    client, _center, caps, _engine, tool = configured_center()
+    caps.register(CapabilityDefinition(
+        capability_id="demo.malformed.read", name="Malformed MCP category",
+        version="1.0.0", description="Cannot infer available UI category",
+        provider_id="aura.test.safe-read", provider_type=ProviderType.MCP,
+        category="unsupported-category", tool_name="read_snapshot",
+        risk_level="low", required_permissions=frozenset({"demo.malformed.read"}),
+    ))
+    response = client.get("/api/capabilities/center", headers=headers())
+    assert response.status_code == 200
+    malformed = next(item for item in response.json()["tools"]
+                     if item["capability_id"] == "demo.malformed.read")
+    assert malformed["gateway_registered"] is False
+    assert malformed["category"] == "unknown"
+    assert tool.calls == 0
+
+
+def test_center_cwd_does_not_control_117_index_resolution(monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)
+    client, _center, _caps, _engine, tool = configured_center()
+    response = client.get("/api/capabilities/center", headers=headers())
+    assert response.status_code == 200
+    assert len(response.json()["features"]) == 117
+    assert tool.calls == 0
