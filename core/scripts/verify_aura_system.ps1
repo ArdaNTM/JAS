@@ -95,7 +95,10 @@ if ($StartContainers) {
         if (-not $env:AURA_POSTGRES_PASSWORD) {
             Add-NotConfigured "Container startup" "AURA_POSTGRES_PASSWORD is required by docker-compose.yml."
         } else {
-            Run-Pass "Container startup" { docker compose -f (Join-Path $Core "deployment\docker-compose.yml") up -d postgres qdrant }
+            Run-Pass "Container startup" {
+                docker compose -f (Join-Path $Core "deployment\docker-compose.yml") -f (Join-Path $Core "deployment\docker-compose.local.yml") up -d postgres qdrant
+                if ($LASTEXITCODE -ne 0) { throw "Local container startup failed" }
+            }
         }
     } else { Add-Result "Container startup" "BLOCKED" "Docker CLI is not installed." }
 }
@@ -115,11 +118,28 @@ if ($pythonReady) {
     Run-Pass "Diagnostics CLI" { & $Python (Join-Path $Core "scripts\aura_diagnostics.py") | Out-Null; if ($LASTEXITCODE) { throw "diagnostics CLI failed" } }
 }
 
-Write-Section "3. FRONTEND BUILD"
+Write-Section "3. FRONTEND BUILD AND AUDIT"
+Run-Pass "Frontend dependency install" {
+    Push-Location $Ui
+    try {
+        Invoke-LoggedNative -LogPath (Join-Path $LogDir "frontend-npm-ci.log") -Command { npm ci }
+    } finally { Pop-Location }
+}
 Run-Pass "Frontend build" {
     Push-Location $Ui
     try {
         Invoke-LoggedNative -LogPath (Join-Path $LogDir "frontend-build.log") -Command { npm run build }
+    } finally { Pop-Location }
+}
+
+Run-Pass "Frontend npm audit" {
+    Push-Location $Ui
+    try {
+        Invoke-LoggedNative -LogPath (Join-Path $LogDir "frontend-npm-audit.log") -Command { npm audit }
+        Get-ChildItem (Join-Path $Ui "dist\assets\*.js") -ErrorAction SilentlyContinue |
+            Sort-Object Length -Descending |
+            Select-Object Name, @{ Name = "KiB"; Expression = { [Math]::Round($_.Length / 1KB, 2) } } |
+            Format-Table -AutoSize | Out-Host
     } finally { Pop-Location }
 }
 
@@ -184,7 +204,7 @@ if ($env:OPENAI_API_KEY) { Run-Pass "OpenAI provider smoke" { $base = if ($env:O
 Run-Pass "Electron binary and main-process syntax" { Push-Location $Ui; try { npm exec electron -- --version; if ($LASTEXITCODE) { throw "Electron binary failed" }; node --check electron-main.cjs; if ($LASTEXITCODE) { throw "Electron main syntax failed" } } finally { Pop-Location } }
 
 if ($pythonReady) {
-    $mustPass = @("Python compile", "Python tests", "Frontend build", "Backend live HTTP", "WebSocket live events", "Electron binary and main-process syntax")
+    $mustPass = @("Python compile", "Python tests", "Frontend dependency install", "Frontend build", "Frontend npm audit", "Backend live HTTP", "WebSocket live events", "Electron binary and main-process syntax")
     $failedRequired = $results | Where-Object { $_.Check -in $mustPass -and $_.Status -ne "PASS" }
     if ($failedRequired) { Add-Result "Release freeze" "BLOCKED" "Required build/runtime gates are not all PASS." }
     else {
