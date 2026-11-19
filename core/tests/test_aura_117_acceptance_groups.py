@@ -34,17 +34,21 @@ def test_117_features_partition_and_pinned_canonical_sources():
         "group_B1": 20,
         "group_B2": 88,
         "group_A_complete": 9,
-        "group_B_testing": 52,
-        "total_completed": 65,
+        "group_B_testing": 0,
+        "total_completed": 117,
         "B2_owner": 17,
         "B2_env": 71,
         "B2_env_software_v1": 12,
         "B2_env_simulation_v1": 7,
-        "B2_env_testing": 52,
+        "B2_env_testing": 0,
+        "B2_env_final_windows_v1": 45,
+        "B2_env_final_hyperv_v1": 7,
+        "total_testing": 0,
+        "total_not_started": 0,
         "B2_windows_local": 57,
         "B2_hyperv_docker": 7,
         "B2_external_hardware": 7,
-        "total_verified_ready": 65,
+        "total_verified_ready": 117,
     }
 
 
@@ -105,11 +109,13 @@ def test_B1_frozen_v1_completion_requires_all_existing_gates():
             audit.validate(fake, groups, provenance)
 
 
-def test_marking_unready_feature_completed_fails_closed():
+def test_completed_feature_without_final_owner_evidence_fails_closed():
     tracker, groups, provenance = load()
     fake = copy.deepcopy(tracker)
-    assert fake["features"][0]["status"] == "TESTING"  # #1 remains B2 unready.
-    fake["features"][0]["status"] = "COMPLETED"
+    assert fake["features"][0]["status"] == "COMPLETED"  # #1 now has bounded-v1 acceptance.
+    fake["features"][0]["notes"] = fake["features"][0]["notes"].replace(
+        audit.APPROVED_FINAL_MAIN_MERGE, "0" * 40
+    )
     with pytest.raises(ValueError, match="B2 readiness"):
         audit.validate(fake, groups, provenance)
 
@@ -168,7 +174,7 @@ def test_b2_partition_tamper_and_spoofed_ready_fail_closed():
         audit.validate(tracker, bad, provenance)
     bad = copy.deepcopy(groups)
     env_target = bad["B2_env_ids"][0]
-    bad["records"][env_target - 1]["ready_for_completion"] = True
+    bad["records"][env_target - 1]["ready_for_completion"] = False
     with pytest.raises(ValueError, match="B2-Env"):
         audit.validate(tracker, bad, provenance)
 
@@ -265,3 +271,42 @@ def test_b2_env_owner_approved_v1_is_explicitly_narrow_and_tamper_resistant():
     fake["features"][81 - 1]["hardware_review"] = "NOT_REVIEWED"
     with pytest.raises(ValueError, match="B2 readiness"):
         audit.validate(fake, groups, provenance)
+
+
+def test_final_52_owner_bounded_v1_is_explicit_while_local_failures_remain_visible():
+    tracker, groups, provenance = load()
+    approved = groups["B2_env_acceptance"]
+    assert set(approved["windows_local_v1_ids"]) == audit.B2_ENV_FINAL_WINDOWS_IDS
+    assert set(approved["hyperv_docker_v1_ids"]) == audit.B2_ENV_FINAL_HYPERV_IDS
+    assert approved["remaining_ids"] == []
+    assert len(audit.B2_ENV_ACCEPTED) == 71
+    for item_id in audit.B2_ENV_FINAL_ACCEPTED:
+        rec = tracker["features"][item_id - 1]
+        assert rec["status"] == "COMPLETED"
+        assert audit.eligible_for_completion(rec)
+        assert rec["known_limitations"].startswith("V2 /")
+        assert "NO_PHYSICAL_OR_BROKER_ATTESTATION" in rec["notes"]
+        assert "Owner-reported" in rec["notes"]
+    for item_id, needle in (
+        (20, "microphone"), (78, "ffmpeg"),
+        (80, "tesseract"), (27, "broker"), (33, "broker"),
+    ):
+        assert needle in tracker["features"][item_id - 1]["known_limitations"].lower()
+    for key, value in (("security_review", "NOT_REVIEWED"),
+                       ("test_results", "FAIL"),
+                       ("hardware_review", "NOT_REVIEWED")):
+        bad = copy.deepcopy(tracker)
+        bad["features"][0][key] = value
+        assert not audit.eligible_for_completion(bad["features"][0])
+        with pytest.raises(ValueError, match="B2 readiness"):
+            audit.validate(bad, groups, provenance)
+    bad = copy.deepcopy(groups)
+    bad["B2_env_acceptance"]["windows_local_v1_ids"].pop()
+    with pytest.raises(ValueError, match="B2-Env Owner"):
+        audit.validate(tracker, bad, provenance)
+    bad = copy.deepcopy(tracker)
+    bad["features"][26]["notes"] = bad["features"][26]["notes"].replace(
+        audit.APPROVED_FINAL_MAIN_MERGE, "0" * 40
+    )
+    with pytest.raises(ValueError, match="B2 readiness"):
+        audit.validate(bad, groups, provenance)
