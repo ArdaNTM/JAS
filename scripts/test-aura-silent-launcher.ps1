@@ -21,6 +21,9 @@ if ($LauncherSource -notmatch 'CreateNoWindow\s*=\s*\$true') {
 if ($LauncherSource -notmatch 'Show-LauncherError') {
     throw "Launcher error MessageBox handler was removed"
 }
+if ($LauncherSource -notmatch '(?s)try\s*\{\s*\$Python = Find-Python') {
+    throw "Hidden session must catch unhandled startup/preflight errors"
+}
 $BrowserStart = $LauncherSource.IndexOf("function Open-AuraBrowser {")
 $BrowserEnd = $LauncherSource.IndexOf("`n`$Python = Find-Python", $BrowserStart)
 if ($BrowserStart -lt 0 -or $BrowserEnd -le $BrowserStart) {

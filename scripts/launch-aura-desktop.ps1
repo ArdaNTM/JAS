@@ -500,6 +500,10 @@ function Open-AuraBrowser {
     Start-Process $url
 }
 
+# Hidden WScript sessions have no visible terminal. Cover every preflight
+# exception (tokens, model discovery, ACL checks and port ownership) with the
+# same graphical MessageBox used for runtime startup failures.
+try {
 $Python = Find-Python
 $Npm = Find-Npm
 
@@ -645,20 +649,18 @@ function Assert-OllamaReady {
     Write-Host "AURA Ollama model selected: $selected"
 
 }
-# The console is intentionally hidden by WScript. Startup failures before the
-# main try/catch must therefore still surface through the graphical error UI.
-try {
     Assert-OllamaReady
 }
 catch {
     Show-LauncherError $_.Exception.Message
     exit 1
 }
-$Splash = Show-Splash
+$Splash = $null
 $coreProcess = $null
 $uiProcess = $null
 
 try {
+    $Splash = Show-Splash
     $Splash.Status.Text = "STARTING AURA CORE..."
     $Splash.Form.Refresh()
 
