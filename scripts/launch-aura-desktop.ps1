@@ -475,8 +475,7 @@ function Open-AuraBrowser {
         if (Test-Path $edge) {
             Start-Process `
                 -FilePath $edge `
-                -ArgumentList "--force-device-scale-factor=1.5 --app=$url" `
-                -WindowStyle Hidden
+                -ArgumentList "--force-device-scale-factor=1.5 --app=$url"
 
             return
         }
@@ -492,8 +491,7 @@ function Open-AuraBrowser {
         if (Test-Path $chrome) {
             Start-Process `
                 -FilePath $chrome `
-                -ArgumentList "--force-device-scale-factor=1.5 --app=$url" `
-                -WindowStyle Hidden
+                -ArgumentList "--force-device-scale-factor=1.5 --app=$url"
 
             return
         }
@@ -647,7 +645,15 @@ function Assert-OllamaReady {
     Write-Host "AURA Ollama model selected: $selected"
 
 }
-Assert-OllamaReady
+# The console is intentionally hidden by WScript. Startup failures before the
+# main try/catch must therefore still surface through the graphical error UI.
+try {
+    Assert-OllamaReady
+}
+catch {
+    Show-LauncherError $_.Exception.Message
+    exit 1
+}
 $Splash = Show-Splash
 $coreProcess = $null
 $uiProcess = $null
