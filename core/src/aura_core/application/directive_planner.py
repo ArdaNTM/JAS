@@ -75,6 +75,10 @@ class DirectivePlanner:
         "write me", "give me a joke", "joke", "bana anlat",
         "bana bir saka", "bir saka", "saka yap", "merhaba",
         "selam", "nedir", "nasil", "kimdir", "acikla",
+        "neler yapabilirsin", "hangi araclarin", "hangi yeteneklerin",
+        "hangi ozelliklerin", "neler biliyorsun", "bana kendini anlat",
+        "kimsin", "ne yapabilirsin", "what can you do", "what tools",
+        "what capabilities", "who are you",
     )
 
     _MODEL_RULES = (

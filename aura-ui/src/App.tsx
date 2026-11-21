@@ -240,6 +240,12 @@ export default function App() {
     errorMessage?: string,
   ) => {
     setSessionState(status === "ready" ? "idle" : status);
+    if (status === "ready") {
+      // A completed NDJSON response is not an outstanding task.
+      setSystemState("idle");
+      setTaskState("HAZIR");
+      setError(null);
+    }
     if (status === "error") {
       setChatHistory((current) => current.map((turn) =>
         turn.id === activeReplyId.current && !turn.content
@@ -430,7 +436,7 @@ export default function App() {
 
       const result = await createTask({
         task_id: makeId(),
-        principal_id: "local-user",
+        principal_id: "local_owner",
         title: text,
         resource_scope:
           generated.resource_scope ||
@@ -461,7 +467,18 @@ export default function App() {
 
       if (["failed", "cancelled", "timed_out"].includes(result.state)) {
         setSystemState("idle");
-        setError(`Görev durumu: ${result.state}. Arayüz başka bir eylem yürütmedi.`);
+        setSessionState("idle");
+        const step = result.steps.find((item) =>
+          ["failed", "denied", "timed_out"].includes(item.state));
+        const reason = typeof step?.reason === "string" && step.reason.trim()
+          ? step.reason.slice(0, 240)
+          : "Core görev günlüğündeki hata ayrıntılarını kontrol edin.";
+        const message = `Görev ${result.state}: ${reason}`;
+        setError(message);
+        setChatHistory((current) => [...current, {
+          id: makeId(), role: "assistant" as const,
+          content: message, source: step?.step_id ?? "MCP Gateway / görev sonucu",
+        }].slice(-40));
         pushTelemetry(`GÖREV SONLANDIRILDI: ${result.state.toUpperCase()}`);
         return;
       }
@@ -495,6 +512,10 @@ export default function App() {
           : "AURA yürütmesi başarısız oldu.";
 
       setError(message);
+      setChatHistory((current) => [...current, {
+        id: makeId(), role: "assistant" as const,
+        content: message, source: "Core hata sonucu",
+      }].slice(-40));
       pushTelemetry(`HATA: ${message}`);
     }
   }

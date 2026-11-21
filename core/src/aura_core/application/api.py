@@ -1398,6 +1398,44 @@ def create_api(
                 logger.warning("Invalid persona environment settings; using safe defaults")
                 persona_policy = PersonaPolicy()
         system_prompt = system_prompt + "\n\n" + persona_policy.system_style_prompt()
+        # Capability questions receive a live, bounded registry snapshot.
+        # Metadata-only v1 features are not tools; this is not authorization.
+        folded = request.message.casefold().translate(str.maketrans(
+            {"ı": "i", "ş": "s", "ğ": "g", "ü": "u", "ö": "o", "ç": "c"}
+        ))
+        if any(phrase in folded for phrase in (
+            "neler yapabilirsin", "ne yapabilirsin", "hangi arac", "hangi yetenek",
+            "hangi ozellik", "what can you do", "what tools", "what capabilities",
+            "kimsin", "who are you",
+        )):
+            kernel = getattr(app.state, "kernel", None)
+            capabilities = getattr(kernel, "capability_registry", None)
+            providers = getattr(kernel, "provider_registry", None)
+            actual_tools = []
+            if capabilities is not None and providers is not None:
+                for entry in capabilities.records():
+                    definition = entry.definition
+                    if (definition.provider_type is not ProviderType.MCP
+                            or not definition.tool_name or not entry.available
+                            or not entry.healthy):
+                        continue
+                    try:
+                        provider = providers.get(definition.provider_id)
+                    except KeyError:
+                        continue
+                    if provider.available and provider.healthy:
+                        actual_tools.append(
+                            f"{definition.capability_id}: {definition.tool_name}"
+                        )
+            tools_summary = "\n".join(sorted(actual_tools)[:30]) or "No live MCP tools are registered."
+            system_prompt += (
+                "\n\nRuntime capability truth (trusted registry metadata; not a grant):"
+                "\n117 bounded-v1 entries are documentation, not 117 callable tools."
+                "\nCurrently registered healthy MCP bindings:\n" + tools_summary
+                + "\nExplain capabilities accurately; every invocation still "
+                "requires PermissionEngine and MCPGateway authorization. "
+                "Do not claim unregistered tools, unrestricted access, or approval."
+            )
         user_content = synthesized.user_content
 
         inference_request = InferenceRequest(
@@ -2126,6 +2164,7 @@ def create_api(
             definition = record.definition
             if (definition.provider_type is not ProviderType.MCP
                     or not definition.tool_name
+                    or definition.tool_name in {"synthesize", "synthesis"}
                     or not record.available or not record.healthy):
                 continue
             try:

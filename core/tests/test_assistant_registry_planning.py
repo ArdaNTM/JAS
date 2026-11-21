@@ -97,3 +97,18 @@ def test_no_tool_needed_returns_text_chat_without_dispatch(monkeypatch):
     assert r.status_code == 200
     assert r.json()["steps"] == []
     assert r.json()["resource_scope"] == "local-assistant"
+
+
+
+def test_capability_question_never_runs_model_tool_selector(monkeypatch):
+    monkeypatch.setenv("AURA_ASSISTANT_AUTO_TOOLS_ENABLED", "1")
+    class ForbiddenSelector:
+        async def complete_json(self, **kwargs):
+            raise AssertionError("Capability questions must not enter tool-selection")
+    api = client(ForbiddenSelector())
+    response = api.post("/api/tasks/plan",
+        headers={"Authorization": "Bearer " + "t" * 40},
+        json={"directive": "Neler yapabilirsin?"})
+    assert response.status_code == 200
+    assert response.json()["resource_scope"] == "local-assistant"
+    assert response.json()["steps"] == []

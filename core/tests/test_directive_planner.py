@@ -55,3 +55,14 @@ def test_instructions_to_operate_computer_are_not_conversation_tools():
             assert "No governed capability" in str(exc)
         else:
             raise AssertionError("Unsupported commands must fail closed")
+
+
+
+def test_capability_questions_are_streaming_chat_not_synthesize_tasks():
+    for query in (
+        "Neler yapabilirsin?", "Hangi araçların var?", "Hangi yeteneklerin var?",
+        "What can you do?", "What tools do you have?", "Kimsin?",
+    ):
+        plan = DirectivePlanner().plan(query)
+        assert plan.resource_scope == "local-assistant"
+        assert plan.steps == ()
