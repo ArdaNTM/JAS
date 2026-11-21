@@ -450,6 +450,8 @@ export interface DiscoveryProposal {
   stars: number | null;
   package_status?: string | null;
   source_sha256?: string | null;
+  package_error?: string | null;
+  stage_attempts?: number;
   repository: string;
   url: string;
   description: string;
@@ -465,6 +467,11 @@ export interface DiscoveryResult {
   partial?: boolean;
   successful_queries?: number;
   failed_queries?: Array<{ query: string; reason: string }>;
+  staging_attempted?: number;
+  staged_count?: number;
+  verified_count?: number;
+  staging_rejected?: Array<{ repository: string; reason: string }>;
+  static_ready_count?: number;
   mode: "review_only";
   owner_review_url?: string;
   activation_performed?: boolean;

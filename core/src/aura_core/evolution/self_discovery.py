@@ -37,10 +37,10 @@ PERMITTED_LICENSES = frozenset({
 })
 # These are operator-owned static queries, never user/LLM supplied search URLs.
 QUERIES = (
-    "mcp-server python archived:false stars:>5",
-    "modelcontextprotocol server archived:false stars:>5",
-    "fastmcp tool archived:false stars:>5",
-    "mcp automation archived:false stars:>5",
+    '"mcp-server" sqlite language:Python archived:false stars:>5',
+    "fastmcp filesystem language:Python archived:false stars:>5",
+    "modelcontextprotocol git playwright archived:false stars:>5",
+    "mcp memory fetch offline archived:false stars:>5",
 )
 _REPO = re.compile(r"^[A-Za-z0-9_.-]{1,80}/[A-Za-z0-9_.-]{1,100}$")
 
@@ -50,6 +50,24 @@ def _valid_repository(value: object) -> bool:
         return False
     return all(part not in (".", "..") and not part.endswith(".")
                for part in value.split("/"))
+_SAAS = re.compile(
+    r"(?i)\b(?:bright[ -]?data|basecamp|shodan|virus[ -]?total|"
+    r"mandatory (?:saas|cloud|subscription)|"
+    r"requires? (?:a )?(?:paid )?(?:api key|cloud subscription))\b"
+)
+_LOCAL_TOOLS = re.compile(
+    r"(?i)\b(?:mcp[ -]?server|fastmcp|sqlite|filesystem|"
+    r"playwright|git|memory|fetch|local|offline|stdio)\b"
+)
+
+
+def _local_rank(repository: str, description: str, stars: int) -> int:
+    """Deterministic, local-first ranking of untrusted metadata."""
+    text = repository + " " + description
+    return (sum(10 for _ in _LOCAL_TOOLS.finditer(text))
+            + min(8, max(0, stars) // 200))
+
+
 _UNSUPPORTED_HOST = re.compile(
     r"\b(?:mlx|apple.silicon|macos.only|darwin|swift|xcode)\b",
     re.IGNORECASE,
@@ -163,7 +181,9 @@ class PublicGitHubDiscoveryMCPProvider:
                         or row.get("archived") is True
                         or row.get("fork") is True):
                     continue
-                if _UNSUPPORTED_HOST.search(str(row.get("description") or "")):
+                description_hint = str(row.get("description") or "")
+                if (_UNSUPPORTED_HOST.search(description_hint)
+                        or _SAAS.search(full_name + " " + description_hint)):
                     continue
                 try:
                     # No README -> no claim that the repo is genuinely local and
@@ -178,7 +198,8 @@ class PublicGitHubDiscoveryMCPProvider:
                     description = content.decode("utf-8", "replace")
                     if (not _POSITIVE.search(description)
                             or _NEGATIVE.search(description)
-                            or _UNSUPPORTED_HOST.search(description)):
+                            or _UNSUPPORTED_HOST.search(description)
+                            or _SAAS.search(description)):
                         continue
                 except FileNotFoundError:
                     # An individual candidate without README is not a valid
@@ -202,11 +223,14 @@ class PublicGitHubDiscoveryMCPProvider:
                         else "local inference and automation"
                     ),
                     "evidence": "GitHub license SPDX + README local/no-required-key filter",
+                    "local_rank": _local_rank(full_name, description_hint, stars),
                 })
-                if len(candidates) >= 3:
-                    break
+                # Inspect up to SEARCH_PER_PAGE entries before ranking.
+            candidates.sort(
+                key=lambda entry: (-entry["local_rank"], -entry["stars"], entry["repository"])
+            )
         return {
-            "items": candidates,
+            "items": candidates[:3],
             "source": "github.com/search/repositories",
             "verification": "metadata_and_readme_only_not_code_audit",
         }
@@ -259,6 +283,13 @@ class SelfDiscoveryEngine:
                 db.execute("ALTER TABLE evolution_proposals ADD COLUMN package_status TEXT")
             if "source_sha256" not in columns:
                 db.execute("ALTER TABLE evolution_proposals ADD COLUMN source_sha256 TEXT")
+            if "package_error" not in columns:
+                db.execute("ALTER TABLE evolution_proposals ADD COLUMN package_error TEXT")
+            if "stage_attempts" not in columns:
+                db.execute(
+                    "ALTER TABLE evolution_proposals ADD COLUMN stage_attempts INTEGER "
+                    "NOT NULL DEFAULT 0"
+                )
             db.execute("""CREATE TABLE IF NOT EXISTS discovery_history (
                 cycle INTEGER PRIMARY KEY,
                 recorded_at INTEGER NOT NULL,
@@ -276,7 +307,8 @@ class SelfDiscoveryEngine:
         with self._connect() as db:
             rows = db.execute(
                 "SELECT proposal_id,repository,url,description,license,"
-                "capability_hint,status,created_at,stars,package_status,source_sha256 "
+                "capability_hint,status,created_at,stars,package_status,source_sha256,"
+                "package_error,stage_attempts "
                 "FROM evolution_proposals ORDER BY created_at DESC LIMIT ?", (count,)
             ).fetchall()
         proposals = []
@@ -284,7 +316,7 @@ class SelfDiscoveryEngine:
             record = dict(zip(
                 ("proposal_id", "repository", "url", "description", "license",
                  "capability_hint", "status", "created_at", "stars",
-                 "package_status", "source_sha256"), row
+                 "package_status", "source_sha256", "package_error", "stage_attempts"), row
             ))
             # A non-executable integration blueprint is review data only.
             # Never infer a runnable entrypoint from arbitrary GitHub README.
@@ -324,60 +356,83 @@ class SelfDiscoveryEngine:
                 "WHERE package_status='READY_FOR_OWNER_REVIEW'"
             ).fetchone()[0])
 
-    async def _stage_pending(self) -> int:
+    async def _stage_pending(self) -> dict[str, object]:
+        report: dict[str, object] = {
+            "attempted": 0, "staged_count": 0, "verified_count": 0, "rejected": [],
+        }
         if not self.auto_stage:
-            return 0
+            return report
         from aura_core.evolution.external_staging import (
             CAPABILITY as STAGE_CAPABILITY, TOOL as STAGE_TOOL,
-            SCOPE as STAGE_SCOPE,
+            staging_scope,
         )
         with self._connect() as db:
-            names = [row[0] for row in db.execute(
-                "SELECT repository FROM evolution_proposals "
-                "WHERE package_status IS NULL OR package_status='pending' "
-                "ORDER BY created_at LIMIT 2"
-            )]
-        ready = 0
-        for repository in names:
+            rows = db.execute(
+                "SELECT repository,description,stars FROM evolution_proposals "
+                "WHERE (package_status IS NULL OR package_status='pending' "
+                "OR (package_status='STAGING_REJECTED' AND stage_attempts=0)) "
+                "ORDER BY created_at LIMIT 50"
+            ).fetchall()
+        # Prefer free local MCP tools over generic high-star SaaS adapters.
+        candidates = [
+            (repository, description, stars or 0)
+            for repository, description, stars in rows
+            if not _SAAS.search(repository + " " + description)
+        ]
+        candidates.sort(
+            key=lambda row: (-_local_rank(row[0], row[1], row[2]), row[0])
+        )
+        for repository, _, _ in candidates[:3]:
+            report["attempted"] += 1
             try:
                 response = await asyncio.wait_for(self.gateway.invoke(MCPGatewayRequest(
                     request_id=str(uuid4()), principal_id=self.principal_id,
                     capability_id=STAGE_CAPABILITY, operation_id=STAGE_CAPABILITY,
-                    resource_scope=STAGE_SCOPE, risk_level=RiskLevel.MEDIUM,
+                    resource_scope=staging_scope(self.workspace),
+                    risk_level=RiskLevel.MEDIUM,
                     tool_name=STAGE_TOOL, arguments={"repository": repository},
-                )), timeout=75)
+                )), timeout=12)
                 if response.decision is not AuthorizationDecision.ALLOW:
-                    raise PermissionError("MCPGateway did not authorize inert staging")
+                    raise PermissionError(
+                        "MCPGateway denied inert external staging for local_owner"
+                    )
                 manifest = response.result
                 if (not isinstance(manifest, dict)
                         or manifest.get("repository") != repository
                         or manifest.get("status") != "READY_FOR_OWNER_REVIEW"
                         or manifest.get("sandbox_attested") is not False
-                        or manifest.get("activation_performed") is not False):
-                    raise ValueError("Staging returned invalid static report")
-                digest = manifest["source_sha256"]
+                        or manifest.get("activation_performed") is not False
+                        or manifest.get("execution_allowed") is not False):
+                    raise ValueError("Staging returned invalid static review proof")
+                digest = manifest.get("source_sha256")
                 if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
-                    raise ValueError("Source digest is missing")
+                    raise ValueError("Source SHA-256 missing from static report")
+                # The staging tool's manifest is still untrusted. Never treat
+                # it as authorization to execute or register an MCP provider.
                 with self._connect() as db:
                     db.execute(
-                        "UPDATE evolution_proposals SET package_status=?,source_sha256=? "
+                        "UPDATE evolution_proposals SET package_status=?,source_sha256=?,"
+                        "package_error=NULL,stage_attempts=stage_attempts+1 "
                         "WHERE repository=?",
                         ("READY_FOR_OWNER_REVIEW", digest, repository),
                     )
-                ready += 1
+                report["staged_count"] += 1
+                report["verified_count"] += 1
             except (PermissionError, ValueError, RuntimeError,
                     OSError, asyncio.TimeoutError) as exc:
-                # Fail closed: preserve the proposal, never mark it verified.
-                logger.warning("Static staging rejected %s: %s", repository, str(exc)[:140])
+                reason = _safe_text(str(exc), 160) or type(exc).__name__
+                logger.warning("Static staging rejected %s: %s", repository, reason)
                 with self._connect() as db:
                     db.execute(
-                        "UPDATE evolution_proposals SET package_status='STAGING_REJECTED' "
-                        "WHERE repository=?", (repository,),
+                        "UPDATE evolution_proposals SET package_status='STAGING_REJECTED',"
+                        "package_error=?,stage_attempts=stage_attempts+1 "
+                        "WHERE repository=?", (reason, repository),
                     )
-                if self.workspace is not None:
-                    self.workspace.audit(action="stage_rejected", repository=repository,
-                                         result="STATIC_REVIEW_FAILED")
-        return ready
+                report["rejected"].append({
+                    "repository": repository, "reason": reason,
+                })
+                self.workspace.audit_rejection(repository, reason)
+        return report
 
     def history(self, limit: int = 25) -> list[dict[str, object]]:
         with self._connect() as db:
@@ -510,7 +565,8 @@ class SelfDiscoveryEngine:
                             )
                         except Exception:
                             research_crosscheck = "unavailable"
-                staged_count = await self._stage_pending()
+                staging_report = await self._stage_pending()
+                staged_count = staging_report["staged_count"]
                 # Only show repositories actually returned by this live scan.
                 # Historical queued entries are available via the list endpoint.
                 current = [record for record in self.proposals(50)
@@ -527,6 +583,9 @@ class SelfDiscoveryEngine:
                     "successful_queries": successful_queries,
                     "failed_queries": failed_queries,
                     "staged_count": staged_count,
+                    "staging_attempted": staging_report["attempted"],
+                    "verified_count": staging_report["verified_count"],
+                    "staging_rejected": staging_report["rejected"],
                     "static_ready_count": self.static_ready_count(),
                     "owner_review_url": "http://localhost:8766/",
                     "activation_performed": False,

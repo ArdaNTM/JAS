@@ -32,7 +32,8 @@ from aura_core.evolution.self_discovery import (
 from aura_core.evolution.self_discovery_api import router as self_discovery_router
 from aura_core.evolution.external_staging import (
     EvolutionWorkspace, GitHubStagingMCPProvider,
-    CAPABILITY as STAGE_CAPABILITY, TOOL as STAGE_TOOL, SCOPE as STAGE_SCOPE,
+    CAPABILITY as STAGE_CAPABILITY, TOOL as STAGE_TOOL,
+    local_staging_policy,
 )
 from aura_core.application.autonomous_adapters import AllowedOperation, CapabilityDrivenPlanner
 from aura_core.application.ollama_completion import OllamaJSONCompletionProvider
@@ -523,7 +524,7 @@ def build_app() -> FastAPI:
     # Read-only policy is narrow to local Owner and fixed public-github scope.
     self_discovery_enabled = (
         storage_mode is StorageMode.LOCAL
-        and os.getenv("AURA_SELF_DISCOVERY_ENABLED", "0").strip() == "1"
+        and os.getenv("AURA_SELF_DISCOVERY_ENABLED", "1").strip() == "1"
         and http_principal_id == "local_owner"
     )
     if self_discovery_enabled:
@@ -557,7 +558,7 @@ def build_app() -> FastAPI:
 
     evolution_workspace = None
     if (self_discovery_enabled
-            and os.getenv("AURA_EVOLUTION_AUTO_STAGE", "0").strip() == "1"):
+            and os.getenv("AURA_EVOLUTION_AUTO_STAGE", "1").strip() == "1"):
         # No checkout or system writes: only bounded inert evidence outside JAS.
         # Security trust is never established by this static scan.
         root_path = os.getenv("AURA_EVOLUTION_ROOT", "").strip()
@@ -588,13 +589,11 @@ def build_app() -> FastAPI:
             category=CapabilityCategory.SECURITY, tool_name=STAGE_TOOL,
             risk_level="medium", required_permissions=frozenset({STAGE_CAPABILITY}),
         ))
-        kernel.permission_engine.add_policy(PermissionPolicy(
-            policy_id="local-owner:evolution-static-staging:operator-opt-in",
-            policy_version="1.0.0", principal_id="local_owner",
-            capability_id=STAGE_CAPABILITY, operation_id=STAGE_CAPABILITY,
-            resource_scope=STAGE_SCOPE, authorization_level=AuthorizationLevel.WRITE,
-            decision=AuthorizationDecision.ALLOW,
-        ))
+        # No global WRITE grant. Only this external workspace's staging
+        # destination is authorized; every call still crosses MCPGateway.
+        kernel.permission_engine.add_policy(
+            local_staging_policy(evolution_workspace)
+        )
 
     gateway = MCPGateway(
         capability_registry=kernel.capability_registry,
