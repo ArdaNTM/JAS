@@ -5,7 +5,7 @@
   "generated_at": "2026-11-19T07:08:05.113Z",
   "git_commit": "19da39d819cefce0dff6c9f4b5ce7dd963288018",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:19aef22186996277aa4b28057e6291824ca7b17d3045441be6533aacc3353fbb",
+  "release_digest": "sha256:f82cc31241237aec951438e351217e8547bffe81eb409fc139608b40eb022a69",
   "file_count": 445,
   "files": [
     {
@@ -366,7 +366,7 @@
     },
     {
       "path": "core/src/aura_core/application/api.py",
-      "sha256": "9d27468feb39052aa55bd574d765a28a0f2a69dca72555140b0f241259ff8001"
+      "sha256": "7376ea83d659bae4d111743153a1aeaf99f03feca4f0bb3c6c8c3d73ec0c0879"
     },
     {
       "path": "core/src/aura_core/application/approval_api.py",
