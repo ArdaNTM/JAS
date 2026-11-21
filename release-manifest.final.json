@@ -5,8 +5,8 @@
   "generated_at": "2026-11-19T07:08:05.113Z",
   "git_commit": "19da39d819cefce0dff6c9f4b5ce7dd963288018",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:e09fad60a327692cb13a609438064d8b96198a0acefc9de805607ae4aada4403",
-  "file_count": 448,
+  "release_digest": "sha256:5d366ac118fcc7757943c8dfd380e6b8f7edf8dc1d770bd4e98537592991eddc",
+  "file_count": 449,
   "files": [
     {
       "path": ".gitattributes",
@@ -66,7 +66,7 @@
     },
     {
       "path": "aura-ui/src/api/client.ts",
-      "sha256": "f9a10282ec22aa4d521e996477cb28f9ff15afa252230a6960289f32d9f3d36d"
+      "sha256": "7dd918c871f4b85c493c5f874558b97884d6a8964b9c9e26733cf0004785835c"
     },
     {
       "path": "aura-ui/src/api/contracts.ts",
@@ -122,7 +122,7 @@
     },
     {
       "path": "aura-ui/src/components/EvolutionReviewPanel.tsx",
-      "sha256": "79cedbd27448c2bd40ec801d3a102c96a762f3af53de21b3b1b456228edeef55"
+      "sha256": "9e29f47840231949ddebaeae52b08dbce2c0c4de8ae0d869ba424fce4e1f6488"
     },
     {
       "path": "aura-ui/src/components/HudGameStudio.tsx",
@@ -885,6 +885,10 @@
       "sha256": "a6644a73be279ce7127d91e7ae24235e0c889dadb91173b72d05d7c5cc0d1189"
     },
     {
+      "path": "core/src/aura_core/evolution/external_staging.py",
+      "sha256": "0b6e9ff81c631aeb2275c46da4ed309666d1e742a6b0278513b5884230b5b850"
+    },
+    {
       "path": "core/src/aura_core/evolution/goal_tree.py",
       "sha256": "55d58e58f28f568a724897f5ac18328899c60919588d3967ca11ffbaf919a30e"
     },
@@ -950,11 +954,11 @@
     },
     {
       "path": "core/src/aura_core/evolution/self_discovery.py",
-      "sha256": "13a87cf381dc5e409a35946d8298869fffa7904ed120e2e6b26cd50708bf03cd"
+      "sha256": "858c2658c12eff911124c167f033f0bce6a8a73e4cf39a9434270095c64074d6"
     },
     {
       "path": "core/src/aura_core/evolution/self_discovery_api.py",
-      "sha256": "d2068f68f3bba2d1e8e1df3d0320ad8869864598fb80b0645ee82b82911ce5d9"
+      "sha256": "2c120f9395bfa038c729103d1baa5cb5b0f9217100959a89096e8dafc49ce93c"
     },
     {
       "path": "core/src/aura_core/evolution/skill_registry.py",
@@ -1142,7 +1146,7 @@
     },
     {
       "path": "core/src/aura_core/main.py",
-      "sha256": "6b4f799613a853da24a6b4efdc7bf933a56eebeababc4b831f661ccce1e9e07f"
+      "sha256": "7d0b57f64b54ae3e85e50772d00e834bd55f42c253dff271acec4a2da83a477b"
     },
     {
       "path": "core/src/aura_core/mcp/__init__.py",

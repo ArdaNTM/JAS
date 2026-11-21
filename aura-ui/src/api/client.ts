@@ -448,6 +448,8 @@ export function invokeCapabilityTool(body: {
 export interface DiscoveryProposal {
   proposal_id: string;
   stars: number | null;
+  package_status?: string | null;
+  source_sha256?: string | null;
   repository: string;
   url: string;
   description: string;
@@ -478,4 +480,22 @@ export async function runSelfDiscovery(): Promise<DiscoveryResult> {
     }
     throw error;
   }
+}
+
+export interface StaticEvolutionPackage {
+  repository: string;
+  source_sha256: string;
+  license: string;
+  entrypoint_hint: string;
+  status: "READY_FOR_OWNER_REVIEW";
+  sandbox_attested: false;
+  activation_performed: false;
+}
+
+export function getVerifiedEvolutionPackages(): Promise<{
+  items: StaticEvolutionPackage[];
+  ready_count: number;
+  activation_performed: false;
+}> {
+  return request("/api/evolution/discovery/verified", { method: "GET", cache: "no-store" });
 }

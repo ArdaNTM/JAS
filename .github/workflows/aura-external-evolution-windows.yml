@@ -1,0 +1,50 @@
+name: AURA External Evolution Windows Static Safety
+
+on:
+  pull_request:
+    paths:
+      - "core/src/aura_core/evolution/external_staging.py"
+      - "core/src/aura_core/evolution/self_discovery.py"
+      - "core/tests/test_external_staging.py"
+      - "core/tests/test_self_discovery.py"
+      - ".github/workflows/aura-external-evolution-windows.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  external-staging:
+    runs-on: windows-latest
+    timeout-minutes: 18
+    defaults:
+      run:
+        working-directory: core
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify PR patch has no whitespace errors
+        shell: pwsh
+        run: |
+          git diff --check HEAD^1 HEAD
+          if ($LASTEXITCODE -ne 0) { throw "PR patch whitespace check failed" }
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: core/uv.lock
+      - name: Install pinned Python dependencies
+        run: uv sync --frozen --group dev
+      - name: Check external Windows TEMP and ZIP safety regressions
+        shell: pwsh
+        run: |
+          $repo = (Resolve-Path ..).Path
+          $outside = Join-Path $env:RUNNER_TEMP "aura-external-evolution-test"
+          if ($outside.StartsWith($repo + "\", [StringComparison]::OrdinalIgnoreCase)) {
+            throw "Tests cannot write into checkout"
+          }
+          uv run --frozen python -m pytest -q --tb=short "--basetemp=$outside" tests/test_external_staging.py tests/test_self_discovery.py
+          if ($LASTEXITCODE -ne 0) { throw "External evolution Windows security tests failed" }

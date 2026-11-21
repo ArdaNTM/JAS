@@ -237,3 +237,93 @@ def test_http_github_rate_limit_surfaces_actual_error(tmp_path):
     assert "rate limit" in response.json()["detail"]
     assert engine.count() == 0
     assert len(gateway.calls) == 1
+
+
+def test_discovery_history_is_durable_and_bounded(tmp_path):
+    db = tmp_path / "history.sqlite3"
+    engine = SelfDiscoveryEngine(gateway=FakeGateway(), db_path=db)
+    _run(engine.run_once())
+    assert engine.history()[0]["status"] == "COMPLETE"
+    restarted = SelfDiscoveryEngine(gateway=FakeGateway(), db_path=db)
+    assert restarted.history()[0]["new_proposals"] == 1
+    assert restarted.history()[0]["query_count"] == 1
+
+
+def test_discovery_read_only_history_and_static_inventory(tmp_path):
+    from aura_core.evolution.external_staging import EvolutionWorkspace
+    gateway = FakeGateway()
+    workspace = EvolutionWorkspace(tmp_path / "external")
+    engine = SelfDiscoveryEngine(gateway=gateway,
+                                 db_path=workspace.root / "catalog" / "proposal.sqlite3",
+                                 workspace=workspace)
+    _run(engine.run_once())
+    app = FastAPI()
+    app.state.http_bearer_token = "t" * 40
+    app.state.http_principal_id = "local_owner"
+    app.state.self_discovery = engine
+    app.state.storage_mode = "local"
+    app.include_router(router)
+    client = TestClient(app)
+    headers = {"Authorization": "Bearer " + "t" * 40}
+    history = client.get("/api/evolution/discovery/history", headers=headers)
+    assert history.status_code == 200
+    assert history.json()["items"][0]["status"] == "COMPLETE"
+    packages = client.get("/api/evolution/discovery/verified", headers=headers)
+    assert packages.status_code == 200
+    assert packages.json()["activation_performed"] is False
+    assert packages.json()["ready_count"] == 0
+    assert client.get("/api/evolution/discovery/verified").status_code == 401
+
+
+def test_auto_staging_calls_second_gateway_tool_but_no_execution(tmp_path):
+    from aura_core.evolution.external_staging import EvolutionWorkspace, CAPABILITY
+    class StageGateway(FakeGateway):
+        async def invoke(self, request):
+            if request.capability_id == CAPABILITY:
+                self.calls.append(request)
+                return SimpleNamespace(decision=AuthorizationDecision.ALLOW, result={
+                    "repository": request.arguments["repository"],
+                    "status": "READY_FOR_OWNER_REVIEW",
+                    "source_sha256": "a" * 64,
+                    "sandbox_attested": False,
+                    "activation_performed": False,
+                })
+            return await super().invoke(request)
+    workspace = EvolutionWorkspace(tmp_path / "workspace")
+    gw = StageGateway()
+    engine = SelfDiscoveryEngine(gateway=gw,
+                                 db_path=workspace.root / "catalog" / "proposals.sqlite3",
+                                 workspace=workspace, auto_stage=True)
+    result = _run(engine.run_once())
+    assert result["staged_count"] == 1
+    assert result["static_ready_count"] == 1
+    assert engine.proposals()[0]["package_status"] == "READY_FOR_OWNER_REVIEW"
+    assert [call.capability_id for call in gw.calls] == [
+        "github.repository.search", "github.repository.stage"
+    ]
+    assert gw.calls[1].resource_scope == "evolution-staging"
+    assert gw.calls[1].risk_level.value == "medium"
+    assert workspace.active.exists()
+    assert __import__("json").loads(workspace.active.read_text())["active"] == []
+    _run(engine.run_once())
+    assert [call.capability_id for call in gw.calls].count("github.repository.stage") == 1
+
+
+def test_denied_staging_never_marks_ready_or_registers_code(tmp_path):
+    from aura_core.evolution.external_staging import EvolutionWorkspace, CAPABILITY
+    class DeniedStage(FakeGateway):
+        async def invoke(self, request):
+            if request.capability_id == CAPABILITY:
+                self.calls.append(request)
+                return SimpleNamespace(decision=AuthorizationDecision.DENY, result=None)
+            return await super().invoke(request)
+    workspace = EvolutionWorkspace(tmp_path / "workspace")
+    engine = SelfDiscoveryEngine(gateway=DeniedStage(),
+                                 db_path=workspace.root / "catalog" / "proposals.sqlite3",
+                                 workspace=workspace, auto_stage=True)
+    result = _run(engine.run_once())
+    assert result["staged_count"] == 0
+    assert engine.proposals()[0]["package_status"] == "STAGING_REJECTED"
+    assert engine.static_ready_count() == 0
+    assert workspace.verified_packages() == []
+    assert __import__("json").loads(workspace.active.read_text())["active"] == []
