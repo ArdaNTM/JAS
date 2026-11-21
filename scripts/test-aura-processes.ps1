@@ -33,4 +33,21 @@ try {
     if (-not $rejected) { throw "Occupied port should fail closed" }
 } finally { $listener.Stop() }
 Assert-AuraPortAvailable -Port $port
+# Verify that Owner health failure does not flow into Core/HUD teardown.
+$launcher = [IO.File]::ReadAllText((Join-Path $PSScriptRoot "launch-aura-desktop.ps1"))
+$probe = $launcher.IndexOf('Wait-ForHttp -Url "http://127.0.0.1:8766/health" -TimeoutSeconds 15 -RequireOk')
+if ($probe -lt 0) { throw "Owner probe must require IPv4 HTTP 200" }
+$localCatch = $launcher.IndexOf('    catch {', $probe)
+$hudStart = $launcher.IndexOf('    $uiProcess = Start-UiWithRetry -Npm $Npm', $probe)
+if ($localCatch -lt 0 -or $hudStart -lt 0 -or $localCatch -gt $hudStart) {
+    throw "Owner readiness failure must be contained before HUD startup"
+}
+$browserStart = $launcher.IndexOf('    Open-AuraBrowser', $hudStart)
+$diagnostic = $launcher.IndexOf('Show-LauncherError -Message $ownerWarning', $browserStart)
+if ($browserStart -lt 0 -or $diagnostic -lt 0) {
+    throw "Owner stderr warning must be displayed after the HUD opens"
+}
+if (-not $launcher.Contains('Read-LogSafe -Path $OwnerLogErr')) {
+    throw "Owner review diagnostics must include captured stderr"
+}
 Write-Host "PASS: AURA owned-process and port regression"
