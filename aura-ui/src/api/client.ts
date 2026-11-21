@@ -448,6 +448,8 @@ export function invokeCapabilityTool(body: {
 export interface DiscoveryProposal {
   proposal_id: string;
   stars: number | null;
+  package_status?: string | null;
+  source_sha256?: string | null;
   repository: string;
   url: string;
   description: string;

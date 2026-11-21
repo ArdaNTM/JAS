@@ -143,8 +143,15 @@ export default function EvolutionReviewPanel() {
                      className="text-cyan-200 underline">{item.repository}</a>
                   <div className="mt-1 text-[10px] text-slate-400">
                     {item.license} · {item.capability_hint} · {item.description}
+                    {item.stars != null ? " · ⭐ " + item.stars : ""}
                   </div>
-                  <div className="mt-2 text-[10px] text-amber-300">OWNER İNCELEMESİ BEKLİYOR · KOD ÇALIŞTIRILMADI</div>
+                  <div className="mt-2 text-[10px] text-amber-300">
+                    {item.package_status === "READY_FOR_OWNER_REVIEW"
+                      ? "STATİK TARAMA TAMAMLANDI · OWNER / BAĞIMSIZ SANDBOX ATTESTATION BEKLİYOR"
+                      : item.package_status === "STAGING_REJECTED"
+                        ? "STAGING REDDEDİLDİ · KAYNAK GÜVENLİĞİ DOĞRULANMADI"
+                        : "İNCELEME / STAGING BEKLİYOR"} · KOD ÇALIŞTIRILMADI
+                  </div>
                 </div>
               ))}
             </div>

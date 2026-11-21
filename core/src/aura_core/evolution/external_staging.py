@@ -40,9 +40,9 @@ _PLATFORM = re.compile(
     re.IGNORECASE,
 )
 _UNSAFE = re.compile(
-    r"\b(?:eval\s*\(|exec\s*\(|os\.system\s*\(|subprocess\."
-    r"(?:Popen|run|call)\s*\(|curl\s+[^\r\n]*\|\s*(?:bash|sh)|"
-    r"powershell\s+-enc|Invoke-Expression|pickle\.loads\s*\()\b",
+    r"(?:\beval\s*\(|\bexec\s*\(|\bos\.system\s*\(|\bsubprocess\."
+    r"(?:Popen|run|call)\s*\(|\bcurl\s+[^\r\n]*\|\s*(?:bash|sh)|"
+    r"\bpowershell\s+-enc|\bInvoke-Expression|\bpickle\.loads\s*\()",
     re.IGNORECASE,
 )
 _PAID = re.compile(

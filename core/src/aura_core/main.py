@@ -30,6 +30,10 @@ from aura_core.evolution.self_discovery import (
     SCOPE as DISCOVERY_SCOPE,
 )
 from aura_core.evolution.self_discovery_api import router as self_discovery_router
+from aura_core.evolution.external_staging import (
+    EvolutionWorkspace, GitHubStagingMCPProvider,
+    CAPABILITY as STAGE_CAPABILITY, TOOL as STAGE_TOOL, SCOPE as STAGE_SCOPE,
+)
 from aura_core.application.autonomous_adapters import AllowedOperation, CapabilityDrivenPlanner
 from aura_core.application.ollama_completion import OllamaJSONCompletionProvider
 from aura_core.application.local_synthesis_mcp import (
@@ -551,6 +555,47 @@ def build_app() -> FastAPI:
             decision=AuthorizationDecision.ALLOW,
         ))
 
+    evolution_workspace = None
+    if (self_discovery_enabled
+            and os.getenv("AURA_EVOLUTION_AUTO_STAGE", "0").strip() == "1"):
+        # No checkout or system writes: only bounded inert evidence outside JAS.
+        # Security trust is never established by this static scan.
+        root_path = os.getenv("AURA_EVOLUTION_ROOT", "").strip()
+        if not root_path:
+            root_path = (r"D:\AURA\Evolution" if os.name == "nt"
+                         else str(Path.home() / ".local/share/aura/evolution"))
+        evolution_workspace = EvolutionWorkspace(
+            root_path,
+            max_items=int(os.getenv("AURA_EVOLUTION_MAX_ITEMS", "24")),
+            max_bytes=int(os.getenv("AURA_EVOLUTION_MAX_BYTES", "150000000")),
+        )
+        stage_provider = GitHubStagingMCPProvider(workspace=evolution_workspace)
+        stage_service = ServiceDefinition(
+            name="github_static_staging", version="1.0.0", provider="aura",
+            category=ServiceCategory.MCP, capabilities=frozenset({STAGE_CAPABILITY}),
+            tags={"inert", "external-workspace", "no-execution"},
+        )
+        kernel.service_registry.register(stage_service, stage_provider)
+        kernel.provider_registry.register(ProviderDefinition(
+            provider_id="aura.github-static-staging",
+            name="External GitHub Static Review", version="1.0.0",
+            service_id=stage_service.service_id,
+        ), stage_provider)
+        kernel.capability_registry.register(CapabilityDefinition(
+            capability_id=STAGE_CAPABILITY, name="Stage GitHub Source for Static Review",
+            version="1.0.0", description="Inert source acquisition outside JAS",
+            provider_id="aura.github-static-staging", provider_type=ProviderType.MCP,
+            category=CapabilityCategory.SECURITY, tool_name=STAGE_TOOL,
+            risk_level="medium", required_permissions=frozenset({STAGE_CAPABILITY}),
+        ))
+        kernel.permission_engine.add_policy(PermissionPolicy(
+            policy_id="local-owner:evolution-static-staging:operator-opt-in",
+            policy_version="1.0.0", principal_id="local_owner",
+            capability_id=STAGE_CAPABILITY, operation_id=STAGE_CAPABILITY,
+            resource_scope=STAGE_SCOPE, authorization_level=AuthorizationLevel.WRITE,
+            decision=AuthorizationDecision.ALLOW,
+        ))
+
     gateway = MCPGateway(
         capability_registry=kernel.capability_registry,
         provider_registry=kernel.provider_registry,
@@ -615,12 +660,15 @@ def build_app() -> FastAPI:
     app.state.self_discovery = None
     if self_discovery_enabled:
         discovery_db = os.getenv("AURA_SELF_DISCOVERY_DB", "").strip()
+        if evolution_workspace is not None:
+            discovery_db = str(evolution_workspace.root / "catalog" / "proposals.sqlite3")
         if not discovery_db:
             discovery_db = str(Path(os.getenv("LOCALAPPDATA", str(Path.home()))) /
                                "AURA" / "self-discovery.sqlite3")
         app.state.self_discovery = SelfDiscoveryEngine(
             gateway=gateway, db_path=discovery_db, principal_id="local_owner",
             interval_seconds=int(os.getenv("AURA_SELF_DISCOVERY_INTERVAL_SECONDS", "3600")),
+            workspace=evolution_workspace, auto_stage=evolution_workspace is not None,
         )
     app.include_router(self_discovery_router)
     app.state.feature_catalog = feature_catalog
