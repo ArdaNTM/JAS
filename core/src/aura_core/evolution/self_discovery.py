@@ -427,16 +427,21 @@ class SelfDiscoveryEngine:
                 "SELECT repository,description,stars,size_kb FROM evolution_proposals "
                 "WHERE status='pending_owner_review' "
                 "AND (package_status IS NULL OR package_status IN ('pending', 'Queued') "
-                "OR (package_status='STAGING_REJECTED' AND stage_attempts < 4 "
-                "AND package_error IN ("
+                "OR (package_status='STAGING_REJECTED' AND ("
+                "(stage_attempts < 4 AND package_error IN ("
                 "'GitHub download byte budget exceeded',"
                 "'Archive download exceeds maximum byte budget',"
-                "'Expanded repository budget exceeded'"
+                "'Expanded repository budget exceeded',"
+                "'GitHub archive/metadata unavailable or rate limited')) "
+                "OR (stage_attempts = 1 AND package_error="
+                "'Binary content is not eligible for static staging')"
                 "))) "
                 "ORDER BY created_at LIMIT 50"
             ).fetchall()
         # Re-evaluate the durable queue on every invocation, even if public
-        # search returns zero. Fail-closed security rejections are NOT retried.
+        # search returns zero. Only bounded transport/budget retries and one
+        # legacy binary-only re-evaluation are eligible, never generic
+        # static risk, executable, or authorization-policy rejections.
         candidates = [
             (repository, description, stars or 0, size_kb)
             for repository, description, stars, size_kb in rows
