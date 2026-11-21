@@ -222,7 +222,8 @@ def test_real_github_style_zip_root_directory_is_not_rejected():
         bundle.writestr("worker-abc/", "")
         bundle.writestr("worker-abc/server.py", "from fastmcp import FastMCP\n")
         bundle.writestr("worker-abc/README.md", "Fully local and offline")
-    files, entrypoint = _validated_files(memory.getvalue())
+    files, entrypoint, skipped_binaries = _validated_files(memory.getvalue())
+    assert skipped_binaries == 0
     assert entrypoint == "server.py"
     assert "README.md" in files
 
