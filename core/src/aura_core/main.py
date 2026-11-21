@@ -24,6 +24,8 @@ from aura_core.application.task_memory import TaskMemoryCoordinator
 from aura_core.application.task_state_machine import TaskStateMachine
 from aura_core.application.autonomy_composition import compose_governed_autonomy
 from aura_core.evolution.evolution_gateway import EvolutionReviewGateway
+from aura_core.evolution.self_discovery import SelfDiscoveryEngine
+from aura_core.evolution.self_discovery_api import router as self_discovery_router
 from aura_core.application.autonomous_adapters import AllowedOperation, CapabilityDrivenPlanner
 from aura_core.application.ollama_completion import OllamaJSONCompletionProvider
 from aura_core.application.stage_c_runtime import StageCLedger, StageCController
@@ -538,6 +540,8 @@ def build_app() -> FastAPI:
 
     app.state.feature_catalog = feature_catalog
     app.include_router(capability_center_router)
+    app.include_router(self_discovery_router)
+    app.state.self_discovery_engine = None
     app.state.http_bearer_token = http_bearer_token
     app.state.http_principal_id = http_principal_id
     app.state.approval_store = approval_store
@@ -1039,6 +1043,21 @@ def build_app() -> FastAPI:
             # after the Kernel and existing event bridge are ready.
             event_runtime.start()
 
+            # Read-only discovery uses the already connected research MCP via
+            # MCPGateway. It never exists for remote storage or untrusted owners.
+            if (storage_mode is StorageMode.LOCAL and
+                    os.getenv("AURA_SELF_DISCOVERY_ENABLED", "1").strip() == "1"):
+                data_root = Path(os.getenv("LOCALAPPDATA", str(Path.home()))) / "AURA"
+                database_path = Path(os.getenv(
+                    "AURA_DISCOVERY_DB", str(data_root / "discovery.sqlite3")
+                ))
+                _app.state.self_discovery_engine = SelfDiscoveryEngine(
+                    gateway=gateway, database_path=database_path,
+                    principal_id=http_principal_id,
+                    interval_seconds=int(os.getenv("AURA_DISCOVERY_INTERVAL_SECONDS", "3600")),
+                )
+                _app.state.self_discovery_engine.start()
+
             # The outer composition replaces create_api lifespan. Start the
             # existing review-only local memory reflection here.
             local_reflection = getattr(_app.state, "background_thinking", None)
@@ -1095,6 +1114,13 @@ def build_app() -> FastAPI:
                     event_coordinator.stop()
                 except Exception:
                     logger.exception("Event-driven orchestration unsubscribe failed")
+
+            discovery = getattr(app.state, "self_discovery_engine", None)
+            if discovery is not None:
+                try:
+                    await discovery.stop()
+                except Exception:
+                    logger.exception("Self-discovery shutdown failed")
 
             local_reflection = getattr(app.state, "background_thinking", None)
             if local_reflection is not None:
