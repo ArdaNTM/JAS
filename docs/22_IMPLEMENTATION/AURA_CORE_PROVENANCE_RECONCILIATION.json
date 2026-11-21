@@ -7,8 +7,8 @@
   "files": [
     {
       "path": "core/src/aura_core/main.py",
-      "unified_blob_sha": "c78a2890a79c40883b16c0350c57897df3443da7",
-      "canonical": "PR #168 proposes reviewed local discovery/synthesis registrations; exact-head CI and independent Owner review mandatory; F2.7 sealed sources not changed.",
+      "unified_blob_sha": "96eb27bd70bf22a896d843e271c48813585517f9",
+      "canonical": "External Evolution PR proposal: Gateway-only inert staging; Owner activation requires independent signed sandbox attestation and protected passkey. Pending CI/Owner review, F2.7 sealed boundary unchanged.",
       "variants": [
         {
           "pr": 158,
@@ -84,6 +84,13 @@
           "pr": 168,
           "ref": "0eb6bc9f7283393127d60c584aa13ff07831bf46",
           "blob": "c78a2890a79c40883b16c0350c57897df3443da7",
+          "ancestry": "proposed_feature_branch",
+          "assessment": "PENDING_EXACT_HEAD_CI_AND_OWNER_REVIEW"
+        },
+        {
+          "pr": 170,
+          "ref": "0040b12a4494350f2aa05a64b2b0dbf4f129118e",
+          "blob": "96eb27bd70bf22a896d843e271c48813585517f9",
           "ancestry": "proposed_feature_branch",
           "assessment": "PENDING_EXACT_HEAD_CI_AND_OWNER_REVIEW"
         }
