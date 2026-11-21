@@ -297,7 +297,8 @@ def test_api_preserves_supplied_request_id() -> None:
     assert response.headers["X-Request-ID"] == "aura-request-123"
 
 
-def test_inference_endpoint_returns_inference_response() -> None:
+def test_inference_endpoint_returns_inference_response(monkeypatch) -> None:
+    monkeypatch.setenv("AURA_OLLAMA_FAST_RESPONSE", "1")
     transport = make_success_transport()
     client = make_client(transport)
 
@@ -340,6 +341,8 @@ def test_inference_endpoint_returns_inference_response() -> None:
             }
         ],
         "stream": False,
+        "think": False,
+        "keep_alive": "10m",
         "options": {
             "temperature": 0.0,
             "num_predict": 32,
@@ -511,6 +514,16 @@ def test_tasks_plan_conversation_returns_empty_non_executable_plan():
 def test_tasks_plan_unsupported_action_remains_422():
     client = make_client(make_success_transport())
     response = client.post("/api/tasks/plan", json={
-        "directive": "AURA delete the backups",
+        "directive": "unsupported_noop_action",
     })
     assert response.status_code == 422
+
+
+def test_tasks_plan_compound_self_discovery_bypasses_ollama_selector(monkeypatch):
+    monkeypatch.setenv("AURA_ASSISTANT_AUTO_TOOLS_ENABLED", "1")
+    client = make_client(make_success_transport())
+    response = client.post("/api/tasks/plan", json={
+        "directive": "Kendini geliştir, GitHub'dan ücretsiz özellikler araştır",
+    })
+    assert response.status_code == 200, response.text
+    assert response.json() == {"resource_scope": "local-discovery", "steps": []}

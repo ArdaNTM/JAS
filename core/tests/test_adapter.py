@@ -45,7 +45,8 @@ def build_backend(
     )
 
 
-def test_adapter_builds_ollama_payload() -> None:
+def test_adapter_builds_ollama_payload(monkeypatch) -> None:
+    monkeypatch.setenv("AURA_OLLAMA_FAST_RESPONSE", "1")
     transport = MockJsonTransport(
         {
             "model": MODEL,
@@ -81,6 +82,8 @@ def test_adapter_builds_ollama_payload() -> None:
             },
         ],
         "stream": False,
+        "think": False,
+        "keep_alive": "10m",
         "options": {
             "temperature": 0.0,
             "num_predict": 32,
@@ -88,7 +91,10 @@ def test_adapter_builds_ollama_payload() -> None:
     }
 
 
-def test_adapter_omits_num_predict_when_max_tokens_is_none() -> None:
+def test_adapter_omits_num_predict_when_max_tokens_is_none(monkeypatch) -> None:
+    # The opt-in fast profile is not global. The ordinary adapter still
+    # omits num_predict when no explicit generation limit is provided.
+    monkeypatch.delenv("AURA_OLLAMA_FAST_RESPONSE", raising=False)
     transport = MockJsonTransport(
         {
             "model": MODEL,
@@ -230,3 +236,19 @@ def test_adapter_rejects_non_string_content() -> None:
         raise AssertionError(
             "Non-string content was unexpectedly accepted"
         )
+
+def test_adapter_fast_profile_uses_default_num_predict_when_max_tokens_missing(monkeypatch):
+    monkeypatch.setenv("AURA_OLLAMA_FAST_RESPONSE", "1")
+    monkeypatch.setenv("AURA_OLLAMA_FAST_MAX_TOKENS", "1024")
+    transport = MockJsonTransport({
+        "model": MODEL,
+        "message": {"role": "assistant", "content": "fast profile"},
+        "done": True,
+    })
+    build_backend(transport).infer(build_request(max_tokens=None))
+    assert transport.last_payload is not None
+    assert transport.last_payload["think"] is False
+    assert transport.last_payload["keep_alive"] == "10m"
+    assert transport.last_payload["options"] == {
+        "temperature": 0.0, "num_predict": 1024,
+    }
