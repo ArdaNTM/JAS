@@ -5,8 +5,8 @@
   "generated_at": "2026-11-19T07:08:05.113Z",
   "git_commit": "19da39d819cefce0dff6c9f4b5ce7dd963288018",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:e7c68ffb01ffd25075a2c38bb7ec7180121c0c7701c7e087d55a38fa64e9ff0d",
-  "file_count": 447,
+  "release_digest": "sha256:f97ecf1f349c2c0fba5182a4df8c09f7fc5fe6f45519279c56f4971f6da152ee",
+  "file_count": 448,
   "files": [
     {
       "path": ".gitattributes",
@@ -78,7 +78,7 @@
     },
     {
       "path": "aura-ui/src/App.tsx",
-      "sha256": "6e8dbecfb606973e52e35c692e3da49432f5ee891a0cbd8d8cec85428a6d0086"
+      "sha256": "350dd0d8e6f6a2a965b35bd0af6e23d651526cfbd0e862ebc57c2719c3c944ed"
     },
     {
       "path": "aura-ui/src/assets/hero.png",
@@ -366,7 +366,7 @@
     },
     {
       "path": "core/src/aura_core/application/api.py",
-      "sha256": "a1cc216a0da438f4915e72c4bed51de481933bf7e83733c4e5bc97c739eacd3d"
+      "sha256": "0e1a13768b006e444c362842a5adf7b92c8def98276842c6da22341d5e7a77d7"
     },
     {
       "path": "core/src/aura_core/application/approval_api.py",
@@ -547,6 +547,10 @@
     {
       "path": "core/src/aura_core/application/local_object_detection.py",
       "sha256": "77c65c22af1ea8f7c70071bc541fb1939298cf8aca985b1c31ac340adf0b4f6f"
+    },
+    {
+      "path": "core/src/aura_core/application/local_synthesis_mcp.py",
+      "sha256": "9927e0ae7e06da435a5359122fe395f9dd5e582366299492fadeae6857850213"
     },
     {
       "path": "core/src/aura_core/application/monitor_topology.py",
@@ -946,7 +950,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/self_discovery.py",
-      "sha256": "6365c59307cc6da9e2a943197c7015b1301d706f83d4dd9245589dbe1ec2614b"
+      "sha256": "0959ae788189f30c1a307581c565e7e7b8bb0cefb2b42e463c8a26f5e9f1d7b7"
     },
     {
       "path": "core/src/aura_core/evolution/self_discovery_api.py",
@@ -1138,7 +1142,7 @@
     },
     {
       "path": "core/src/aura_core/main.py",
-      "sha256": "f982bd62419f0c28e5a44bdb20b412490caebb1a3139b47e048f04edc3ef9f1e"
+      "sha256": "6b4f799613a853da24a6b4efdc7bf933a56eebeababc4b831f661ccce1e9e07f"
     },
     {
       "path": "core/src/aura_core/mcp/__init__.py",

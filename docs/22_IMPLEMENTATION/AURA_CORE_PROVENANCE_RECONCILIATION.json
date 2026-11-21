@@ -7,8 +7,8 @@
   "files": [
     {
       "path": "core/src/aura_core/main.py",
-      "unified_blob_sha": "85d869647856d61c70359ddcad81c58660d9e2b2",
-      "canonical": "PR #168 proposal-only GitHub discovery registration; F2.7 and existing Owner controls untouched. Requires exact-head CI and independent Owner review.",
+      "unified_blob_sha": "c78a2890a79c40883b16c0350c57897df3443da7",
+      "canonical": "PR #168 proposes reviewed local discovery/synthesis registrations; exact-head CI and independent Owner review mandatory; F2.7 sealed sources not changed.",
       "variants": [
         {
           "pr": 158,
@@ -79,6 +79,13 @@
           "blob": "85d869647856d61c70359ddcad81c58660d9e2b2",
           "ancestry": "proposed_feature_branch",
           "assessment": "PENDING_OWNER_REVIEW_AND_EXACT_HEAD_CI"
+        },
+        {
+          "pr": 168,
+          "ref": "0eb6bc9f7283393127d60c584aa13ff07831bf46",
+          "blob": "c78a2890a79c40883b16c0350c57897df3443da7",
+          "ancestry": "proposed_feature_branch",
+          "assessment": "PENDING_EXACT_HEAD_CI_AND_OWNER_REVIEW"
         }
       ]
     },
