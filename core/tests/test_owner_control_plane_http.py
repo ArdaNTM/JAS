@@ -143,3 +143,22 @@ def test_non_governed_pending_approval_never_enters_owner_ui(owner):
     response = post(client, "/api/owner/challenge", {"approval_id": other.approval_id})
     assert response.status_code == 409
     assert store.get(other.approval_id).status is ApprovalStatus.PENDING
+
+
+def test_numeric_ipv4_health_probe_succeeds_without_relaxing_owner_host(owner):
+    client, store, pending, assertion = owner
+    # uvicorn binds 127.0.0.1; PowerShell must not depend on IPv6 localhost.
+    health = client.get("/health", headers={"Host": "127.0.0.1:8766"})
+    assert health.status_code == 200
+    assert health.json()["status"] == "ok"
+    assert health.json()["activation_allowed"] is False
+    assert client.get("/health").status_code == 200
+
+    # Every existing protected route still requires the exact localhost host.
+    for path in ("/", "/api/owner/health", "/api/owner/pending",
+                 "/api/owner/discoveries"):
+        assert client.get(path, headers={"Host": "127.0.0.1:8766"}).status_code == 403
+    assert client.get("/health", headers={"Host": "evil.example"}).status_code == 403
+    assert client.post("/api/owner/challenge", json={"approval_id": "x"},
+                       headers={"Origin": "http://localhost:8766",
+                                "Host": "127.0.0.1:8766"}).status_code == 403

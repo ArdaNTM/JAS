@@ -141,7 +141,8 @@ function Wait-ForHttp {
         [Parameter(Mandatory = $true)]
         [string]$Url,
 
-        [int]$TimeoutSeconds = 30
+        [int]$TimeoutSeconds = 30,
+        [switch]$RequireOk
     )
 
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
@@ -155,7 +156,9 @@ function Wait-ForHttp {
                 -TimeoutSec 2 `
                 -ErrorAction Stop
 
-            if (
+            if ($RequireOk) {
+                if ($response.StatusCode -eq 200) { return $true }
+            } elseif (
                 $response.StatusCode -ge 200 -and
                 $response.StatusCode -lt 500
             ) {
@@ -565,7 +568,6 @@ $UiPort = 4173
 Assert-AuraPortAvailable -Port $CorePort
 Assert-AuraPortAvailable -Port $UiPort
 Assert-AuraPortAvailable -Port 5173
-Assert-AuraPortAvailable -Port 8766
 
 $env:AURA_CORE_HOST = "127.0.0.1"
 $env:AURA_CORE_PORT = "$CorePort"
@@ -690,6 +692,7 @@ $Splash = $null
 $coreProcess = $null
 $uiProcess = $null
 $ownerProcess = $null
+$ownerWarning = $null
 
 try {
     $Splash = Show-Splash
@@ -743,12 +746,29 @@ try {
     $Splash.Status.Text = "STARTING OWNER REVIEW..."
     $Splash.Form.Refresh()
 
-    $ownerProcess = Start-OwnerReview -Python $Python
-    if (-not (Wait-ForProcessAlive -ProcessId $ownerProcess.Id -TimeoutSeconds 5)) {
-        throw "Owner review process exited before health check.`n" + (Read-LogSafe -Path $OwnerLogErr)
+    try {
+        # An unrelated listener must never be terminated. An occupied Owner
+        # port is optional-service failure, not a reason to shut down Core.
+        Assert-AuraPortAvailable -Port 8766
+        $ownerProcess = Start-OwnerReview -Python $Python
+        if (-not (Wait-ForProcessAlive -ProcessId $ownerProcess.Id -TimeoutSeconds 5)) {
+            throw "Owner review process exited before health check."
+        }
+        # Force IPv4 (uvicorn binds only 127.0.0.1), require actual HTTP 200;
+        # the older localhost/API probe could fail on IPv6/Host mismatch.
+        if (-not (Wait-ForHttp -Url "http://127.0.0.1:8766/health" -TimeoutSeconds 15 -RequireOk)) {
+            throw "Owner review 127.0.0.1:8766 failed health check."
+        }
     }
-    if (-not (Wait-ForHttp -Url "http://localhost:8766/api/owner/health" -TimeoutSeconds 15)) {
-        throw "Owner review 127.0.0.1:8766 failed health check.`n" + (Read-LogSafe -Path $OwnerLogErr)
+    catch {
+        $ownerWarning = $_.Exception.Message
+        $ownerStderr = Read-LogSafe -Path $OwnerLogErr
+        $ownerWarning += "`n`n----- aura-owner-review.stderr.log -----`n" + $ownerStderr
+        Write-Warning "Owner review unavailable; continuing AURA Core and HUD startup."
+        if ($null -ne $ownerProcess) {
+            Stop-ProcessTreeSafe -ProcessId $ownerProcess.Id
+            $ownerProcess = $null
+        }
     }
 
     $Splash.Status.Text = "STARTING HUD..."
@@ -765,6 +785,13 @@ try {
     $Splash = $null
 
     Open-AuraBrowser
+
+    if (-not [string]::IsNullOrWhiteSpace($ownerWarning)) {
+        # Display the Owner stderr diagnostics only after the HUD has opened.
+        # A missing GUI MessageBox must not roll back already-running Core/UI.
+        try { Show-LauncherError -Message $ownerWarning }
+        catch { Write-Warning "Owner review failed; see aura-owner-review.stderr.log" }
+    }
 }
 catch {
     Close-Splash -Splash $Splash

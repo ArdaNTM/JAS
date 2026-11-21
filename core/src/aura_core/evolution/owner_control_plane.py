@@ -65,7 +65,14 @@ def create_owner_control_plane(
         # requests to the owner control plane via the 127.0.0.1 UI origin.
         host = request.headers.get("host", "").lower()
         if host != "localhost:8766":
-            return JSONResponse({"detail": "Owner Host mismatch"}, status_code=403)
+            # Only the credential-free readiness probe may use an explicit
+            # numeric IPv4 Host. Browser/passkey routes remain pinned to the
+            # exact "localhost:8766" relying-party origin.
+            probe = (request.method in {"GET", "HEAD"}
+                     and request.url.path == "/health"
+                     and host == "127.0.0.1:8766")
+            if not probe:
+                return JSONResponse({"detail": "Owner Host mismatch"}, status_code=403)
         # All state-changing operations require exact browser Origin + JSON,
         # not just a bearer token or the ability to reach loopback.
         if request.method not in {"GET", "HEAD"}:
@@ -107,6 +114,11 @@ def create_owner_control_plane(
             (package_root / "owner_review.css").read_text(encoding="utf-8"),
             media_type="text/css",
         )
+
+    @app.get("/health")
+    def loopback_health():
+        # No passkeys, pending approvals, or other owner state returned.
+        return {"status": "ok", "activation_allowed": False}
 
     @app.get("/api/owner/health")
     def health():
