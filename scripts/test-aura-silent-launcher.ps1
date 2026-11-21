@@ -21,8 +21,14 @@ if ($LauncherSource -notmatch 'CreateNoWindow\s*=\s*\$true') {
 if ($LauncherSource -notmatch 'Show-LauncherError') {
     throw "Launcher error MessageBox handler was removed"
 }
-if ($LauncherSource -match '(?s)Start-Process\s+`\s*\r?\n\s*-FilePath\s+\$edge\s+`.*?-WindowStyle Hidden') {
-    throw "Edge app window must be visible while its console stays hidden"
+$BrowserStart = $LauncherSource.IndexOf("function Open-AuraBrowser {")
+$BrowserEnd = $LauncherSource.IndexOf("`n$Python = Find-Python", $BrowserStart)
+if ($BrowserStart -lt 0 -or $BrowserEnd -le $BrowserStart) {
+    throw "Browser launcher function boundary was not found"
+}
+$BrowserBody = $LauncherSource.Substring($BrowserStart, $BrowserEnd - $BrowserStart)
+if ($BrowserBody.Contains("-WindowStyle Hidden")) {
+    throw "Visible Edge/Chrome app window must not be hidden"
 }
 
 $TempDesktop = Join-Path $env:TEMP ("aura-shortcut-ci-" + [guid]::NewGuid().ToString("N"))
