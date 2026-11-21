@@ -5,7 +5,7 @@
   "generated_at": "2026-11-19T07:08:05.113Z",
   "git_commit": "19da39d819cefce0dff6c9f4b5ce7dd963288018",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:c80ca35744090bbb846ee87e046771bb269bb95cd760f58317c167539018f91d",
+  "release_digest": "sha256:8fc55fcec48ddb27758431070c9c5714ec5b1b85c49a21b8d4a01ff0b3206057",
   "file_count": 448,
   "files": [
     {
@@ -438,7 +438,7 @@
     },
     {
       "path": "core/src/aura_core/application/directive_planner.py",
-      "sha256": "1fffd48140e35a2f4020d3525e6674d840785ffaab320b76645fd2d2c7cb9d4e"
+      "sha256": "de435c1aa968cb78714b5317a5053287799bce0aebd4f02fb37d2a1775cd86bf"
     },
     {
       "path": "core/src/aura_core/application/episodic_memory.py",

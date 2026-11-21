@@ -83,3 +83,10 @@ def test_discovery_directives_are_explicit_and_never_research_tasks():
         plan = DirectivePlanner().plan(phrase)
         assert plan.resource_scope == "local-discovery"
         assert plan.steps == ()
+
+
+def test_explicit_inflected_turkish_research_still_routes_to_gateway():
+    phrase = "Bana yapay zeka alanında bu haftanın en son gelişmelerini araştırıp özetler misin?"
+    plan = DirectivePlanner().plan(phrase)
+    assert plan.resource_scope == "public-web"
+    assert plan.steps[0].capability_id == "internet.search"

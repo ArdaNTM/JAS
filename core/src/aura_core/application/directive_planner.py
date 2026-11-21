@@ -153,7 +153,12 @@ class DirectivePlanner:
         # Match standalone words, not substrings: "ara" inside "bilgisayar"
         # must never turn an ordinary question into a search tool invocation.
         research_words = set(re.findall(r"[a-z0-9_]+", normalized))
-        if research_words.intersection(self._RESEARCH_TERMS):
+        # Turkish inflection is legal only on the explicitly research-related
+        # stems. An unrelated word such as "bilgisayar" must not match "ara"
+        # or "bilgi" and accidentally dispatch a network tool.
+        search_stems = ("arastir", "incele", "ogren")
+        if (research_words.intersection(self._RESEARCH_TERMS)
+                or any(word.startswith(search_stems) for word in research_words)):
             return GeneratedPlan(
                 resource_scope="public-web",
                 steps=(
