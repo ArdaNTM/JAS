@@ -27,7 +27,15 @@ class StartRequest(BaseModel):
 
 @router.get("/status")
 async def status(request: Request, principal: str = Depends(authenticated_principal)):
-    controller = _controller(request)
+    host = request.client.host if request.client else ""
+    if host not in {"127.0.0.1", "::1", "localhost", "testclient"}:
+        raise HTTPException(status_code=403, detail="Stage C requires loopback client")
+    controller = getattr(request.app.state, "stage_c_controller", None)
+    if controller is None:
+        return {"enabled": False, "kill_switch_engaged": False,
+                "max_actions": 8, "deadline_seconds": 120,
+                "reason": "Stage C requires private state, fingerprint approvals and a governed adapter",
+                "approval_authority": "separate_owner_control_plane"}
     return {
         "enabled": True,
         "kill_switch_engaged": controller.ledger.stopped(),

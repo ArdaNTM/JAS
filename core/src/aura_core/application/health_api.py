@@ -80,12 +80,14 @@ async def health(request: Request) -> JSONResponse:
         }
 
     scheduler = getattr(request.app.state, "learning_scheduler", None)
-    components["learning"] = {
-        "status": (
-            "not_configured" if scheduler is None else
-            "running" if scheduler.running else "stopped"
-        )
-    }
+    reflection = getattr(request.app.state, "background_thinking", None)
+    if scheduler is not None:
+        state = "running" if scheduler.running else "stopped"
+    elif reflection is not None:
+        state = "running" if reflection.status().get("enabled") else "stopped"
+    else:
+        state = "not_configured"
+    components["learning"] = {"status": state}
 
     task_service = getattr(
         request.app.state,

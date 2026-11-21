@@ -1039,6 +1039,12 @@ def build_app() -> FastAPI:
             # after the Kernel and existing event bridge are ready.
             event_runtime.start()
 
+            # The outer composition replaces create_api lifespan. Start the
+            # existing review-only local memory reflection here.
+            local_reflection = getattr(_app.state, "background_thinking", None)
+            if local_reflection is not None:
+                local_reflection.start()
+
             # Reflection integration is conditional: it is activated only if
             # the composition root explicitly provides the existing daemon.
             reflection_daemon = getattr(
@@ -1089,6 +1095,13 @@ def build_app() -> FastAPI:
                     event_coordinator.stop()
                 except Exception:
                     logger.exception("Event-driven orchestration unsubscribe failed")
+
+            local_reflection = getattr(app.state, "background_thinking", None)
+            if local_reflection is not None:
+                try:
+                    await local_reflection.stop()
+                except Exception:
+                    logger.exception("Local reflection shutdown failed")
 
             try:
                 await event_runtime.stop(timeout_seconds=5.0)
