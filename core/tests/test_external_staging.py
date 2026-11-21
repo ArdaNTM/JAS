@@ -214,3 +214,14 @@ def test_external_evolution_root_never_equals_checkout():
         EvolutionWorkspace(checkout)
     with pytest.raises(PermissionError, match="outside JAS checkout"):
         EvolutionWorkspace(checkout / "core" / "test-secret")
+
+
+def test_real_github_style_zip_root_directory_is_not_rejected():
+    memory = io.BytesIO()
+    with zipfile.ZipFile(memory, "w", zipfile.ZIP_DEFLATED) as bundle:
+        bundle.writestr("worker-abc/", "")
+        bundle.writestr("worker-abc/server.py", "from fastmcp import FastMCP\n")
+        bundle.writestr("worker-abc/README.md", "Fully local and offline")
+    files, entrypoint = _validated_files(memory.getvalue())
+    assert entrypoint == "server.py"
+    assert "README.md" in files

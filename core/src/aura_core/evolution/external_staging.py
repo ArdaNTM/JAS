@@ -217,6 +217,10 @@ def _validated_files(archive: bytes) -> tuple[dict[str, bytes], str]:
                     or raw.startswith("/") or raw.startswith(".")):
                 raise StagingRejected("Unsafe ZIP entry name")
             segments = PurePosixPath(raw).parts
+            if len(segments) == 1 and info.is_dir():
+                # GitHub's codeload archives contain a top-level directory
+                # entry before the actual source paths.
+                continue
             if len(segments) < 2 or any(part in _DENIED_PARTS for part in segments):
                 raise StagingRejected("Unsafe ZIP path segments")
             archive_roots.add(segments[0])
