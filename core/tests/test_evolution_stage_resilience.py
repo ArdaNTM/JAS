@@ -207,3 +207,71 @@ def test_local_rank_prefers_no_key_sqlite_over_generic_star_count():
     assert _local_rank("owner/sqlite-fastmcp", "zero API keys, local filesystem git", 10) > (
         _local_rank("owner/cloud", "generic connector", 100000)
     )
+
+
+def test_legacy_binary_rejection_is_retried_once_then_safety_blocked(tmp_path):
+    workspace = EvolutionWorkspace(tmp_path / "outside")
+    attempted = []
+
+    class Gateway:
+        async def invoke(self, request):
+            if request.capability_id == CAPABILITY_ID:
+                return SimpleNamespace(decision=AuthorizationDecision.ALLOW, result={"items": []})
+            attempted.append(request.arguments["repository"])
+            raise ValueError("Executable or suspicious archive content rejected")
+
+    engine = SelfDiscoveryEngine(
+        gateway=Gateway(), db_path=workspace.root / "catalog" / "proposals.sqlite3",
+        workspace=workspace, auto_stage=True,
+    )
+    with sqlite3.connect(engine._db_path) as db:
+        db.execute(
+            "INSERT INTO evolution_proposals "
+            "(proposal_id,repository,url,description,license,capability_hint,created_at,"
+            "stars,size_kb,package_status,package_error,stage_attempts) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+            ("legacy", "local/old-binary", "https://github.com/local/old-binary",
+             "Fully local filesystem MCP", "MIT", "MCP", 1, 100, 500,
+             "STAGING_REJECTED", "Binary content is not eligible for static staging", 1),
+        )
+    first = asyncio.run(engine.run_once())
+    assert first["staging_attempted"] == 1
+    assert first["verified_count"] == 0
+    assert attempted == ["local/old-binary"]
+    assert engine.proposals()[0]["stage_attempts"] == 2
+    second = asyncio.run(engine.run_once())
+    assert second["staging_attempted"] == 0
+    assert engine.static_ready_count() == 0
+    assert json.loads(workspace.active.read_text())["active"] == []
+
+
+def test_existing_rate_limited_metadata_retry_can_verify_without_new_search(tmp_path):
+    workspace = EvolutionWorkspace(tmp_path / "outside")
+    class Gateway:
+        async def invoke(self, request):
+            if request.capability_id == CAPABILITY_ID:
+                return SimpleNamespace(decision=AuthorizationDecision.ALLOW, result={"items": []})
+            return SimpleNamespace(decision=AuthorizationDecision.ALLOW, result={
+                "repository": request.arguments["repository"],
+                "status": "READY_FOR_OWNER_REVIEW", "source_sha256": "c" * 64,
+                "sandbox_attested": False, "activation_performed": False,
+                "execution_allowed": False,
+            })
+    engine = SelfDiscoveryEngine(
+        gateway=Gateway(), db_path=workspace.root / "catalog" / "proposals.sqlite3",
+        workspace=workspace, auto_stage=True,
+    )
+    with sqlite3.connect(engine._db_path) as db:
+        db.execute(
+            "INSERT INTO evolution_proposals "
+            "(proposal_id,repository,url,description,license,capability_hint,created_at,"
+            "stars,size_kb,package_status,package_error,stage_attempts) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+            ("rate", "local/rate-limit", "https://github.com/local/rate-limit",
+             "Fully local filesystem MCP", "MIT", "MCP", 1, 100, 500,
+             "STAGING_REJECTED", "GitHub archive/metadata unavailable or rate limited", 1),
+        )
+    outcome = asyncio.run(engine.run_once())
+    assert outcome["new_count"] == 0
+    assert outcome["staging_attempted"] == outcome["verified_count"] == 1
+    assert engine.proposals()[0]["package_status"] == "READY_FOR_OWNER_REVIEW"
