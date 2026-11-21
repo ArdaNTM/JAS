@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import ipaddress
 import sqlite3
-from urllib.parse import quote
 from pathlib import Path
 from typing import Literal
 from uuid import UUID
@@ -150,7 +149,7 @@ def create_owner_control_plane(
             raise HTTPException(503, "Discovery catalog path rejected")
         if not path.is_file():
             return {"items": [], "mode": "untrusted_discovery_review"}
-        uri = "file:" + quote(path.resolve().as_posix(), safe="/:") + "?mode=ro"
+        uri = path.resolve().as_uri() + "?mode=ro"
         try:
             with sqlite3.connect(uri, uri=True, timeout=2) as db:
                 rows = db.execute(
