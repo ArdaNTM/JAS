@@ -5,7 +5,7 @@
   "generated_at": "2026-11-19T07:08:05.113Z",
   "git_commit": "19da39d819cefce0dff6c9f4b5ce7dd963288018",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:3102dfb0d753217d90ee5b850ed64f8962e73aa8e587582c0260f2ec3acf7277",
+  "release_digest": "sha256:5d366ac118fcc7757943c8dfd380e6b8f7edf8dc1d770bd4e98537592991eddc",
   "file_count": 449,
   "files": [
     {
@@ -886,7 +886,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/external_staging.py",
-      "sha256": "2daad35c07b37880f214988b3b18f546b7be4aee9865d1c75b509d009724e13f"
+      "sha256": "0b6e9ff81c631aeb2275c46da4ed309666d1e742a6b0278513b5884230b5b850"
     },
     {
       "path": "core/src/aura_core/evolution/goal_tree.py",
@@ -954,7 +954,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/self_discovery.py",
-      "sha256": "ac329c61e9ebd985262382775bb152a1134d11ae5e92aa2788676528f0ff65ff"
+      "sha256": "858c2658c12eff911124c167f033f0bce6a8a73e4cf39a9434270095c64074d6"
     },
     {
       "path": "core/src/aura_core/evolution/self_discovery_api.py",
