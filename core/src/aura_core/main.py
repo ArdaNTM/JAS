@@ -24,6 +24,12 @@ from aura_core.application.task_memory import TaskMemoryCoordinator
 from aura_core.application.task_state_machine import TaskStateMachine
 from aura_core.application.autonomy_composition import compose_governed_autonomy
 from aura_core.evolution.evolution_gateway import EvolutionReviewGateway
+from aura_core.evolution.self_discovery import (
+    PublicGitHubDiscoveryMCPProvider, SelfDiscoveryEngine,
+    CAPABILITY_ID as DISCOVERY_CAPABILITY, TOOL_NAME as DISCOVERY_TOOL,
+    SCOPE as DISCOVERY_SCOPE,
+)
+from aura_core.evolution.self_discovery_api import router as self_discovery_router
 from aura_core.application.autonomous_adapters import AllowedOperation, CapabilityDrivenPlanner
 from aura_core.application.ollama_completion import OllamaJSONCompletionProvider
 from aura_core.application.stage_c_runtime import StageCLedger, StageCController
@@ -506,6 +512,42 @@ def build_app() -> FastAPI:
                 required_permissions=frozenset({cap_id}),
             ))
 
+    # User opt-in: public GitHub metadata lookup is itself an MCP operation.
+    # Read-only policy is narrow to local Owner and fixed public-github scope.
+    self_discovery_enabled = (
+        storage_mode is StorageMode.LOCAL
+        and os.getenv("AURA_SELF_DISCOVERY_ENABLED", "0").strip() == "1"
+        and http_principal_id == "local_owner"
+    )
+    if self_discovery_enabled:
+        discovery_provider = PublicGitHubDiscoveryMCPProvider()
+        discovery_service = ServiceDefinition(
+            name="github_discovery_mcp", version="1.0.0", provider="aura",
+            category=ServiceCategory.MCP,
+            capabilities=frozenset({DISCOVERY_CAPABILITY}),
+            tags={"public", "read-only", "review-only"},
+        )
+        kernel.service_registry.register(discovery_service, discovery_provider)
+        kernel.provider_registry.register(ProviderDefinition(
+            provider_id="aura.github-discovery", name="Public GitHub Discovery",
+            version="1.0.0", service_id=discovery_service.service_id,
+        ), discovery_provider)
+        kernel.capability_registry.register(CapabilityDefinition(
+            capability_id=DISCOVERY_CAPABILITY, name="GitHub Public Repository Search",
+            version="1.0.0",
+            description="Read-only public repository metadata; never downloads executable code",
+            provider_id="aura.github-discovery", provider_type=ProviderType.MCP,
+            category=CapabilityCategory.RESEARCH, tool_name=DISCOVERY_TOOL,
+            risk_level="low", required_permissions=frozenset({DISCOVERY_CAPABILITY}),
+        ))
+        kernel.permission_engine.add_policy(PermissionPolicy(
+            policy_id="local-owner:github-discovery:read-only",
+            policy_version="1.0.0", principal_id="local_owner",
+            capability_id=DISCOVERY_CAPABILITY, operation_id=DISCOVERY_CAPABILITY,
+            resource_scope=DISCOVERY_SCOPE, authorization_level=AuthorizationLevel.READ,
+            decision=AuthorizationDecision.ALLOW,
+        ))
+
     gateway = MCPGateway(
         capability_registry=kernel.capability_registry,
         provider_registry=kernel.provider_registry,
@@ -536,6 +578,17 @@ def build_app() -> FastAPI:
         storage_mode=storage_mode,
     )
 
+    app.state.self_discovery = None
+    if self_discovery_enabled:
+        discovery_db = os.getenv("AURA_SELF_DISCOVERY_DB", "").strip()
+        if not discovery_db:
+            discovery_db = str(Path(os.getenv("LOCALAPPDATA", str(Path.home()))) /
+                               "AURA" / "self-discovery.sqlite3")
+        app.state.self_discovery = SelfDiscoveryEngine(
+            gateway=gateway, db_path=discovery_db, principal_id="local_owner",
+            interval_seconds=int(os.getenv("AURA_SELF_DISCOVERY_INTERVAL_SECONDS", "3600")),
+        )
+    app.include_router(self_discovery_router)
     app.state.feature_catalog = feature_catalog
     app.include_router(capability_center_router)
     app.state.http_bearer_token = http_bearer_token
@@ -1038,6 +1091,9 @@ def build_app() -> FastAPI:
             # The runtime owns the sole EventBus dispatch loop. Start it only
             # after the Kernel and existing event bridge are ready.
             event_runtime.start()
+            discovery_worker = getattr(_app.state, "self_discovery", None)
+            if discovery_worker is not None:
+                discovery_worker.start()
 
             # The outer composition replaces create_api lifespan. Start the
             # existing review-only local memory reflection here.
@@ -1095,6 +1151,13 @@ def build_app() -> FastAPI:
                     event_coordinator.stop()
                 except Exception:
                     logger.exception("Event-driven orchestration unsubscribe failed")
+
+            discovery_worker = getattr(app.state, "self_discovery", None)
+            if discovery_worker is not None:
+                try:
+                    await discovery_worker.stop()
+                except Exception:
+                    logger.exception("Self-discovery shutdown failed")
 
             local_reflection = getattr(app.state, "background_thinking", None)
             if local_reflection is not None:
