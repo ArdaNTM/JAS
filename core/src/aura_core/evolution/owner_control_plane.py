@@ -7,6 +7,8 @@ with private pre-provisioned state and a pinned WebAuthn credential.
 from __future__ import annotations
 
 import ipaddress
+import sqlite3
+from urllib.parse import quote
 from pathlib import Path
 from typing import Literal
 from uuid import UUID
@@ -42,11 +44,18 @@ def create_owner_control_plane(
     *, approvals: SQLiteApprovalStore, decider: TrustedOwnerPasskeyDecider,
     receipt_issuer: OwnerReceiptIssuer | None = None,
     origin: str = OWNER_ORIGIN,
+    catalog_db: Path | None = None,
+    read_only: bool = False,
 ) -> FastAPI:
     if origin != OWNER_ORIGIN:
         raise ValueError("Owner service requires pinned localhost:8766 origin")
-    if not isinstance(approvals, SQLiteApprovalStore) or not isinstance(decider, TrustedOwnerPasskeyDecider):
-        raise TypeError("A protected approval store and WebAuthn decider are mandatory")
+    if not isinstance(approvals, SQLiteApprovalStore):
+        raise TypeError("An explicit approval store is required")
+    if read_only:
+        if decider is not None or receipt_issuer is not None:
+            raise TypeError("Read-only discovery UI cannot accept approval authority")
+    elif not isinstance(decider, TrustedOwnerPasskeyDecider):
+        raise TypeError("A WebAuthn decider is mandatory for owner decisions")
 
     app = FastAPI(title="AURA Trusted Owner", docs_url=None, redoc_url=None, openapi_url=None)
     package_root = Path(__file__).resolve().parent
@@ -102,7 +111,8 @@ def create_owner_control_plane(
 
     @app.get("/api/owner/health")
     def health():
-        return {"status": "review_only", "approval_auth": "webauthn-es256-uv",
+        return {"status": "review_only", "approval_auth": (
+            "not_provisioned" if read_only else "webauthn-es256-uv"),
                 "activation_allowed": False, "origin": origin}
 
     @app.get("/api/owner/pending")
@@ -129,8 +139,40 @@ def create_owner_control_plane(
             )
         ], "mode": "read_only_until_owner_auth"}
 
+    @app.get("/api/owner/discoveries")
+    def discoveries():
+        # The Core discovery catalog is untrusted, display-only data.
+        # Read in SQLite read-only mode; never use it as an approval store.
+        if catalog_db is None:
+            return {"items": [], "mode": "untrusted_discovery_review"}
+        path = Path(catalog_db)
+        if path.is_symlink() or (path.exists() and not path.is_file()):
+            raise HTTPException(503, "Discovery catalog path rejected")
+        if not path.is_file():
+            return {"items": [], "mode": "untrusted_discovery_review"}
+        uri = "file:" + quote(path.resolve().as_posix(), safe="/:") + "?mode=ro"
+        try:
+            with sqlite3.connect(uri, uri=True, timeout=2) as db:
+                rows = db.execute(
+                    "SELECT repository,url,description,license,capability_hint,"
+                    "package_status,package_error,stage_attempts "
+                    "FROM evolution_proposals WHERE status='pending_owner_review' "
+                    "ORDER BY created_at DESC LIMIT 50"
+                ).fetchall()
+        except sqlite3.Error as exc:
+            raise HTTPException(503, "Discovery catalog unavailable") from exc
+        keys = ("repository", "url", "description", "license", "capability_hint",
+                "package_status", "package_error", "stage_attempts")
+        return {
+            "items": [dict(zip(keys, row)) for row in rows],
+            "mode": "untrusted_discovery_review",
+            "owner_approved": False, "execution_allowed": False,
+        }
+
     @app.post("/api/owner/challenge")
     def challenge(body: ChallengeBody):
+        if read_only:
+            raise HTTPException(503, "Owner passkey service is not provisioned")
         try:
             UUID(body.approval_id)
             return decider.issue(body.approval_id)
@@ -139,6 +181,8 @@ def create_owner_control_plane(
 
     @app.post("/api/owner/decision")
     def decide(body: DecisionBody):
+        if read_only:
+            raise HTTPException(503, "Owner passkey service is not provisioned")
         try:
             UUID(body.challenge_id)
             assertion = WebAuthnOwnerAssertion(
