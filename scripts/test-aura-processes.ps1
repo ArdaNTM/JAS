@@ -8,6 +8,9 @@ $fake = @(
     @{ CommandLine = ('"' + $py + '" -m aura_core'); ExecutablePath=$py; ProcessId=101; Expected=$true },
     @{ CommandLine = ('"C:\Program Files\nodejs\node.exe" "' + $vite + '" --port 5173'); ExecutablePath="C:\Program Files\nodejs\node.exe"; ProcessId=102; Expected=$true },
     @{ CommandLine = ('"' + $py + '" -c "print(1)"'); ExecutablePath=$py; ProcessId=103; Expected=$false },
+    @{ CommandLine = ('"C:\Program Files\nodejs\node.exe" "' + $vite + '" preview --port 4173'); ExecutablePath="C:\Program Files\nodejs\node.exe"; ProcessId=106; Expected=$true },
+    @{ CommandLine = ('"C:\Program Files\nodejs\node.exe" "' + $vite.Replace('\','/') + '" preview --port 4173'); ExecutablePath="C:\Program Files\nodejs\node.exe"; ProcessId=107; Expected=$true },
+    @{ CommandLine = '"C:\Program Files\nodejs\node.exe" "D:\Other\aura-ui\node_modules\vite\bin\vite.js" preview --port 4173'; ExecutablePath="C:\Program Files\nodejs\node.exe"; ProcessId=108; Expected=$false },
     @{ CommandLine = '"C:\Program Files\nodejs\node.exe" C:\AnotherApp\vite\bin\vite.js'; ExecutablePath="C:\Program Files\nodejs\node.exe"; ProcessId=104; Expected=$false },
     @{ CommandLine = '"C:\Python313\python.exe" -m aura_core'; ExecutablePath="C:\Python313\python.exe"; ProcessId=105; Expected=$false }
 )

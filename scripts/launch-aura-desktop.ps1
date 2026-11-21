@@ -299,7 +299,12 @@ function Start-Ui {
     Reset-LogFile -Path $UiLogOut
     Reset-LogFile -Path $UiLogErr
 
-    $uiCommand = '""' + $Npm + '" run preview -- --host 127.0.0.1 --port ' + $UiPort + ' --strictPort > "' + $UiLogOut + '" 2> "' + $UiLogErr + '""'
+    # Launch Vite CLI by its repository-absolute path, so stale processes
+    # are positively identifiable from Win32_Process.CommandLine.
+    $node = Get-Command node.exe -ErrorAction Stop
+    $vite = Join-Path $Ui "node_modules\vite\bin\vite.js"
+    if (-not (Test-Path $vite)) { throw "AURA UI dependencies missing: npm ci is required." }
+    $uiCommand = '""' + $node.Source + '" "' + $vite + '" preview --host 127.0.0.1 --port ' + $UiPort + ' --strictPort > "' + $UiLogOut + '" 2> "' + $UiLogErr + '""'
 
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = "cmd.exe"
@@ -526,7 +531,8 @@ if (-not (Test-Path $Ui)) {
 }
 
 Stop-AuraRelatedProcesses
-Start-Sleep -Milliseconds 700
+# Allow Vite's listener to drain after its process exits.
+Start-Sleep -Milliseconds 1400
 . (Join-Path $PSScriptRoot "aura-processes.ps1")
 $CorePort = 8000
 $UiPort = 4173
@@ -624,9 +630,21 @@ function Assert-OllamaReady {
         if ($null -eq $tags) { throw "Ollama did not become ready on 127.0.0.1:11434." }
     }
     $names = @($tags.models | ForEach-Object { [string]$_.name })
-    if ($names -notcontains "qwen3:latest") {
-        throw "qwen3:latest model not installed; run 'ollama list' and 'ollama pull qwen3'."
+    $fast = "qwen3:4b-instruct-2507-q4_K_M"
+    if ($names -contains $fast) {
+        $selected = $fast
+        # Instruct-2507 is non-thinking; avoid unsupported think=false.
+        $env:AURA_OLLAMA_FAST_RESPONSE = "0"
+        $env:AURA_MAX_TOKENS = "1024"
+    } elseif ($names -contains "qwen3:latest") {
+        $selected = "qwen3:latest"
+        $env:AURA_OLLAMA_FAST_RESPONSE = "1"
+    } else {
+        throw "Ollama model missing. Install '$fast' or 'qwen3:latest'."
     }
+    $env:AURA_MODEL = "ollama/$selected"
+    $env:AURA_LLM_MODEL = $selected
+    Write-Host "AURA local model: $selected"
 }
 Assert-OllamaReady
 $Splash = Show-Splash
