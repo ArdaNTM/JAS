@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 import unicodedata
 
 from aura_core.kernel.permissions import RiskLevel
@@ -149,7 +150,10 @@ class DirectivePlanner:
                 ),
             )
 
-        if any(term in normalized for term in self._RESEARCH_TERMS):
+        # Match standalone words, not substrings: "ara" inside "bilgisayar"
+        # must never turn an ordinary question into a search tool invocation.
+        research_words = set(re.findall(r"[a-z0-9_]+", normalized))
+        if research_words.intersection(self._RESEARCH_TERMS):
             return GeneratedPlan(
                 resource_scope="public-web",
                 steps=(
