@@ -206,6 +206,7 @@ def _validated_files(archive: bytes) -> tuple[dict[str, bytes], str]:
     result: dict[str, bytes] = {}
     seen: set[str] = set()
     total = 0
+    archive_roots: set[str] = set()
     with z:
         infos = z.infolist()
         if len(infos) > _MAX_FILES + 80:
@@ -218,6 +219,9 @@ def _validated_files(archive: bytes) -> tuple[dict[str, bytes], str]:
             segments = PurePosixPath(raw).parts
             if len(segments) < 2 or any(part in _DENIED_PARTS for part in segments):
                 raise StagingRejected("Unsafe ZIP path segments")
+            archive_roots.add(segments[0])
+            if len(archive_roots) != 1:
+                raise StagingRejected("Archive has multiple source roots")
             relative_parts = segments[1:]
             if any(part.rstrip(" .") != part or
                    part.split(".")[0].lower() in _WIN_RESERVED
@@ -253,6 +257,17 @@ def _validated_files(archive: bytes) -> tuple[dict[str, bytes], str]:
             result[rel] = data
     if not result:
         raise StagingRejected("No eligible source files found")
+    readmes = [
+        data.decode("utf-8", "replace")
+        for path, data in result.items()
+        if path.rsplit("/", 1)[-1].lower() in ("readme.md", "readme.rst", "readme.txt")
+    ]
+    if not readmes or not any(re.search(
+        r"(?i)\b(?:offline|fully local|runs? locally|self.hosted|"
+        r"no api[ _-]?key|required no external credentials)\b",
+        readme,
+    ) for readme in readmes):
+        raise StagingRejected("Local/no-paid-key README evidence required")
     entrypoints = sorted(path for path in result if path.rsplit("/", 1)[-1] in _ENTRY)
     if not entrypoints:
         raise StagingRejected("No recognizable MCP/local Python or JS entrypoint")

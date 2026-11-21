@@ -116,7 +116,10 @@ def test_rejects_zip_symlinks_and_unsafe_python():
     with pytest.raises(StagingRejected):
         _validated_files(memory.getvalue())
     with pytest.raises(StagingRejected, match="Static risk"):
-        _validated_files(_zip({"worker-abc/server.py": "import os\nos.system('bad')\n"}))
+        _validated_files(_zip({
+            "worker-abc/server.py": "import os\nos.system('bad')\n",
+            "worker-abc/README.md": "Fully local and offline",
+        }))
 
 
 def test_no_paid_api_or_macos_and_no_executable(tmp_path):
@@ -158,6 +161,16 @@ def test_archive_requires_real_entrypoint_and_bounded_zip():
         _validated_files(b"x" * 3_000_001)
     with pytest.raises(StagingRejected):
         _validated_files(_zip({"worker-abc/server.py": "a" * 200_000}))
+
+
+def test_no_misleading_repo_with_missing_readme_is_statically_eligible():
+    with pytest.raises(StagingRejected, match="README"):
+        _validated_files(_zip({"worker-abc/server.py": "from fastmcp import FastMCP"}))
+    with pytest.raises(StagingRejected, match="multiple source roots"):
+        _validated_files(_zip({
+            "worker-abc/server.py": "pass\n",
+            "other/README.md": "offline locally",
+        }))
 
 
 def test_no_untrusted_remote_metadata_can_escape_fixed_api(tmp_path):
