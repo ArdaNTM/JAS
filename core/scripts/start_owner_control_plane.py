@@ -1,8 +1,8 @@
 """Run the independent owner UI under a protected OS account.
 
-Opt-in, fail-closed. Requires pre-enrolled WebAuthn ES256 credential and
-owner-provisioned database files outside the AURA checkout. Not launched by
-Start-AURA or enabled by AURA_BACKGROUND_THINKING_ENABLED.
+Passkey approval requires pre-enrolled WebAuthn ES256 credentials and private
+owner files outside checkout. Until enrollment, the local CLI exposes only the
+separate untrusted read-only discovery catalog, never approval/activation.
 """
 from __future__ import annotations
 
@@ -94,13 +94,19 @@ def main() -> None:
     # Existing owner identity must be explicitly provisioned by the dedicated
     # Owner account. No automatic enrollment or insecure key generation.
     parser.add_argument("--owner-root", default=None)
+    parser.add_argument(
+        "--require-enrollment", action="store_true",
+        help="Fail closed instead of offering read-only catalog review",
+    )
     parser.add_argument("--owner-config")
     parser.add_argument("--approval-db")
     parser.add_argument("--challenge-db")
     parser.add_argument("--owner-receipt-key")
     parser.add_argument("--owner-receipt-key-id")
     args = parser.parse_args()
-    evolution_root = os.environ.get("AURA_EVOLUTION_ROOT")
+    evolution_root = os.environ.get("AURA_EVOLUTION_ROOT") or (
+        r"D:\AURA\Evolution" if os.name == "nt" else None
+    )
     root = Path(args.owner_root) if args.owner_root else (
         Path(evolution_root) / "owner" if evolution_root else None
     )
@@ -113,13 +119,28 @@ def main() -> None:
             return explicit
         assert root is not None
         return str(root / filename)
-    app = build_app(
-        owner_config=owner_file(args.owner_config, "owner-passkey.json"),
-        approval_db=owner_file(args.approval_db, "approvals.sqlite"),
-        challenge_db=owner_file(args.challenge_db, "challenges.sqlite"),
-        owner_receipt_key=args.owner_receipt_key,
-        owner_receipt_key_id=args.owner_receipt_key_id,
-    )
+    config_path = Path(owner_file(args.owner_config, "owner-passkey.json"))
+    # Only the implicit, not-yet-enrolled local Owner can choose inert review.
+    # Explicit credentials, partial/corrupt passkeys, and strict mode must
+    # always go through build_app() with protected_path() NTFS/DPAPI checks.
+    explicitly_configured = any((
+        args.owner_config, args.approval_db, args.challenge_db,
+        args.owner_receipt_key, args.owner_receipt_key_id,
+    ))
+    if (not args.require_enrollment and not explicitly_configured
+            and not config_path.exists() and not config_path.is_symlink()):
+        if root is None:
+            parser.error("Read-only discovery requires an external Evolution owner root")
+        from aura_core.evolution.owner_control_plane_http import build_local_review_app
+        app = build_local_review_app(root.parent)
+    else:
+        app = build_app(
+            owner_config=str(config_path),
+            approval_db=owner_file(args.approval_db, "approvals.sqlite"),
+            challenge_db=owner_file(args.challenge_db, "challenges.sqlite"),
+            owner_receipt_key=args.owner_receipt_key,
+            owner_receipt_key_id=args.owner_receipt_key_id,
+        )
     # No --reload, no multi-worker, no exposed NIC.
     uvicorn.run(app, host="127.0.0.1", port=8766, access_log=False,
                 reload=False, workers=1)
