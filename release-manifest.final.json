@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-19T07:08:05.113Z",
-  "git_commit": "19da39d819cefce0dff6c9f4b5ce7dd963288018",
+  "generated_at": "2026-11-22T00:15:00.000Z",
+  "git_commit": "c7cfe64a195517f0a14868bfd846ba392de83844",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:96dc3956807384fdd59a86c55ba397da3e1544273498673f6273be22f01f4287",
-  "file_count": 449,
+  "release_digest": "sha256:ab929d9428ff87975d3539c35864b8ab0db459f7342b5a4ed29b9ce2ba649369",
+  "file_count": 450,
   "files": [
     {
       "path": ".gitattributes",
@@ -38,7 +38,7 @@
     },
     {
       "path": ".github/workflows/aura-windows-launcher.yml",
-      "sha256": "3efdccdfbdac88e833a16560d6e80db90ebdba749d56a8e90a73753b40c4698c"
+      "sha256": "11f1d3e61db502cdae4618b712230d933c871dc07c7b5f7c745ec36e8a0af5dc"
     },
     {
       "path": ".github/workflows/aura-windows-owner-security.yml",
@@ -282,7 +282,7 @@
     },
     {
       "path": "core/scripts/provision_windows_owner.ps1",
-      "sha256": "5e94114eb08fedcd639f237534ae75bb9a82090f8a4b05ba10cc20779da27f5f"
+      "sha256": "ef92186e31ae5759b79753051b346ef2fe714b45cdafab929afa11dbfe1d69de"
     },
     {
       "path": "core/scripts/run_osworld_v2_live.py",
@@ -290,7 +290,7 @@
     },
     {
       "path": "core/scripts/start_owner_control_plane.py",
-      "sha256": "18f73226a5010b41a94b9e1ec5694a4db9085450f970432acd1c0b657166e2bc"
+      "sha256": "c951d0ca045318f10d41a183825a39b68206fe469c831b625914ad65fb8d994f"
     },
     {
       "path": "core/scripts/start_pinned_egress_proxy.py",
@@ -886,7 +886,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/external_staging.py",
-      "sha256": "6b4ebd564debd1bc13318f86f59a2edad93aa6a9430913e8b2073023fbc7e274"
+      "sha256": "4fcc5e3e2b7bb7e144d6ff97f6c96b17f82bb162b09a917b91dfe6446232d55d"
     },
     {
       "path": "core/src/aura_core/evolution/goal_tree.py",
@@ -906,7 +906,11 @@
     },
     {
       "path": "core/src/aura_core/evolution/owner_control_plane.py",
-      "sha256": "fbf5c5d7c2b2447e3dd6403102b24565cdde2221160e9a3ecaacf297cdc60da6"
+      "sha256": "8a9212dd73f3bf934d80926820172e9215a17bbedc34c6c6c73b5334bcc0a7bf"
+    },
+    {
+      "path": "core/src/aura_core/evolution/owner_control_plane_http.py",
+      "sha256": "12364458a1de96b775ee9adee768860e6b119d786e3ad9f95da0edbe891154d1"
     },
     {
       "path": "core/src/aura_core/evolution/owner_enroll.html",
@@ -938,11 +942,11 @@
     },
     {
       "path": "core/src/aura_core/evolution/owner_review.html",
-      "sha256": "bd5cb59a659fe4a52c8c70ed7932df180bfddf26cf33ed27880a4be60a15d7a0"
+      "sha256": "0d24acff173669df43ff2ae118a355035cf6a447f108c6ab884e12cabdff79cf"
     },
     {
       "path": "core/src/aura_core/evolution/owner_review.js",
-      "sha256": "1fff3a90b5da2ccd4aef3d527b689d1d6b46bbb36948c560f49e6414bbc3fb5a"
+      "sha256": "5ca4b3b9b8603143c09c04c744708a4ad0dbf2d32fe7f6dd5a0d0dfa32890203"
     },
     {
       "path": "core/src/aura_core/evolution/sandbox_attestor.py",
@@ -954,7 +958,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/self_discovery.py",
-      "sha256": "84947fdc3bad6bc0f03e53df5f487fae919c6ecfaa973ff0d7a4340f28365f70"
+      "sha256": "f3415869a432414f24a760ec3fd70f98e8ceaccf9f7e418c1863f09ff2cab6a2"
     },
     {
       "path": "core/src/aura_core/evolution/self_discovery_api.py",
