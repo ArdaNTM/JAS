@@ -1,0 +1,34 @@
+name: AURA Windows Silent Desktop Shortcut
+
+on:
+  pull_request:
+    paths:
+      - "scripts/create-aura-shortcut.ps1"
+      - "scripts/launch-aura-desktop.ps1"
+      - "scripts/launch-aura-silent.vbs"
+      - "scripts/test-aura-silent-launcher.ps1"
+      - ".github/workflows/aura-windows-silent-launcher.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  silent-launcher:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify PR patch whitespace
+        shell: pwsh
+        run: |
+          git diff --check HEAD^1 HEAD
+          if ($LASTEXITCODE -ne 0) { throw "git diff --check failed" }
+      - name: Test silent shortcut with Windows PowerShell 5.1
+        shell: cmd
+        run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\test-aura-silent-launcher.ps1
+      - name: Test silent shortcut with PowerShell 7
+        shell: pwsh
+        run: ./scripts/test-aura-silent-launcher.ps1
