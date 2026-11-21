@@ -14,6 +14,7 @@ import {
   generateTaskPlan,
   getHealth,
   getUIContract,
+  runSelfDiscovery,
   type HealthResponse,
   type TaskStep,
 } from "./api/client";
@@ -359,6 +360,43 @@ export default function App() {
 
     try {
       const generated = await generateTaskPlan(text);
+
+      if (generated.resource_scope === "local-discovery" && generated.steps.length === 0) {
+        setTaskId(null);
+        setPlan([]);
+        setResearchOutput(null);
+        setSystemState("executing");
+        setTaskState("AÇIK KAYNAK KEŞFİ");
+        const found = await runSelfDiscovery();
+        const descriptions = found.items.slice(0, 6).map((item) =>
+          [
+            item.repository + " · " + item.license,
+            item.description,
+            "Katkı: " + item.capability_hint,
+            item.url,
+          ].join("\n")
+        );
+        const reply = [
+          "Ücretsiz/açık kaynak GitHub keşfi tamamlandı.",
+          "Yeni öneri: " + (found.new_count ?? 0) +
+            " · Kalıcı inceleme kuyruğu: " + found.proposal_count,
+          ...descriptions,
+          descriptions.length === 0
+            ? "Bu taramada doğrulanabilir yeni aday bulunamadı. Lisans/README filtresi sıkıdır."
+            : "Adaylar yalnızca metadata incelemesidir; kod indirilmedi veya çalıştırılmadı.",
+          "Onay ve güvenli entegrasyon için ayrı Trusted Owner Control Plane incelemesi gerekir.",
+        ].join("\n\n");
+        setChatHistory((current) => [...current, {
+          id: makeId(), role: "assistant" as const,
+          content: reply, source: "MCP Gateway · GitHub Public Search",
+          reviewAvailable: true,
+        }].slice(-40));
+        setSystemState("idle");
+        setSessionState("idle");
+        setTaskState("HAZIR");
+        pushTelemetry("GITHUB ÖNERİLERİ İNCELEME KUYRUĞUNA ALINDI");
+        return;
+      }
 
       if (generated.resource_scope === "local-assistant" &&
           generated.steps.length === 0) {

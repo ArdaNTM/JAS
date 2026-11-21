@@ -101,6 +101,15 @@ class DirectivePlanner:
         normalized = _ascii_fold(text)
         tokens = set(normalized.split())
 
+        # Discovery is an explicit user action; plain capability questions do
+        # not trigger any GitHub fetch or permission operation.
+        if (normalized.strip(" .!?") == "kendini gelistir"
+                or ("yeni" in normalized and "ucretsiz" in normalized
+                    and "ozellik" in normalized and "arastir" in normalized)
+                or ("github" in normalized and "kendine" in normalized
+                    and "arac" in normalized and "bul" in normalized)):
+            return GeneratedPlan(resource_scope="local-discovery", steps=())
+
         # Question-first classification runs before search keyword matching;
         # "hangi araştırma araçların var?" is not a request to search the web.
         if any(term in normalized for term in self._CAPABILITY_QUESTIONS):

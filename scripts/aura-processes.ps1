@@ -48,11 +48,11 @@ function Stop-AuraStaleProcesses {
     foreach ($port in @(8000, 4173, 5173)) {
         $listeners = @(Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue)
         foreach ($listener in $listeners) {
-            $pid = [int]$listener.OwningProcess
-            if ($pid -le 0 -or $owned.ContainsKey($pid)) { continue }
-            $process = $all | Where-Object { [int]$_.ProcessId -eq $pid } | Select-Object -First 1
+            $ownerProcessId = [int]$listener.OwningProcess
+            if ($ownerProcessId -le 0 -or $owned.ContainsKey($ownerProcessId)) { continue }
+            $process = $all | Where-Object { [int]$_.ProcessId -eq $ownerProcessId } | Select-Object -First 1
             if ($null -ne $process -and (Test-AuraOwnedProcess -Process $process -Root $Root)) {
-                $owned[$pid] = $true
+                $owned[$ownerProcessId] = $true
             }
         }
     }

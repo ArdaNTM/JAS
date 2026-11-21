@@ -72,3 +72,14 @@ def test_questions_do_not_implicitly_authorize_tools():
     plan = DirectivePlanner().plan("Bilgisayarımı silebilir misin?")
     assert plan.resource_scope == "local-assistant"
     assert plan.steps == ()
+
+
+def test_discovery_directives_are_explicit_and_never_research_tasks():
+    for phrase in (
+        "Kendini geliştir",
+        "Yeni ücretsiz özellikler araştır",
+        "GitHub'dan kendine katabileceğin araçlar bul",
+    ):
+        plan = DirectivePlanner().plan(phrase)
+        assert plan.resource_scope == "local-discovery"
+        assert plan.steps == ()
