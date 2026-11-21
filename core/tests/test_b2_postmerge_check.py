@@ -111,3 +111,12 @@ def test_scoped_json_report_requires_explicit_pytest_flags():
         b2.main(["--list-only", "--run-pytest"])
     with pytest.raises(SystemExit):
         b2.main(["--list-only", "--evidence-out", "report.json"])
+
+
+def test_external_temp_and_sibling_prefix_are_not_checkout_paths(tmp_path):
+    repo = ROOT.resolve()
+    assert b2._inside_tree(repo / "core" / "tests", repo)
+    assert not b2._inside_tree(repo.parent / (repo.name + "-sibling"), repo)
+    # Pytest's external temporary root must not be mistaken for a checkout
+    # child. If CI configured an unsafe --basetemp under JAS this MUST fail.
+    assert not b2._inside_tree(tmp_path.resolve(), repo)

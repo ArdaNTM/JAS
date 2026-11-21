@@ -27,7 +27,23 @@ V1_SIMULATION = frozenset({81, 85, 86, 87, 88, 89, 90})
 V1_FINAL_WINDOWS = frozenset({1, 6, 7, 9, 11, 13, 14, 16, 17, 18, 19, 20, 22, 23, 24, 26, 28, 31, 32, 49, 54, 55, 57, 69, 77, 78, 79, 80, 82, 83, 84, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 104, 106, 113, 116})
 V1_FINAL_HYPERV = frozenset({25, 27, 33, 45, 51, 60, 101})
 V1_ACCEPTED = V1_SOFTWARE | V1_SIMULATION | V1_FINAL_WINDOWS | V1_FINAL_HYPERV
-_TEST_PATH = re.compile(r"(?:core/)?tests/[A-Za-z0-9_./-]+\.py")
+_TEST_PATH = re.compile(r"(?:core/)?tests/[A-Za-z0-9_./-]+\\.py")
+
+
+def _inside_tree(candidate: Path, tree_root: Path) -> bool:
+    """Check resolved path membership across Windows casing and drive changes.
+
+    A path on a different volume (e.g. TEMP on C: and JAS on D:) is
+    outside, not an error; a sibling with a common textual prefix is
+    NOT inside. No paths inside the checkout are exempted.
+    """
+    child = candidate.resolve()
+    root = tree_root.resolve()
+    try:
+        common = os.path.commonpath((str(child), str(root)))
+    except ValueError:
+        return False
+    return os.path.normcase(common) == os.path.normcase(str(root))
 
 
 def load_b2(repo: Path) -> tuple[dict, dict]:
@@ -102,7 +118,7 @@ def focused_tests(repo: Path, tracker: dict, catalog: dict, *, target_ids: list[
             normalized = item.removeprefix("core/")
             actual = (repo / "core" / normalized).resolve()
             tests_dir = (repo / "core/tests").resolve()
-            if not actual.is_relative_to(tests_dir):
+            if not _inside_tree(actual, tests_dir):
                 raise ValueError(f"B2 feature #{i} points outside test tree: {item}")
             if not actual.is_file():
                 missing.add(normalized)
@@ -130,7 +146,7 @@ def run_pytest_evidence(
     """
     repo = repo.resolve()
     destination = output.resolve()
-    if destination.is_relative_to(repo) or not destination.parent.is_dir():
+    if _inside_tree(destination, repo) or not destination.parent.is_dir():
         raise ValueError("Evidence output must be outside the checkout")
     if re.fullmatch(r"[0-9a-f]{40}", head) is None:
         raise ValueError("Evidence requires an exact checked-out Git HEAD")
@@ -154,7 +170,7 @@ def run_pytest_evidence(
     hashes: list[dict[str, str]] = []
     for name in paths:
         path = (repo / "core" / name).resolve()
-        if not path.is_relative_to((repo / "core/tests").resolve()) or not path.is_file():
+        if not _inside_tree(path, repo / "core/tests") or not path.is_file():
             raise ValueError("Selected pytest source is no longer under core/tests")
         hashes.append({"path": name, "sha256": hashlib.sha256(path.read_bytes()).hexdigest()})
     success = bool(paths and baseline_ok and code == 0)
