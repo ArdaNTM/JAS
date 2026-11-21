@@ -64,8 +64,8 @@ _LOCAL_TOOLS = re.compile(
 
 
 _NO_KEY_EVIDENCE = re.compile(
-    r"(?i)\\b(?:zero\\s+api[\\s_-]*keys?|no\\s+api[\\s_-]*keys?|"
-    r"without\\s+(?:an?\\s+)?api[\\s_-]*key|fully\\s+offline)\\b"
+    r"(?i)\b(?:zero\s+api[\s_-]*keys?|no\s+api[\s_-]*keys?|"
+    r"without\s+(?:an?\s+)?api[\s_-]*key|fully\s+offline)\b"
 )
 
 
