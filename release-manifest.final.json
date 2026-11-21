@@ -5,8 +5,8 @@
   "generated_at": "2026-11-19T07:08:05.113Z",
   "git_commit": "19da39d819cefce0dff6c9f4b5ce7dd963288018",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:0d93b0c680f09f663680f7e05ee61c6572e0d9996cfc22840d3820923e793f40",
-  "file_count": 444,
+  "release_digest": "sha256:f82cc31241237aec951438e351217e8547bffe81eb409fc139608b40eb022a69",
+  "file_count": 445,
   "files": [
     {
       "path": ".gitattributes",
@@ -66,7 +66,7 @@
     },
     {
       "path": "aura-ui/src/api/client.ts",
-      "sha256": "a81c163285d7aa5cf5977e1b1fdbe8edced75735294a371d50d90f9dce1aaf7f"
+      "sha256": "299f9c5f118759cc8fc6821e54421736204b250835d4cfd68838984b5cd4646b"
     },
     {
       "path": "aura-ui/src/api/contracts.ts",
@@ -78,7 +78,7 @@
     },
     {
       "path": "aura-ui/src/App.tsx",
-      "sha256": "8111a7dee363c230fb16df42b878ce36db79d4f292d118667ae5d05481a422e9"
+      "sha256": "979f99c2edc37088b7652825492c8803e9509aca77f67dceb9cc4d959551cd0d"
     },
     {
       "path": "aura-ui/src/assets/hero.png",
@@ -94,7 +94,7 @@
     },
     {
       "path": "aura-ui/src/AuraJarvisBridge.tsx",
-      "sha256": "d188bea11b86a06b78bb505a2b505dfafd32ac5655e56b65afcb7b00629ecd4b"
+      "sha256": "04ed0beb480c2ecd0bbebb328f18875168f6c9fa70d1842ade66bf14ab0e4337"
     },
     {
       "path": "aura-ui/src/components/ApprovalPanel.tsx",
@@ -113,6 +113,10 @@
       "sha256": "5f4fad6e4d4115ca000ca5af31465e6e40c550db2f3f02e921962b36945e89fd"
     },
     {
+      "path": "aura-ui/src/components/ChatTranscript.tsx",
+      "sha256": "8e7e432b4530c3d7b620abc9235bffc6e5c69e583376a38d2b181675a29260fa"
+    },
+    {
       "path": "aura-ui/src/components/DynamicHologram3D.tsx",
       "sha256": "c1c4ec0921918f6eff2d959be54246e5a91e2521052a30d24eaa91c6f182054e"
     },
@@ -126,7 +130,7 @@
     },
     {
       "path": "aura-ui/src/components/StageCControlPanel.tsx",
-      "sha256": "58aa7a73d17dd89253924161127e79377dc45e2254db841ecad26fd3b668d63a"
+      "sha256": "16911e3baa9b338ac21daf79ebb352e8fad157970f86ff1dae4289e6024e5105"
     },
     {
       "path": "aura-ui/src/components/TaskConsole.tsx",
@@ -362,7 +366,7 @@
     },
     {
       "path": "core/src/aura_core/application/api.py",
-      "sha256": "83e10a2cfea1d53fb42e5b410fa072426fb1af71c620234051f80d4589051371"
+      "sha256": "7376ea83d659bae4d111743153a1aeaf99f03feca4f0bb3c6c8c3d73ec0c0879"
     },
     {
       "path": "core/src/aura_core/application/approval_api.py",
@@ -494,7 +498,7 @@
     },
     {
       "path": "core/src/aura_core/application/health_api.py",
-      "sha256": "ec0c505314953bc3a451137e859c4a4a9808e6e2ab34388b3310cd20cc3232e5"
+      "sha256": "0749704a49b23781b9bfa03f2c981d5c58c632ca927dc589252f61b280106093"
     },
     {
       "path": "core/src/aura_core/application/hud_api.py",
@@ -666,7 +670,7 @@
     },
     {
       "path": "core/src/aura_core/application/stage_c_api.py",
-      "sha256": "07cc59e2e12c010a5b35c3bc4f3a716fa4dd858c8f6b81bd882e749951a4ce55"
+      "sha256": "fe779ffbad4a7a3a338384af050557963eef65faecac608cc1f1b208781796c1"
     },
     {
       "path": "core/src/aura_core/application/stage_c_runtime.py",
@@ -778,7 +782,7 @@
     },
     {
       "path": "core/src/aura_core/config/runtime.py",
-      "sha256": "c5b4ea52f4d63159e7aa1ac7ddff555a28b340680012f44444c261a1ffa90a67"
+      "sha256": "5d145766dc3434e984923b94653e851be8b667d19e530abd671aa259c9f532c7"
     },
     {
       "path": "core/src/aura_core/config/storage.py",
@@ -1126,7 +1130,7 @@
     },
     {
       "path": "core/src/aura_core/main.py",
-      "sha256": "b32526e17f736e682d2445d26836b2e0dea3fe863cc30b6ec6e675c4dd896279"
+      "sha256": "e0aa030046b2f1ae1465bcf9f00decf6c06ec1eff64b3901422366d38bc19a45"
     },
     {
       "path": "core/src/aura_core/mcp/__init__.py",
@@ -1558,7 +1562,7 @@
     },
     {
       "path": "core/src/aura_core/runtime/adapter.py",
-      "sha256": "08949e0c14e385415d930bee775342048883fd88886d0729344ad540d6f4e358"
+      "sha256": "a0ce9f43ed51ab884b30dbf25bd03c03ee88400542e6ccaface74a89ca3eaf0d"
     },
     {
       "path": "core/src/aura_core/runtime/backend.py",
@@ -1590,7 +1594,7 @@
     },
     {
       "path": "core/src/aura_core/runtime/transport.py",
-      "sha256": "bf5cd0f9b4603c32b872cc2cd3b9c4caac5b8303204bb7515b4657cb19eef30f"
+      "sha256": "6000ac69d714293f68c38857595fab73a230a1ac341611975aa800c863dc94ce"
     },
     {
       "path": "core/src/aura_core/science/analysis.py",

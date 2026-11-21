@@ -43,3 +43,19 @@ def test_missing_event_bus_is_not_silently_reported_running():
     components = client().get("/api/health").json()["components"]
     assert components["event_bus"]["status"] == "not_configured"
     assert components["learning"]["status"] == "not_configured"
+
+
+def test_local_reflection_health_reports_actual_running_state():
+    runtime = SimpleNamespace(status=lambda: {"enabled": True, "running": True})
+    kernel = SimpleNamespace(event_bus=object(), state="running")
+    app = FastAPI()
+    app.include_router(router)
+    app.state.event_bus_runtime = runtime
+    app.state.kernel = kernel
+    app.state.mcp_gateway = object()
+    app.state.permission_engine = object()
+    app.state.learning_scheduler = None
+    app.state.background_thinking = SimpleNamespace(status=lambda: {"enabled": True})
+    assert TestClient(app).get("/api/health").json()["components"]["learning"]["status"] == "running"
+    app.state.background_thinking = SimpleNamespace(status=lambda: {"enabled": False})
+    assert TestClient(app).get("/api/health").json()["components"]["learning"]["status"] == "stopped"

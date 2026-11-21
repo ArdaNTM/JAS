@@ -19,6 +19,10 @@ class RuntimeConfig(BaseModel):
         if not model:
             raise RuntimeError("AURA_MODEL environment variable is required")
 
+        if runtime.strip().casefold() == "ollama":
+            from aura_core.runtime.adapter import normalize_ollama_model
+            model = normalize_ollama_model(model)
+
         temperature = float(os.getenv("AURA_TEMPERATURE", "0.7"))
 
         max_tokens_raw = os.getenv("AURA_MAX_TOKENS")

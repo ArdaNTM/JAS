@@ -25,6 +25,19 @@ class JsonTransport(Protocol):
         ...
 
 
+def _ollama_http_error(exc: httpx.HTTPStatusError) -> BackendUnavailableError:
+    code = exc.response.status_code
+    if code == 404:
+        return BackendUnavailableError(
+            "Ollama model bulunamadi. 'ollama list' ve 'ollama pull qwen3' komutlarini kontrol edin."
+        )
+    if code in {401, 403}:
+        return BackendUnavailableError("Ollama istegi yetkilendirme nedeniyle reddedildi.")
+    if code >= 500:
+        return BackendUnavailableError("Ollama sunucusu yanit veremiyor (HTTP 5xx).")
+    return BackendUnavailableError(f"Ollama istegi reddedildi (HTTP {code}).")
+
+
 class HttpJsonTransport:
     def get_json(
         self,
@@ -111,5 +124,15 @@ class HttpJsonTransport:
                         if event.get("done") is True:
                             return
                     raise ValueError("Inference stream closed without terminal completion")
+        except httpx.HTTPStatusError as exc:
+            raise _ollama_http_error(exc) from exc
+        except httpx.ReadTimeout as exc:
+            raise BackendUnavailableError(
+                "Ollama model yaniti zaman asimina ugradi; AURA_BACKEND_TIMEOUT ve model kaynaklarini kontrol edin."
+            ) from exc
+        except httpx.ConnectError as exc:
+            raise BackendUnavailableError(
+                "Ollama baglantisi kurulamadi; yerel Ollama servisini kontrol edin."
+            ) from exc
         except httpx.RequestError as exc:
-            raise BackendUnavailableError("Inference streaming backend is unavailable") from exc
+            raise BackendUnavailableError("Ollama akisi sirasinda baglanti kesildi.") from exc

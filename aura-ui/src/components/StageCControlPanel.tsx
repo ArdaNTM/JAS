@@ -41,7 +41,8 @@ export default function StageCControlPanel() {
       }
       const current: StageCStatus = await response.json();
       setStatus(current);
-      if (current.kill_switch_engaged) setNotice("ACİL DURDURMA KİLİTLİ — yeni görev yok");
+      if (!current.enabled) setNotice("Aşama C kapalı: güvenli adaptör ve ayrı onay deposu gerekli.");
+      else if (current.kill_switch_engaged) setNotice("ACİL DURDURMA KİLİTLİ — yeni görev yok");
     } catch {
       setStatus(null);
       setNotice("Kontrol kanalına erişilemiyor");
@@ -129,7 +130,7 @@ export default function StageCControlPanel() {
       {expanded && (
         <div className="mt-4 space-y-3 border-t border-amber-950 pt-4">
           <p role="status" className="text-amber-300">{notice}</p>
-          {status && (
+          {status?.enabled && (
             <>
               <p>Yetki: Bağımsız Owner Control Plane · Kill Switch: {
                 status.kill_switch_engaged ? "AKTİF" : "Hazır"

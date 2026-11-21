@@ -77,150 +77,10 @@ function Stop-ProcessTreeSafe {
     }
 }
 
+# Do not kill unrelated Node/Python processes or foreign port owners.
 function Stop-AuraRelatedProcesses {
-    $processNames = @(
-        "python.exe",
-        "pythonw.exe",
-        "node.exe",
-        "cmd.exe"
-    )
-
-    $auraMarkers = @(
-        "aura_core",
-        "local_research_mcp",
-        "aura-daemon",
-        "aura-ui",
-        "D:\AURA\JAS",
-        "vite"
-    )
-
-    try {
-        $processes = Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
-            Where-Object {
-                $_.Name -in $processNames
-            }
-
-        foreach ($process in $processes) {
-            $commandLine = [string]$process.CommandLine
-
-            if ([string]::IsNullOrWhiteSpace($commandLine)) {
-                continue
-            }
-
-            $matchesAura = $false
-
-            foreach ($marker in $auraMarkers) {
-                if ($commandLine.IndexOf(
-                    $marker,
-                    [System.StringComparison]::OrdinalIgnoreCase
-                ) -ge 0) {
-                    $matchesAura = $true
-                    break
-                }
-            }
-
-            if ($matchesAura) {
-                Stop-ProcessTreeSafe -ProcessId ([int]$process.ProcessId)
-            }
-        }
-    }
-    catch {
-    }
-
-    Start-Sleep -Milliseconds 300
-
-    try {
-        $processes = Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
-            Where-Object {
-                $_.Name -in $processNames
-            }
-
-        foreach ($process in $processes) {
-            $commandLine = [string]$process.CommandLine
-
-            if ([string]::IsNullOrWhiteSpace($commandLine)) {
-                continue
-            }
-
-            $matchesAura = $false
-
-            foreach ($marker in $auraMarkers) {
-                if ($commandLine.IndexOf(
-                    $marker,
-                    [System.StringComparison]::OrdinalIgnoreCase
-                ) -ge 0) {
-                    $matchesAura = $true
-                    break
-                }
-            }
-
-            if ($matchesAura) {
-                Stop-ProcessTreeSafe -ProcessId ([int]$process.ProcessId)
-            }
-        }
-    }
-    catch {
-    }
-}
-
-function Stop-PortOwner {
-    param(
-        [Parameter(Mandatory = $true)]
-        [int]$Port
-    )
-
-    try {
-        $connections = Get-NetTCPConnection `
-            -LocalPort $Port `
-            -State Listen `
-            -ErrorAction SilentlyContinue
-
-        foreach ($connection in $connections) {
-            $ownerProcessId = [int]$connection.OwningProcess
-
-            if ($ownerProcessId -gt 0) {
-                Stop-ProcessTreeSafe -ProcessId $ownerProcessId
-            }
-        }
-    }
-    catch {
-    }
-
-    try {
-        $lines = netstat.exe -ano -p TCP 2>$null
-
-        foreach ($line in $lines) {
-            if ($line -notmatch "LISTENING") {
-                continue
-            }
-
-            $parts = $line -split "\s+"
-
-            if ($parts.Count -lt 5) {
-                continue
-            }
-
-            $localAddress = $parts[1]
-            $processIdText = $parts[$parts.Count - 1]
-
-            if ($localAddress -notmatch ":$Port$") {
-                continue
-            }
-
-            $ownerProcessId = 0
-
-            if ([int]::TryParse(
-                $processIdText,
-                [ref]$ownerProcessId
-            )) {
-                if ($ownerProcessId -gt 0) {
-                    Stop-ProcessTreeSafe -ProcessId $ownerProcessId
-                }
-            }
-        }
-    }
-    catch {
-    }
+    . (Join-Path $PSScriptRoot "aura-processes.ps1")
+    Stop-AuraStaleProcesses -Root $Root
 }
 
 function Reset-LogFile {
@@ -463,7 +323,7 @@ function Start-UiWithRetry {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Npm,
-        [int]$MaxAttempts = 5
+        [int]$MaxAttempts = 1
     )
 
     for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
@@ -667,17 +527,34 @@ if (-not (Test-Path $Ui)) {
 
 Stop-AuraRelatedProcesses
 Start-Sleep -Milliseconds 700
-
-$CorePort = Find-FreePort -PreferredPort 8000
-$UiPort = Find-FreePort -PreferredPort 4173
+. (Join-Path $PSScriptRoot "aura-processes.ps1")
+$CorePort = 8000
+$UiPort = 4173
+Assert-AuraPortAvailable -Port $CorePort
+Assert-AuraPortAvailable -Port $UiPort
+Assert-AuraPortAvailable -Port 5173
 
 $env:AURA_CORE_HOST = "127.0.0.1"
 $env:AURA_CORE_PORT = "$CorePort"
 $env:AURA_UI_PORT = "$UiPort"
 
 $env:AURA_RUNTIME = "ollama"
-$env:AURA_MODEL = "qwen3:latest"
+$env:AURA_MODEL = "ollama/qwen3"
 $env:AURA_LLM_MODEL = "qwen3"
+$env:AURA_BACKEND_ENDPOINT = "http://127.0.0.1:11434"
+$env:AURA_OLLAMA_BASE_URL = "http://127.0.0.1:11434"
+$env:AURA_OLLAMA_URL = "http://127.0.0.1:11434"
+$env:AURA_BACKEND_TIMEOUT = "300"
+$env:AURA_OLLAMA_FAST_RESPONSE = "1"
+$env:AURA_ASSISTANT_AUTO_TOOLS_ENABLED = "1"
+$env:AURA_STORAGE_MODE = "local"
+$env:AURA_API_PRINCIPAL_ID = "local_owner"
+$env:AURA_CHAT_MEMORY_ENABLED = "0"
+$env:AURA_BACKGROUND_THINKING_ENABLED = "1"
+$env:AURA_BACKGROUND_THINKING_PRINCIPAL_ID = "local_owner"
+$env:AURA_REFLECTION_DB = Join-Path $env:LOCALAPPDATA "AURA\reflection.sqlite3"
+$env:AURA_EVOLUTION_REVIEW_ENABLED = "0"
+$env:AURA_STAGE_C_BROWSER_ENABLED = "0"
 
 $env:AURA_RESEARCH_MCP_TRANSPORT = "stdio"
 $env:AURA_RESEARCH_MCP_PROVIDER_ID = "aura-research-local"
@@ -693,10 +570,65 @@ $env:AURA_RESEARCH_MCP_FETCH_TOOL = "fetch"
 $env:AURA_RESEARCH_MCP_COMMAND = $Python
 $env:AURA_RESEARCH_MCP_ARGS = Join-Path $Core "scripts\local_research_mcp.py"
 
-$env:AURA_EVENT_STREAM_TOKEN = "aura-dev-event-stream-token-7f3c9a2e6b1d4f8c0e5a9b7d3c1f6e2a"
+# Both Core and UI preview inherit the same process-local tokens.
+# Never expose bearer credentials in VITE_ variables, arguments or logs.
+function New-AuraToken {
+    $bytes = New-Object byte[] 32
+    $rng = [Security.Cryptography.RandomNumberGenerator]::Create()
+    try {
+        $rng.GetBytes($bytes)
+        return [Convert]::ToBase64String($bytes)
+    } finally {
+        $rng.Dispose()
+        [Array]::Clear($bytes, 0, $bytes.Length)
+    }
+}
+$env:AURA_API_BEARER_TOKEN = New-AuraToken
+$env:AURA_EVENT_STREAM_TOKEN = New-AuraToken
+$env:AURA_APPROVAL_FINGERPRINT_KEY = New-AuraToken
+
+# Stage C state must pass the existing production NTFS private-ACL check.
+# Failure keeps computer control disabled, never weakens PermissionEngine.
+$env:AURA_STAGE_C_ENABLED = "0"
+$env:AURA_SCREEN_CONTROL_ENABLED = "0"
+$stageState = Join-Path $env:LOCALAPPDATA "AURA\StageC"
+New-Item -ItemType Directory -Path $stageState -Force | Out-Null
+$env:AURA_STAGE_C_DIRECTORY = $stageState
+$env:AURA_STAGE_C_DB_PATH = Join-Path $stageState "stage-c.sqlite3"
+$privateDirectoryCheck = "import os; from pathlib import Path; from aura_core.evolution.windows_owner_storage import _powershell, _HARDEN, require_private_acl; p=Path(os.environ['AURA_STAGE_C_DIRECTORY']); _powershell(_HARDEN,path=p); require_private_acl(p)"
+& $Python -c $privateDirectoryCheck
+if ($LASTEXITCODE -eq 0) {
+    $env:AURA_SCREEN_CONTROL_ENABLED = "1"
+    $env:AURA_STAGE_C_ENABLED = "1"
+} else {
+    Write-Warning "Stage C private NTFS state cannot be verified; remaining disabled."
+}
 $env:AURA_ALLOW_FILE_ORIGIN = "1"
 $env:AURA_CORS_ORIGINS = "http://127.0.0.1:$UiPort,http://localhost:$UiPort,http://127.0.0.1:5173,http://localhost:5173"
 
+function Assert-OllamaReady {
+    try {
+        $tags = Invoke-RestMethod "http://127.0.0.1:11434/api/tags" -TimeoutSec 5
+    } catch {
+        $ollama = Get-Command ollama.exe -ErrorAction SilentlyContinue
+        if ($null -eq $ollama) { throw "Ollama offline; ollama.exe is not on PATH." }
+        Start-Process -FilePath $ollama.Source -ArgumentList "serve" -WindowStyle Hidden | Out-Null
+        $tags = $null
+        for ($attempt = 0; $attempt -lt 30; $attempt++) {
+            Start-Sleep -Milliseconds 500
+            try {
+                $tags = Invoke-RestMethod "http://127.0.0.1:11434/api/tags" -TimeoutSec 3
+                break
+            } catch { }
+        }
+        if ($null -eq $tags) { throw "Ollama did not become ready on 127.0.0.1:11434." }
+    }
+    $names = @($tags.models | ForEach-Object { [string]$_.name })
+    if ($names -notcontains "qwen3:latest") {
+        throw "qwen3:latest model not installed; run 'ollama list' and 'ollama pull qwen3'."
+    }
+}
+Assert-OllamaReady
 $Splash = Show-Splash
 $coreProcess = $null
 $uiProcess = $null

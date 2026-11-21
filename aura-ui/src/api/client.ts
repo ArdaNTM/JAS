@@ -36,6 +36,8 @@ export interface TaskStepResult {
   state: string;
   attempts: number;
   reason: string;
+  approval_id?: string | null;
+  result?: unknown;
 }
 
 export interface TaskResponse {
@@ -239,12 +241,13 @@ export async function streamAssistantResponse(
   researchOutput: unknown,
   onDelta: (text: string) => void,
   signal?: AbortSignal,
+  history: Array<{ role: "user" | "assistant"; content: string }> = [],
 ): Promise<{ model: string; finish_reason: string }> {
   const response = await fetch(`${API_BASE}/api/assistant/respond/stream`, {
     method: "POST",
     credentials: "same-origin",
     headers: { Accept: "application/x-ndjson", "Content-Type": "application/json" },
-    body: JSON.stringify({ message, research_output: researchOutput ?? null }),
+    body: JSON.stringify({ message, research_output: researchOutput ?? null, history }),
     signal,
   });
   if (!response.ok || !response.body) {
@@ -258,9 +261,15 @@ export async function streamAssistantResponse(
   const consume = (line: string) => {
     if (!line.trim()) return;
     const event = JSON.parse(line) as {
-      delta?: string; done?: boolean; finish_reason?: string; model?: string; error?: string;
+      delta?: string; done?: boolean; finish_reason?: string; model?: string; error?: string; message?: string; request_id?: string; status?: string;
     };
-    if (event.error) throw new Error("Yerel model yanıt akışı kesildi.");
+    if (event.error) {
+      const hint = typeof event.message === "string" && event.message.length <= 500
+        ? event.message : "Yerel model akışı başarısız oldu.";
+      const requestId = event.request_id ? " (istek: " + event.request_id + ")" : "";
+      throw new Error(hint + requestId);
+    }
+    // Heartbeat/waiting events are not visible text.
     if (typeof event.delta === "string") {
       total += event.delta.length;
       if (total > 24000) throw new Error("Yanıt izin verilen uzunluğu aştı.");

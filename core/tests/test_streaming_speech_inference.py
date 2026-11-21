@@ -124,3 +124,41 @@ def test_stream_endpoint_requires_auth_and_delivers_all_three_events():
     chunks = [json.loads(line) for line in response.text.splitlines()]
     assert "".join(c["delta"] for c in chunks if "delta" in c) == "Birinci. İkinci. Üçüncü."
     assert chunks[-1]["done"] is True
+
+
+def test_ollama_model_normalization_accepts_provider_prefix_and_preserves_tags():
+    from aura_core.runtime.adapter import normalize_ollama_model
+    assert normalize_ollama_model("ollama/qwen3") == "qwen3:latest"
+    assert normalize_ollama_model("qwen3") == "qwen3:latest"
+    assert normalize_ollama_model("qwen2.5:7b-instruct") == "qwen2.5:7b-instruct"
+
+
+def test_stream_ignores_thinking_only_chunks_without_dropping_content():
+    class Transport:
+        def post_stream_json(self, endpoint, payload, timeout):
+            assert payload["model"] == "qwen3:latest"
+            yield {"message": {"thinking": "private"}, "done": False}
+            yield {"message": {"content": "Merhaba"}, "done": False}
+            yield {"done": True, "done_reason": "stop"}
+
+    backend = AdapterBackend(BackendConfig(), Transport())
+    result = list(backend.infer_stream(InferenceRequest(
+        model="ollama/qwen3", messages=[{"role": "user", "content": "Merhaba"}],
+    )))
+    assert result == [{"delta": "Merhaba"}, {"done": True, "finish_reason": "stop"}]
+
+
+def test_missing_ollama_model_error_is_classified_without_exposing_backend_body():
+    from aura_core.runtime.errors import BackendUnavailableError
+    import pytest
+
+    def handle(request):
+        return httpx.Response(404, json={"error": "secret file path"})
+
+    transport = httpx.MockTransport(handle)
+    with patch("aura_core.runtime.transport.httpx.Client",
+               return_value=httpx.Client(transport=transport)):
+        with pytest.raises(BackendUnavailableError, match="Ollama model"):
+            list(HttpJsonTransport().post_stream_json(
+                "http://127.0.0.1:11434/api/chat", {"stream": True}, 30
+            ))

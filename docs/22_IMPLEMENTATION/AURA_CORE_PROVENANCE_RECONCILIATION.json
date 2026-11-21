@@ -7,8 +7,8 @@
   "files": [
     {
       "path": "core/src/aura_core/main.py",
-      "unified_blob_sha": "1003869772bf0eb15568b8960589d4165f5b67f0",
-      "canonical": "PR #158 merged main e9c68dd with PR #158 aa7b6b3, preserved governed core registrations; pending exact-head CI and security review",
+      "unified_blob_sha": "c180573ef73bc56c426f18887a7dfeb5aeea81e3",
+      "canonical": "PR #166 proposes local reflection lifecycle change; exact-head CI and independent Owner review required before merge",
       "variants": [
         {
           "pr": 158,
@@ -65,6 +65,13 @@
           "blob": "1003869772bf0eb15568b8960589d4165f5b67f0",
           "ancestry": "current_branch",
           "assessment": "BOUNDED_CATALOG_REGISTRATION_ONLY_NO_PERMISSION_OR_GATEWAY_SEALED_CHANGE;REQUIRES_EXACT_HEAD_CI"
+        },
+        {
+          "pr": 166,
+          "ref": "0ed9f060e2d56c28ece4ddc301dcbeff9afe0917",
+          "blob": "c180573ef73bc56c426f18887a7dfeb5aeea81e3",
+          "ancestry": "proposed_feature_branch",
+          "assessment": "SOURCE_CHANGE_PENDING_OWNER_REVIEW_AND_CI"
         }
       ]
     },

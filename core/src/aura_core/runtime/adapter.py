@@ -11,6 +11,20 @@ from aura_core.runtime.errors import BackendInvalidResponseError
 from aura_core.runtime.transport import JsonTransport
 
 
+def normalize_ollama_model(model: str) -> str:
+    """Normalize Ollama provider-prefix syntax without changing other model tags."""
+    if not isinstance(model, str):
+        raise ValueError("Ollama model must be a string")
+    name = model.strip()
+    if name.casefold().startswith("ollama/"):
+        name = name[7:]
+    if name.casefold() == "qwen3":
+        name = "qwen3:latest"
+    if not name or any(c.isspace() for c in name) or "/" in name or "\\" in name:
+        raise ValueError("Invalid Ollama model name")
+    return name
+
+
 class AdapterBackend(InferenceBackend):
     def __init__(
         self,
@@ -25,7 +39,7 @@ class AdapterBackend(InferenceBackend):
         request: InferenceRequest,
     ) -> dict[str, Any]:
         payload: dict[str, Any] = {
-            "model": request.model,
+            "model": normalize_ollama_model(request.model),
             "messages": [
                 message.model_dump()
                 for message in request.messages
@@ -131,7 +145,9 @@ class AdapterBackend(InferenceBackend):
             timeout=self._config.timeout,
         ):
             if event.get("error"):
-                raise BackendInvalidResponseError("Inference stream returned an error")
+                # The transport already classifies HTTP statuses. Reject malformed
+                # streaming payloads without echoing untrusted backend text.
+                raise BackendInvalidResponseError("Ollama stream returned an error")
             message = event.get("message")
             if isinstance(message, dict):
                 fragment = message.get("content", "")
