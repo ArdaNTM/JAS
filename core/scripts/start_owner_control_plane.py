@@ -91,15 +91,32 @@ def build_app(*, owner_config: str, approval_db: str, challenge_db: str,
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--owner-config", required=True)
-    parser.add_argument("--approval-db", required=True)
-    parser.add_argument("--challenge-db", required=True)
+    # Existing owner identity must be explicitly provisioned by the dedicated
+    # Owner account. No automatic enrollment or insecure key generation.
+    parser.add_argument("--owner-root", default=None)
+    parser.add_argument("--owner-config")
+    parser.add_argument("--approval-db")
+    parser.add_argument("--challenge-db")
     parser.add_argument("--owner-receipt-key")
     parser.add_argument("--owner-receipt-key-id")
     args = parser.parse_args()
+    evolution_root = os.environ.get("AURA_EVOLUTION_ROOT")
+    root = Path(args.owner_root) if args.owner_root else (
+        Path(evolution_root) / "owner" if evolution_root else None
+    )
+    if root is None and not all((args.owner_config, args.approval_db, args.challenge_db)):
+        parser.error("Set AURA_EVOLUTION_ROOT or explicit protected Owner paths")
+    if root is not None and (not root.is_absolute() or root.is_symlink()):
+        parser.error("Owner root must be an absolute non-symlink directory")
+    def owner_file(explicit: str | None, filename: str) -> str:
+        if explicit is not None:
+            return explicit
+        assert root is not None
+        return str(root / filename)
     app = build_app(
-        owner_config=args.owner_config, approval_db=args.approval_db,
-        challenge_db=args.challenge_db,
+        owner_config=owner_file(args.owner_config, "owner-passkey.json"),
+        approval_db=owner_file(args.approval_db, "approvals.sqlite"),
+        challenge_db=owner_file(args.challenge_db, "challenges.sqlite"),
         owner_receipt_key=args.owner_receipt_key,
         owner_receipt_key_id=args.owner_receipt_key_id,
     )
