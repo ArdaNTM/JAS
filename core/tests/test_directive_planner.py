@@ -66,3 +66,19 @@ def test_capability_questions_are_streaming_chat_not_synthesize_tasks():
         plan = DirectivePlanner().plan(query)
         assert plan.resource_scope == "local-assistant"
         assert plan.steps == ()
+
+
+def test_general_question_is_conversation_even_if_it_contains_ara_substring():
+    for query in ("Bir karar nasıl verilir?", "Bugün nasılsın?", "Nasıl öğreniyorsun?"):
+        plan = DirectivePlanner().plan(query)
+        assert plan.resource_scope == "local-assistant"
+        assert plan.steps == ()
+
+
+def test_explicit_actions_are_not_promoted_to_conversation():
+    for query in ("Dosyamı oku ve yorumla", "Kahvemi hazırla.", "Delete my files?"):
+        try:
+            plan = DirectivePlanner().plan(query)
+        except ValueError:
+            continue
+        assert plan.resource_scope != "local-assistant"

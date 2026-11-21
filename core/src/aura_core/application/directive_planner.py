@@ -144,7 +144,13 @@ class DirectivePlanner:
                 ),
             )
 
-        if any(term in normalized for term in self._RESEARCH_TERMS):
+        # Whole-word search imperative: "ara" must not match ordinary
+        # words such as "karar" or "araçlar".
+        research_terms = {"ara", "bul", "incele", "ogren", "research", "search"}
+        research_requested = bool(tokens.intersection(research_terms)) or any(
+            term in normalized for term in ("arastir", "arastirma", "hakkinda")
+        )
+        if research_requested:
             return GeneratedPlan(
                 resource_scope="public-web",
                 steps=(
@@ -174,6 +180,19 @@ class DirectivePlanner:
                 resource_scope="local-assistant",
                 steps=(),
             )
+
+        # Informational conversational requests without action directives
+        # are safely answered by inference, never auto-promoted to OS tools.
+        # Imperatives still fail closed (or enter opt-in registered tool planning).
+        action_verbs = {
+            "sil", "delete", "run", "execute", "calistir", "ac", "kapat",
+            "oku", "yaz", "download", "indir", "ara", "arastir",
+            "research", "search", "bul", "incele", "fetch", "gonder",
+            "send", "activate", "install", "kur", "planla", "hazirla",
+            "gelistir", "degistir", "goster", "listele",
+        }
+        if normalized.endswith("?") and not tokens.intersection(action_verbs):
+            return GeneratedPlan(resource_scope="local-assistant", steps=())
 
         raise ValueError(
             "No governed capability matches this directive. "
