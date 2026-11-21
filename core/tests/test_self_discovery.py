@@ -493,15 +493,22 @@ def test_three_candidates_per_cycle_and_rejected_reason_is_persistent(tmp_path):
                         "execution_allowed": False,
                     },
                 )
+            query_index = QUERIES.index(request.arguments["query"])
+            selections = (
+                repositories[:3] if query_index == 0
+                else repositories[3:] if query_index == 1
+                else []
+            )
             return SimpleNamespace(
                 decision=AuthorizationDecision.ALLOW,
                 result={"items": [
                     {"repository": name,
                      "url": "https://github.com/" + name,
                      "description": "fully local fastmcp sqlite filesystem",
-                     "license": "MIT", "stars": 120 + index,
+                     "license": "MIT",
+                     "stars": 6000 if name == repositories[0] else 120,
                      "capability_hint": "MCP"}
-                    for index, name in enumerate(repositories)
+                    for name in selections
                 ]},
             )
     workspace = EvolutionWorkspace(tmp_path / "external")

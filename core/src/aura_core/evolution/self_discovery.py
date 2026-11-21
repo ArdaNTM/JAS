@@ -391,7 +391,7 @@ class SelfDiscoveryEngine:
                     resource_scope=staging_scope(self.workspace),
                     risk_level=RiskLevel.MEDIUM,
                     tool_name=STAGE_TOOL, arguments={"repository": repository},
-                )), timeout=75)
+                )), timeout=12)
                 if response.decision is not AuthorizationDecision.ALLOW:
                     raise PermissionError(
                         "MCPGateway denied inert external staging for local_owner"
