@@ -91,6 +91,9 @@ def test_bad_database_path_is_rejected(tmp_path):
     with pytest.raises(ValueError, match="absolute"):
         SelfDiscoveryEngine(gateway=FakeGateway(), database_path=Path("relative.db"))
     link = tmp_path / "link.sqlite3"
-    link.symlink_to(tmp_path / "absent.db")
+    try:
+        link.symlink_to(tmp_path / "absent.db")
+    except (OSError, NotImplementedError):
+        pytest.skip("Symlink creation requires elevated privileges on this host")
     with pytest.raises(ValueError, match="symlink"):
         SelfDiscoveryEngine(gateway=FakeGateway(), database_path=link)
