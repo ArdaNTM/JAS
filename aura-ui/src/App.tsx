@@ -751,7 +751,7 @@ export default function App() {
               <StageCControlPanel />
             </div>
           </details>
-        )
+        )}
 
         <footer className="border-t border-cyan-950/70 pt-4">
           <form

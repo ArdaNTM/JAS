@@ -5,7 +5,7 @@
   "generated_at": "2026-11-19T07:08:05.113Z",
   "git_commit": "19da39d819cefce0dff6c9f4b5ce7dd963288018",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:a4875e8b211a1801f79948c1c0939a71ee30bbd4bf4d2c2633a9a1d47af4a21b",
+  "release_digest": "sha256:7db3a74b66d07c6403f7302c530f39b800037b9ce2447fe5a6d360967df1f786",
   "file_count": 445,
   "files": [
     {
@@ -78,7 +78,7 @@
     },
     {
       "path": "aura-ui/src/App.tsx",
-      "sha256": "e87e985453031cc53781938a2f0bab9bd06f47080fe2af1f4fde1c263133f612"
+      "sha256": "cc451d483994e6293f64005ab4b876f6258633086ae657d837881436ce1e9b4f"
     },
     {
       "path": "aura-ui/src/assets/hero.png",
