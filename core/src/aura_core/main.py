@@ -32,6 +32,9 @@ from aura_core.evolution.self_discovery import (
 from aura_core.evolution.self_discovery_api import router as self_discovery_router
 from aura_core.application.autonomous_adapters import AllowedOperation, CapabilityDrivenPlanner
 from aura_core.application.ollama_completion import OllamaJSONCompletionProvider
+from aura_core.application.local_synthesis_mcp import (
+    LocalSynthesisMCPProvider, CAPABILITY as SYNTH_CAPABILITY, TOOL as SYNTH_TOOL,
+)
 from aura_core.application.stage_c_runtime import StageCLedger, StageCController
 from aura_core.mcp.stage_c_browser import OriginGuard, PlaywrightSessions, BrowserControlMCPProvider
 from aura_core.application.full_duplex_session import (
@@ -577,6 +580,37 @@ def build_app() -> FastAPI:
         approval_store=approval_store,
         storage_mode=storage_mode,
     )
+
+    if storage_mode is StorageMode.LOCAL:
+        synthesis_provider = LocalSynthesisMCPProvider(
+            inference_service=app.state.inference_service,
+            model=kernel_config.runtime.model,
+        )
+        synthesis_service = ServiceDefinition(
+            name="local_synthesis_mcp", version="1.0.0", provider="aura",
+            category=ServiceCategory.MCP,
+            capabilities=frozenset({SYNTH_CAPABILITY}),
+            tags={"read-only", "inference-only"},
+        )
+        kernel.service_registry.register(synthesis_service, synthesis_provider)
+        kernel.provider_registry.register(ProviderDefinition(
+            provider_id="aura.local-synthesis", name="AURA Local Synthesis",
+            version="1.0.0", service_id=synthesis_service.service_id,
+        ), synthesis_provider)
+        kernel.capability_registry.register(CapabilityDefinition(
+            capability_id=SYNTH_CAPABILITY, name="Local Text Synthesis",
+            version="1.0.0", description="Answer or summarize text using local inference",
+            provider_id="aura.local-synthesis", provider_type=ProviderType.MCP,
+            category=CapabilityCategory.LANGUAGE, tool_name=SYNTH_TOOL,
+            risk_level="low", required_permissions=frozenset({SYNTH_CAPABILITY}),
+        ))
+        kernel.permission_engine.add_policy(PermissionPolicy(
+            policy_id="local-owner:local-synthesis:inference",
+            policy_version="1.0.0", principal_id="local_owner",
+            capability_id=SYNTH_CAPABILITY, operation_id=SYNTH_CAPABILITY,
+            resource_scope="local_default", authorization_level=AuthorizationLevel.READ,
+            decision=AuthorizationDecision.ALLOW,
+        ))
 
     app.state.self_discovery = None
     if self_discovery_enabled:

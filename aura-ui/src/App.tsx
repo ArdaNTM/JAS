@@ -524,6 +524,23 @@ export default function App() {
 
       if (result.state === "succeeded") {
         setSystemState("idle");
+        // A Gateway-governed local synthesis task has already inferred the
+        // answer; display its real result instead of generating a second one.
+        if (generated.steps.length === 1 &&
+            generated.steps[0].capability_id === "assistant.synthesize") {
+          const value = result.steps[0]?.result;
+          const content = value && typeof value === "object" &&
+            "content" in value ? (value as {content: unknown}).content : null;
+          if (typeof content === "string" && content.trim()) {
+            setChatHistory((current) => [...current, {
+              id: makeId(), role: "assistant" as const, content,
+              source: "InferenceService · MCPGateway · assistant.synthesize",
+            }].slice(-40));
+            setTaskState("HAZIR");
+            setSessionState("idle");
+            return;
+          }
+        }
 
         setResearchOutput(result.steps);
         const replyId = makeId();

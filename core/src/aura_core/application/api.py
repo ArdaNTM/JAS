@@ -664,6 +664,9 @@ def create_api(
 
     metrics = RequestMetrics()
 
+    # Shared with the bounded InferenceService MCP adapter; no duplicate
+    # model runtime is constructed for synthesis.
+    app.state.inference_service = application
     app.state.readiness = readiness
     app.state.metrics = metrics
     app.state.task_service = task_service
