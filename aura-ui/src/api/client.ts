@@ -191,6 +191,31 @@ export function getTask(
   );
 }
 
+export interface DiscoveryProposal {
+  id: string;
+  full_name: string;
+  url: string;
+  license_id: string;
+  summary: string;
+  capability: string;
+  status: "awaiting_owner_review";
+}
+export interface DiscoveryResult {
+  count: number;
+  added?: number;
+  note?: string;
+  next_allowed: number;
+  authorization_granted: false;
+  execution_performed: false;
+  items: DiscoveryProposal[];
+}
+export function getDiscoveryProposals(): Promise<DiscoveryResult> {
+  return request<DiscoveryResult>("/api/evolution/discovery/proposals");
+}
+export function runSelfDiscovery(): Promise<DiscoveryResult> {
+  return request<DiscoveryResult>("/api/evolution/discovery/run", { method: "POST" });
+}
+
 export function getHealth(): Promise<HealthResponse> {
   return request<HealthResponse>(
     "/api/health",

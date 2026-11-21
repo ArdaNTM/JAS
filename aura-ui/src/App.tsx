@@ -14,6 +14,7 @@ import {
   generateTaskPlan,
   getHealth,
   getUIContract,
+  runSelfDiscovery,
   type HealthResponse,
   type TaskStep,
 } from "./api/client";
@@ -358,6 +359,37 @@ export default function App() {
     );
 
     try {
+      // Read-only public discovery passes through the existing MCP Gateway.
+      const normalized = text.replace(/^aura[\s,:;.!?-]*/i, "").trim();
+      if (/^(kendini geliştir|yeni ücretsiz özellikler araştır|github'?dan kendine katabileceğin araçlar bul)/i.test(normalized)) {
+        const result = await runSelfDiscovery();
+        if (result.authorization_granted || result.execution_performed) {
+          throw new Error("Keşif hattı beklenmeyen yürütme yetkisi bildirdi.");
+        }
+        const items = result.items.slice(0, 8);
+        const summary = items.length
+          ? items.map((item) =>
+              item.full_name + " (" + item.license_id + ") — " + item.summary
+              + ". AURA alanı: " + item.capability
+            ).join("\n\n")
+          : "Uygun ücretsiz, açık kaynak ve yerel özellik önerisi bulunamadı.";
+        const note = result.note === "cooldown"
+          ? "GitHub hız sınırı nedeniyle kalıcı öneriler gösteriliyor."
+          : result.note === "ok"
+            ? "GitHub araştırması MCP Gateway üzerinden tamamlandı."
+            : "GitHub veya MCP Gateway erişilemiyor; mevcut kayıtlar gösteriliyor.";
+        setChatHistory((current) => [...current, {
+          id: makeId(), role: "assistant" as const,
+          content: note + "\n\n" + summary + "\n\nÖneriler yalnızca inceleme içindir; kod kurulmadı ve izin verilmedi.",
+          source: "MCPGateway · internet.fetch · GitHub Public API",
+          sources: items.map((item) => ({ title: item.full_name, url: item.url })),
+          ownerReview: items.length > 0,
+        }].slice(-40));
+        setSystemState("idle");
+        setSessionState("idle");
+        setTaskState("HAZIR");
+        return;
+      }
       const generated = await generateTaskPlan(text);
 
       if (generated.resource_scope === "local-assistant" &&
