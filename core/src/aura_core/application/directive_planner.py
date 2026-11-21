@@ -77,6 +77,16 @@ class DirectivePlanner:
         "selam", "nedir", "nasil", "kimdir", "acikla",
     )
 
+    # Capability/identity questions are ordinary assistant conversation.
+    # These must never be promoted into a model-selected "synthesize" tool.
+    _CAPABILITY_QUESTIONS = (
+        "neler yapabilirsin", "ne yapabilirsin", "neleri yapabiliyorsun",
+        "hangi araclarin var", "hangi yeteneklerin var", "yeteneklerin neler",
+        "kendini tanit", "sen kimsin", "sistemde neler var",
+        "what can you do", "what tools do you have", "what are your capabilities",
+        "tell me about yourself", "who are you",
+    )
+
     _MODEL_RULES = (
         (frozenset({"disli", "gear", "gears"}), "gear-v1"),
         (frozenset({"kure", "sphere", "ball"}), "sphere-v1"),
@@ -90,6 +100,11 @@ class DirectivePlanner:
 
         normalized = _ascii_fold(text)
         tokens = set(normalized.split())
+
+        # Question-first classification runs before search keyword matching;
+        # "hangi araştırma araçların var?" is not a request to search the web.
+        if any(term in normalized for term in self._CAPABILITY_QUESTIONS):
+            return GeneratedPlan(resource_scope="local-assistant", steps=())
 
         starts_as_3d = normalized.startswith(("3d ", "3b "))
         has_visual_verb = any(
@@ -155,6 +170,11 @@ class DirectivePlanner:
                 resource_scope="local-assistant",
                 steps=(),
             )
+
+        # Unknown questions stay read-only: only explicit action plans may
+        # reach MCPGateway. Do not infer authority from a question mark.
+        if normalized.rstrip().endswith("?"):
+            return GeneratedPlan(resource_scope="local-assistant", steps=())
 
         raise ValueError(
             "No governed capability matches this directive. "

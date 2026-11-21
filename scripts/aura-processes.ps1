@@ -1,34 +1,66 @@
-# Windows-only, repository-scoped AURA process ownership checks.
-# Never terminate arbitrary Node, Python, Uvicorn, or other project processes.
+# Repository-scoped process identification. Never kill unrelated processes.
 function Test-AuraOwnedProcess {
     param([Parameter(Mandatory=$true)]$Process, [Parameter(Mandatory=$true)][string]$Root)
-    $command = ([string]$Process.CommandLine).Replace("/", "\\")
-    $executable = [string]$Process.ExecutablePath
-    if (-not $command) { return $false }
+    $comparison = [StringComparison]::OrdinalIgnoreCase
+    $command = ([string]$Process.CommandLine).Replace('/', '\')
+    $exe = ([string]$Process.ExecutablePath).Replace('/', '\')
+    if (-not $command -or -not $exe) { return $false }
+
     $corePython = Join-Path $Root "core\.venv\Scripts\python.exe"
     $alternatePython = Join-Path $Root ".venv\Scripts\python.exe"
-    $researchScript = Join-Path $Root "core\scripts\local_research_mcp.py"
-    $viteScript = Join-Path $Root "aura-ui\node_modules\vite\bin\vite.js"
-    $comparison = [StringComparison]::OrdinalIgnoreCase
-    $isCore = ($command.IndexOf($corePython,$comparison) -ge 0 -or
-               $command.IndexOf($alternatePython,$comparison) -ge 0 -or
-               $executable.Equals($corePython,$comparison) -or
-               $executable.Equals($alternatePython,$comparison)) -and
-              $command -match '(?i)(?:^|\s)-m\s+aura_core(?:\s|$)'
-    $isResearch = $command.IndexOf($researchScript,$comparison) -ge 0
-    $isVite = $command.IndexOf($viteScript,$comparison) -ge 0 -and
-              $executable -match '(?i)node(?:\.exe)?$'
-    return ($isCore -or $isResearch -or $isVite)
+    $research = Join-Path $Root "core\scripts\local_research_mcp.py"
+    $vite = Join-Path $Root "aura-ui\node_modules\vite\bin\vite.js"
+    $viteCli = Join-Path $Root "aura-ui\node_modules\vite\dist\node\cli.js"
+    $uiDir = Join-Path $Root "aura-ui"
+    $coreOwned = (
+        ($exe.Equals($corePython, $comparison) -or $exe.Equals($alternatePython, $comparison)) -and
+        $command -match '(?i)(?:^|\s)-m\s+aura_core(?:\s|$)'
+    )
+    $researchOwned = (
+        $command.IndexOf($research, $comparison) -ge 0 -and
+        ($exe.Equals($corePython, $comparison) -or $exe.Equals($alternatePython, $comparison))
+    )
+    $nodeExe = $exe -match '(?i)(?:^|\\)node\.exe$'
+    $viteOwned = $nodeExe -and (
+        $command.IndexOf($vite, $comparison) -ge 0 -or
+        $command.IndexOf($viteCli, $comparison) -ge 0
+    )
+    # Some npm preview launchers use npm.cmd via cmd.exe. Only the
+    # unambiguous repo-working-directory/preview command is recognized.
+    $npmPreview = (
+        $command.IndexOf($uiDir, $comparison) -ge 0 -and
+        $command -match '(?i)\bnpm(?:\.cmd)?\b.*\brun\s+preview\b' -and
+        $exe -match '(?i)(?:^|\\)cmd\.exe$'
+    )
+    return ($coreOwned -or $researchOwned -or $viteOwned -or $npmPreview)
 }
 
 function Stop-AuraStaleProcesses {
     param([Parameter(Mandatory=$true)][string]$Root)
     $all = @(Get-CimInstance Win32_Process -ErrorAction Stop)
+    $owned = @{}
     foreach ($process in $all) {
-        if (-not (Test-AuraOwnedProcess -Process $process -Root $Root)) { continue }
-        Write-Host "Stopping stale AURA process PID $($process.ProcessId)"
-        Stop-Process -Id $process.ProcessId -Force -ErrorAction SilentlyContinue
+        if (Test-AuraOwnedProcess -Process $process -Root $Root) {
+            $owned[[int]$process.ProcessId] = $true
+        }
     }
+    # Explicitly inspect the expected ports; never terminate a foreign owner.
+    foreach ($port in @(8000, 4173, 5173)) {
+        $listeners = @(Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue)
+        foreach ($listener in $listeners) {
+            $pid = [int]$listener.OwningProcess
+            if ($pid -le 0 -or $owned.ContainsKey($pid)) { continue }
+            $process = $all | Where-Object { [int]$_.ProcessId -eq $pid } | Select-Object -First 1
+            if ($null -ne $process -and (Test-AuraOwnedProcess -Process $process -Root $Root)) {
+                $owned[$pid] = $true
+            }
+        }
+    }
+    foreach ($processId in $owned.Keys) {
+        Write-Host "Stopping repo-owned AURA process PID $processId"
+        Stop-Process -Id ([int]$processId) -Force -ErrorAction SilentlyContinue
+    }
+    Start-Sleep -Milliseconds 500
 }
 
 function Assert-AuraPortAvailable {
@@ -38,7 +70,7 @@ function Assert-AuraPortAvailable {
         $listener = [Net.Sockets.TcpListener]::new([Net.IPAddress]::Loopback, $Port)
         $listener.Start()
     } catch {
-        throw "Port $Port is occupied. AURA will not switch ports or stop non-AURA processes. Check Get-NetTCPConnection -LocalPort $Port."
+        throw "Port $Port is occupied by a process not safely identified as AURA. No other process will be terminated."
     } finally {
         if ($null -ne $listener) { $listener.Stop() }
     }

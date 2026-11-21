@@ -55,3 +55,20 @@ def test_instructions_to_operate_computer_are_not_conversation_tools():
             assert "No governed capability" in str(exc)
         else:
             raise AssertionError("Unsupported commands must fail closed")
+
+
+def test_capability_questions_are_conversation_not_synthesize_or_search():
+    for text in (
+        "Neler yapabilirsin?", "Hangi araçların var?", "Hangi yeteneklerin var?",
+        "Which features do you have?", "What can you do?", "Bana kendini tanıt",
+        "Sohbet etmek ister misin?",
+    ):
+        result = DirectivePlanner().plan(text)
+        assert result.resource_scope == "local-assistant"
+        assert result.steps == ()
+
+
+def test_questions_do_not_implicitly_authorize_tools():
+    plan = DirectivePlanner().plan("Bilgisayarımı silebilir misin?")
+    assert plan.resource_scope == "local-assistant"
+    assert plan.steps == ()

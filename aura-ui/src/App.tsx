@@ -240,6 +240,12 @@ export default function App() {
     errorMessage?: string,
   ) => {
     setSessionState(status === "ready" ? "idle" : status);
+    if (status === "ready") {
+      setSystemState("idle");
+      setTaskState("HAZIR");
+      setError(null);
+      pushTelemetry("ASİSTAN YANITI TAMAMLANDI · HAZIR");
+    }
     if (status === "error") {
       setChatHistory((current) => current.map((turn) =>
         turn.id === activeReplyId.current && !turn.content
@@ -461,7 +467,19 @@ export default function App() {
 
       if (["failed", "cancelled", "timed_out"].includes(result.state)) {
         setSystemState("idle");
-        setError(`Görev durumu: ${result.state}. Arayüz başka bir eylem yürütmedi.`);
+        setTaskState("BAŞARISIZ");
+        setSessionState("idle");
+        // Only server-returned, bounded step error metadata is shown. Never
+        // fabricate a completed result or leave a blank assistant bubble.
+        const detail = result.steps.find((step) => step.reason)?.reason;
+        const reason = typeof detail === "string" ? detail.slice(0, 280) : "Sağlayıcı veya yetki denetimi tamamlanamadı.";
+        const message = `Görev ${result.state}: ${reason}`;
+        setChatHistory((current) => [...current, {
+          id: makeId(), role: "assistant" as const,
+          content: message,
+          source: generated.steps.map((step) => step.capability_id).join(", "),
+        }].slice(-40));
+        setError(message);
         pushTelemetry(`GÖREV SONLANDIRILDI: ${result.state.toUpperCase()}`);
         return;
       }
@@ -495,6 +513,9 @@ export default function App() {
           : "AURA yürütmesi başarısız oldu.";
 
       setError(message);
+      setChatHistory((current) => [...current, {
+        id: makeId(), role: "assistant" as const, content: message, source: "Core hata tanısı",
+      }].slice(-40));
       pushTelemetry(`HATA: ${message}`);
     }
   }

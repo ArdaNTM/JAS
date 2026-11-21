@@ -624,9 +624,20 @@ function Assert-OllamaReady {
         if ($null -eq $tags) { throw "Ollama did not become ready on 127.0.0.1:11434." }
     }
     $names = @($tags.models | ForEach-Object { [string]$_.name })
-    if ($names -notcontains "qwen3:latest") {
-        throw "qwen3:latest model not installed; run 'ollama list' and 'ollama pull qwen3'."
+    $preferred = "qwen3:4b-instruct-2507-q4_K_M"
+    $fallback = "qwen3:latest"
+    if ($names -contains $preferred) {
+        $selected = $preferred
+    } elseif ($names -contains $fallback) {
+        $selected = $fallback
+    } else {
+        throw "No supported Qwen3 model installed; run 'ollama pull qwen3'."
     }
+    $env:AURA_MODEL = "ollama/$selected"
+    $env:AURA_LLM_MODEL = $selected
+    $env:AURA_INFERENCE_MODEL = $selected
+    Write-Host "AURA Ollama model selected: $selected"
+
 }
 Assert-OllamaReady
 $Splash = Show-Splash
