@@ -284,6 +284,7 @@ def _validated_files(archive: bytes, *, max_archive_bytes: int | None = None) ->
     total = 0
     archive_roots: set[str] = set()
     skipped_binaries = 0
+    member_files = 0
     with z:
         infos = z.infolist()
         if len(infos) > _MAX_FILES + 80:
@@ -320,7 +321,8 @@ def _validated_files(archive: bytes, *, max_archive_bytes: int | None = None) ->
             if key in seen:
                 raise StagingRejected("Case-fold duplicate archive member")
             seen.add(key)
-            if len(result) >= _MAX_FILES or info.file_size > _MAX_FILE:
+            member_files += 1
+            if member_files > _MAX_FILES or info.file_size > _MAX_FILE:
                 raise StagingRejected("ZIP file budget exceeded")
             if info.file_size > 100 * max(1, info.compress_size):
                 raise StagingRejected("ZIP compression ratio exceeded")
