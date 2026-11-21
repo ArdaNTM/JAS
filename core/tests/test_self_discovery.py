@@ -152,7 +152,7 @@ def test_optional_local_research_requires_a_second_gateway_dispatch(tmp_path, mo
 
 
 
-def test_full_scan_calls_all_three_gateway_queries_and_never_invents_items(tmp_path):
+def test_full_scan_calls_all_bounded_gateway_queries_and_never_invents_items(tmp_path):
     gateway = FakeGateway()
     engine = SelfDiscoveryEngine(gateway=gateway, db_path=tmp_path / "full.sqlite3")
     result = _run(engine.run_once(full_scan=True))
@@ -199,7 +199,7 @@ def test_github_rate_limit_is_not_a_successful_empty_result():
         leave_dispatch(token)
 
 
-def test_http_manual_scan_reports_all_three_queries(tmp_path):
+def test_http_manual_scan_reports_all_bounded_queries(tmp_path):
     gateway = FakeGateway()
     engine = SelfDiscoveryEngine(gateway=gateway, db_path=tmp_path / "http.sqlite3")
     app = FastAPI()
@@ -361,23 +361,23 @@ def test_public_search_stream_accepts_over_256k_but_rejects_over_2m():
         _run(rejected())
 
 
-def test_public_search_uses_per_page_8_and_inspects_eighth_candidate():
+def test_public_search_uses_per_page_6_and_inspects_sixth_candidate():
     def handler(request: httpx.Request):
         if request.url.path == "/search/repositories":
-            assert request.url.params["per_page"] == "8"
+            assert request.url.params["per_page"] == "6"
             rows = [
                 {"full_name": f"not-licensed/repo-{i}", "license": None,
                  "stargazers_count": 100}
-                for i in range(7)
+                for i in range(5)
             ]
             rows.append({
-                "full_name": "allowed/eighth",
+                "full_name": "allowed/sixth",
                 "license": {"spdx_id": "MIT"},
                 "stargazers_count": 160,
                 "description": "Offline MCP tool",
             })
             return httpx.Response(200, json={"items": rows})
-        assert request.url.path == "/repos/allowed/eighth/readme"
+        assert request.url.path == "/repos/allowed/sixth/readme"
         return httpx.Response(200, json={
             "encoding": "base64",
             "content": base64.b64encode(b"Fully local and offline").decode(),
@@ -394,7 +394,7 @@ def test_public_search_uses_per_page_8_and_inspects_eighth_candidate():
         result = _run(provider.call_tool("search_open_source", {"query": QUERIES[0]}))
     finally:
         leave_dispatch(token)
-    assert [x["repository"] for x in result["items"]] == ["allowed/eighth"]
+    assert [x["repository"] for x in result["items"]] == ["allowed/sixth"]
 
 
 def test_missing_one_readme_does_not_abort_other_free_candidates():
@@ -431,7 +431,7 @@ def test_multiquery_rate_limit_preserves_successful_proposals(tmp_path):
     class PartialGateway(FakeGateway):
         async def invoke(self, request):
             if (request.capability_id == CAPABILITY_ID
-                    and request.arguments["query"] in (QUERIES[0], QUERIES[-1])):
+                    and request.arguments["query"] == QUERIES[0]):
                 self.calls.append(request)
                 raise DiscoveryUnavailable("GitHub public API rate limit reached (403/429)")
             return await super().invoke(request)
@@ -441,8 +441,8 @@ def test_multiquery_rate_limit_preserves_successful_proposals(tmp_path):
     )
     result = _run(engine.run_once(full_scan=True))
     assert result["partial"] is True
-    assert result["successful_queries"] == len(QUERIES) - 2
-    assert len(result["failed_queries"]) == 2
+    assert result["successful_queries"] == len(QUERIES) - 1
+    assert len(result["failed_queries"]) == 1
     assert "rate limit" in result["failed_queries"][0]["reason"]
     assert result["new_count"] == 1
     assert result["proposal_count"] == 1
