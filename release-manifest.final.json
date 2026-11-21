@@ -5,7 +5,7 @@
   "generated_at": "2026-11-22T00:15:00.000Z",
   "git_commit": "c7cfe64a195517f0a14868bfd846ba392de83844",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:ab929d9428ff87975d3539c35864b8ab0db459f7342b5a4ed29b9ce2ba649369",
+  "release_digest": "sha256:cc73515f8dd52ddcb2c8d5a59501aa21458ff62f852a7f2748eb295c3185a21a",
   "file_count": 450,
   "files": [
     {
@@ -886,7 +886,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/external_staging.py",
-      "sha256": "4fcc5e3e2b7bb7e144d6ff97f6c96b17f82bb162b09a917b91dfe6446232d55d"
+      "sha256": "011f900c63b5e4b50c5ac2056bb65583cbfd19832f128d984ede6f00efa9f3a3"
     },
     {
       "path": "core/src/aura_core/evolution/goal_tree.py",
