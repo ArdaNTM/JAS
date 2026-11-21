@@ -29,6 +29,9 @@ logger = logging.getLogger("aura_core.evolution.self_discovery")
 CAPABILITY_ID = "github.repository.search"
 TOOL_NAME = "search_open_source"
 SCOPE = "public-github"
+# Fixed decoded response budget per GitHub public JSON request (DoS bounded).
+GITHUB_RESPONSE_MAX_BYTES = 2 * 1024 * 1024
+SEARCH_PER_PAGE = 8
 PERMITTED_LICENSES = frozenset({
     "MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC",
 })
@@ -111,8 +114,8 @@ class PublicGitHubDiscoveryMCPProvider:
                     raise DiscoveryUnavailable("GitHub public API unavailable")
                 data = bytearray()
                 async for chunk in response.aiter_bytes():
-                    if len(data) + len(chunk) > 256_000:
-                        raise DiscoveryUnavailable("GitHub response exceeds 256 KiB budget")
+                    if len(data) + len(chunk) > GITHUB_RESPONSE_MAX_BYTES:
+                        raise DiscoveryUnavailable("GitHub response exceeds 2 MiB budget")
                     data.extend(chunk)
             payload = json.loads(data)
             if not isinstance(payload, dict):
@@ -138,13 +141,13 @@ class PublicGitHubDiscoveryMCPProvider:
             follow_redirects=False, trust_env=False,
         ) as client:
             search = await self._get(client, "/search/repositories", {
-                "q": query, "per_page": 4, "sort": "stars", "order": "desc",
+                "q": query, "per_page": SEARCH_PER_PAGE, "sort": "stars", "order": "desc",
             })
             rows = search.get("items")
             if not isinstance(rows, list):
                 raise DiscoveryUnavailable("GitHub search result missing items")
             candidates: list[dict[str, str]] = []
-            for row in rows[:4]:
+            for row in rows[:SEARCH_PER_PAGE]:
                 if not isinstance(row, dict):
                     continue
                 full_name = row.get("full_name")
@@ -177,9 +180,13 @@ class PublicGitHubDiscoveryMCPProvider:
                             or _NEGATIVE.search(description)
                             or _UNSUPPORTED_HOST.search(description)):
                         continue
+                except FileNotFoundError:
+                    # An individual candidate without README is not a valid
+                    # local/free tool, but must not abort the entire search.
+                    continue
                 except DiscoveryUnavailable:
-                    # Never disguise rate limits or GitHub network failures as
-                    # a valid empty discovery result.
+                    # Query-level failure is reported to the engine; other
+                    # independent queries can still succeed.
                     raise
                 except (ValueError, TypeError, OSError):
                     continue
@@ -403,19 +410,39 @@ class SelfDiscoveryEngine:
             self._cycle += len(indexes)
             seen: set[str] = set()
             saved = 0
+            successful_queries = 0
+            failed_queries: list[dict[str, str]] = []
             try:
                 for index in indexes:
-                    response = await self.gateway.invoke(MCPGatewayRequest(
-                        request_id=str(uuid4()), principal_id=self.principal_id,
-                        capability_id=CAPABILITY_ID, operation_id=CAPABILITY_ID,
-                        resource_scope=SCOPE, risk_level=RiskLevel.LOW,
-                        tool_name=TOOL_NAME, arguments={"query": QUERIES[index]},
-                    ))
-                    if response.decision is not AuthorizationDecision.ALLOW:
-                        raise PermissionError("MCPGateway denied GitHub discovery")
-                    result = response.result
-                    if not isinstance(result, dict) or not isinstance(result.get("items"), list):
-                        raise DiscoveryUnavailable("Discovery provider returned invalid evidence")
+                    # Network, rate-limit, and provider errors affect only this
+                    # independent public query. Permission denials are not
+                    # availability failures: they remain fail-closed.
+                    try:
+                        response = await self.gateway.invoke(MCPGatewayRequest(
+                            request_id=str(uuid4()), principal_id=self.principal_id,
+                            capability_id=CAPABILITY_ID, operation_id=CAPABILITY_ID,
+                            resource_scope=SCOPE, risk_level=RiskLevel.LOW,
+                            tool_name=TOOL_NAME, arguments={"query": QUERIES[index]},
+                        ))
+                        if response.decision is not AuthorizationDecision.ALLOW:
+                            raise PermissionError("MCPGateway denied GitHub discovery")
+                        result = response.result
+                        if (not isinstance(result, dict)
+                                or not isinstance(result.get("items"), list)):
+                            raise DiscoveryUnavailable(
+                                "Discovery provider returned invalid evidence"
+                            )
+                    except PermissionError:
+                        raise
+                    except (DiscoveryUnavailable, RuntimeError,
+                            asyncio.TimeoutError, OSError) as exc:
+                        failed_queries.append({
+                            "query": QUERIES[index],
+                            "reason": _safe_text(str(exc), 160) or
+                                      "GitHub query unavailable",
+                        })
+                        continue
+                    successful_queries += 1
 
                     with self._connect() as db:
                         for row in result["items"][:3]:
@@ -454,6 +481,14 @@ class SelfDiscoveryEngine:
                             except (TypeError, ValueError, KeyError):
                                 continue
 
+                # Never claim a complete scan if every remote query failed.
+                # Successful queries already committed their validated rows.
+                if not successful_queries and failed_queries:
+                    raise DiscoveryUnavailable(
+                        "GitHub discovery failed for all queries: " +
+                        failed_queries[0]["reason"]
+                    )
+
                 research_crosscheck = "not_requested"
                 if saved and os.getenv("AURA_DISCOVERY_USE_RESEARCH_MCP", "0") == "1":
                     first = self.proposals(1)
@@ -481,11 +516,16 @@ class SelfDiscoveryEngine:
                 current = [record for record in self.proposals(50)
                            if record["repository"] in seen]
                 self._last_error = ""
-                self._history_record(query_count=len(indexes), saved=saved,
-                                     staged=staged_count, status="COMPLETE")
+                self._history_record(
+                    query_count=len(indexes), saved=saved, staged=staged_count,
+                    status="PARTIAL" if failed_queries else "COMPLETE",
+                )
                 return {
                     "items": current, "proposal_count": self.count(),
                     "new_count": saved, "mode": "review_only",
+                    "partial": bool(failed_queries),
+                    "successful_queries": successful_queries,
+                    "failed_queries": failed_queries,
                     "staged_count": staged_count,
                     "static_ready_count": self.static_ready_count(),
                     "owner_review_url": "http://localhost:8766/",

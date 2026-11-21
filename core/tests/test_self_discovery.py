@@ -236,7 +236,8 @@ def test_http_github_rate_limit_surfaces_actual_error(tmp_path):
     assert response.status_code == 429
     assert "rate limit" in response.json()["detail"]
     assert engine.count() == 0
-    assert len(gateway.calls) == 1
+    assert len(gateway.calls) == len(QUERIES)
+    assert engine.history()[0]["status"] == "FAILED"
 
 
 def test_discovery_history_is_durable_and_bounded(tmp_path):
@@ -327,3 +328,140 @@ def test_denied_staging_never_marks_ready_or_registers_code(tmp_path):
     assert engine.static_ready_count() == 0
     assert workspace.verified_packages() == []
     assert __import__("json").loads(workspace.active.read_text())["active"] == []
+
+
+
+def test_public_search_stream_accepts_over_256k_but_rejects_over_2m():
+    from aura_core.evolution.self_discovery import GITHUB_RESPONSE_MAX_BYTES
+    assert GITHUB_RESPONSE_MAX_BYTES == 2_097_152
+
+    async def handler(request: httpx.Request):
+        assert request.url.host == "api.github.com"
+        if request.url.path != "/search/repositories":
+            raise AssertionError("unexpected URL")
+        return httpx.Response(200, json={"items": [], "padding": "x" * 300_000})
+
+    provider = PublicGitHubDiscoveryMCPProvider(transport=httpx.MockTransport(handler))
+    async def accepted():
+        async with httpx.AsyncClient(transport=provider._transport) as client:
+            return await provider._get(client, "/search/repositories")
+    assert len(_run(accepted())["padding"]) == 300_000
+
+    async def oversized_handler(request: httpx.Request):
+        return httpx.Response(200, content=b"z" * (GITHUB_RESPONSE_MAX_BYTES + 1))
+    blocked = PublicGitHubDiscoveryMCPProvider(
+        transport=httpx.MockTransport(oversized_handler),
+    )
+    async def rejected():
+        async with httpx.AsyncClient(transport=blocked._transport) as client:
+            return await blocked._get(client, "/search/repositories")
+    with pytest.raises(DiscoveryUnavailable, match="2 MiB"):
+        _run(rejected())
+
+
+def test_public_search_uses_per_page_8_and_inspects_eighth_candidate():
+    def handler(request: httpx.Request):
+        if request.url.path == "/search/repositories":
+            assert request.url.params["per_page"] == "8"
+            rows = [
+                {"full_name": f"not-licensed/repo-{i}", "license": None,
+                 "stargazers_count": 100}
+                for i in range(7)
+            ]
+            rows.append({
+                "full_name": "allowed/eighth",
+                "license": {"spdx_id": "MIT"},
+                "stargazers_count": 160,
+                "description": "Offline MCP tool",
+            })
+            return httpx.Response(200, json={"items": rows})
+        assert request.url.path == "/repos/allowed/eighth/readme"
+        return httpx.Response(200, json={
+            "encoding": "base64",
+            "content": base64.b64encode(b"Fully local and offline").decode(),
+        })
+    provider = PublicGitHubDiscoveryMCPProvider(
+        transport=httpx.MockTransport(handler),
+    )
+    token = enter_dispatch(DispatchGrant(
+        principal_id="local_owner", capability_id=CAPABILITY_ID,
+        tool_name="search_open_source", risk_level="low",
+        approval_consumed=False,
+    ))
+    try:
+        result = _run(provider.call_tool("search_open_source", {"query": QUERIES[0]}))
+    finally:
+        leave_dispatch(token)
+    assert [x["repository"] for x in result["items"]] == ["allowed/eighth"]
+
+
+def test_missing_one_readme_does_not_abort_other_free_candidates():
+    def handler(request: httpx.Request):
+        if request.url.path == "/search/repositories":
+            return httpx.Response(200, json={"items": [
+                {"full_name": "missing/readme", "license": {"spdx_id": "MIT"},
+                 "stargazers_count": 100},
+                {"full_name": "valid/second", "license": {"spdx_id": "MIT"},
+                 "stargazers_count": 99},
+            ]})
+        if request.url.path == "/repos/missing/readme/readme":
+            return httpx.Response(404)
+        if request.url.path == "/repos/valid/second/readme":
+            return httpx.Response(200, json={"encoding": "base64",
+                "content": base64.b64encode(b"Fully local and offline").decode()})
+        raise AssertionError("unexpected URL")
+    provider = PublicGitHubDiscoveryMCPProvider(
+        transport=httpx.MockTransport(handler),
+    )
+    token = enter_dispatch(DispatchGrant(
+        principal_id="local_owner", capability_id=CAPABILITY_ID,
+        tool_name="search_open_source", risk_level="low",
+        approval_consumed=False,
+    ))
+    try:
+        result = _run(provider.call_tool("search_open_source", {"query": QUERIES[0]}))
+    finally:
+        leave_dispatch(token)
+    assert [x["repository"] for x in result["items"]] == ["valid/second"]
+
+
+def test_multiquery_rate_limit_preserves_successful_proposals(tmp_path):
+    class PartialGateway(FakeGateway):
+        async def invoke(self, request):
+            if (request.capability_id == CAPABILITY_ID
+                    and request.arguments["query"] in (QUERIES[0], QUERIES[-1])):
+                self.calls.append(request)
+                raise DiscoveryUnavailable("GitHub public API rate limit reached (403/429)")
+            return await super().invoke(request)
+    gateway = PartialGateway()
+    engine = SelfDiscoveryEngine(
+        gateway=gateway, db_path=tmp_path / "partial.sqlite3",
+    )
+    result = _run(engine.run_once(full_scan=True))
+    assert result["partial"] is True
+    assert result["successful_queries"] == len(QUERIES) - 2
+    assert len(result["failed_queries"]) == 2
+    assert "rate limit" in result["failed_queries"][0]["reason"]
+    assert result["new_count"] == 1
+    assert result["proposal_count"] == 1
+    assert result["items"][0]["repository"] == "verified/local"
+    assert engine.proposals()[0]["repository"] == "verified/local"
+    assert engine.history()[0]["status"] == "PARTIAL"
+    assert len(gateway.calls) == len(QUERIES)
+    assert result["activation_performed"] is False
+
+
+def test_authorization_denial_is_never_treated_as_partial_success(tmp_path):
+    class DeniedGateway(FakeGateway):
+        async def invoke(self, request):
+            if (request.capability_id == CAPABILITY_ID
+                    and request.arguments["query"] == QUERIES[1]):
+                self.calls.append(request)
+                return SimpleNamespace(decision=AuthorizationDecision.DENY, result=None)
+            return await super().invoke(request)
+    engine = SelfDiscoveryEngine(
+        gateway=DeniedGateway(), db_path=tmp_path / "denied-partial.sqlite3",
+    )
+    with pytest.raises(PermissionError, match="MCPGateway denied"):
+        _run(engine.run_once(full_scan=True))
+    assert engine.history()[0]["status"] == "FAILED"

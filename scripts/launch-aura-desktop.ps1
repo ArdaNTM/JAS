@@ -475,8 +475,7 @@ function Open-AuraBrowser {
         if (Test-Path $edge) {
             Start-Process `
                 -FilePath $edge `
-                -ArgumentList "--force-device-scale-factor=1.5 --app=$url" `
-                -WindowStyle Hidden
+                -ArgumentList "--force-device-scale-factor=1.5 --app=$url"
 
             return
         }
@@ -492,8 +491,7 @@ function Open-AuraBrowser {
         if (Test-Path $chrome) {
             Start-Process `
                 -FilePath $chrome `
-                -ArgumentList "--force-device-scale-factor=1.5 --app=$url" `
-                -WindowStyle Hidden
+                -ArgumentList "--force-device-scale-factor=1.5 --app=$url"
 
             return
         }
@@ -502,6 +500,10 @@ function Open-AuraBrowser {
     Start-Process $url
 }
 
+# Hidden WScript sessions have no visible terminal. Cover every preflight
+# exception (tokens, model discovery, ACL checks and port ownership) with the
+# same graphical MessageBox used for runtime startup failures.
+try {
 $Python = Find-Python
 $Npm = Find-Npm
 
@@ -647,12 +649,18 @@ function Assert-OllamaReady {
     Write-Host "AURA Ollama model selected: $selected"
 
 }
-Assert-OllamaReady
-$Splash = Show-Splash
+    Assert-OllamaReady
+}
+catch {
+    Show-LauncherError $_.Exception.Message
+    exit 1
+}
+$Splash = $null
 $coreProcess = $null
 $uiProcess = $null
 
 try {
+    $Splash = Show-Splash
     $Splash.Status.Text = "STARTING AURA CORE..."
     $Splash.Form.Refresh()
 

@@ -378,14 +378,21 @@ export default function App() {
             item.url,
             "Durum: Owner Control Plane inceleme kuyruğunda (aktivasyon yapılmadı).",
           ].join("\n"));
+          const warnings = (found.failed_queries ?? []).map((failure) =>
+            "⚠ GitHub sorgusu başarısız: " + failure.query +
+            " — " + failure.reason
+          );
           const reply = [
-            "SelfDiscoveryEngine gerçek GitHub Public Search taramasını tamamladı.",
+            found.partial
+              ? "SelfDiscoveryEngine GitHub taraması kısmen tamamlandı; başarılı sorguların gerçek sonuçları kaydedildi."
+              : "SelfDiscoveryEngine gerçek GitHub Public Search taramasını tamamladı.",
             "Yeni öneri: " + (found.new_count ?? 0) +
               " · Kalıcı öneri kuyruğu: " + found.proposal_count,
+            ...warnings,
             ...descriptions,
             descriptions.length === 0
               ? "Bu canlı taramada lisans ve yerel çalışabilirlik filtresini geçen repo bulunamadı."
-              : "Repo kayıtları GitHub metadata/README kanıtıdır; kod indirilmedi veya çalıştırılmadı.",
+              : "Repo kayıtları GitHub metadata/README kanıtıdır; güvenli staging kaynak arşivi indirebilir ancak kod çalıştırılmadı.",
             "Bağımsız Owner Control Plane ve sandbox incelemesi olmadan entegrasyon yapılmaz.",
           ].join("\n\n");
           setChatHistory((current) => [...current, {
@@ -394,7 +401,9 @@ export default function App() {
             reviewAvailable: true,
           }].slice(-40));
           setTaskState("HAZIR");
-          pushTelemetry("GERÇEK GITHUB REPO TARAMASI TAMAMLANDI");
+          pushTelemetry(found.partial
+            ? "GITHUB TARAMASI KISMİ BAŞARILI · SORGULAR: " + (found.successful_queries ?? 0)
+            : "GERÇEK GITHUB REPO TARAMASI TAMAMLANDI");
         } catch (cause) {
           const reason = cause instanceof Error ? cause.message
             : "GitHub keşif hizmeti yanıt vermedi.";
