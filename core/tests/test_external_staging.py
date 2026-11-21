@@ -234,3 +234,44 @@ def test_repository_traversal_names_are_denied_before_url_build(tmp_path):
         with pytest.raises((StagingRejected, ValueError)):
             _authorized(provider, name)
     assert workspace.verified_packages() == []
+
+
+
+def test_staging_repo_metadata_accepts_300k_with_2m_cap(tmp_path):
+    from aura_core.evolution.self_discovery import GITHUB_RESPONSE_MAX_BYTES
+    assert GITHUB_RESPONSE_MAX_BYTES == 2_097_152
+    archive = _valid_archive()
+    def handler(request):
+        if request.url.path == "/repos/sample/worker":
+            return httpx.Response(200, json={
+                "full_name": "sample/worker", "private": False,
+                "fork": False, "archived": False,
+                "license": {"spdx_id": "MIT"}, "description": "Offline MCP",
+                "padding": "x" * 300_000,
+            })
+        if request.url.path == "/repos/sample/worker/commits":
+            return httpx.Response(200, json=[{"sha": "a" * 40}])
+        if request.url.path == "/sample/worker/zip/" + ("a" * 40):
+            return httpx.Response(200, content=archive)
+        raise AssertionError("Unexpected remote path")
+    workspace = EvolutionWorkspace(tmp_path / "evolution")
+    provider = GitHubStagingMCPProvider(
+        workspace=workspace, transport=httpx.MockTransport(handler),
+    )
+    result = _authorized(provider)
+    assert result["status"] == "READY_FOR_OWNER_REVIEW"
+    assert result["execution_allowed"] is False
+
+
+def test_staging_repo_metadata_over_2m_remains_rejected(tmp_path):
+    from aura_core.evolution.self_discovery import GITHUB_RESPONSE_MAX_BYTES
+    def handler(request):
+        assert request.url.path == "/repos/sample/worker"
+        return httpx.Response(200, content=b"x" * (GITHUB_RESPONSE_MAX_BYTES + 1))
+    workspace = EvolutionWorkspace(tmp_path / "evolution")
+    provider = GitHubStagingMCPProvider(
+        workspace=workspace, transport=httpx.MockTransport(handler),
+    )
+    with pytest.raises(StagingRejected, match="budget"):
+        _authorized(provider)
+    assert workspace.verified_packages() == []
