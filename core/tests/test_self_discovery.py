@@ -247,3 +247,29 @@ def test_discovery_history_is_durable_and_bounded(tmp_path):
     restarted = SelfDiscoveryEngine(gateway=FakeGateway(), db_path=db)
     assert restarted.history()[0]["new_proposals"] == 1
     assert restarted.history()[0]["query_count"] == 1
+
+
+def test_discovery_read_only_history_and_static_inventory(tmp_path):
+    from aura_core.evolution.external_staging import EvolutionWorkspace
+    gateway = FakeGateway()
+    workspace = EvolutionWorkspace(tmp_path / "external")
+    engine = SelfDiscoveryEngine(gateway=gateway,
+                                 db_path=workspace.root / "catalog" / "proposal.sqlite3",
+                                 workspace=workspace)
+    _run(engine.run_once())
+    app = FastAPI()
+    app.state.http_bearer_token = "t" * 40
+    app.state.http_principal_id = "local_owner"
+    app.state.self_discovery = engine
+    app.state.storage_mode = "local"
+    app.include_router(router)
+    client = TestClient(app)
+    headers = {"Authorization": "Bearer " + "t" * 40}
+    history = client.get("/api/evolution/discovery/history", headers=headers)
+    assert history.status_code == 200
+    assert history.json()["items"][0]["status"] == "COMPLETE"
+    packages = client.get("/api/evolution/discovery/verified", headers=headers)
+    assert packages.status_code == 200
+    assert packages.json()["activation_performed"] is False
+    assert packages.json()["ready_count"] == 0
+    assert client.get("/api/evolution/discovery/verified").status_code == 401

@@ -34,6 +34,25 @@ async def list_proposals(request: Request, principal: str = Depends(authenticate
             "activation_performed": False}
 
 
+@router.get("/history")
+async def discovery_history(request: Request, principal: str = Depends(authenticated_principal)):
+    engine = _engine(request, principal)
+    return {"items": engine.history(25), "activation_performed": False}
+
+
+@router.get("/verified")
+async def verified_static_packages(request: Request, principal: str = Depends(authenticated_principal)):
+    engine = _engine(request, principal)
+    if engine.workspace is None:
+        return {"items": [], "ready_count": 0, "activation_performed": False}
+    items = engine.workspace.verified_packages(20)
+    return {
+        "items": items, "ready_count": len(items),
+        "activation_performed": False, "sandbox_attestation_required": True,
+        "owner_passkey_required": True,
+    }
+
+
 @router.post("/run")
 async def run_discovery(request: Request, principal: str = Depends(authenticated_principal)):
     engine = _engine(request, principal)

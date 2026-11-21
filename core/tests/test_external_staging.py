@@ -181,3 +181,14 @@ def test_audit_logs_only_bounded_metadata_and_rejects_symlink(tmp_path):
     with pytest.raises(ValueError):
         workspace.audit(action="stage_verified", repository="../bad",
                         result="OWNER_REVIEW_REQUIRED")
+
+
+def test_read_only_verified_inventory_never_grants_activation(tmp_path):
+    workspace = EvolutionWorkspace(tmp_path / "evolution")
+    provider = GitHubStagingMCPProvider(workspace=workspace, transport=_transport())
+    _authorized(provider)
+    packages = workspace.verified_packages()
+    assert len(packages) == 1
+    assert packages[0]["repository"] == "sample/worker"
+    assert packages[0]["sandbox_attested"] is False
+    assert packages[0]["activation_performed"] is False

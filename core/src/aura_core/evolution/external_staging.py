@@ -131,6 +131,41 @@ class EvolutionWorkspace:
                 "action": action, "repository": repository, "result": result,
             }, sort_keys=True) + "\n")
 
+    def verified_packages(self, limit: int = 20) -> list[dict[str, object]]:
+        # Read-only summaries. Never interpret a manifest as authorization.
+        summary = []
+        directory = self.root / "verified"
+        for package in sorted(directory.iterdir()):
+            if len(summary) >= max(1, min(50, limit)):
+                break
+            if package.is_symlink() or not package.is_dir():
+                continue
+            manifest = package / "aura-capability-manifest.json"
+            if manifest.is_symlink() or not manifest.is_file():
+                continue
+            try:
+                if manifest.stat().st_size > 16000:
+                    continue
+                data = json.loads(manifest.read_text("utf-8"))
+                if (data.get("status") != "READY_FOR_OWNER_REVIEW"
+                        or not _NAME.fullmatch(data.get("repository", ""))
+                        or data.get("repository", "").replace("/", "__") != package.name
+                        or data.get("sandbox_attested") is not False
+                        or data.get("activation_performed") is not False):
+                    continue
+                summary.append({
+                    "repository": data["repository"],
+                    "source_sha256": data.get("source_sha256"),
+                    "license": data.get("license_spdx_metadata"),
+                    "entrypoint_hint": data.get("entrypoint_hint"),
+                    "status": "READY_FOR_OWNER_REVIEW",
+                    "sandbox_attested": False,
+                    "activation_performed": False,
+                })
+            except (OSError, ValueError, TypeError, AttributeError):
+                continue
+        return summary
+
     def _usage(self) -> int:
         total = 0
         for area in ("staging", "verified"):
