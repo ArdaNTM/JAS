@@ -447,6 +447,7 @@ export function invokeCapabilityTool(body: {
 
 export interface DiscoveryProposal {
   proposal_id: string;
+  stars: number | null;
   repository: string;
   url: string;
   description: string;
@@ -466,6 +467,15 @@ export interface DiscoveryResult {
 export function getDiscoveryProposals(): Promise<DiscoveryResult> {
   return request("/api/evolution/discovery", { method: "GET", cache: "no-store" });
 }
-export function runSelfDiscovery(): Promise<DiscoveryResult> {
-  return request("/api/evolution/discovery/run", { method: "POST", body: "{}" });
+export async function runSelfDiscovery(): Promise<DiscoveryResult> {
+  try {
+    return await request("/api/evolution/discovery/run", { method: "POST", body: "{}" });
+  } catch (error) {
+    // The generic API error localizer masks FastAPI's rate-limit/offline
+    // detail. Discovery is a read-only action: show the bounded server cause.
+    if (error instanceof AuraApiError && typeof error.details === "string") {
+      throw new Error("GitHub keşfi başarısız: " + error.details.slice(0, 180));
+    }
+    throw error;
+  }
 }

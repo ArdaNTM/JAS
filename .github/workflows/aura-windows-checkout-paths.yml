@@ -1,0 +1,43 @@
+name: AURA Windows Checkout Boundary Regression
+
+on:
+  pull_request:
+    paths:
+      - "core/scripts/b2_postmerge_check.py"
+      - "core/tests/test_windows_checkout_boundary.py"
+      - "core/tests/test_b2_postmerge_check.py"
+      - ".github/workflows/aura-windows-checkout-paths.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checkout-boundary:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: core
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: core/uv.lock
+      - name: Install pinned dependencies
+        run: uv sync --frozen --group dev
+      - name: Verify checkout-external Windows TEMP and path boundaries
+        shell: pwsh
+        run: |
+          $repo = (Resolve-Path .).Path
+          $tempRoot = [IO.Path]::GetFullPath($env:RUNNER_TEMP)
+          if ($tempRoot.StartsWith($repo + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+            throw "Unsafe pytest --basetemp inside checkout"
+          }
+          $baseTemp = Join-Path $tempRoot "aura-checkout-path-tests"
+          uv run --frozen python -m pytest -q --tb=short "--basetemp=$baseTemp" tests/test_windows_checkout_boundary.py tests/test_b2_postmerge_check.py
+          if ($LASTEXITCODE -ne 0) { throw "Windows checkout path regressions failed" }

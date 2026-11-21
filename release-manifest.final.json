@@ -5,7 +5,7 @@
   "generated_at": "2026-11-19T07:08:05.113Z",
   "git_commit": "19da39d819cefce0dff6c9f4b5ce7dd963288018",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:8fc55fcec48ddb27758431070c9c5714ec5b1b85c49a21b8d4a01ff0b3206057",
+  "release_digest": "sha256:e09fad60a327692cb13a609438064d8b96198a0acefc9de805607ae4aada4403",
   "file_count": 448,
   "files": [
     {
@@ -66,7 +66,7 @@
     },
     {
       "path": "aura-ui/src/api/client.ts",
-      "sha256": "701c875e0050cf002712d00d5f26a94d1ee1bb097c15291ee637041bb032490a"
+      "sha256": "f9a10282ec22aa4d521e996477cb28f9ff15afa252230a6960289f32d9f3d36d"
     },
     {
       "path": "aura-ui/src/api/contracts.ts",
@@ -78,7 +78,7 @@
     },
     {
       "path": "aura-ui/src/App.tsx",
-      "sha256": "350dd0d8e6f6a2a965b35bd0af6e23d651526cfbd0e862ebc57c2719c3c944ed"
+      "sha256": "71980c645ca99335f788476cf33690fda1fd0c8f3169dceb01ed965e03961954"
     },
     {
       "path": "aura-ui/src/assets/hero.png",
@@ -366,7 +366,7 @@
     },
     {
       "path": "core/src/aura_core/application/api.py",
-      "sha256": "0e1a13768b006e444c362842a5adf7b92c8def98276842c6da22341d5e7a77d7"
+      "sha256": "1f6f4ab032f2103c5bda7ae801299ec58ad7496d4d3b32131f963664491aa5fb"
     },
     {
       "path": "core/src/aura_core/application/approval_api.py",
@@ -438,7 +438,7 @@
     },
     {
       "path": "core/src/aura_core/application/directive_planner.py",
-      "sha256": "de435c1aa968cb78714b5317a5053287799bce0aebd4f02fb37d2a1775cd86bf"
+      "sha256": "bd02252f20be0b3fc74b4310781240277c4f2080bfdbb9ab2d235cefcd3d0dc2"
     },
     {
       "path": "core/src/aura_core/application/episodic_memory.py",
@@ -950,11 +950,11 @@
     },
     {
       "path": "core/src/aura_core/evolution/self_discovery.py",
-      "sha256": "0959ae788189f30c1a307581c565e7e7b8bb0cefb2b42e463c8a26f5e9f1d7b7"
+      "sha256": "13a87cf381dc5e409a35946d8298869fffa7904ed120e2e6b26cd50708bf03cd"
     },
     {
       "path": "core/src/aura_core/evolution/self_discovery_api.py",
-      "sha256": "3fa9015fdd7f8eec5ae2ed3450c3b69aa164367c909ea877e287a6dab349825f"
+      "sha256": "d2068f68f3bba2d1e8e1df3d0320ad8869864598fb80b0645ee82b82911ce5d9"
     },
     {
       "path": "core/src/aura_core/evolution/skill_registry.py",
