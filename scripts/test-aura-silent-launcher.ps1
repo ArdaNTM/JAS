@@ -22,7 +22,7 @@ if ($LauncherSource -notmatch 'Show-LauncherError') {
     throw "Launcher error MessageBox handler was removed"
 }
 $BrowserStart = $LauncherSource.IndexOf("function Open-AuraBrowser {")
-$BrowserEnd = $LauncherSource.IndexOf("`n$Python = Find-Python", $BrowserStart)
+$BrowserEnd = $LauncherSource.IndexOf("`n`$Python = Find-Python", $BrowserStart)
 if ($BrowserStart -lt 0 -or $BrowserEnd -le $BrowserStart) {
     throw "Browser launcher function boundary was not found"
 }
