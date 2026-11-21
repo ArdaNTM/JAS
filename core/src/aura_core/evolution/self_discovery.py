@@ -12,6 +12,8 @@ import json
 import logging
 import os
 import re
+import shutil
+import subprocess
 import sqlite3
 import time
 from pathlib import Path
@@ -31,16 +33,16 @@ TOOL_NAME = "search_open_source"
 SCOPE = "public-github"
 # Fixed decoded response budget per GitHub public JSON request (DoS bounded).
 GITHUB_RESPONSE_MAX_BYTES = 2 * 1024 * 1024
-SEARCH_PER_PAGE = 8
+SEARCH_PER_PAGE = 6
 PERMITTED_LICENSES = frozenset({
     "MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC",
 })
 # These are operator-owned static queries, never user/LLM supplied search URLs.
+# Two broad, operator-owned searches limit unauthenticated API use.
+# Readme-level validation still filters SaaS/mandatory API-key integrations.
 QUERIES = (
-    '"mcp-server" sqlite language:Python archived:false stars:>5',
-    "fastmcp filesystem language:Python archived:false stars:>5",
-    "modelcontextprotocol git playwright archived:false stars:>5",
-    "mcp memory fetch offline archived:false stars:>5",
+    '"mcp-server" archived:false stars:>5',
+    "fastmcp archived:false stars:>5",
 )
 _REPO = re.compile(r"^[A-Za-z0-9_.-]{1,80}/[A-Za-z0-9_.-]{1,100}$")
 
@@ -97,11 +99,33 @@ def _safe_text(value: object, limit: int = 180) -> str:
     return "".join(c for c in value if c.isprintable()).strip()[:limit]
 
 
+def _github_token() -> str | None:
+    """Optional local credential; never log or send to untrusted redirects."""
+    token = os.environ.get("GITHUB_TOKEN", "").strip()
+    if not token:
+        executable = shutil.which("gh")
+        if executable:
+            try:
+                result = subprocess.run(
+                    [executable, "auth", "token"], capture_output=True,
+                    text=True, check=False, timeout=3,
+                    creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+                )
+                if result.returncode == 0:
+                    token = result.stdout.strip()
+            except (OSError, subprocess.TimeoutExpired):
+                pass
+    if not token or len(token) > 255 or any(c.isspace() for c in token):
+        return None
+    return token
+
+
 class PublicGitHubDiscoveryMCPProvider:
     """Fixed-origin public GETs only. Must be invoked via MCPGateway grant."""
 
     def __init__(self, *, transport: httpx.AsyncBaseTransport | None = None):
         self._transport = transport
+        self._token = _github_token()
 
     async def list_tools(self) -> tuple[MCPTool, ...]:
         return (MCPTool(
@@ -120,10 +144,13 @@ class PublicGitHubDiscoveryMCPProvider:
         # The caller only passes path constants and regex-validated repo names.
         url = "https://api.github.com" + path
         try:
-            async with client.stream("GET", url, params=params, headers={
+            headers = {
                 "Accept": "application/vnd.github+json",
                 "User-Agent": "AURA-JAS-Local-Discovery/1.0",
-            }) as response:
+            }
+            if self._token is not None:
+                headers["Authorization"] = "Bearer " + self._token
+            async with client.stream("GET", url, params=params, headers=headers) as response:
                 if response.status_code in (403, 429):
                     raise DiscoveryUnavailable("GitHub public API rate limit reached (403/429)")
                 if response.status_code == 404:
@@ -369,7 +396,8 @@ class SelfDiscoveryEngine:
         with self._connect() as db:
             rows = db.execute(
                 "SELECT repository,description,stars FROM evolution_proposals "
-                "WHERE (package_status IS NULL OR package_status='pending' "
+                "WHERE status='pending_owner_review' "
+                "AND (package_status IS NULL OR package_status='pending' "
                 "OR (package_status='STAGING_REJECTED' AND stage_attempts=0)) "
                 "ORDER BY created_at LIMIT 50"
             ).fetchall()
@@ -377,7 +405,8 @@ class SelfDiscoveryEngine:
         candidates = [
             (repository, description, stars or 0)
             for repository, description, stars in rows
-            if not _SAAS.search(repository + " " + description)
+            if _valid_repository(repository)
+            and not _SAAS.search(repository + " " + description)
         ]
         candidates.sort(
             key=lambda row: (-_local_rank(row[0], row[1], row[2]), row[0])
@@ -536,14 +565,9 @@ class SelfDiscoveryEngine:
                             except (TypeError, ValueError, KeyError):
                                 continue
 
-                # Never claim a complete scan if every remote query failed.
-                # Successful queries already committed their validated rows.
-                if not successful_queries and failed_queries:
-                    raise DiscoveryUnavailable(
-                        "GitHub discovery failed for all queries: " +
-                        failed_queries[0]["reason"]
-                    )
-
+                # Even with a rate-limited search, a previously validated
+                # catalog can supply up to three inert staging candidates.
+                # PermissionEngine/MCPGateway still authorizes each download.
                 research_crosscheck = "not_requested"
                 if saved and os.getenv("AURA_DISCOVERY_USE_RESEARCH_MCP", "0") == "1":
                     first = self.proposals(1)
@@ -567,6 +591,13 @@ class SelfDiscoveryEngine:
                             research_crosscheck = "unavailable"
                 staging_report = await self._stage_pending()
                 staged_count = staging_report["staged_count"]
+                # Preserve fail-closed 429 behavior for an empty catalog;
+                # an existing queue is a useful partial offline outcome.
+                if not successful_queries and failed_queries and not staging_report["attempted"]:
+                    raise DiscoveryUnavailable(
+                        "GitHub discovery failed for all queries: " +
+                        failed_queries[0]["reason"]
+                    )
                 # Only show repositories actually returned by this live scan.
                 # Historical queued entries are available via the list endpoint.
                 current = [record for record in self.proposals(50)

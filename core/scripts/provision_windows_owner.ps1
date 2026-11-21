@@ -2,7 +2,11 @@
 # Not invoked by AURA Core/agents. Refuses to overwrite existing identity state.
 [CmdletBinding()]
 param(
-    [string]$TrustRoot = (Join-Path $env:LOCALAPPDATA 'AURA\OwnerTrust')
+    [string]$TrustRoot = $(if ($env:AURA_EVOLUTION_ROOT) {
+        Join-Path $env:AURA_EVOLUTION_ROOT 'owner'
+    } else {
+        'D:\AURA\Evolution\owner'
+    })
 )
 $ErrorActionPreference = 'Stop'
 if (-not [IO.Path]::IsPathRooted($TrustRoot)) { throw 'Absolute trust root required' }

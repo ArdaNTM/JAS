@@ -117,11 +117,37 @@ function render(records) {
     root.append(card);
   }
 }
+function renderDiscoveries(records) {
+  const root = $("discoveries");
+  root.replaceChildren();
+  if (!records.length) {
+    const empty = document.createElement("p");
+    empty.textContent = "No queued GitHub discovery proposals.";
+    root.append(empty);
+    return;
+  }
+  for (const record of records) {
+    const card = document.createElement("article");
+    const title = document.createElement("h2");
+    title.textContent = record.repository;
+    card.append(title);
+    item(card, "License", record.license);
+    item(card, "Description", record.description);
+    item(card, "Stage", record.package_status || "Queued");
+    item(card, "Static review", record.package_error || "Not executed or approved");
+    root.append(card);
+  }
+}
 async function load() {
   try {
-    const result = await api("/api/owner/pending");
+    const [result, proposals] = await Promise.all([
+      api("/api/owner/pending"), api("/api/owner/discoveries"),
+    ]);
     render(Array.isArray(result.items) ? result.items : []);
-    status("Review only · " + (result.items?.length ?? 0) + " pending");
+    renderDiscoveries(Array.isArray(proposals.items) ? proposals.items : []);
+    status("Review only · " + (result.items?.length ?? 0)
+      + " protected approvals · " + (proposals.items?.length ?? 0)
+      + " untrusted discoveries");
   } catch (error) {
     status(error instanceof Error ? error.message : "Owner control plane unavailable");
   }

@@ -16,6 +16,10 @@ function Test-AuraOwnedProcess {
         ($exe.Equals($corePython, $comparison) -or $exe.Equals($alternatePython, $comparison)) -and
         $command -match '(?i)(?:^|\s)-m\s+aura_core(?:\s|$)'
     )
+    $ownerReviewOwned = (
+        ($exe.Equals($corePython, $comparison) -or $exe.Equals($alternatePython, $comparison)) -and
+        $command -match '(?i)(?:^|\s)-m\s+aura_core\.evolution\.owner_control_plane_http(?:\s|$)'
+    )
     $researchOwned = (
         $command.IndexOf($research, $comparison) -ge 0 -and
         ($exe.Equals($corePython, $comparison) -or $exe.Equals($alternatePython, $comparison))
@@ -32,7 +36,7 @@ function Test-AuraOwnedProcess {
         $command -match '(?i)\bnpm(?:\.cmd)?\b.*\brun\s+preview\b' -and
         $exe -match '(?i)(?:^|\\)cmd\.exe$'
     )
-    return ($coreOwned -or $researchOwned -or $viteOwned -or $npmPreview)
+    return ($coreOwned -or $ownerReviewOwned -or $researchOwned -or $viteOwned -or $npmPreview)
 }
 
 function Stop-AuraStaleProcesses {
@@ -45,7 +49,7 @@ function Stop-AuraStaleProcesses {
         }
     }
     # Explicitly inspect the expected ports; never terminate a foreign owner.
-    foreach ($port in @(8000, 4173, 5173)) {
+    foreach ($port in @(8000, 4173, 5173, 8766)) {
         $listeners = @(Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue)
         foreach ($listener in $listeners) {
             $ownerProcessId = [int]$listener.OwningProcess

@@ -53,6 +53,8 @@ $CoreLogOut = Join-Path $Root "aura-daemon.stdout.log"
 $CoreLogErr = Join-Path $Root "aura-daemon.stderr.log"
 $UiLogOut = Join-Path $Root "aura-ui.stdout.log"
 $UiLogErr = Join-Path $Root "aura-ui.stderr.log"
+$OwnerLogOut = Join-Path $Root "aura-owner-review.stdout.log"
+$OwnerLogErr = Join-Path $Root "aura-owner-review.stderr.log"
 
 function Stop-ProcessTreeSafe {
     param(
@@ -287,6 +289,34 @@ function Start-Core {
         throw "AURA Core process could not be started."
     }
 
+    return $process
+}
+
+function Start-OwnerReview {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Python
+    )
+
+    Reset-LogFile -Path $OwnerLogOut
+    Reset-LogFile -Path $OwnerLogErr
+
+    # Inert catalog review only. Protected passkey approval state belongs to
+    # the separately provisioned local Owner OS principal, not AURA Core.
+    $ownerCommand = '""' + $Python + '" -m aura_core.evolution.owner_control_plane_http > "' + $OwnerLogOut + '" 2> "' + $OwnerLogErr + '""'
+    $psi = New-Object System.Diagnostics.ProcessStartInfo
+    $psi.FileName = "cmd.exe"
+    $psi.Arguments = "/d /s /c $ownerCommand"
+    $psi.WorkingDirectory = $Core
+    $psi.UseShellExecute = $false
+    $psi.CreateNoWindow = $true
+    $psi.WindowStyle = [System.Diagnostics.ProcessWindowStyle]::Hidden
+
+    $process = New-Object System.Diagnostics.Process
+    $process.StartInfo = $psi
+    if (-not $process.Start()) {
+        throw "AURA Owner review process could not be started."
+    }
     return $process
 }
 
@@ -535,6 +565,7 @@ $UiPort = 4173
 Assert-AuraPortAvailable -Port $CorePort
 Assert-AuraPortAvailable -Port $UiPort
 Assert-AuraPortAvailable -Port 5173
+Assert-AuraPortAvailable -Port 8766
 
 $env:AURA_CORE_HOST = "127.0.0.1"
 $env:AURA_CORE_PORT = "$CorePort"
@@ -658,6 +689,7 @@ catch {
 $Splash = $null
 $coreProcess = $null
 $uiProcess = $null
+$ownerProcess = $null
 
 try {
     $Splash = Show-Splash
@@ -708,6 +740,17 @@ try {
         throw $details
     }
 
+    $Splash.Status.Text = "STARTING OWNER REVIEW..."
+    $Splash.Form.Refresh()
+
+    $ownerProcess = Start-OwnerReview -Python $Python
+    if (-not (Wait-ForProcessAlive -ProcessId $ownerProcess.Id -TimeoutSeconds 5)) {
+        throw "Owner review process exited before health check.`n" + (Read-LogSafe -Path $OwnerLogErr)
+    }
+    if (-not (Wait-ForHttp -Url "http://localhost:8766/api/owner/health" -TimeoutSeconds 15)) {
+        throw "Owner review 127.0.0.1:8766 failed health check.`n" + (Read-LogSafe -Path $OwnerLogErr)
+    }
+
     $Splash.Status.Text = "STARTING HUD..."
     $Splash.Form.Refresh()
 
@@ -740,6 +783,10 @@ catch {
 
     if ($null -ne $uiProcess) {
         Stop-ProcessTreeSafe -ProcessId $uiProcess.Id
+    }
+
+    if ($null -ne $ownerProcess) {
+        Stop-ProcessTreeSafe -ProcessId $ownerProcess.Id
     }
 
     exit 1

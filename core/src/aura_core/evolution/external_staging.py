@@ -16,6 +16,7 @@ import stat
 import tempfile
 import time
 import zipfile
+from urllib.parse import urljoin, urlsplit
 from pathlib import Path, PurePosixPath
 
 import httpx
@@ -23,7 +24,7 @@ import httpx
 from aura_core.mcp.dispatch_context import current_dispatch
 from aura_core.mcp.mcp_provider import MCPTool
 from aura_core.evolution.self_discovery import (
-    PERMITTED_LICENSES, GITHUB_RESPONSE_MAX_BYTES,
+    PERMITTED_LICENSES, GITHUB_RESPONSE_MAX_BYTES, _github_token,
 )
 
 CAPABILITY = "github.repository.stage"
@@ -346,6 +347,7 @@ class GitHubStagingMCPProvider:
                  transport: httpx.AsyncBaseTransport | None = None):
         self.workspace = workspace
         self._transport = transport
+        self._token = _github_token()
 
     async def list_tools(self):
         return (MCPTool(
@@ -361,20 +363,39 @@ class GitHubStagingMCPProvider:
 
     async def _read(self, client: httpx.AsyncClient, url: str, *,
                     max_bytes: int) -> bytes:
+        # Explicit redirect handling instead of follow_redirects=True avoids
+        # leaking API tokens or contacting an attacker-chosen third-party host.
         try:
-            async with client.stream("GET", url, headers={
-                "User-Agent": "AURA-Evolution-Static-Review/1.0",
-                "Accept": "application/vnd.github+json" if "api.github.com" in url
-                          else "application/zip",
-            }) as response:
-                if response.status_code != 200:
-                    raise StagingRejected("GitHub archive/metadata unavailable or rate limited")
-                data = bytearray()
-                async for chunk in response.aiter_bytes():
-                    if len(data) + len(chunk) > max_bytes:
-                        raise StagingRejected("GitHub download byte budget exceeded")
-                    data.extend(chunk)
-                return bytes(data)
+            for redirect_count in range(3):
+                parsed = urlsplit(url)
+                if (parsed.scheme != "https"
+                        or parsed.hostname not in {"api.github.com", "codeload.github.com"}
+                        or parsed.username is not None or parsed.password is not None
+                        or parsed.port not in (None, 443)):
+                    raise StagingRejected("GitHub archive redirect origin denied")
+                headers = {
+                    "User-Agent": "AURA-Evolution-Static-Review/1.0",
+                    "Accept": ("application/vnd.github+json"
+                               if parsed.hostname == "api.github.com" else "application/zip"),
+                }
+                if parsed.hostname == "api.github.com" and self._token is not None:
+                    headers["Authorization"] = "Bearer " + self._token
+                async with client.stream("GET", url, headers=headers) as response:
+                    if response.status_code in (301, 302, 303, 307, 308):
+                        location = response.headers.get("location")
+                        if not location or redirect_count >= 2:
+                            raise StagingRejected("GitHub archive redirect limit exceeded")
+                        url = urljoin(url, location)
+                        continue
+                    if response.status_code != 200:
+                        raise StagingRejected("GitHub archive/metadata unavailable or rate limited")
+                    data = bytearray()
+                    async for chunk in response.aiter_bytes():
+                        if len(data) + len(chunk) > max_bytes:
+                            raise StagingRejected("GitHub download byte budget exceeded")
+                        data.extend(chunk)
+                    return bytes(data)
+            raise StagingRejected("GitHub archive redirect limit exceeded")
         except httpx.RequestError as exc:
             raise StagingRejected("GitHub archive network request failed") from exc
 
@@ -409,7 +430,6 @@ class GitHubStagingMCPProvider:
             if (_PLATFORM.search(description) or _PAID.search(description)
                     or _SAAS.search(repository + " " + description)):
                 raise StagingRejected("Paid SaaS or macOS-only candidate rejected")
-                raise StagingRejected("Paid or macOS-specific candidate rejected")
             # Pin the snapshot to the current default-branch commit SHA, never
             # interpolate a user-controlled branch/ref into an archive URL.
             commits = json.loads(await self._read(
