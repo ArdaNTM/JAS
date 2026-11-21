@@ -288,6 +288,7 @@ def test_auto_staging_calls_second_gateway_tool_but_no_execution(tmp_path):
                     "source_sha256": "a" * 64,
                     "sandbox_attested": False,
                     "activation_performed": False,
+                    "execution_allowed": False,
                 })
             return await super().invoke(request)
     workspace = EvolutionWorkspace(tmp_path / "workspace")
@@ -302,7 +303,8 @@ def test_auto_staging_calls_second_gateway_tool_but_no_execution(tmp_path):
     assert [call.capability_id for call in gw.calls] == [
         "github.repository.search", "github.repository.stage"
     ]
-    assert gw.calls[1].resource_scope == "evolution-staging"
+    from aura_core.evolution.external_staging import staging_scope
+    assert gw.calls[1].resource_scope == staging_scope(workspace)
     assert gw.calls[1].risk_level.value == "medium"
     assert workspace.active.exists()
     assert __import__("json").loads(workspace.active.read_text())["active"] == []
@@ -465,3 +467,113 @@ def test_authorization_denial_is_never_treated_as_partial_success(tmp_path):
     with pytest.raises(PermissionError, match="MCPGateway denied"):
         _run(engine.run_once(full_scan=True))
     assert engine.history()[0]["status"] == "FAILED"
+
+
+
+def test_three_candidates_per_cycle_and_rejected_reason_is_persistent(tmp_path):
+    from aura_core.evolution.external_staging import (
+        EvolutionWorkspace, CAPABILITY, staging_scope,
+    )
+    repositories = [f"owner/local-mcp-{i}" for i in range(5)]
+
+    class ManyGateway(FakeGateway):
+        async def invoke(self, request):
+            self.calls.append(request)
+            if request.capability_id == CAPABILITY:
+                if request.arguments["repository"] == repositories[0]:
+                    raise ValueError("No recognizable MCP/local Python or JS entrypoint")
+                return SimpleNamespace(
+                    decision=AuthorizationDecision.ALLOW,
+                    result={
+                        "repository": request.arguments["repository"],
+                        "status": "READY_FOR_OWNER_REVIEW",
+                        "source_sha256": "a" * 64,
+                        "sandbox_attested": False,
+                        "activation_performed": False,
+                        "execution_allowed": False,
+                    },
+                )
+            return SimpleNamespace(
+                decision=AuthorizationDecision.ALLOW,
+                result={"items": [
+                    {"repository": name,
+                     "url": "https://github.com/" + name,
+                     "description": "fully local fastmcp sqlite filesystem",
+                     "license": "MIT", "stars": 120 + index,
+                     "capability_hint": "MCP"}
+                    for index, name in enumerate(repositories)
+                ]},
+            )
+    workspace = EvolutionWorkspace(tmp_path / "external")
+    gateway = ManyGateway()
+    engine = SelfDiscoveryEngine(
+        gateway=gateway, db_path=workspace.root / "catalog" / "queue.sqlite3",
+        workspace=workspace, auto_stage=True,
+    )
+    first = _run(engine.run_once(full_scan=True))
+    stage_calls = [x for x in gateway.calls if x.capability_id == CAPABILITY]
+    assert len(stage_calls) == 3
+    assert all(x.resource_scope == staging_scope(workspace) for x in stage_calls)
+    assert first["staging_attempted"] == 3
+    assert first["staged_count"] == first["verified_count"] == 2
+    assert first["static_ready_count"] == 2
+    assert first["staging_rejected"] == [{
+        "repository": repositories[0],
+        "reason": "No recognizable MCP/local Python or JS entrypoint",
+    }]
+    persisted = SelfDiscoveryEngine(
+        gateway=gateway, db_path=workspace.root / "catalog" / "queue.sqlite3",
+        workspace=workspace, auto_stage=True,
+    )
+    record = next(x for x in persisted.proposals(50)
+                  if x["repository"] == repositories[0])
+    assert record["package_status"] == "STAGING_REJECTED"
+    assert "entrypoint" in record["package_error"]
+    assert record["stage_attempts"] == 1
+    audit = (workspace.root / "logs" / "staging-rejections.jsonl").read_text()
+    assert "entrypoint" in audit and repositories[0] in audit
+    second = _run(persisted.run_once())
+    assert second["staging_attempted"] <= 2
+    assert len([x for x in gateway.calls if x.capability_id == CAPABILITY]) <= 5
+    assert __import__("json").loads(workspace.active.read_text())["active"] == []
+
+
+def test_local_first_github_metadata_ranking_rejects_mandatory_saas():
+    import base64
+    def handler(request):
+        if request.url.path == "/search/repositories":
+            return httpx.Response(200, json={"items": [
+                {"full_name": "brightdata/mcp-server", "description": "cloud API service",
+                 "license": {"spdx_id": "MIT"}, "stargazers_count": 999999},
+                {"full_name": "owner/virustotal-mcp", "description": "VirusTotal API key",
+                 "license": {"spdx_id": "MIT"}, "stargazers_count": 1000},
+                {"full_name": "owner/sqlite-mcp", "description": "Offline sqlite filesystem",
+                 "license": {"spdx_id": "MIT"}, "stargazers_count": 15},
+                {"full_name": "owner/git-memory", "description": "Fully local memory tool",
+                 "license": {"spdx_id": "Apache-2.0"}, "stargazers_count": 20},
+            ]})
+        assert request.url.path in ("/repos/owner/sqlite-mcp/readme",
+                                     "/repos/owner/git-memory/readme")
+        return httpx.Response(200, json={
+            "encoding": "base64",
+            "content": base64.b64encode(
+                b"Local offline stdio MCP, no API key required"
+            ).decode(),
+        })
+    provider = PublicGitHubDiscoveryMCPProvider(
+        transport=httpx.MockTransport(handler),
+    )
+    token = enter_dispatch(DispatchGrant(
+        principal_id="local_owner", capability_id=CAPABILITY_ID,
+        tool_name="search_open_source", risk_level="low",
+        approval_consumed=False,
+    ))
+    try:
+        result = _run(provider.call_tool(
+            "search_open_source", {"query": QUERIES[0]}
+        ))
+    finally:
+        leave_dispatch(token)
+    names = [x["repository"] for x in result["items"]]
+    assert "owner/sqlite-mcp" in names and "owner/git-memory" in names
+    assert not any("brightdata" in x or "virustotal" in x for x in names)

@@ -275,3 +275,85 @@ def test_staging_repo_metadata_over_2m_remains_rejected(tmp_path):
     with pytest.raises(StagingRejected, match="budget"):
         _authorized(provider)
     assert workspace.verified_packages() == []
+
+
+
+def test_scoped_local_owner_policy_and_real_gateway_end_to_end(tmp_path):
+    from aura_core.evolution.external_staging import (
+        local_staging_policy, staging_scope,
+    )
+    from aura_core.kernel.services import ServiceRegistry, ServiceDefinition, ServiceCategory
+    from aura_core.kernel.capabilities import (
+        CapabilityRegistry, CapabilityDefinition, ProviderType, CapabilityCategory,
+    )
+    from aura_core.kernel.permissions import (
+        PermissionEngine, AuthorizationDecision, RiskLevel,
+    )
+    from aura_core.mcp.provider import ProviderRegistry, ProviderDefinition
+    from aura_core.mcp.gateway import MCPGateway, MCPGatewayRequest
+
+    workspace = EvolutionWorkspace(tmp_path / "evolution")
+    provider = GitHubStagingMCPProvider(
+        workspace=workspace, transport=_transport(),
+    )
+    services = ServiceRegistry()
+    service = services.register(ServiceDefinition(
+        name="test-static-staging", version="1.0.0", provider="aura",
+        category=ServiceCategory.MCP, capabilities=frozenset({CAPABILITY}),
+    ), provider)
+    providers = ProviderRegistry(services)
+    providers.register(ProviderDefinition(
+        provider_id="aura.test-static-staging", name="Test Static Staging",
+        version="1.0.0", service_id=service.service_id,
+    ), provider)
+    capabilities = CapabilityRegistry(services)
+    capabilities.register(CapabilityDefinition(
+        capability_id=CAPABILITY, name="Bounded External Static Staging",
+        version="1.0.0", description="Inert external local code static inspection",
+        provider_id="aura.test-static-staging", provider_type=ProviderType.MCP,
+        category=CapabilityCategory.SECURITY, tool_name=TOOL,
+        risk_level="medium", required_permissions=frozenset({CAPABILITY}),
+    ))
+    permissions = PermissionEngine(capabilities)
+    permissions.add_policy(local_staging_policy(workspace))
+    gateway = MCPGateway(
+        capability_registry=capabilities, provider_registry=providers,
+        permission_engine=permissions,
+    )
+
+    def request(*, principal="local_owner", scope=None):
+        return MCPGatewayRequest(
+            request_id="unique-staging-test",
+            principal_id=principal, capability_id=CAPABILITY,
+            operation_id=CAPABILITY, resource_scope=scope or staging_scope(workspace),
+            risk_level=RiskLevel.MEDIUM, tool_name=TOOL,
+            arguments={"repository": "sample/worker"},
+        )
+    for principal, scope in (
+        ("stranger", staging_scope(workspace)),
+        ("local_owner", str(workspace.root / "verified")),
+        ("local_owner", str(workspace.root / "staging-sibling")),
+    ):
+        response = _run(gateway.invoke(request(principal=principal, scope=scope)))
+        assert response.decision is AuthorizationDecision.DENY
+        assert not list((workspace.root / "verified").iterdir())
+
+    accepted = _run(gateway.invoke(request()))
+    assert accepted.decision is AuthorizationDecision.ALLOW
+    assert accepted.result["status"] == "READY_FOR_OWNER_REVIEW"
+    assert (workspace.root / "staging" / "sample__worker" / "source.zip").is_file()
+    assert (workspace.root / "verified" / "sample__worker"
+            / "aura-capability-manifest.json").is_file()
+    assert __import__("json").loads(workspace.active.read_text())["active"] == []
+
+
+def test_staging_rejections_are_audited_without_activation(tmp_path):
+    ws = EvolutionWorkspace(tmp_path / "outside")
+    ws.audit_rejection("owner/mcp-repo", "Mandatory external API key required")
+    obj = json.loads(
+        (ws.root / "logs" / "staging-rejections.jsonl").read_text().splitlines()[0]
+    )
+    assert obj["status"] == "STAGING_REJECTED"
+    assert obj["repository"] == "owner/mcp-repo"
+    assert "API key required" in obj["reason"]
+    assert json.loads(ws.active.read_text())["active"] == []
