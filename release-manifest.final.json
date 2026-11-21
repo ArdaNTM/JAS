@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-22T12:30:00.000Z",
+  "generated_at": "2026-11-22T12:45:00.000Z",
   "git_commit": "c7cfe64a195517f0a14868bfd846ba392de83844",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:8c0f0a717e9e87a38a6be99e85458de132525cb99f9a53d39ae96bb57bf42985",
+  "release_digest": "sha256:8fde8818d79bd57ab6568471f57b4a56df7a2e398da811d7e4824baba398ed83",
   "file_count": 450,
   "files": [
     {
@@ -38,7 +38,7 @@
     },
     {
       "path": ".github/workflows/aura-windows-launcher.yml",
-      "sha256": "8284b666f1a315ed0ad92d96b234cc30e17a87264683b34d325546e64ba27a00"
+      "sha256": "419478ccf0c2a0e11d1daebe1912dea28b0d53008197f77aafd8f0ece91f027d"
     },
     {
       "path": ".github/workflows/aura-windows-owner-security.yml",
