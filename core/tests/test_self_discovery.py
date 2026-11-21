@@ -214,3 +214,26 @@ def test_http_manual_scan_reports_all_three_queries(tmp_path):
     assert response.json()["new_count"] == 1
     assert response.json()["items"][0]["stars"] == 128
     assert [call.arguments["query"] for call in gateway.calls] == list(QUERIES)
+
+
+def test_http_github_rate_limit_surfaces_actual_error(tmp_path):
+    class RateLimitedGateway(FakeGateway):
+        async def invoke(self, request):
+            self.calls.append(request)
+            raise DiscoveryUnavailable("GitHub public API rate limit reached (403/429)")
+    gateway = RateLimitedGateway()
+    engine = SelfDiscoveryEngine(gateway=gateway, db_path=tmp_path / "limited.sqlite3")
+    app = FastAPI()
+    app.state.http_bearer_token = "t" * 40
+    app.state.http_principal_id = "local_owner"
+    app.state.self_discovery = engine
+    app.state.storage_mode = "local"
+    app.include_router(router)
+    response = TestClient(app).post(
+        "/api/evolution/discovery/run",
+        headers={"Authorization": "Bearer " + "t" * 40},
+    )
+    assert response.status_code == 429
+    assert "rate limit" in response.json()["detail"]
+    assert engine.count() == 0
+    assert len(gateway.calls) == 1

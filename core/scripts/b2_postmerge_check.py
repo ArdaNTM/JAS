@@ -27,7 +27,7 @@ V1_SIMULATION = frozenset({81, 85, 86, 87, 88, 89, 90})
 V1_FINAL_WINDOWS = frozenset({1, 6, 7, 9, 11, 13, 14, 16, 17, 18, 19, 20, 22, 23, 24, 26, 28, 31, 32, 49, 54, 55, 57, 69, 77, 78, 79, 80, 82, 83, 84, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 104, 106, 113, 116})
 V1_FINAL_HYPERV = frozenset({25, 27, 33, 45, 51, 60, 101})
 V1_ACCEPTED = V1_SOFTWARE | V1_SIMULATION | V1_FINAL_WINDOWS | V1_FINAL_HYPERV
-_TEST_PATH = re.compile(r"(?:core/)?tests/[A-Za-z0-9_./-]+\\.py")
+_TEST_PATH = re.compile(r"(?:core/)?tests/[A-Za-z0-9_./-]+\.py")
 
 
 def _inside_tree(candidate: Path, tree_root: Path) -> bool:
