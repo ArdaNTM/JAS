@@ -192,3 +192,12 @@ def test_read_only_verified_inventory_never_grants_activation(tmp_path):
     assert packages[0]["repository"] == "sample/worker"
     assert packages[0]["sandbox_attested"] is False
     assert packages[0]["activation_performed"] is False
+
+
+def test_external_evolution_root_never_equals_checkout():
+    from pathlib import Path
+    checkout = Path(__file__).resolve().parents[2]
+    with pytest.raises(PermissionError, match="outside JAS checkout"):
+        EvolutionWorkspace(checkout)
+    with pytest.raises(PermissionError, match="outside JAS checkout"):
+        EvolutionWorkspace(checkout / "core" / "test-secret")

@@ -273,3 +273,57 @@ def test_discovery_read_only_history_and_static_inventory(tmp_path):
     assert packages.json()["activation_performed"] is False
     assert packages.json()["ready_count"] == 0
     assert client.get("/api/evolution/discovery/verified").status_code == 401
+
+
+def test_auto_staging_calls_second_gateway_tool_but_no_execution(tmp_path):
+    from aura_core.evolution.external_staging import EvolutionWorkspace, CAPABILITY
+    class StageGateway(FakeGateway):
+        async def invoke(self, request):
+            if request.capability_id == CAPABILITY:
+                self.calls.append(request)
+                return SimpleNamespace(decision=AuthorizationDecision.ALLOW, result={
+                    "repository": request.arguments["repository"],
+                    "status": "READY_FOR_OWNER_REVIEW",
+                    "source_sha256": "a" * 64,
+                    "sandbox_attested": False,
+                    "activation_performed": False,
+                })
+            return await super().invoke(request)
+    workspace = EvolutionWorkspace(tmp_path / "workspace")
+    gw = StageGateway()
+    engine = SelfDiscoveryEngine(gateway=gw,
+                                 db_path=workspace.root / "catalog" / "proposals.sqlite3",
+                                 workspace=workspace, auto_stage=True)
+    result = _run(engine.run_once())
+    assert result["staged_count"] == 1
+    assert result["static_ready_count"] == 1
+    assert engine.proposals()[0]["package_status"] == "READY_FOR_OWNER_REVIEW"
+    assert [call.capability_id for call in gw.calls] == [
+        "github.repository.search", "github.repository.stage"
+    ]
+    assert gw.calls[1].resource_scope == "evolution-staging"
+    assert gw.calls[1].risk_level.value == "medium"
+    assert workspace.active.exists()
+    assert __import__("json").loads(workspace.active.read_text())["active"] == []
+    _run(engine.run_once())
+    assert [call.capability_id for call in gw.calls].count("github.repository.stage") == 1
+
+
+def test_denied_staging_never_marks_ready_or_registers_code(tmp_path):
+    from aura_core.evolution.external_staging import EvolutionWorkspace, CAPABILITY
+    class DeniedStage(FakeGateway):
+        async def invoke(self, request):
+            if request.capability_id == CAPABILITY:
+                self.calls.append(request)
+                return SimpleNamespace(decision=AuthorizationDecision.DENY, result=None)
+            return await super().invoke(request)
+    workspace = EvolutionWorkspace(tmp_path / "workspace")
+    engine = SelfDiscoveryEngine(gateway=DeniedStage(),
+                                 db_path=workspace.root / "catalog" / "proposals.sqlite3",
+                                 workspace=workspace, auto_stage=True)
+    result = _run(engine.run_once())
+    assert result["staged_count"] == 0
+    assert engine.proposals()[0]["package_status"] == "STAGING_REJECTED"
+    assert engine.static_ready_count() == 0
+    assert workspace.verified_packages() == []
+    assert __import__("json").loads(workspace.active.read_text())["active"] == []

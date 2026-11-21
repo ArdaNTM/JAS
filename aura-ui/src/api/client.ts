@@ -481,3 +481,21 @@ export async function runSelfDiscovery(): Promise<DiscoveryResult> {
     throw error;
   }
 }
+
+export interface StaticEvolutionPackage {
+  repository: string;
+  source_sha256: string;
+  license: string;
+  entrypoint_hint: string;
+  status: "READY_FOR_OWNER_REVIEW";
+  sandbox_attested: false;
+  activation_performed: false;
+}
+
+export function getVerifiedEvolutionPackages(): Promise<{
+  items: StaticEvolutionPackage[];
+  ready_count: number;
+  activation_performed: false;
+}> {
+  return request("/api/evolution/discovery/verified", { method: "GET", cache: "no-store" });
+}

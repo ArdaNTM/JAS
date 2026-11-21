@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { getDiscoveryProposals, type DiscoveryProposal } from "../api/client";
+import {
+  getDiscoveryProposals, getVerifiedEvolutionPackages,
+  type DiscoveryProposal, type StaticEvolutionPackage,
+} from "../api/client";
 
 interface GoalGroup {
   goal_id: string;
@@ -37,11 +40,17 @@ export default function EvolutionReviewPanel() {
   const [message, setMessage] = useState("Evolution incelemesi yalnızca görüntüleme modundadır.");
   const [discovered, setDiscovered] = useState<DiscoveryProposal[]>([]);
   const [discoveryCount, setDiscoveryCount] = useState(0);
+  const [staticReady, setStaticReady] = useState<StaticEvolutionPackage[]>([]);
   const refreshDiscovered = useCallback(async () => {
     try {
       const result = await getDiscoveryProposals();
       setDiscovered(result.items);
       setDiscoveryCount(result.proposal_count);
+      const ready = await getVerifiedEvolutionPackages();
+      if (ready.activation_performed) {
+        throw new Error("Untrusted static review must not authorize tool execution");
+      }
+      setStaticReady(ready.items);
     } catch {
       // Local discovery may be independently disabled; no false readiness.
     }
@@ -97,7 +106,9 @@ export default function EvolutionReviewPanel() {
             EVOLUTION / PRIMAL ANCHOR
           </p>
           <p className="mt-2 text-slate-400">Gelişim önerileri · Onay ve çalıştırma bu HUD içinde mümkün değil.</p>
-          <p className="mt-2 text-[10px] text-cyan-300">GitHub inceleme kuyruğu · Öneri: {discoveryCount}</p>
+          <p className="mt-2 text-[10px] text-cyan-300">
+            GitHub öneri kuyruğu: {discoveryCount} · Statik paketi hazır: {staticReady.length}
+          </p>
         </div>
         <button
           type="button"
@@ -152,6 +163,25 @@ export default function EvolutionReviewPanel() {
                         ? "STAGING REDDEDİLDİ · KAYNAK GÜVENLİĞİ DOĞRULANMADI"
                         : "İNCELEME / STAGING BEKLİYOR"} · KOD ÇALIŞTIRILMADI
                   </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {staticReady.length > 0 && (
+            <div className="space-y-2 border-t border-cyan-950 pt-4">
+              <h3 className="text-amber-300">DEPO DIŞI STATİK PAKETLER · ATTESTATION BEKLİYOR</h3>
+              {staticReady.map((candidate) => (
+                <div key={candidate.repository} className="rounded border border-amber-900 p-3">
+                  <p className="font-medium text-cyan-200">{candidate.repository}</p>
+                  <p className="mt-1 text-slate-400">
+                    {candidate.license} · Giriş noktası önerisi: {candidate.entrypoint_hint}
+                  </p>
+                  <p className="break-all font-mono text-[10px] text-slate-500">
+                    SHA-256: {candidate.source_sha256}
+                  </p>
+                  <p className="mt-2 text-amber-300">
+                    STATİK KONTROL · BAĞIMSIZ SANDBOX ATTESTATION VE PASSKEY GEREKLİ
+                  </p>
                 </div>
               ))}
             </div>
