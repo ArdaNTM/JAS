@@ -41,6 +41,29 @@ def _ascii_fold(value: str) -> str:
     )
 
 
+# Explicit read-only exploration intent; normalized Turkish spellings are
+# matched on word boundaries, not as substrings of unrelated identifiers.
+_DISCOVERY_INTENTS = (
+    r"kendini\\s+gelistir(?:\\w*)?",
+    r"(?:yeni\\s+)?(?:ucretsiz\\s+)?(?:ozellik|yetenek)(?:ler)?\\s+"
+    r"(?:arastir|kesfet)(?:\\w*)?",
+    r"yetenek\\s+kesfet(?:\\w*)?",
+    r"github(?:\\s*['’\\-]?\\s*dan|dan)",
+    r"yeni\\s+arac(?:lar)?\\s+bul(?:\\w*)?",
+    r"mcp\\s+arastir(?:\\w*)?",
+    r"self\\s+discovery",
+)
+_DISCOVERY_PATTERN = re.compile(
+    r"(?<![a-z0-9_])(?:" + "|".join(_DISCOVERY_INTENTS) + r")(?![a-z0-9_])"
+)
+
+
+def is_self_discovery_intent(message: str) -> bool:
+    if not isinstance(message, str) or len(message) > 32768:
+        return False
+    return bool(_DISCOVERY_PATTERN.search(_ascii_fold(message)))
+
+
 class DirectivePlanner:
     """
     Deterministic, allow-listed directive planner.
@@ -102,13 +125,9 @@ class DirectivePlanner:
         normalized = _ascii_fold(text)
         tokens = set(normalized.split())
 
-        # Discovery is an explicit user action; plain capability questions do
-        # not trigger any GitHub fetch or permission operation.
-        if (normalized.strip(" .!?") == "kendini gelistir"
-                or ("yeni" in normalized and "ucretsiz" in normalized
-                    and "ozellik" in normalized and "arastir" in normalized)
-                or ("github" in normalized and "kendine" in normalized
-                    and "arac" in normalized and "bul" in normalized)):
+        # Match an explicit discovery intent anywhere in compound Turkish text,
+        # before the general research, capability Q&A or model-selected tools.
+        if is_self_discovery_intent(text):
             return GeneratedPlan(resource_scope="local-discovery", steps=())
 
         # Question-first classification runs before search keyword matching;

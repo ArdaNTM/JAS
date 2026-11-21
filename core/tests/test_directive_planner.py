@@ -90,3 +90,35 @@ def test_explicit_inflected_turkish_research_still_routes_to_gateway():
     plan = DirectivePlanner().plan(phrase)
     assert plan.resource_scope == "public-web"
     assert plan.steps[0].capability_id == "internet.search"
+
+
+def test_compound_turkish_discovery_intents_never_trigger_general_research():
+    variants = (
+        "Kendini geliştir, GitHub'dan ücretsiz özellikler araştır",
+        "KENDİNİ GELİŞTİR",
+        "KENDİNİ GELİŞTİR, GitHub’dan ücretsiz özellikler araştır",
+        "kendini gelistir",
+        "ÖZELLİK ARAŞTIR",
+        "ozellik arastir",
+        "yetenek araştır",
+        "yetenek keşfet",
+        "Github'dan",
+        "githubdan",
+        "yeni araç bul",
+        "mcp araştır",
+        "self discovery",
+        "İSTİYORUM: Github'dan AURA'ya yeni araç bul!",
+        "Lütfen yeni ücretsiz özellikler araştır",
+    )
+    from aura_core.application.directive_planner import is_self_discovery_intent
+    for message in variants:
+        assert is_self_discovery_intent(message), message
+        plan = DirectivePlanner().plan(message)
+        assert plan.resource_scope == "local-discovery", message
+        assert not plan.steps
+
+
+def test_unrelated_github_substrings_not_automatically_discovery():
+    from aura_core.application.directive_planner import is_self_discovery_intent
+    for message in ("githubdashboard", "superself discoverytool", "aracbulucu"):
+        assert not is_self_discovery_intent(message)

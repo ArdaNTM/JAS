@@ -366,35 +366,50 @@ export default function App() {
         setPlan([]);
         setResearchOutput(null);
         setSystemState("executing");
-        setTaskState("AÇIK KAYNAK KEŞFİ");
-        const found = await runSelfDiscovery();
-        const descriptions = found.items.slice(0, 6).map((item) =>
-          [
-            item.repository + " · " + item.license,
+        setTaskState("GITHUB KEŞFİ");
+        try {
+          const found = await runSelfDiscovery();
+          const descriptions = found.items.slice(0, 9).map((item) => [
+            "**" + item.repository + "** · ⭐ " +
+              (typeof item.stars === "number" ? item.stars : "bilinmiyor") +
+              " · Lisans: " + item.license,
             item.description,
-            "Katkı: " + item.capability_hint,
+            "AURA'ya katkısı: " + item.capability_hint,
             item.url,
-          ].join("\n")
-        );
-        const reply = [
-          "Ücretsiz/açık kaynak GitHub keşfi tamamlandı.",
-          "Yeni öneri: " + (found.new_count ?? 0) +
-            " · Kalıcı inceleme kuyruğu: " + found.proposal_count,
-          ...descriptions,
-          descriptions.length === 0
-            ? "Bu taramada doğrulanabilir yeni aday bulunamadı. Lisans/README filtresi sıkıdır."
-            : "Adaylar yalnızca metadata incelemesidir; kod indirilmedi veya çalıştırılmadı.",
-          "Onay ve güvenli entegrasyon için ayrı Trusted Owner Control Plane incelemesi gerekir.",
-        ].join("\n\n");
-        setChatHistory((current) => [...current, {
-          id: makeId(), role: "assistant" as const,
-          content: reply, source: "MCP Gateway · GitHub Public Search",
-          reviewAvailable: true,
-        }].slice(-40));
-        setSystemState("idle");
-        setSessionState("idle");
-        setTaskState("HAZIR");
-        pushTelemetry("GITHUB ÖNERİLERİ İNCELEME KUYRUĞUNA ALINDI");
+            "Durum: Owner Control Plane inceleme kuyruğunda (aktivasyon yapılmadı).",
+          ].join("\n"));
+          const reply = [
+            "SelfDiscoveryEngine gerçek GitHub Public Search taramasını tamamladı.",
+            "Yeni öneri: " + (found.new_count ?? 0) +
+              " · Kalıcı öneri kuyruğu: " + found.proposal_count,
+            ...descriptions,
+            descriptions.length === 0
+              ? "Bu canlı taramada lisans ve yerel çalışabilirlik filtresini geçen repo bulunamadı."
+              : "Repo kayıtları GitHub metadata/README kanıtıdır; kod indirilmedi veya çalıştırılmadı.",
+            "Bağımsız Owner Control Plane ve sandbox incelemesi olmadan entegrasyon yapılmaz.",
+          ].join("\n\n");
+          setChatHistory((current) => [...current, {
+            id: makeId(), role: "assistant" as const,
+            content: reply, source: "SelfDiscoveryEngine · GitHub Keşif",
+            reviewAvailable: true,
+          }].slice(-40));
+          setTaskState("HAZIR");
+          pushTelemetry("GERÇEK GITHUB REPO TARAMASI TAMAMLANDI");
+        } catch (cause) {
+          const reason = cause instanceof Error ? cause.message
+            : "GitHub keşif hizmeti yanıt vermedi.";
+          setChatHistory((current) => [...current, {
+            id: makeId(), role: "assistant" as const,
+            content: "Canlı GitHub keşfi başarısız: " + reason,
+            source: "SelfDiscoveryEngine · GitHub Keşif",
+          }].slice(-40));
+          setTaskState("BAŞARISIZ");
+          setError(reason);
+          pushTelemetry("GITHUB KEŞFİ BAŞARISIZ: " + reason);
+        } finally {
+          setSystemState("idle");
+          setSessionState("idle");
+        }
         return;
       }
 

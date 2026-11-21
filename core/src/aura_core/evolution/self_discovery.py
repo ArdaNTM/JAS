@@ -92,7 +92,9 @@ class PublicGitHubDiscoveryMCPProvider:
                 "User-Agent": "AURA-JAS-Local-Discovery/1.0",
             }) as response:
                 if response.status_code in (403, 429):
-                    raise DiscoveryUnavailable("GitHub public API rate limit reached")
+                    raise DiscoveryUnavailable("GitHub public API rate limit reached (403/429)")
+                if response.status_code == 404:
+                    raise FileNotFoundError("GitHub README/repository not found")
                 if response.status_code != 200:
                     raise DiscoveryUnavailable("GitHub public API unavailable")
                 data = bytearray()
@@ -134,6 +136,9 @@ class PublicGitHubDiscoveryMCPProvider:
                 if not isinstance(row, dict):
                     continue
                 full_name = row.get("full_name")
+                stars = row.get("stargazers_count")
+                if type(stars) is not int or not 0 <= stars <= 2_000_000_000:
+                    continue
                 license_obj = row.get("license")
                 license_id = (license_obj.get("spdx_id")
                               if isinstance(license_obj, dict) else None)
@@ -156,7 +161,11 @@ class PublicGitHubDiscoveryMCPProvider:
                     description = content.decode("utf-8", "replace")
                     if not _POSITIVE.search(description) or _NEGATIVE.search(description):
                         continue
-                except (DiscoveryUnavailable, ValueError, TypeError, OSError):
+                except DiscoveryUnavailable:
+                    # Never disguise rate limits or GitHub network failures as
+                    # a valid empty discovery result.
+                    raise
+                except (ValueError, TypeError, OSError):
                     continue
                 candidates.append({
                     "repository": full_name,
@@ -164,6 +173,7 @@ class PublicGitHubDiscoveryMCPProvider:
                     "description": _safe_text(row.get("description")) or
                                    "Local open-source MCP / AI integration candidate",
                     "license": license_id,
+                    "stars": stars,
                     "capability_hint": (
                         "MCP server integration" if "mcp" in query
                         else "local inference and automation"
@@ -211,8 +221,14 @@ class SelfDiscoveryEngine:
                 license TEXT NOT NULL,
                 capability_hint TEXT NOT NULL,
                 status TEXT NOT NULL DEFAULT 'pending_owner_review',
-                created_at REAL NOT NULL
+                created_at REAL NOT NULL,
+                stars INTEGER
             )""")
+            # Existing PR #168 SQLite files must migrate without losing queued
+            # proposals. Old entries have unknown, never fabricated stars.
+            columns = {row[1] for row in db.execute("PRAGMA table_info(evolution_proposals)")}
+            if "stars" not in columns:
+                db.execute("ALTER TABLE evolution_proposals ADD COLUMN stars INTEGER")
 
     def _connect(self):
         return sqlite3.connect(str(self._db_path), timeout=5)
@@ -222,14 +238,14 @@ class SelfDiscoveryEngine:
         with self._connect() as db:
             rows = db.execute(
                 "SELECT proposal_id,repository,url,description,license,"
-                "capability_hint,status,created_at "
+                "capability_hint,status,created_at,stars "
                 "FROM evolution_proposals ORDER BY created_at DESC LIMIT ?", (count,)
             ).fetchall()
         proposals = []
         for row in rows:
             record = dict(zip(
                 ("proposal_id", "repository", "url", "description", "license",
-                 "capability_hint", "status", "created_at"), row
+                 "capability_hint", "status", "created_at", "stars"), row
             ))
             # A non-executable integration blueprint is review data only.
             # Never infer a runnable entrypoint from arbitrary GitHub README.
@@ -260,63 +276,77 @@ class SelfDiscoveryEngine:
             "requires_independent_attestation": True,
         }
 
-    async def run_once(self) -> dict[str, object]:
+    async def run_once(self, *, full_scan: bool = False) -> dict[str, object]:
         async with self._lock:
-            query = QUERIES[self._cycle % len(QUERIES)]
-            # One bounded query/cycle limits anonymous GitHub API consumption.
-            self._cycle += 1
+            indexes = (
+                range(len(QUERIES)) if full_scan
+                else (self._cycle % len(QUERIES),)
+            )
+            self._cycle += len(indexes)
+            seen: set[str] = set()
+            saved = 0
             try:
-                response = await self.gateway.invoke(MCPGatewayRequest(
-                    request_id=str(uuid4()), principal_id=self.principal_id,
-                    capability_id=CAPABILITY_ID, operation_id=CAPABILITY_ID,
-                    resource_scope=SCOPE, risk_level=RiskLevel.LOW,
-                    tool_name=TOOL_NAME, arguments={"query": query},
-                ))
-                if response.decision is not AuthorizationDecision.ALLOW:
-                    raise PermissionError("MCPGateway denied GitHub discovery")
-                result = response.result
-                if not isinstance(result, dict) or not isinstance(result.get("items"), list):
-                    raise DiscoveryUnavailable("Discovery provider returned invalid evidence")
-                saved = 0
-                with self._connect() as db:
-                    for row in result["items"][:3]:
-                        if not isinstance(row, dict):
-                            continue
-                        name = row.get("repository")
-                        license_id = row.get("license")
-                        if (not isinstance(name, str) or not _REPO.fullmatch(name)
-                                or license_id not in PERMITTED_LICENSES
-                                or row.get("url") != "https://github.com/" + name):
-                            continue
-                        proposal_id = hashlib.sha256(name.casefold().encode()).hexdigest()[:24]
-                        try:
-                            cursor = db.execute(
-                                "INSERT OR IGNORE INTO evolution_proposals "
-                                "(proposal_id,repository,url,description,license,capability_hint,created_at)"
-                                "VALUES (?,?,?,?,?,?,?)",
-                                (proposal_id, name, row["url"],
-                                 _safe_text(row.get("description")),
-                                 license_id, _safe_text(row.get("capability_hint"), 100),
-                                 time.time()),
-                            )
-                            saved += cursor.rowcount
-                        except (TypeError, ValueError, KeyError):
-                            continue
+                for index in indexes:
+                    response = await self.gateway.invoke(MCPGatewayRequest(
+                        request_id=str(uuid4()), principal_id=self.principal_id,
+                        capability_id=CAPABILITY_ID, operation_id=CAPABILITY_ID,
+                        resource_scope=SCOPE, risk_level=RiskLevel.LOW,
+                        tool_name=TOOL_NAME, arguments={"query": QUERIES[index]},
+                    ))
+                    if response.decision is not AuthorizationDecision.ALLOW:
+                        raise PermissionError("MCPGateway denied GitHub discovery")
+                    result = response.result
+                    if not isinstance(result, dict) or not isinstance(result.get("items"), list):
+                        raise DiscoveryUnavailable("Discovery provider returned invalid evidence")
+
+                    with self._connect() as db:
+                        for row in result["items"][:3]:
+                            if not isinstance(row, dict):
+                                continue
+                            name = row.get("repository")
+                            license_id = row.get("license")
+                            stars = row.get("stars")
+                            if (not isinstance(name, str) or not _REPO.fullmatch(name)
+                                    or license_id not in PERMITTED_LICENSES
+                                    or row.get("url") != "https://github.com/" + name
+                                    or type(stars) is not int
+                                    or not 0 <= stars <= 2_000_000_000):
+                                continue
+                            seen.add(name)
+                            proposal_id = hashlib.sha256(name.casefold().encode()).hexdigest()[:24]
+                            try:
+                                cursor = db.execute(
+                                    "INSERT OR IGNORE INTO evolution_proposals "
+                                    "(proposal_id,repository,url,description,license,capability_hint,"
+                                    "created_at,stars) VALUES (?,?,?,?,?,?,?,?)",
+                                    (proposal_id, name, row["url"],
+                                     _safe_text(row.get("description")),
+                                     license_id, _safe_text(row.get("capability_hint"), 100),
+                                     time.time(), stars),
+                                )
+                                saved += cursor.rowcount
+                                # Refresh genuine GitHub star count for previously
+                                # queued repositories without changing review state.
+                                if cursor.rowcount == 0:
+                                    db.execute(
+                                        "UPDATE evolution_proposals SET stars=? "
+                                        "WHERE proposal_id=? AND repository=?",
+                                        (stars, proposal_id, name),
+                                    )
+                            except (TypeError, ValueError, KeyError):
+                                continue
+
                 research_crosscheck = "not_requested"
                 if saved and os.getenv("AURA_DISCOVERY_USE_RESEARCH_MCP", "0") == "1":
-                    # Existing local research capability is optional, but may
-                    # only be invoked through MCPGateway. Search snippets
-                    # NEVER override GitHub license/README eligibility.
                     first = self.proposals(1)
                     if first:
                         try:
                             check = await asyncio.wait_for(self.gateway.invoke(
                                 MCPGatewayRequest(
                                     request_id=str(uuid4()), principal_id=self.principal_id,
-                                    capability_id="internet.search",
-                                    operation_id="internet.search",
-                                    resource_scope="public-web",
-                                    risk_level=RiskLevel.LOW, tool_name="search",
+                                    capability_id="internet.search", operation_id="internet.search",
+                                    resource_scope="public-web", risk_level=RiskLevel.LOW,
+                                    tool_name="search",
                                     arguments={"query": first[0]["repository"] +
                                                " local open-source documentation"},
                                 )
@@ -327,9 +357,13 @@ class SelfDiscoveryEngine:
                             )
                         except Exception:
                             research_crosscheck = "unavailable"
+                # Only show repositories actually returned by this live scan.
+                # Historical queued entries are available via the list endpoint.
+                current = [record for record in self.proposals(50)
+                           if record["repository"] in seen]
                 self._last_error = ""
                 return {
-                    "items": self.proposals(10), "proposal_count": self.count(),
+                    "items": current, "proposal_count": self.count(),
                     "new_count": saved, "mode": "review_only",
                     "owner_review_url": "http://localhost:8766/",
                     "activation_performed": False,

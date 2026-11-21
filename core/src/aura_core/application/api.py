@@ -29,7 +29,7 @@ from aura_core.application.live_events import LiveEventBroker
 from aura_core.application.readiness import ReadinessService
 from aura_core.application.service import InferenceService
 from aura_core.application.tasks import AgentTaskService, SubmittedTask
-from aura_core.application.directive_planner import DirectivePlanner, GeneratedPlan, GeneratedStep
+from aura_core.application.directive_planner import DirectivePlanner, is_self_discovery_intent, GeneratedPlan, GeneratedStep
 from aura_core.application.reasoning_planner import ReasoningPlanner
 from aura_core.application.capability_discovery import DynamicCapabilityDiscovery
 from aura_core.application.proactive_store import ProactiveSuggestionStore
@@ -2270,21 +2270,23 @@ def create_api(
         request: DirectivePlanRequest,
         principal_id: str = Depends(authenticated_principal),
     ) -> DirectivePlanResponse:
-
-        try:
-            generated = app.state.directive_planner.plan(request.directive)
-        except ValueError as exc:
-            # The existing deterministic planner handles known safe operations.
-            # Model-selected tools require explicit host opt-in, real registry
-            # bindings and subsequent independent Gateway authorization.
-            if (os.getenv("AURA_ASSISTANT_AUTO_TOOLS_ENABLED", "0") == "1"
-                    and "No governed capability matches" in str(exc)):
-                try:
-                    generated = await _model_select_governed_tool(request.directive)
-                except (ValueError, TypeError) as invalid:
-                    raise HTTPException(status_code=422, detail=str(invalid)) from invalid
-            else:
-                raise HTTPException(status_code=422, detail=str(exc)) from exc
+        # Explicit discovery never reaches the probabilistic tool selector.
+        # This is metadata-only planning; the actual outbound GET later
+        # requires the separately authenticated, Gateway-governed endpoint.
+        if is_self_discovery_intent(request.directive):
+            generated = GeneratedPlan(resource_scope="local-discovery", steps=())
+        else:
+            try:
+                generated = app.state.directive_planner.plan(request.directive)
+            except ValueError as exc:
+                if (os.getenv("AURA_ASSISTANT_AUTO_TOOLS_ENABLED", "0") == "1"
+                        and "No governed capability matches" in str(exc)):
+                    try:
+                        generated = await _model_select_governed_tool(request.directive)
+                    except (ValueError, TypeError) as invalid:
+                        raise HTTPException(status_code=422, detail=str(invalid)) from invalid
+                else:
+                    raise HTTPException(status_code=422, detail=str(exc)) from exc
 
         return DirectivePlanResponse(
             resource_scope=generated.resource_scope,

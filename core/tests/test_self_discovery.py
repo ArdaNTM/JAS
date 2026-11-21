@@ -36,9 +36,9 @@ def test_fixed_origin_and_strict_free_license_filter():
         if request.url.path == "/search/repositories":
             return httpx.Response(200, json={"items": [
                 {"full_name": "verified/local", "description": "Local model MCP",
-                 "license": {"spdx_id": "MIT"}, "archived": False},
+                 "license": {"spdx_id": "MIT"}, "archived": False, "stargazers_count": 128},
                 {"full_name": "unlicensed/repo", "license": None},
-                {"full_name": "premium/api", "license": {"spdx_id": "Apache-2.0"}},
+                {"full_name": "premium/api", "license": {"spdx_id": "Apache-2.0"}, "stargazers_count": 32},
             ]})
         if request.url.path.endswith("/verified/local/readme"):
             return httpx.Response(200, json={
@@ -60,6 +60,7 @@ def test_fixed_origin_and_strict_free_license_filter():
     finally:
         leave_dispatch(token)
     assert [item["repository"] for item in result["items"]] == ["verified/local"]
+    assert result["items"][0]["stars"] == 128
     assert all(url.startswith("https://api.github.com/") for url in urls)
 
 
@@ -87,10 +88,10 @@ class FakeGateway:
             "items": [
                 {"repository": "verified/local",
                  "url": "https://github.com/verified/local", "description": "Offline",
-                 "license": "MIT", "capability_hint": "MCP"},
+                 "license": "MIT", "capability_hint": "MCP", "stars": 128},
                 {"repository": "forbidden/paid",
                  "url": "https://github.com/forbidden/paid", "license": "GPL-3.0",
-                 "description": "Paid", "capability_hint": "MCP"},
+                 "description": "Paid", "capability_hint": "MCP", "stars": 99},
             ],
         })
 
@@ -148,3 +149,68 @@ def test_optional_local_research_requires_a_second_gateway_dispatch(tmp_path, mo
     ]
     assert result["items"][0]["integration_blueprint"]["entrypoint"] is None
     assert result["activation_performed"] is False
+
+
+
+def test_full_scan_calls_all_three_gateway_queries_and_never_invents_items(tmp_path):
+    gateway = FakeGateway()
+    engine = SelfDiscoveryEngine(gateway=gateway, db_path=tmp_path / "full.sqlite3")
+    result = _run(engine.run_once(full_scan=True))
+    assert [call.arguments["query"] for call in gateway.calls] == list(QUERIES)
+    assert result["new_count"] == 1
+    assert result["items"][0]["stars"] == 128
+    assert result["items"][0]["repository"] == "verified/local"
+    assert result["proposal_count"] == 1
+
+
+def test_old_sqlite_database_migrates_stars_without_erasing_queue(tmp_path):
+    import sqlite3
+    path = tmp_path / "legacy.sqlite3"
+    with sqlite3.connect(path) as db:
+        db.execute("""CREATE TABLE evolution_proposals (
+            proposal_id TEXT PRIMARY KEY,
+            repository TEXT NOT NULL UNIQUE, url TEXT NOT NULL,
+            description TEXT NOT NULL, license TEXT NOT NULL,
+            capability_hint TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'pending_owner_review',
+            created_at REAL NOT NULL)""")
+        db.execute("INSERT INTO evolution_proposals VALUES (?,?,?,?,?,?,?,?)",
+                   ("old", "owner/existing", "https://github.com/owner/existing",
+                    "Existing", "MIT", "MCP", "pending_owner_review", 1.0))
+    engine = SelfDiscoveryEngine(gateway=FakeGateway(), db_path=path)
+    assert engine.count() == 1
+    assert engine.proposals()[0]["stars"] is None
+
+
+def test_github_rate_limit_is_not_a_successful_empty_result():
+    async def handler(request):
+        return httpx.Response(429, json={"message": "API rate limit exceeded"})
+    provider = PublicGitHubDiscoveryMCPProvider(
+        transport=httpx.MockTransport(handler))
+    token = enter_dispatch(DispatchGrant(
+        principal_id="local_owner", capability_id=CAPABILITY_ID,
+        tool_name="search_open_source", risk_level="low",
+        approval_consumed=False,
+    ))
+    try:
+        with pytest.raises(DiscoveryUnavailable, match="rate limit"):
+            _run(provider.call_tool("search_open_source", {"query": QUERIES[0]}))
+    finally:
+        leave_dispatch(token)
+
+
+def test_http_manual_scan_reports_all_three_queries(tmp_path):
+    gateway = FakeGateway()
+    engine = SelfDiscoveryEngine(gateway=gateway, db_path=tmp_path / "http.sqlite3")
+    app = FastAPI()
+    app.state.http_bearer_token = "t" * 40
+    app.state.http_principal_id = "local_owner"
+    app.state.self_discovery = engine
+    app.state.storage_mode = "local"
+    app.include_router(router)
+    response = TestClient(app).post("/api/evolution/discovery/run",
+                                    headers={"Authorization": "Bearer " + "t" * 40})
+    assert response.status_code == 200, response.text
+    assert response.json()["new_count"] == 1
+    assert response.json()["items"][0]["stars"] == 128
+    assert [call.arguments["query"] for call in gateway.calls] == list(QUERIES)

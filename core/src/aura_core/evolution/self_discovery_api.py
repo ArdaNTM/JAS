@@ -38,8 +38,12 @@ async def list_proposals(request: Request, principal: str = Depends(authenticate
 async def run_discovery(request: Request, principal: str = Depends(authenticated_principal)):
     engine = _engine(request, principal)
     try:
-        return await asyncio.wait_for(engine.run_once(), timeout=90)
+        return await asyncio.wait_for(engine.run_once(full_scan=True), timeout=90)
     except asyncio.TimeoutError as exc:
         raise HTTPException(status_code=504, detail="GitHub discovery timed out") from exc
-    except (DiscoveryUnavailable, OSError, PermissionError, RuntimeError) as exc:
+    except DiscoveryUnavailable as exc:
+        message = str(exc)[:180]
+        status = 429 if "rate limit" in message.lower() else 503
+        raise HTTPException(status_code=status, detail=message) from exc
+    except (OSError, PermissionError, RuntimeError) as exc:
         raise HTTPException(status_code=503, detail=str(exc)[:180]) from exc
