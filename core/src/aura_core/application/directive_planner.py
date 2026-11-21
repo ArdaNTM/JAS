@@ -95,6 +95,21 @@ class DirectivePlanner:
         normalized = _ascii_fold(text)
         tokens = set(normalized.split())
 
+        # Identity/capability questions are never searches just because the
+        # Turkish word "araç" folds to "arac" and contains "ara".
+        conversation = normalized
+        if conversation.startswith("aura"):
+            suffix = conversation[4:]
+            if not suffix or suffix[0] in " ,:;.!?-":
+                conversation = suffix.lstrip(" ,:;.!?-")
+        if any(conversation.startswith(prefix) for prefix in (
+            "neler yapabilirsin", "ne yapabilirsin", "hangi araclarin",
+            "hangi yeteneklerin", "hangi ozelliklerin",
+            "what can you do", "what tools", "what capabilities",
+            "kimsin", "who are you",
+        )):
+            return GeneratedPlan(resource_scope="local-assistant", steps=())
+
         starts_as_3d = normalized.startswith(("3d ", "3b "))
         has_visual_verb = any(
             term in tokens for term in self._VISUAL_VERBS
