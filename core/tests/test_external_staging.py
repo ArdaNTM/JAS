@@ -158,7 +158,7 @@ def test_archive_requires_real_entrypoint_and_bounded_zip():
     with pytest.raises(StagingRejected, match="entrypoint"):
         _validated_files(_zip({"worker-abc/README.md": "fully local offline"}))
     with pytest.raises(StagingRejected, match="budget"):
-        _validated_files(b"x" * 3_000_001)
+        _validated_files(b"x" * (32 * 1024 * 1024 + 1))
     with pytest.raises(StagingRejected):
         _validated_files(_zip({"worker-abc/server.py": "a" * 200_000}))
 
