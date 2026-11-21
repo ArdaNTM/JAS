@@ -22,7 +22,9 @@ import httpx
 
 from aura_core.mcp.dispatch_context import current_dispatch
 from aura_core.mcp.mcp_provider import MCPTool
-from aura_core.evolution.self_discovery import PERMITTED_LICENSES
+from aura_core.evolution.self_discovery import (
+    PERMITTED_LICENSES, GITHUB_RESPONSE_MAX_BYTES,
+)
 
 CAPABILITY = "github.repository.stage"
 TOOL = "stage_repository"
@@ -349,7 +351,8 @@ class GitHubStagingMCPProvider:
             follow_redirects=False, trust_env=False,
         ) as client:
             metadata = json.loads(await self._read(
-                client, f"https://api.github.com/repos/{repository}", max_bytes=120_000,
+                client, f"https://api.github.com/repos/{repository}",
+                max_bytes=GITHUB_RESPONSE_MAX_BYTES,
             ))
             if (not isinstance(metadata, dict)
                     or metadata.get("full_name") != repository

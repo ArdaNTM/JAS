@@ -462,6 +462,9 @@ export interface DiscoveryResult {
   items: DiscoveryProposal[];
   proposal_count: number;
   new_count?: number;
+  partial?: boolean;
+  successful_queries?: number;
+  failed_queries?: Array<{ query: string; reason: string }>;
   mode: "review_only";
   owner_review_url?: string;
   activation_performed?: boolean;
