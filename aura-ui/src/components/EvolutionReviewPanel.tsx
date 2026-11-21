@@ -1,4 +1,5 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { getDiscoveryProposals, type DiscoveryProposal } from "../api/client";
 
 interface GoalGroup {
   goal_id: string;
@@ -33,10 +34,22 @@ export default function EvolutionReviewPanel() {
   const [loading, setLoading] = useState(false);
   const [tree, setTree] = useState<GoalTree | null>(null);
   const [drafts, setDrafts] = useState<ReviewDraft[]>([]);
+  const [discoveries, setDiscoveries] = useState<DiscoveryProposal[]>([]);
+  const [discoveryCount, setDiscoveryCount] = useState(0);
   const [message, setMessage] = useState("Evolution incelemesi yalnızca görüntüleme modundadır.");
 
   const refresh = useCallback(async () => {
     setLoading(true);
+    try {
+      const result = await getDiscoveryProposals();
+      if (result.authorization_granted || result.execution_performed) {
+        throw new Error("Beklenmeyen Discovery yürütme yetkisi!");
+      }
+      setDiscoveries(result.items);
+      setDiscoveryCount(result.count);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Öneri kuyruğu erişilemedi.");
+    }
     try {
       const response = await fetch("/api/evolution/goals", {
         method: "GET",
@@ -65,11 +78,17 @@ export default function EvolutionReviewPanel() {
     } catch (error) {
       setTree(null);
       setDrafts([]);
-      setMessage(error instanceof Error ? error.message : "Evolution durumuna erişilemedi");
+      setMessage("Evolution hedef servisi kapalı; GitHub önerileri bağımsız olarak görüntülenebilir.");
     } finally {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (!expanded) return;
+    const refreshTimer = window.setInterval(() => void refresh(), 30_000);
+    return () => window.clearInterval(refreshTimer);
+  }, [expanded, refresh]);
 
   return (
     <section className="mx-auto mt-6 w-full max-w-5xl border border-cyan-900/70 bg-slate-950/80 p-5 text-xs text-slate-200">
@@ -99,7 +118,7 @@ export default function EvolutionReviewPanel() {
             <>
               <div className="flex flex-wrap gap-4 text-cyan-300">
                 <span>Mod: {tree.mode}</span>
-                <span>Öneri: {tree.proposal_count ?? 0}</span>
+                <span>Öneri: {(tree.proposal_count ?? 0) + discoveryCount}</span>
                 <span>Yetki: YOK</span>
               </div>
               {(tree.groups ?? []).map(group => (
@@ -115,6 +134,19 @@ export default function EvolutionReviewPanel() {
               ))}
             </>
           )}
+          <div className="space-y-2 rounded border border-cyan-950 p-3">
+            <h3 className="text-cyan-300">GITHUB KEŞİF ÖNERİLERİ · Öneri: {discoveryCount}</h3>
+            <p className="text-slate-500">Yalnızca kaynak kanıtı · passkey ve entegrasyon yetkisi verilmedi.</p>
+            {discoveries.slice(0, 15).map((item) => (
+              <article key={item.id} className="rounded border border-cyan-950/80 p-2">
+                <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-cyan-300 underline">
+                  {item.full_name}
+                </a>
+                <p>{item.summary}</p>
+                <p className="text-[10px] text-slate-400">{item.license_id} · {item.capability} · Owner incelemesi bekliyor</p>
+              </article>
+            ))}
+          </div>
           {drafts.length > 0 && (
             <div className="space-y-3 border-t border-cyan-950 pt-4">
               <h3 className="text-amber-300">KARANTİNA / OWNER REVIEW BEKLİYOR</h3>
