@@ -7,8 +7,8 @@
   "files": [
     {
       "path": "core/src/aura_core/main.py",
-      "unified_blob_sha": "c180573ef73bc56c426f18887a7dfeb5aeea81e3",
-      "canonical": "PR #166 proposes local reflection lifecycle change; exact-head CI and independent Owner review required before merge",
+      "unified_blob_sha": "85d869647856d61c70359ddcad81c58660d9e2b2",
+      "canonical": "PR #168 proposal-only GitHub discovery registration; F2.7 and existing Owner controls untouched. Requires exact-head CI and independent Owner review.",
       "variants": [
         {
           "pr": 158,
@@ -72,6 +72,13 @@
           "blob": "c180573ef73bc56c426f18887a7dfeb5aeea81e3",
           "ancestry": "proposed_feature_branch",
           "assessment": "SOURCE_CHANGE_PENDING_OWNER_REVIEW_AND_CI"
+        },
+        {
+          "pr": 168,
+          "ref": "08ed15643bbf9fdeafe4930dc845314ea9a6f224",
+          "blob": "85d869647856d61c70359ddcad81c58660d9e2b2",
+          "ancestry": "proposed_feature_branch",
+          "assessment": "PENDING_OWNER_REVIEW_AND_EXACT_HEAD_CI"
         }
       ]
     },
