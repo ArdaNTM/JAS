@@ -7,8 +7,8 @@
   "files": [
     {
       "path": "core/src/aura_core/main.py",
-      "unified_blob_sha": "c180573ef73bc56c426f18887a7dfeb5aeea81e3",
-      "canonical": "PR #166 proposes local reflection lifecycle change; exact-head CI and independent Owner review required before merge",
+      "unified_blob_sha": "35e1e311b4d09dd9677f289db330bdd0bb03dc74",
+      "canonical": "PR #167 proposes read-only discovery lifecycle on top of canonical main; exact-head CI and independent Owner source review required before merge",
       "variants": [
         {
           "pr": 158,
@@ -72,6 +72,13 @@
           "blob": "c180573ef73bc56c426f18887a7dfeb5aeea81e3",
           "ancestry": "proposed_feature_branch",
           "assessment": "SOURCE_CHANGE_PENDING_OWNER_REVIEW_AND_CI"
+        },
+        {
+          "pr": 167,
+          "ref": "7ad6429a4e8e0cfc735cf4fd977c15e1f945a3cb",
+          "blob": "35e1e311b4d09dd9677f289db330bdd0bb03dc74",
+          "ancestry": "proposed_feature_branch",
+          "assessment": "READ_ONLY_DISCOVERY_REQUIRES_OWNER_REVIEW_AND_EXACT_HEAD_CI"
         }
       ]
     },
