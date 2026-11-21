@@ -40,6 +40,13 @@ QUERIES = (
     "mcp automation archived:false stars:>5",
 )
 _REPO = re.compile(r"^[A-Za-z0-9_.-]{1,80}/[A-Za-z0-9_.-]{1,100}$")
+
+
+def _valid_repository(value: object) -> bool:
+    if not isinstance(value, str) or not _REPO.fullmatch(value):
+        return False
+    return all(part not in (".", "..") and not part.endswith(".")
+               for part in value.split("/"))
 _UNSUPPORTED_HOST = re.compile(
     r"\b(?:mlx|apple.silicon|macos.only|darwin|swift|xcode)\b",
     re.IGNORECASE,
@@ -147,7 +154,7 @@ class PublicGitHubDiscoveryMCPProvider:
                 license_obj = row.get("license")
                 license_id = (license_obj.get("spdx_id")
                               if isinstance(license_obj, dict) else None)
-                if (not isinstance(full_name, str) or not _REPO.fullmatch(full_name)
+                if (not _valid_repository(full_name)
                         or license_id not in PERMITTED_LICENSES
                         or row.get("private") is True
                         or row.get("archived") is True
@@ -417,7 +424,7 @@ class SelfDiscoveryEngine:
                             name = row.get("repository")
                             license_id = row.get("license")
                             stars = row.get("stars")
-                            if (not isinstance(name, str) or not _REPO.fullmatch(name)
+                            if (not _valid_repository(name)
                                     or license_id not in PERMITTED_LICENSES
                                     or row.get("url") != "https://github.com/" + name
                                     or type(stars) is not int

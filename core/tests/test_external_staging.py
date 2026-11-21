@@ -225,3 +225,12 @@ def test_real_github_style_zip_root_directory_is_not_rejected():
     files, entrypoint = _validated_files(memory.getvalue())
     assert entrypoint == "server.py"
     assert "README.md" in files
+
+
+def test_repository_traversal_names_are_denied_before_url_build(tmp_path):
+    workspace = EvolutionWorkspace(tmp_path / "workspace")
+    provider = GitHubStagingMCPProvider(workspace=workspace, transport=_transport())
+    for name in ("../bad", "good/..", "./repo", "good/.", "good./repo"):
+        with pytest.raises((StagingRejected, ValueError)):
+            _authorized(provider, name)
+    assert workspace.verified_packages() == []

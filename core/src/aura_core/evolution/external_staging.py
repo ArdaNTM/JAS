@@ -28,6 +28,13 @@ CAPABILITY = "github.repository.stage"
 TOOL = "stage_repository"
 SCOPE = "evolution-staging"
 _NAME = re.compile(r"^[A-Za-z0-9_.-]{1,80}/[A-Za-z0-9_.-]{1,100}$")
+
+
+def _valid_repository(value: object) -> bool:
+    if not isinstance(value, str) or not _NAME.fullmatch(value):
+        return False
+    return all(part not in (".", "..") and not part.endswith(".")
+               for part in value.split("/"))
 _SHA = re.compile(r"^[0-9a-f]{40}$")
 _FILE = re.compile(r"^[A-Za-z0-9_./-]{1,250}$")
 _DENIED_PARTS = frozenset({"", ".", ".."})
@@ -114,7 +121,7 @@ class EvolutionWorkspace:
         # Bounded metadata-only audit. Never persist archive contents,
         # environment variables, credentials or arbitrary error strings.
         if (not re.fullmatch(r"[a-z_]{3,32}", action)
-                or not _NAME.fullmatch(repository)
+                or not _valid_repository(repository)
                 or not re.fullmatch(r"[A-Z_]{3,40}", result)):
             raise ValueError("Invalid evolution audit record")
         destination = self.root / "logs" / "discovery.jsonl"
@@ -148,7 +155,7 @@ class EvolutionWorkspace:
                     continue
                 data = json.loads(manifest.read_text("utf-8"))
                 if (data.get("status") != "READY_FOR_OWNER_REVIEW"
-                        or not _NAME.fullmatch(data.get("repository", ""))
+                        or not _valid_repository(data.get("repository", ""))
                         or data.get("repository", "").replace("/", "__") != package.name
                         or data.get("sandbox_attested") is not False
                         or data.get("activation_performed") is not False):
@@ -181,7 +188,7 @@ class EvolutionWorkspace:
         return total
 
     def reserve(self, repository: str, additional_bytes: int):
-        if not _NAME.fullmatch(repository):
+        if not _valid_repository(repository):
             raise StagingRejected("Invalid GitHub repository identity")
         key = repository.replace("/", "__")
         stage = self.root / "staging" / key
@@ -335,7 +342,7 @@ class GitHubStagingMCPProvider:
         if name != TOOL or not isinstance(arguments, dict) or set(arguments) != {"repository"}:
             raise StagingRejected("Unexpected staging tool input")
         repository = arguments["repository"]
-        if not isinstance(repository, str) or not _NAME.fullmatch(repository):
+        if not _valid_repository(repository):
             raise StagingRejected("Invalid GitHub repository")
         async with httpx.AsyncClient(
             transport=self._transport, timeout=httpx.Timeout(15.0, connect=5.0),
