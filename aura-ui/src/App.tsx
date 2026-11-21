@@ -2,9 +2,10 @@ import ArcReactor3D from "./components/ArcReactor3D";
 import DynamicHologram3D from "./components/DynamicHologram3D";
 import CapabilityWorkbench from "./components/CapabilityWorkbench";
 import CapabilityAndToolCenter from "./components/CapabilityAndToolCenter";
+import ChatTranscript, { type ChatTurn } from "./components/ChatTranscript";
 import EvolutionReviewPanel from "./components/EvolutionReviewPanel";
 import StageCControlPanel from "./components/StageCControlPanel";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 
 import {
@@ -128,7 +129,15 @@ type VisualizationModelId =
   | "sphere-v1"
   | "motor-v1";
 export default function App() {
-  const [mainView, setMainView] = useState<"capabilities" | "hud">("capabilities");
+  const [mainView, setMainView] = useState<"capabilities" | "hud">("hud");
+  const [chatHistory, setChatHistory] = useState<ChatTurn[]>([]);
+  const [assistantHistory, setAssistantHistory] = useState<Array<{role: "user" | "assistant"; content: string}>>([]);
+  const activeReplyId = useRef<string | null>(null);
+  const handleAssistantDelta = useCallback((delta: string) => {
+    setChatHistory((current) => current.map((turn) =>
+      turn.id === activeReplyId.current ? { ...turn, content: turn.content + delta } : turn
+    ));
+  }, []);
   const [researchOutput, setResearchOutput] =
     useState<unknown>(null);
 
@@ -232,6 +241,11 @@ export default function App() {
   ) => {
     setSessionState(status === "ready" ? "idle" : status);
     if (status === "error") {
+      setChatHistory((current) => current.map((turn) =>
+        turn.id === activeReplyId.current && !turn.content
+          ? { ...turn, content: errorMessage ?? "Yerel model yanıtı alınamadı." }
+          : turn
+      ));
       // A successful task can still fail while generating or playing its answer.
       // Keep the task summary and lifecycle state consistent with that failure.
       setTaskState("ERROR");
@@ -324,6 +338,10 @@ export default function App() {
       return;
     }
 
+    setAssistantHistory(chatHistory.filter((turn) =>
+      (turn.role === "user" || turn.role === "assistant") && turn.content.trim()
+    ).slice(-8).map((turn) => ({ role: turn.role as "user" | "assistant", content: turn.content.slice(0, 4000) })));
+    setChatHistory((current) => [...current, { id: makeId(), role: "user", content: text }].slice(-40));
     setError(null);
     setSessionState("processing");
     setSystemState("thinking");
@@ -343,6 +361,9 @@ export default function App() {
         setPlan([]);
         setTaskId(null);
         setResearchOutput(null);
+        const replyId = makeId();
+        activeReplyId.current = replyId;
+        setChatHistory((current) => [...current, { id: replyId, role: "assistant", content: "", source: "Ollama · yerel model" }].slice(-40));
         setAssistantDirective(text.replace(/^aura(?:[\s,:;.!?-]+|$)/i, "").trim() || text);
         setAssistantRequestId((current) => current + 1);
         setSystemState("idle");
@@ -428,6 +449,12 @@ export default function App() {
 
       if (result.state === "awaiting_approval" || result.state === "pending_approval") {
         setSystemState("idle");
+        setChatHistory((current) => [...current, {
+          id: makeId(), role: "assistant",
+          content: "Görev beklemeye alındı. Ayrı yetkili Owner incelemesi gerekli.",
+          source: generated.steps.map((step) => step.capability_id).join(", "),
+          approvalId: result.steps.find((step) => step.approval_id)?.approval_id ?? null,
+        }].slice(-40));
         pushTelemetry("YÜRÜTME ENGELLENDİ — AÇIK ONAY GEREKLİ");
         return;
       }
@@ -443,6 +470,12 @@ export default function App() {
         setSystemState("idle");
 
         setResearchOutput(result.steps);
+        const replyId = makeId();
+        activeReplyId.current = replyId;
+        setChatHistory((current) => [...current, {
+          id: replyId, role: "assistant", content: "",
+          source: "MCP Gateway · " + generated.steps.map((step) => step.capability_id).join(", "),
+        }].slice(-40));
         setAssistantDirective(text);
         setAssistantRequestId(
           (current) => current + 1,
@@ -617,7 +650,7 @@ export default function App() {
             </div>
           </aside>
 
-          <section className="order-1 flex flex-col items-center lg:order-2">
+          <section className="order-1 flex min-w-0 flex-col items-center lg:order-2">
 
             <div className="relative">
               {hologramTarget.trim() ? (
@@ -647,6 +680,8 @@ export default function App() {
                 />
               ))}
             </div>
+
+            <ChatTranscript turns={chatHistory} />
 
             {error && (
               <div className="mt-4 max-w-xl rounded border border-red-900/70 bg-red-950/20 px-4 py-2 text-center text-[10px] text-red-300">
@@ -705,7 +740,18 @@ export default function App() {
         </main>
         )}
 
-        <FullDuplexPanel voice={fullDuplex} goal={command} />
+        {mainView === "hud" && (
+          <details className="mx-auto my-5 w-full max-w-5xl rounded-lg border border-cyan-950/70 bg-slate-950/40">
+            <summary className="cursor-pointer px-4 py-3 text-[11px] font-bold tracking-widest text-cyan-400">
+              GELİŞMİŞ KONTROLLER · SES / EVOLUTION / STAGE C
+            </summary>
+            <div className="space-y-4 px-3 pb-4">
+              <FullDuplexPanel voice={fullDuplex} goal={command} />
+              <EvolutionReviewPanel />
+              <StageCControlPanel />
+            </div>
+          </details>
+        )
 
         <footer className="border-t border-cyan-950/70 pt-4">
           <form
@@ -783,8 +829,6 @@ export default function App() {
 
 
       <CapabilityWorkbench />
-      <EvolutionReviewPanel />
-      <StageCControlPanel />
       <AuraJarvisBridge
         directive={assistantDirective}
         researchOutput={researchOutput}
@@ -792,6 +836,9 @@ export default function App() {
         onStatus={handleVoiceStatus}
         speakThroughSession={fullDuplex.speak}
         sessionActive={fullDuplex.active}
+        enableSpeech={fullDuplex.active}
+        history={assistantHistory}
+        onDelta={handleAssistantDelta}
       />
     </>
 );

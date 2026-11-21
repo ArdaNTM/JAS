@@ -49,6 +49,9 @@ type AuraJarvisBridgeProps = {
   ) => void;
   speakThroughSession?: (text: string) => Promise<boolean>;
   sessionActive?: boolean;
+  enableSpeech?: boolean;
+  history?: Array<{ role: "user" | "assistant"; content: string }>;
+  onDelta?: (delta: string) => void;
 };
 
 export default function AuraJarvisBridge({
@@ -58,6 +61,9 @@ export default function AuraJarvisBridge({
   onStatus,
   speakThroughSession,
   sessionActive = false,
+  enableSpeech = false,
+  history = [],
+  onDelta,
 }: AuraJarvisBridgeProps) {
   useEffect(() => {
     if (requestId <= 0 || !directive?.trim()) return;
@@ -115,6 +121,8 @@ export default function AuraJarvisBridge({
         await streamAssistantResponse(directive.trim(), researchOutput, (delta) => {
           if (cancelled) return;
           spoken += delta;
+          onDelta?.(delta);
+          if (!enableSpeech) return;
           pending += delta;
           if (pending.length >= 80) {
               const cut = Math.max(pending.lastIndexOf(". "), pending.lastIndexOf("! "),
@@ -125,10 +133,11 @@ export default function AuraJarvisBridge({
                 queue(complete);
               }
           }
-        }, abort.signal);
+        }, abort.signal, history);
 
         if (cancelled) return;
         if (pending.trim()) queue(pending);
+        if (!spoken.trim()) throw new Error("Ollama boş bir yanıt üretti. Model etiketini ve inference ayarlarını kontrol edin.");
         if (!everQueued) {
           onStatus?.("ready");
           return;
@@ -152,7 +161,7 @@ export default function AuraJarvisBridge({
       player?.pause();
       if (player) { player.src = ""; player = null; }
     };
-  }, [directive, researchOutput, requestId, onStatus, speakThroughSession, sessionActive]);
+  }, [directive, researchOutput, requestId, onStatus, speakThroughSession, sessionActive, enableSpeech, onDelta]);
 
   return null;
 }
