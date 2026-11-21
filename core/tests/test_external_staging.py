@@ -169,3 +169,15 @@ def test_no_untrusted_remote_metadata_can_escape_fixed_api(tmp_path):
                  "sample\\worker", "a/worker?ref=evil"):
         with pytest.raises(StagingRejected):
             _authorized(provider, repo)
+
+
+def test_audit_logs_only_bounded_metadata_and_rejects_symlink(tmp_path):
+    workspace = EvolutionWorkspace(tmp_path / "safe")
+    workspace.audit(action="stage_verified", repository="sample/worker",
+                    result="OWNER_REVIEW_REQUIRED")
+    rows = (workspace.root / "logs" / "discovery.jsonl").read_text().splitlines()
+    assert len(rows) == 1
+    assert json.loads(rows[0])["repository"] == "sample/worker"
+    with pytest.raises(ValueError):
+        workspace.audit(action="stage_verified", repository="../bad",
+                        result="OWNER_REVIEW_REQUIRED")

@@ -245,6 +245,14 @@ class SelfDiscoveryEngine:
                 db.execute("ALTER TABLE evolution_proposals ADD COLUMN package_status TEXT")
             if "source_sha256" not in columns:
                 db.execute("ALTER TABLE evolution_proposals ADD COLUMN source_sha256 TEXT")
+            db.execute("""CREATE TABLE IF NOT EXISTS discovery_history (
+                cycle INTEGER PRIMARY KEY,
+                recorded_at INTEGER NOT NULL,
+                query_count INTEGER NOT NULL,
+                new_proposals INTEGER NOT NULL,
+                staged_count INTEGER NOT NULL,
+                status TEXT NOT NULL
+            )""")
 
     def _connect(self):
         return sqlite3.connect(str(self._db_path), timeout=5)
@@ -352,7 +360,32 @@ class SelfDiscoveryEngine:
                         "UPDATE evolution_proposals SET package_status='STAGING_REJECTED' "
                         "WHERE repository=?", (repository,),
                     )
+                if self.workspace is not None:
+                    self.workspace.audit(action="stage_rejected", repository=repository,
+                                         result="STATIC_REVIEW_FAILED")
         return ready
+
+    def history(self, limit: int = 25) -> list[dict[str, object]]:
+        with self._connect() as db:
+            rows = db.execute(
+                "SELECT cycle, recorded_at, query_count, new_proposals,"
+                "staged_count, status FROM discovery_history ORDER BY cycle DESC LIMIT ?",
+                (max(1, min(limit, 100)),),
+            ).fetchall()
+        return [dict(zip(
+            ("cycle", "recorded_at", "query_count", "new_proposals",
+             "staged_count", "status"), row
+        )) for row in rows]
+
+    def _history_record(self, *, query_count: int, saved: int,
+                        staged: int, status: str) -> None:
+        with self._connect() as db:
+            db.execute(
+                "INSERT OR REPLACE INTO discovery_history "
+                "(cycle,recorded_at,query_count,new_proposals,staged_count,status) "
+                "VALUES (?,?,?,?,?,?)",
+                (self._cycle, int(time.time()), query_count, saved, staged, status),
+            )
 
     async def run_once(self, *, full_scan: bool = False) -> dict[str, object]:
         async with self._lock:
@@ -441,6 +474,8 @@ class SelfDiscoveryEngine:
                 current = [record for record in self.proposals(50)
                            if record["repository"] in seen]
                 self._last_error = ""
+                self._history_record(query_count=len(indexes), saved=saved,
+                                     staged=staged_count, status="COMPLETE")
                 return {
                     "items": current, "proposal_count": self.count(),
                     "new_count": saved, "mode": "review_only",
@@ -453,6 +488,8 @@ class SelfDiscoveryEngine:
             except (DiscoveryUnavailable, PermissionError, OSError,
                     RuntimeError, asyncio.TimeoutError) as exc:
                 self._last_error = str(exc)[:180]
+                self._history_record(query_count=len(indexes), saved=saved,
+                                     staged=0, status="FAILED")
                 raise
 
     def start(self) -> None:

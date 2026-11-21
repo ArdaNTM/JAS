@@ -110,6 +110,27 @@ class EvolutionWorkspace:
                 ],
             }, indent=2) + "\n", encoding="utf-8")
 
+    def audit(self, *, action: str, repository: str, result: str) -> None:
+        # Bounded metadata-only audit. Never persist archive contents,
+        # environment variables, credentials or arbitrary error strings.
+        if (not re.fullmatch(r"[a-z_]{3,32}", action)
+                or not _NAME.fullmatch(repository)
+                or not re.fullmatch(r"[A-Z_]{3,40}", result)):
+            raise ValueError("Invalid evolution audit record")
+        destination = self.root / "logs" / "discovery.jsonl"
+        if destination.is_symlink():
+            raise StagingRejected("Audit log cannot be a symlink")
+        if destination.exists() and destination.stat().st_size > 200_000:
+            rotated = destination.with_suffix(".previous.jsonl")
+            if rotated.is_symlink():
+                raise StagingRejected("Audit rotation target cannot be a symlink")
+            destination.replace(rotated)
+        with destination.open("a", encoding="utf-8") as stream:
+            stream.write(json.dumps({
+                "timestamp": int(time.time()),
+                "action": action, "repository": repository, "result": result,
+            }, sort_keys=True) + "\n")
+
     def _usage(self) -> int:
         total = 0
         for area in ("staging", "verified"):
@@ -306,7 +327,9 @@ class GitHubStagingMCPProvider:
             old_manifest = verified / "aura-capability-manifest.json"
             if old_manifest.is_file():
                 old = json.loads(old_manifest.read_text("utf-8"))
-                if old.get("source_sha256") == archive_sha:
+                if old.get("source_sha256") == archive_sha and old.get("repository") == repository:
+                    self.workspace.audit(action="stage_cached", repository=repository,
+                                         result="STATIC_REVIEW_ONLY")
                     return old
             raise StagingRejected("Existing verified package requires independent review")
         if stage.exists():
@@ -348,6 +371,8 @@ class GitHubStagingMCPProvider:
             )
             stage_tmp.rename(stage)
             verified_tmp.rename(verified)
+            self.workspace.audit(action="stage_verified", repository=repository,
+                                 result="OWNER_REVIEW_REQUIRED")
             return report
         finally:
             if stage_tmp.exists():

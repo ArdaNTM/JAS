@@ -237,3 +237,13 @@ def test_http_github_rate_limit_surfaces_actual_error(tmp_path):
     assert "rate limit" in response.json()["detail"]
     assert engine.count() == 0
     assert len(gateway.calls) == 1
+
+
+def test_discovery_history_is_durable_and_bounded(tmp_path):
+    db = tmp_path / "history.sqlite3"
+    engine = SelfDiscoveryEngine(gateway=FakeGateway(), db_path=db)
+    _run(engine.run_once())
+    assert engine.history()[0]["status"] == "COMPLETE"
+    restarted = SelfDiscoveryEngine(gateway=FakeGateway(), db_path=db)
+    assert restarted.history()[0]["new_proposals"] == 1
+    assert restarted.history()[0]["query_count"] == 1
