@@ -135,3 +135,16 @@ def test_unauthenticated_or_remote_discovery_fails_closed(tmp_path):
     assert r.status_code == 200, r.text
     assert r.json()["proposal_count"] == 1
     assert r.json()["activation_performed"] is False
+
+
+def test_optional_local_research_requires_a_second_gateway_dispatch(tmp_path, monkeypatch):
+    monkeypatch.setenv("AURA_DISCOVERY_USE_RESEARCH_MCP", "1")
+    gateway = FakeGateway()
+    engine = SelfDiscoveryEngine(gateway=gateway, db_path=tmp_path / "research.sqlite3")
+    result = _run(engine.run_once())
+    assert result["local_research_crosscheck"] == "gateway_queried"
+    assert [call.capability_id for call in gateway.calls] == [
+        "github.repository.search", "internet.search"
+    ]
+    assert result["items"][0]["integration_blueprint"]["entrypoint"] is None
+    assert result["activation_performed"] is False

@@ -225,11 +225,23 @@ class SelfDiscoveryEngine:
                 "capability_hint,status,created_at "
                 "FROM evolution_proposals ORDER BY created_at DESC LIMIT ?", (count,)
             ).fetchall()
-        return [
-            dict(zip(("proposal_id", "repository", "url", "description", "license",
-                      "capability_hint", "status", "created_at"), row))
-            for row in rows
-        ]
+        proposals = []
+        for row in rows:
+            record = dict(zip(
+                ("proposal_id", "repository", "url", "description", "license",
+                 "capability_hint", "status", "created_at"), row
+            ))
+            # A non-executable integration blueprint is review data only.
+            # Never infer a runnable entrypoint from arbitrary GitHub README.
+            record["integration_blueprint"] = {
+                "source": record["url"],
+                "suggested_transport": "stdio_pending_owner_validation",
+                "entrypoint": None,
+                "next_step": "manual source and license audit; independent sandbox attestation",
+                "activation": "blocked_until_signed_owner_receipt",
+            }
+            proposals.append(record)
+        return proposals
 
     def count(self) -> int:
         with self._connect() as db:
@@ -290,12 +302,38 @@ class SelfDiscoveryEngine:
                             saved += cursor.rowcount
                         except (TypeError, ValueError, KeyError):
                             continue
+                research_crosscheck = "not_requested"
+                if saved and os.getenv("AURA_DISCOVERY_USE_RESEARCH_MCP", "0") == "1":
+                    # Existing local research capability is optional, but may
+                    # only be invoked through MCPGateway. Search snippets
+                    # NEVER override GitHub license/README eligibility.
+                    first = self.proposals(1)
+                    if first:
+                        try:
+                            check = await asyncio.wait_for(self.gateway.invoke(
+                                MCPGatewayRequest(
+                                    request_id=str(uuid4()), principal_id=self.principal_id,
+                                    capability_id="internet.search",
+                                    operation_id="internet.search",
+                                    resource_scope="public-web",
+                                    risk_level=RiskLevel.LOW, tool_name="search",
+                                    arguments={"query": first[0]["repository"] +
+                                               " local open-source documentation"},
+                                )
+                            ), timeout=12.0)
+                            research_crosscheck = (
+                                "gateway_queried" if check.decision is AuthorizationDecision.ALLOW
+                                else "gateway_denied"
+                            )
+                        except Exception:
+                            research_crosscheck = "unavailable"
                 self._last_error = ""
                 return {
                     "items": self.proposals(10), "proposal_count": self.count(),
                     "new_count": saved, "mode": "review_only",
                     "owner_review_url": "http://localhost:8766/",
                     "activation_performed": False,
+                    "local_research_crosscheck": research_crosscheck,
                 }
             except (DiscoveryUnavailable, PermissionError, OSError,
                     RuntimeError, asyncio.TimeoutError) as exc:
