@@ -334,11 +334,11 @@ def test_scoped_local_owner_policy_and_real_gateway_end_to_end(tmp_path):
         ("local_owner", str(workspace.root / "verified")),
         ("local_owner", str(workspace.root / "staging-sibling")),
     ):
-        response = _run(gateway.invoke(request(principal=principal, scope=scope)))
+        response = asyncio.run(gateway.invoke(request(principal=principal, scope=scope)))
         assert response.decision is AuthorizationDecision.DENY
         assert not list((workspace.root / "verified").iterdir())
 
-    accepted = _run(gateway.invoke(request()))
+    accepted = asyncio.run(gateway.invoke(request()))
     assert accepted.decision is AuthorizationDecision.ALLOW
     assert accepted.result["status"] == "READY_FOR_OWNER_REVIEW"
     assert (workspace.root / "staging" / "sample__worker" / "source.zip").is_file()
