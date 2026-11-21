@@ -133,7 +133,7 @@ jobs:
         continue-on-error: true
         working-directory: aura-ui
         shell: pwsh
-        run: npm audit --audit-level=high
+        run: npm audit
       - name: Install console dependencies for separate audit
         working-directory: core/frontend
         shell: pwsh
@@ -150,7 +150,7 @@ jobs:
         continue-on-error: true
         working-directory: core/frontend
         shell: pwsh
-        run: npm audit --audit-level=high
+        run: npm audit
       - name: Check optional Turkish TTS setup script syntax
         shell: pwsh
         run: |
