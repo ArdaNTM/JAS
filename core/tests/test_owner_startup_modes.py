@@ -2,11 +2,18 @@
 from __future__ import annotations
 
 import sys
+import importlib.util
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 import pytest
 
-from scripts import start_owner_control_plane as owner_cli
+# The standalone script is intentionally not an importable runtime package.
+_CLI_PATH = Path(__file__).resolve().parents[1] / "scripts" / "start_owner_control_plane.py"
+_CLI_SPEC = importlib.util.spec_from_file_location("aura_owner_cli_test", _CLI_PATH)
+assert _CLI_SPEC is not None and _CLI_SPEC.loader is not None
+owner_cli = importlib.util.module_from_spec(_CLI_SPEC)
+_CLI_SPEC.loader.exec_module(owner_cli)
 
 
 def _run_cli(monkeypatch, args):
