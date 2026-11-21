@@ -28,7 +28,26 @@ from aura_core.evolution.self_discovery import (
 
 CAPABILITY = "github.repository.stage"
 TOOL = "stage_repository"
-SCOPE = "evolution-staging"
+SCOPE = "evolution-staging"  # legacy label, not an authorization resource
+
+
+def staging_scope(workspace: "EvolutionWorkspace") -> str:
+    """Authorize only the exact external staging destination for this operation."""
+    return str((workspace.root / "staging").resolve())
+
+
+def local_staging_policy(workspace: "EvolutionWorkspace"):
+    from aura_core.kernel.permissions import (
+        AuthorizationDecision, AuthorizationLevel, PermissionPolicy,
+    )
+    return PermissionPolicy(
+        policy_id="local-owner:evolution-static-staging:external-only",
+        policy_version="1.0.0", principal_id="local_owner",
+        capability_id=CAPABILITY, operation_id=CAPABILITY,
+        resource_scope=staging_scope(workspace),
+        authorization_level=AuthorizationLevel.WRITE,
+        decision=AuthorizationDecision.ALLOW,
+    )
 _NAME = re.compile(r"^[A-Za-z0-9_.-]{1,80}/[A-Za-z0-9_.-]{1,100}$")
 
 
@@ -56,7 +75,8 @@ _UNSAFE = re.compile(
 )
 _PAID = re.compile(
     r"(?i)(?:OPENAI_API_KEY|ANTHROPIC_API_KEY|STRIPE_SECRET_KEY|"
-    r"paid\s+(?:subscription|api\s+key)\s+required)",
+    r"BRIGHTDATA_API_KEY|SHODAN_API_KEY|VIRUSTOTAL_API_KEY|"
+    r"BASECAMP_ACCESS_TOKEN|paid\s+(?:subscription|api\s+key)\s+required)",
 )
 _ENTRY = ("pyproject.toml", "package.json", "server.py", "main.py", "mcp_server.py")
 _MAX_ARCHIVE = 3_000_000
@@ -174,6 +194,25 @@ class EvolutionWorkspace:
             except (OSError, ValueError, TypeError, AttributeError):
                 continue
         return summary
+
+    def audit_rejection(self, repository: str, reason: str) -> None:
+        if not _valid_repository(repository):
+            raise ValueError("Invalid audit repository")
+        # Bounded, printable metadata only; do not log arbitrary request data.
+        safe_reason = "".join(c for c in reason if c.isprintable())[:160]
+        destination = self.root / "logs" / "staging-rejections.jsonl"
+        if destination.is_symlink():
+            raise StagingRejected("Audit log cannot be a symlink")
+        if destination.exists() and destination.stat().st_size > 200_000:
+            rotated = destination.with_suffix(".previous.jsonl")
+            if rotated.is_symlink():
+                raise StagingRejected("Audit rotation target cannot be a symlink")
+            destination.replace(rotated)
+        with destination.open("a", encoding="utf-8") as stream:
+            stream.write(json.dumps({
+                "timestamp": int(time.time()), "repository": repository,
+                "reason": safe_reason, "status": "STAGING_REJECTED",
+            }, sort_keys=True) + "\n")
 
     def _usage(self) -> int:
         total = 0
@@ -294,6 +333,9 @@ def _validated_files(archive: bytes) -> tuple[dict[str, bytes], str]:
             if path.lower().endswith(("readme.md", "pyproject.toml", "package.json")):
                 if _PLATFORM.search(readable):
                     raise StagingRejected("Unsupported macOS-only integration")
+                from aura_core.evolution.self_discovery import _SAAS
+                if _SAAS.search(readable) and _PAID.search(readable):
+                    raise StagingRejected("Mandatory external SaaS dependency rejected")
     return result, entrypoints[0]
 
 
@@ -363,7 +405,10 @@ class GitHubStagingMCPProvider:
                     or metadata["license"].get("spdx_id") not in PERMITTED_LICENSES):
                 raise StagingRejected("GitHub metadata/license does not satisfy staging policy")
             description = str(metadata.get("description") or "")[:500]
-            if _PLATFORM.search(description) or _PAID.search(description):
+            from aura_core.evolution.self_discovery import _SAAS
+            if (_PLATFORM.search(description) or _PAID.search(description)
+                    or _SAAS.search(repository + " " + description)):
+                raise StagingRejected("Paid SaaS or macOS-only candidate rejected")
                 raise StagingRejected("Paid or macOS-specific candidate rejected")
             # Pin the snapshot to the current default-branch commit SHA, never
             # interpolate a user-controlled branch/ref into an archive URL.

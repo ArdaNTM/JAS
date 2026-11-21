@@ -376,8 +376,13 @@ export default function App() {
             item.description,
             "AURA'ya katkısı: " + item.capability_hint,
             item.url,
+            "Paket: " + (item.package_status ?? "Staging bekleniyor") +
+              (item.package_error ? " — " + item.package_error : ""),
             "Durum: Owner Control Plane inceleme kuyruğunda (aktivasyon yapılmadı).",
           ].join("\n"));
+          const stagingFailures = (found.staging_rejected ?? []).map((failure) =>
+            "⚠ Staging reddedildi: " + failure.repository + " — " + failure.reason
+          );
           const warnings = (found.failed_queries ?? []).map((failure) =>
             "⚠ GitHub sorgusu başarısız: " + failure.query +
             " — " + failure.reason
@@ -388,6 +393,11 @@ export default function App() {
               : "SelfDiscoveryEngine gerçek GitHub Public Search taramasını tamamladı.",
             "Yeni öneri: " + (found.new_count ?? 0) +
               " · Kalıcı öneri kuyruğu: " + found.proposal_count,
+            "Staging denemesi: " + (found.staging_attempted ?? 0) +
+              " · İndirilen: " + (found.staged_count ?? 0) +
+              " · Statik doğrulanan: " + (found.verified_count ?? 0) +
+              " · Toplam hazır paket: " + (found.static_ready_count ?? 0),
+            ...stagingFailures,
             ...warnings,
             ...descriptions,
             descriptions.length === 0
