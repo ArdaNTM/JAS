@@ -396,7 +396,7 @@ class GitHubStagingMCPProvider:
                         data.extend(chunk)
                     return bytes(data)
             raise StagingRejected("GitHub archive redirect limit exceeded")
-        except (httpx.RequestError, ValueError) as exc:
+        except httpx.RequestError as exc:
             raise StagingRejected("GitHub archive network request failed") from exc
 
     async def call_tool(self, name: str, arguments: dict | None = None):
