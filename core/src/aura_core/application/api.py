@@ -11,6 +11,7 @@ import threading
 import time
 from time import perf_counter
 from uuid import uuid4
+from typing import Literal
 from urllib.parse import urlsplit
 
 from fastapi import Depends, FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
@@ -424,6 +425,12 @@ class DirectivePlanResponse(BaseModel):
     steps: list[TaskStepPayload]
 
 
+class AssistantHistoryMessage(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    role: Literal["user", "assistant"]
+    content: str = Field(min_length=1, max_length=4000)
+
+
 class AssistantRespondRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -433,6 +440,7 @@ class AssistantRespondRequest(BaseModel):
     )
 
     research_output: object | None = None
+    history: list[AssistantHistoryMessage] = Field(default_factory=list, max_length=8)
 
 
 class CapabilityEvidencePayload(BaseModel):
@@ -1392,14 +1400,9 @@ def create_api(
 
         inference_request = InferenceRequest(
             messages=[
-                {
-                    "role": "system",
-                    "content": system_prompt,
-                },
-                {
-                    "role": "user",
-                    "content": user_content,
-                },
+                {"role": "system", "content": system_prompt},
+                *[{"role": item.role, "content": item.content} for item in request.history],
+                {"role": "user", "content": user_content},
             ],
             model=config.model,
             temperature=config.temperature,
@@ -1881,7 +1884,16 @@ def create_api(
                 async with gate:
                     iterator = application.infer_stream(prepared)
                     while True:
-                        item = await asyncio.to_thread(next_event, iterator)
+                        # Keep the SSE/NDJSON socket alive during cold model
+                        # loading and thinking-only Ollama chunks. Never
+                        # launch a second iterator read while one is pending.
+                        pending = asyncio.create_task(asyncio.to_thread(next_event, iterator))
+                        while True:
+                            try:
+                                item = await asyncio.wait_for(asyncio.shield(pending), timeout=12.0)
+                                break
+                            except asyncio.TimeoutError:
+                                yield '{"status":"waiting"}\n'
                         if item is None:
                             break
                         fragment = item.get("delta", "")
@@ -1902,12 +1914,31 @@ def create_api(
                         raise ValueError("Inference stream did not complete")
             except (asyncio.CancelledError, GeneratorExit):
                 raise
+            except BackendUnavailableError as exc:
+                logger.warning("Assistant inference backend unavailable: %s", exc,
+                               extra={"request_id": request_id})
+                yield json.dumps({
+                    "error": "ollama_unavailable",
+                    "message": str(exc),
+                    "request_id": request_id,
+                }, ensure_ascii=False) + "\n"
+            except BackendInvalidResponseError:
+                logger.exception("Assistant inference returned invalid stream",
+                                 extra={"request_id": request_id})
+                yield json.dumps({
+                    "error": "invalid_model_stream",
+                    "message": "Ollama beklenen formatta yanit vermedi. Model ve sunucu loglarini kontrol edin.",
+                    "request_id": request_id,
+                }, ensure_ascii=False) + "\n"
             except Exception:
                 logger.exception(
                     "Assistant inference stream failed", extra={"request_id": request_id}
                 )
-                # No stack traces, paths, prompts, or provider secrets in UI.
-                yield '{"error":"inference_stream_failed"}\n'
+                yield json.dumps({
+                    "error": "inference_stream_failed",
+                    "message": "Yerel model akisi kesildi; Core loglarini kontrol edin.",
+                    "request_id": request_id,
+                }, ensure_ascii=False) + "\n"
             finally:
                 if iterator is not None:
                     await asyncio.to_thread(iterator.close)
