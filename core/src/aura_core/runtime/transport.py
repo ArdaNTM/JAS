@@ -83,8 +83,6 @@ class HttpJsonTransport:
                 raise BackendUnavailableError(
                     "Inference backend is unavailable (transient connection failed twice)"
                 ) from exc
-            except httpx.HTTPStatusError as exc:
-                raise _ollama_http_error(exc) from exc
             except httpx.ReadTimeout as exc:
                 raise BackendUnavailableError(
                     "Inference backend is unavailable (model response timed out; "

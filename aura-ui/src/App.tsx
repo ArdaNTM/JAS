@@ -341,7 +341,7 @@ export default function App() {
     setAssistantHistory(chatHistory.filter((turn) =>
       (turn.role === "user" || turn.role === "assistant") && turn.content.trim()
     ).slice(-8).map((turn) => ({ role: turn.role as "user" | "assistant", content: turn.content.slice(0, 4000) })));
-    setChatHistory((current) => [...current, { id: makeId(), role: "user", content: text }].slice(-40));
+    setChatHistory((current) => [...current, { id: makeId(), role: "user" as const, content: text }].slice(-40));
     setError(null);
     setSessionState("processing");
     setSystemState("thinking");
@@ -363,7 +363,7 @@ export default function App() {
         setResearchOutput(null);
         const replyId = makeId();
         activeReplyId.current = replyId;
-        setChatHistory((current) => [...current, { id: replyId, role: "assistant", content: "", source: "Ollama · yerel model" }].slice(-40));
+        setChatHistory((current) => [...current, { id: replyId, role: "assistant" as const, content: "", source: "Ollama · yerel model" }].slice(-40));
         setAssistantDirective(text.replace(/^aura(?:[\s,:;.!?-]+|$)/i, "").trim() || text);
         setAssistantRequestId((current) => current + 1);
         setSystemState("idle");
@@ -450,7 +450,7 @@ export default function App() {
       if (result.state === "awaiting_approval" || result.state === "pending_approval") {
         setSystemState("idle");
         setChatHistory((current) => [...current, {
-          id: makeId(), role: "assistant",
+          id: makeId(), role: "assistant" as const,
           content: "Görev beklemeye alındı. Ayrı yetkili Owner incelemesi gerekli.",
           source: generated.steps.map((step) => step.capability_id).join(", "),
           approvalId: result.steps.find((step) => step.approval_id)?.approval_id ?? null,
@@ -473,7 +473,7 @@ export default function App() {
         const replyId = makeId();
         activeReplyId.current = replyId;
         setChatHistory((current) => [...current, {
-          id: replyId, role: "assistant", content: "",
+          id: replyId, role: "assistant" as const, content: "",
           source: "MCP Gateway · " + generated.steps.map((step) => step.capability_id).join(", "),
         }].slice(-40));
         setAssistantDirective(text);

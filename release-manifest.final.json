@@ -5,7 +5,7 @@
   "generated_at": "2026-11-19T07:08:05.113Z",
   "git_commit": "19da39d819cefce0dff6c9f4b5ce7dd963288018",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:7db3a74b66d07c6403f7302c530f39b800037b9ce2447fe5a6d360967df1f786",
+  "release_digest": "sha256:19aef22186996277aa4b28057e6291824ca7b17d3045441be6533aacc3353fbb",
   "file_count": 445,
   "files": [
     {
@@ -78,7 +78,7 @@
     },
     {
       "path": "aura-ui/src/App.tsx",
-      "sha256": "cc451d483994e6293f64005ab4b876f6258633086ae657d837881436ce1e9b4f"
+      "sha256": "979f99c2edc37088b7652825492c8803e9509aca77f67dceb9cc4d959551cd0d"
     },
     {
       "path": "aura-ui/src/assets/hero.png",
@@ -1594,7 +1594,7 @@
     },
     {
       "path": "core/src/aura_core/runtime/transport.py",
-      "sha256": "1d96abe75f468da0573b0019d5b12c242c4826067547c289b257e074f9e3d87d"
+      "sha256": "6000ac69d714293f68c38857595fab73a230a1ac341611975aa800c863dc94ce"
     },
     {
       "path": "core/src/aura_core/science/analysis.py",
