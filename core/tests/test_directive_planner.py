@@ -55,3 +55,38 @@ def test_instructions_to_operate_computer_are_not_conversation_tools():
             assert "No governed capability" in str(exc)
         else:
             raise AssertionError("Unsupported commands must fail closed")
+
+
+def test_capability_questions_are_conversation_not_synthesize_or_search():
+    for text in (
+        "Neler yapabilirsin?", "Hangi araçların var?", "Hangi yeteneklerin var?",
+        "Which features do you have?", "What can you do?", "Bana kendini tanıt",
+        "Sohbet etmek ister misin?",
+    ):
+        result = DirectivePlanner().plan(text)
+        assert result.resource_scope == "local-assistant"
+        assert result.steps == ()
+
+
+def test_questions_do_not_implicitly_authorize_tools():
+    plan = DirectivePlanner().plan("Bilgisayarımı silebilir misin?")
+    assert plan.resource_scope == "local-assistant"
+    assert plan.steps == ()
+
+
+def test_discovery_directives_are_explicit_and_never_research_tasks():
+    for phrase in (
+        "Kendini geliştir",
+        "Yeni ücretsiz özellikler araştır",
+        "GitHub'dan kendine katabileceğin araçlar bul",
+    ):
+        plan = DirectivePlanner().plan(phrase)
+        assert plan.resource_scope == "local-discovery"
+        assert plan.steps == ()
+
+
+def test_explicit_inflected_turkish_research_still_routes_to_gateway():
+    phrase = "Bana yapay zeka alanında bu haftanın en son gelişmelerini araştırıp özetler misin?"
+    plan = DirectivePlanner().plan(phrase)
+    assert plan.resource_scope == "public-web"
+    assert plan.steps[0].capability_id == "internet.search"

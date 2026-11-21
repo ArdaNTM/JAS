@@ -443,3 +443,29 @@ export function invokeCapabilityTool(body: {
     body: JSON.stringify(body),
   });
 }
+
+
+export interface DiscoveryProposal {
+  proposal_id: string;
+  repository: string;
+  url: string;
+  description: string;
+  license: string;
+  capability_hint: string;
+  status: "pending_owner_review";
+  created_at: number;
+}
+export interface DiscoveryResult {
+  items: DiscoveryProposal[];
+  proposal_count: number;
+  new_count?: number;
+  mode: "review_only";
+  owner_review_url?: string;
+  activation_performed?: boolean;
+}
+export function getDiscoveryProposals(): Promise<DiscoveryResult> {
+  return request("/api/evolution/discovery", { method: "GET", cache: "no-store" });
+}
+export function runSelfDiscovery(): Promise<DiscoveryResult> {
+  return request("/api/evolution/discovery/run", { method: "POST", body: "{}" });
+}

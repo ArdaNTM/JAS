@@ -14,6 +14,7 @@ import {
   generateTaskPlan,
   getHealth,
   getUIContract,
+  runSelfDiscovery,
   type HealthResponse,
   type TaskStep,
 } from "./api/client";
@@ -240,6 +241,12 @@ export default function App() {
     errorMessage?: string,
   ) => {
     setSessionState(status === "ready" ? "idle" : status);
+    if (status === "ready") {
+      setSystemState("idle");
+      setTaskState("HAZIR");
+      setError(null);
+      pushTelemetry("ASİSTAN YANITI TAMAMLANDI · HAZIR");
+    }
     if (status === "error") {
       setChatHistory((current) => current.map((turn) =>
         turn.id === activeReplyId.current && !turn.content
@@ -354,6 +361,43 @@ export default function App() {
     try {
       const generated = await generateTaskPlan(text);
 
+      if (generated.resource_scope === "local-discovery" && generated.steps.length === 0) {
+        setTaskId(null);
+        setPlan([]);
+        setResearchOutput(null);
+        setSystemState("executing");
+        setTaskState("AÇIK KAYNAK KEŞFİ");
+        const found = await runSelfDiscovery();
+        const descriptions = found.items.slice(0, 6).map((item) =>
+          [
+            item.repository + " · " + item.license,
+            item.description,
+            "Katkı: " + item.capability_hint,
+            item.url,
+          ].join("\n")
+        );
+        const reply = [
+          "Ücretsiz/açık kaynak GitHub keşfi tamamlandı.",
+          "Yeni öneri: " + (found.new_count ?? 0) +
+            " · Kalıcı inceleme kuyruğu: " + found.proposal_count,
+          ...descriptions,
+          descriptions.length === 0
+            ? "Bu taramada doğrulanabilir yeni aday bulunamadı. Lisans/README filtresi sıkıdır."
+            : "Adaylar yalnızca metadata incelemesidir; kod indirilmedi veya çalıştırılmadı.",
+          "Onay ve güvenli entegrasyon için ayrı Trusted Owner Control Plane incelemesi gerekir.",
+        ].join("\n\n");
+        setChatHistory((current) => [...current, {
+          id: makeId(), role: "assistant" as const,
+          content: reply, source: "MCP Gateway · GitHub Public Search",
+          reviewAvailable: true,
+        }].slice(-40));
+        setSystemState("idle");
+        setSessionState("idle");
+        setTaskState("HAZIR");
+        pushTelemetry("GITHUB ÖNERİLERİ İNCELEME KUYRUĞUNA ALINDI");
+        return;
+      }
+
       if (generated.resource_scope === "local-assistant" &&
           generated.steps.length === 0) {
         // A conversation is not an agent task: no task creation, no MCP
@@ -461,13 +505,42 @@ export default function App() {
 
       if (["failed", "cancelled", "timed_out"].includes(result.state)) {
         setSystemState("idle");
-        setError(`Görev durumu: ${result.state}. Arayüz başka bir eylem yürütmedi.`);
+        setTaskState("BAŞARISIZ");
+        setSessionState("idle");
+        // Only server-returned, bounded step error metadata is shown. Never
+        // fabricate a completed result or leave a blank assistant bubble.
+        const detail = result.steps.find((step) => step.reason)?.reason;
+        const reason = typeof detail === "string" ? detail.slice(0, 280) : "Sağlayıcı veya yetki denetimi tamamlanamadı.";
+        const message = `Görev ${result.state}: ${reason}`;
+        setChatHistory((current) => [...current, {
+          id: makeId(), role: "assistant" as const,
+          content: message,
+          source: generated.steps.map((step) => step.capability_id).join(", "),
+        }].slice(-40));
+        setError(message);
         pushTelemetry(`GÖREV SONLANDIRILDI: ${result.state.toUpperCase()}`);
         return;
       }
 
       if (result.state === "succeeded") {
         setSystemState("idle");
+        // A Gateway-governed local synthesis task has already inferred the
+        // answer; display its real result instead of generating a second one.
+        if (generated.steps.length === 1 &&
+            generated.steps[0].capability_id === "assistant.synthesize") {
+          const value = result.steps[0]?.result;
+          const content = value && typeof value === "object" &&
+            "content" in value ? (value as {content: unknown}).content : null;
+          if (typeof content === "string" && content.trim()) {
+            setChatHistory((current) => [...current, {
+              id: makeId(), role: "assistant" as const, content,
+              source: "InferenceService · MCPGateway · assistant.synthesize",
+            }].slice(-40));
+            setTaskState("HAZIR");
+            setSessionState("idle");
+            return;
+          }
+        }
 
         setResearchOutput(result.steps);
         const replyId = makeId();
@@ -495,6 +568,9 @@ export default function App() {
           : "AURA yürütmesi başarısız oldu.";
 
       setError(message);
+      setChatHistory((current) => [...current, {
+        id: makeId(), role: "assistant" as const, content: message, source: "Core hata tanısı",
+      }].slice(-40));
       pushTelemetry(`HATA: ${message}`);
     }
   }

@@ -5,8 +5,8 @@
   "generated_at": "2026-11-19T07:08:05.113Z",
   "git_commit": "19da39d819cefce0dff6c9f4b5ce7dd963288018",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:f82cc31241237aec951438e351217e8547bffe81eb409fc139608b40eb022a69",
-  "file_count": 445,
+  "release_digest": "sha256:8fc55fcec48ddb27758431070c9c5714ec5b1b85c49a21b8d4a01ff0b3206057",
+  "file_count": 448,
   "files": [
     {
       "path": ".gitattributes",
@@ -66,7 +66,7 @@
     },
     {
       "path": "aura-ui/src/api/client.ts",
-      "sha256": "299f9c5f118759cc8fc6821e54421736204b250835d4cfd68838984b5cd4646b"
+      "sha256": "701c875e0050cf002712d00d5f26a94d1ee1bb097c15291ee637041bb032490a"
     },
     {
       "path": "aura-ui/src/api/contracts.ts",
@@ -78,7 +78,7 @@
     },
     {
       "path": "aura-ui/src/App.tsx",
-      "sha256": "979f99c2edc37088b7652825492c8803e9509aca77f67dceb9cc4d959551cd0d"
+      "sha256": "350dd0d8e6f6a2a965b35bd0af6e23d651526cfbd0e862ebc57c2719c3c944ed"
     },
     {
       "path": "aura-ui/src/assets/hero.png",
@@ -114,7 +114,7 @@
     },
     {
       "path": "aura-ui/src/components/ChatTranscript.tsx",
-      "sha256": "8e7e432b4530c3d7b620abc9235bffc6e5c69e583376a38d2b181675a29260fa"
+      "sha256": "a1f564d7b180e74bac4e16b5e5d4a5c98e5cae81b20f1db41737eef4e1e1b338"
     },
     {
       "path": "aura-ui/src/components/DynamicHologram3D.tsx",
@@ -122,7 +122,7 @@
     },
     {
       "path": "aura-ui/src/components/EvolutionReviewPanel.tsx",
-      "sha256": "ab10a4629e80408842285d1300d744e162b9acb60d08411d9fc177183586175b"
+      "sha256": "79cedbd27448c2bd40ec801d3a102c96a762f3af53de21b3b1b456228edeef55"
     },
     {
       "path": "aura-ui/src/components/HudGameStudio.tsx",
@@ -366,7 +366,7 @@
     },
     {
       "path": "core/src/aura_core/application/api.py",
-      "sha256": "7376ea83d659bae4d111743153a1aeaf99f03feca4f0bb3c6c8c3d73ec0c0879"
+      "sha256": "0e1a13768b006e444c362842a5adf7b92c8def98276842c6da22341d5e7a77d7"
     },
     {
       "path": "core/src/aura_core/application/approval_api.py",
@@ -438,7 +438,7 @@
     },
     {
       "path": "core/src/aura_core/application/directive_planner.py",
-      "sha256": "e0e36fe4e10b27cc714354534aa58990ada8bc2dce1a2c2ae80b220854431946"
+      "sha256": "de435c1aa968cb78714b5317a5053287799bce0aebd4f02fb37d2a1775cd86bf"
     },
     {
       "path": "core/src/aura_core/application/episodic_memory.py",
@@ -547,6 +547,10 @@
     {
       "path": "core/src/aura_core/application/local_object_detection.py",
       "sha256": "77c65c22af1ea8f7c70071bc541fb1939298cf8aca985b1c31ac340adf0b4f6f"
+    },
+    {
+      "path": "core/src/aura_core/application/local_synthesis_mcp.py",
+      "sha256": "9927e0ae7e06da435a5359122fe395f9dd5e582366299492fadeae6857850213"
     },
     {
       "path": "core/src/aura_core/application/monitor_topology.py",
@@ -945,6 +949,14 @@
       "sha256": "979ee14388ed4b5ccc0ceeb0fab39a3765aa092662d9ca31e6fc4e90a69a0e87"
     },
     {
+      "path": "core/src/aura_core/evolution/self_discovery.py",
+      "sha256": "0959ae788189f30c1a307581c565e7e7b8bb0cefb2b42e463c8a26f5e9f1d7b7"
+    },
+    {
+      "path": "core/src/aura_core/evolution/self_discovery_api.py",
+      "sha256": "3fa9015fdd7f8eec5ae2ed3450c3b69aa164367c909ea877e287a6dab349825f"
+    },
+    {
       "path": "core/src/aura_core/evolution/skill_registry.py",
       "sha256": "39c3a87d91a21cd9a2c5871bfb20feda584ff4e5c445d1be37b49093f2f6f003"
     },
@@ -1130,7 +1142,7 @@
     },
     {
       "path": "core/src/aura_core/main.py",
-      "sha256": "e0aa030046b2f1ae1465bcf9f00decf6c06ec1eff64b3901422366d38bc19a45"
+      "sha256": "6b4f799613a853da24a6b4efdc7bf933a56eebeababc4b831f661ccce1e9e07f"
     },
     {
       "path": "core/src/aura_core/mcp/__init__.py",

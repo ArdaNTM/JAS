@@ -6,6 +6,7 @@ export type ChatTurn = {
   content: string;
   source?: string;
   approvalId?: string | null;
+  reviewAvailable?: boolean;
 };
 
 function MarkdownContent({ text }: { text: string }): ReactNode {
@@ -35,6 +36,12 @@ export default function ChatTranscript({ turns }: { turns: ChatTurn[] }) {
               <MarkdownContent text={turn.content || "Yanıt hazırlanıyor…"} />
             </div>
             {turn.source && <div className="mt-2 break-words text-[10px] text-slate-500">Kaynak / araç: {turn.source}</div>}
+            {turn.reviewAvailable && (
+              <a href="http://localhost:8766/" target="_blank" rel="noopener noreferrer"
+                 className="mt-3 inline-block rounded border border-amber-800/70 px-3 py-2 text-xs text-amber-200">
+                TRUSTED OWNER İNCELEMESİNİ AÇ
+              </a>
+            )}
             {turn.approvalId && (
               <div className="mt-3 rounded border border-amber-800/70 p-3 text-xs text-amber-200">
                 <p>Bekleyen bağımsız Owner onayı: <code>{turn.approvalId}</code></p>

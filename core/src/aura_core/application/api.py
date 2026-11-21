@@ -664,6 +664,9 @@ def create_api(
 
     metrics = RequestMetrics()
 
+    # Shared with the bounded InferenceService MCP adapter; no duplicate
+    # model runtime is constructed for synthesis.
+    app.state.inference_service = application
     app.state.readiness = readiness
     app.state.metrics = metrics
     app.state.task_service = task_service
@@ -1398,6 +1401,41 @@ def create_api(
                 logger.warning("Invalid persona environment settings; using safe defaults")
                 persona_policy = PersonaPolicy()
         system_prompt = system_prompt + "\n\n" + persona_policy.system_style_prompt()
+        # Reflect live registries, never the 117 informational feature index
+        # as if it were a callable provider. Metadata never grants authority.
+        active_tools: list[dict[str, str]] = []
+        registry_kernel = getattr(app.state, "kernel", None)
+        caps = getattr(registry_kernel, "capability_registry", None)
+        providers = getattr(registry_kernel, "provider_registry", None)
+        if caps is not None and providers is not None:
+            try:
+                for record in caps.records():
+                    definition = record.definition
+                    if (definition.provider_type is not ProviderType.MCP
+                            or not definition.tool_name or not record.available
+                            or not record.healthy):
+                        continue
+                    provider = providers.get(definition.provider_id)
+                    if not provider.available or not provider.healthy:
+                        continue
+                    active_tools.append({
+                        "id": definition.capability_id[:96],
+                        "tool": definition.tool_name[:96],
+                        "risk": str(definition.risk_level)[:16],
+                    })
+                    if len(active_tools) == 24:
+                        break
+            except (KeyError, ValueError, AttributeError, RuntimeError):
+                active_tools = []
+        # Live capability metadata is explanatory, not executable authority.
+        system_prompt += (
+            "\n\nActive registered MCP tools (read-only metadata, not authorization): "
+            + json.dumps(active_tools, ensure_ascii=False)
+            + "\nOther catalog entries are informational and may not be executable. "
+              "Explain accurately which tools exist, note that PermissionEngine "
+              "and MCPGateway may deny or require independent Owner approval. "
+              "Never claim you executed a tool from this list."
+        )
         user_content = synthesized.user_content
 
         inference_request = InferenceRequest(

@@ -1,4 +1,5 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { getDiscoveryProposals, type DiscoveryProposal } from "../api/client";
 
 interface GoalGroup {
   goal_id: string;
@@ -34,9 +35,26 @@ export default function EvolutionReviewPanel() {
   const [tree, setTree] = useState<GoalTree | null>(null);
   const [drafts, setDrafts] = useState<ReviewDraft[]>([]);
   const [message, setMessage] = useState("Evolution incelemesi yalnızca görüntüleme modundadır.");
+  const [discovered, setDiscovered] = useState<DiscoveryProposal[]>([]);
+  const [discoveryCount, setDiscoveryCount] = useState(0);
+  const refreshDiscovered = useCallback(async () => {
+    try {
+      const result = await getDiscoveryProposals();
+      setDiscovered(result.items);
+      setDiscoveryCount(result.proposal_count);
+    } catch {
+      // Local discovery may be independently disabled; no false readiness.
+    }
+  }, []);
+  useEffect(() => {
+    void refreshDiscovered();
+    const timer = window.setInterval(() => void refreshDiscovered(), 15000);
+    return () => window.clearInterval(timer);
+  }, [refreshDiscovered]);
 
   const refresh = useCallback(async () => {
     setLoading(true);
+    void refreshDiscovered();
     try {
       const response = await fetch("/api/evolution/goals", {
         method: "GET",
@@ -69,7 +87,7 @@ export default function EvolutionReviewPanel() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [refreshDiscovered]);
 
   return (
     <section className="mx-auto mt-6 w-full max-w-5xl border border-cyan-900/70 bg-slate-950/80 p-5 text-xs text-slate-200">
@@ -79,6 +97,7 @@ export default function EvolutionReviewPanel() {
             EVOLUTION / PRIMAL ANCHOR
           </p>
           <p className="mt-2 text-slate-400">Gelişim önerileri · Onay ve çalıştırma bu HUD içinde mümkün değil.</p>
+          <p className="mt-2 text-[10px] text-cyan-300">GitHub inceleme kuyruğu · Öneri: {discoveryCount}</p>
         </div>
         <button
           type="button"
@@ -114,6 +133,21 @@ export default function EvolutionReviewPanel() {
                 </div>
               ))}
             </>
+          )}
+          {discovered.length > 0 && (
+            <div className="space-y-2 border-t border-cyan-950 pt-4">
+              <h3 className="text-cyan-300">ÜCRETSİZ GITHUB KEŞFİ · ÖNERİ: {discoveryCount}</h3>
+              {discovered.slice(0, 20).map((item) => (
+                <div key={item.proposal_id} className="rounded border border-cyan-950 p-3">
+                  <a href={item.url} target="_blank" rel="noopener noreferrer"
+                     className="text-cyan-200 underline">{item.repository}</a>
+                  <div className="mt-1 text-[10px] text-slate-400">
+                    {item.license} · {item.capability_hint} · {item.description}
+                  </div>
+                  <div className="mt-2 text-[10px] text-amber-300">OWNER İNCELEMESİ BEKLİYOR · KOD ÇALIŞTIRILMADI</div>
+                </div>
+              ))}
+            </div>
           )}
           {drafts.length > 0 && (
             <div className="space-y-3 border-t border-cyan-950 pt-4">

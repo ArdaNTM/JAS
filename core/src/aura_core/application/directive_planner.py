@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 import unicodedata
 
 from aura_core.kernel.permissions import RiskLevel
@@ -77,6 +78,16 @@ class DirectivePlanner:
         "selam", "nedir", "nasil", "kimdir", "acikla",
     )
 
+    # Capability/identity questions are ordinary assistant conversation.
+    # These must never be promoted into a model-selected "synthesize" tool.
+    _CAPABILITY_QUESTIONS = (
+        "neler yapabilirsin", "ne yapabilirsin", "neleri yapabiliyorsun",
+        "hangi araclarin var", "hangi yeteneklerin var", "yeteneklerin neler",
+        "kendini tanit", "sen kimsin", "sistemde neler var",
+        "what can you do", "what tools do you have", "what are your capabilities",
+        "tell me about yourself", "who are you",
+    )
+
     _MODEL_RULES = (
         (frozenset({"disli", "gear", "gears"}), "gear-v1"),
         (frozenset({"kure", "sphere", "ball"}), "sphere-v1"),
@@ -90,6 +101,20 @@ class DirectivePlanner:
 
         normalized = _ascii_fold(text)
         tokens = set(normalized.split())
+
+        # Discovery is an explicit user action; plain capability questions do
+        # not trigger any GitHub fetch or permission operation.
+        if (normalized.strip(" .!?") == "kendini gelistir"
+                or ("yeni" in normalized and "ucretsiz" in normalized
+                    and "ozellik" in normalized and "arastir" in normalized)
+                or ("github" in normalized and "kendine" in normalized
+                    and "arac" in normalized and "bul" in normalized)):
+            return GeneratedPlan(resource_scope="local-discovery", steps=())
+
+        # Question-first classification runs before search keyword matching;
+        # "hangi araştırma araçların var?" is not a request to search the web.
+        if any(term in normalized for term in self._CAPABILITY_QUESTIONS):
+            return GeneratedPlan(resource_scope="local-assistant", steps=())
 
         starts_as_3d = normalized.startswith(("3d ", "3b "))
         has_visual_verb = any(
@@ -125,7 +150,15 @@ class DirectivePlanner:
                 ),
             )
 
-        if any(term in normalized for term in self._RESEARCH_TERMS):
+        # Match standalone words, not substrings: "ara" inside "bilgisayar"
+        # must never turn an ordinary question into a search tool invocation.
+        research_words = set(re.findall(r"[a-z0-9_]+", normalized))
+        # Turkish inflection is legal only on the explicitly research-related
+        # stems. An unrelated word such as "bilgisayar" must not match "ara"
+        # or "bilgi" and accidentally dispatch a network tool.
+        search_stems = ("arastir", "incele", "ogren")
+        if (research_words.intersection(self._RESEARCH_TERMS)
+                or any(word.startswith(search_stems) for word in research_words)):
             return GeneratedPlan(
                 resource_scope="public-web",
                 steps=(
@@ -155,6 +188,11 @@ class DirectivePlanner:
                 resource_scope="local-assistant",
                 steps=(),
             )
+
+        # Unknown questions stay read-only: only explicit action plans may
+        # reach MCPGateway. Do not infer authority from a question mark.
+        if normalized.rstrip().endswith("?"):
+            return GeneratedPlan(resource_scope="local-assistant", steps=())
 
         raise ValueError(
             "No governed capability matches this directive. "
