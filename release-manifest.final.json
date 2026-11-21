@@ -5,7 +5,7 @@
   "generated_at": "2026-11-22T00:15:00.000Z",
   "git_commit": "c7cfe64a195517f0a14868bfd846ba392de83844",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:cc73515f8dd52ddcb2c8d5a59501aa21458ff62f852a7f2748eb295c3185a21a",
+  "release_digest": "sha256:e642b639326260a580e0b25a8a8e56a133a7811aeba24540cfb7a0c2af3a348d",
   "file_count": 450,
   "files": [
     {
@@ -38,7 +38,7 @@
     },
     {
       "path": ".github/workflows/aura-windows-launcher.yml",
-      "sha256": "11f1d3e61db502cdae4618b712230d933c871dc07c7b5f7c745ec36e8a0af5dc"
+      "sha256": "8284b666f1a315ed0ad92d96b234cc30e17a87264683b34d325546e64ba27a00"
     },
     {
       "path": ".github/workflows/aura-windows-owner-security.yml",
