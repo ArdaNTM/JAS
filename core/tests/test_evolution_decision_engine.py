@@ -270,3 +270,95 @@ def test_windows_owner_delegation_and_passkey_acl_fail_closed(sample, monkeypatc
     assert not AutonomousDelegationVerifier(workspace).authorized_categories()
     with pytest.raises(PermissionError):
         require_private_acl(owner)
+
+
+def _signed_activation_delegation(workspace, monkeypatch):
+    from aura_core.evolution.owner_cli import make_activation_delegation
+    signer = Ed25519PrivateKey.generate()
+    public = signer.public_key()
+    raw = public.public_bytes(
+        serialization.Encoding.Raw, serialization.PublicFormat.Raw,
+    )
+    owner = workspace.root / "owner"
+    owner.mkdir(exist_ok=True)
+    (owner / "autonomous_delegation.pub.pem").write_bytes(
+        public.public_bytes(
+            serialization.Encoding.PEM,
+            serialization.PublicFormat.SubjectPublicKeyInfo,
+        )
+    )
+    doc = make_activation_delegation(
+        signer, categories=("local_memory",),
+        image="example/mcp@sha256:" + "a" * 64,
+        policy_sha256="b" * 64,
+        tests_sha256="c" * 64,
+        attestor_key_sha256="d" * 64,
+        attestor_runner_id="independent_attestor",
+        days=1, max_tools=8, min_score=70,
+    )
+    (owner / "autonomous_delegation.json").write_text(json.dumps(doc), "utf-8")
+    if os.name == "posix":
+        owner.chmod(0o700)
+        (owner / "autonomous_delegation.json").chmod(0o600)
+        (owner / "autonomous_delegation.pub.pem").chmod(0o600)
+    _private_windows_test_owner_state(workspace)
+    monkeypatch.setenv("AURA_STORAGE_MODE", "local")
+    monkeypatch.setenv("AURA_EVOLUTION_AUTO_ACTIVATE", "1")
+    monkeypatch.setenv("AURA_EVOLUTION_DELEGATION_KEY_SHA256", hashlib.sha256(raw).hexdigest())
+    return doc
+
+
+def test_signed_bounded_activation_policy_is_distinct_from_runtime_registration(sample, monkeypatch):
+    from aura_core.evolution.activation_delegation import ActivationDelegationVerifier
+    workspace, _ = sample
+    grant = _signed_activation_delegation(workspace, monkeypatch)
+    assert ActivationDelegationVerifier(workspace).verified_grant() == grant["claims"]
+    result = EvolutionDecisionEngine(workspace).evaluate("test__local-memory")
+    assert result.status == "AUTO_APPROVED_BY_POLICY"
+    assert result.requires_independent_attestation is True
+    assert result.activation_performed is False
+    assert result.registration_performed is False
+    assert json.loads(workspace.active.read_text())["active"] == []
+
+
+def test_activation_delegation_denies_tampering_or_absent_flag(sample, monkeypatch):
+    from aura_core.evolution.activation_delegation import ActivationDelegationVerifier
+    workspace, _ = sample
+    doc = _signed_activation_delegation(workspace, monkeypatch)
+    verifier = ActivationDelegationVerifier(workspace)
+    document = workspace.root / "owner" / "autonomous_delegation.json"
+    assert verifier.verified_grant() is not None
+    monkeypatch.setenv("AURA_EVOLUTION_AUTO_ACTIVATE", "0")
+    assert verifier.verified_grant() is None
+    monkeypatch.setenv("AURA_EVOLUTION_AUTO_ACTIVATE", "1")
+    doc["claims"]["max_tools"] = 17
+    document.write_text(json.dumps(doc))
+    assert verifier.verified_grant() is None
+    assert EvolutionDecisionEngine(workspace).evaluate("test__local-memory").status == "OWNER_DELEGATION_REQUIRED"
+
+
+@pytest.mark.parametrize("mutate", [
+    lambda c: c.update({"auto_activation": False}),
+    lambda c: c.update({"scope": "unrestricted-host"}),
+    lambda c: c.update({"min_score": 1}),
+    lambda c: c.update({"oci_image": "python:latest"}),
+    lambda c: c.update({"attestor_key_sha256": "not-a-key"}),
+    lambda c: c.update({"expires_at": c["issued_at"] + 8 * 86400}),
+])
+def test_unsafe_activation_scopes_rejected(sample, monkeypatch, mutate):
+    from aura_core.evolution.activation_delegation import validated_claims
+    workspace, _ = sample
+    doc = _signed_activation_delegation(workspace, monkeypatch)
+    mutate(doc["claims"])
+    with pytest.raises(PermissionError):
+        validated_claims(doc["claims"], now=doc["claims"]["issued_at"])
+
+
+def test_review_v1_is_never_accepted_as_automatic_activation(sample, monkeypatch):
+    from aura_core.evolution.activation_delegation import ActivationDelegationVerifier
+    workspace, _ = sample
+    monkeypatch.setenv("AURA_STORAGE_MODE", "local")
+    monkeypatch.setenv("AURA_EVOLUTION_AUTO_ACTIVATE", "1")
+    _signed_owner_delegation(workspace, monkeypatch)
+    assert ActivationDelegationVerifier(workspace).verified_grant() is None
+    assert EvolutionDecisionEngine(workspace).evaluate("test__local-memory").status == "POLICY_ELIGIBLE_PENDING_ATTESTATION"
