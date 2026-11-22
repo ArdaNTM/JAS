@@ -220,6 +220,21 @@ def test_recovery_v2_retries_old_sdk_failure_once_but_never_replays(monkeypatch)
     assert _eligible_local_recovery({**old, "retry_count": True}) is False
 
 
+def test_local_recovery_does_not_scan_or_install_without_signed_owner():
+    import asyncio
+    from types import SimpleNamespace
+    from aura_core.evolution.attestor_worker import IndependentMCPAttestorWorker
+
+    worker = object.__new__(IndependentMCPAttestorWorker)
+    worker._delegation = SimpleNamespace(verified_grant=lambda: None)
+    worker._decisions = SimpleNamespace(
+        evaluate_pending=lambda **_: (_ for _ in ()).throw(
+            AssertionError("unsigned Owner must not evaluate pending candidates")
+        ),
+    )
+    assert asyncio.run(worker.scan()) == []
+
+
 def test_isolated_src_python_is_started_as_module_for_relative_imports(tmp_path):
     from aura_core.evolution.windows_job_mcp import _isolated_entry_args
     python = tmp_path / "runtime" / "pkg" / ".venv" / "Scripts" / "python.exe"
