@@ -5,6 +5,8 @@ import base64
 import hashlib
 import json
 import os
+import csv
+import subprocess
 from pathlib import Path
 import time
 
@@ -41,6 +43,44 @@ def sample(tmp_path):
     return workspace, package
 
 
+def _private_windows_test_owner_state(workspace):
+    """Provision real private test NTFS ACLs; never bypass runtime ACL checks.
+
+    Pytest's ordinary tmp_path inherits broad Temp-directory ACLs on Windows.
+    Signing a real test delegation into those inherited directories must not
+    make production validation less strict. Protect only our fixture subtree.
+    """
+    if os.name != "nt":
+        return
+    from aura_core.evolution.windows_owner_storage import (
+        harden_private_acl, require_private_acl,
+    )
+    identity = subprocess.run(
+        ["whoami.exe", "/user", "/fo", "csv", "/nh"], capture_output=True,
+        text=True, timeout=10, check=True,
+    )
+    sid = next(csv.reader(identity.stdout.splitlines()))[-1].strip()
+    if not sid.startswith("S-1-5-"):
+        raise RuntimeError("Cannot establish Windows test identity")
+    # Bootstrap the fixture's private parent; harden_private_acl subsequently
+    # enforces that every child already has a protected parent.
+    root = workspace.root
+    subprocess.run(["icacls.exe", str(root), "/inheritance:r"],
+                   check=True, capture_output=True, timeout=10)
+    subprocess.run([
+        "icacls.exe", str(root), "/grant:r",
+        "*" + sid + ":(OI)(CI)F",
+        "*S-1-5-18:(OI)(CI)F",
+        "*S-1-5-32-544:(OI)(CI)F",
+    ], check=True, capture_output=True, timeout=10)
+    require_private_acl(root)
+    owner = root / "owner"
+    harden_private_acl(owner)
+    for name in ("autonomous_delegation.json",
+                 "autonomous_delegation.pub.pem"):
+        harden_private_acl(owner / name)
+
+
 def _signed_owner_delegation(workspace, monkeypatch, *, category="local_memory", expiry=None):
     signer = Ed25519PrivateKey.generate()
     pub = signer.public_key()
@@ -72,6 +112,7 @@ def _signed_owner_delegation(workspace, monkeypatch, *, category="local_memory",
         "signature_b64": base64.urlsafe_b64encode(signature).decode().rstrip("="),
     }
     (owner / "autonomous_delegation.json").write_text(json.dumps(data), "utf-8")
+    _private_windows_test_owner_state(workspace)
     monkeypatch.setenv("AURA_EVOLUTION_DELEGATION_KEY_SHA256", hashlib.sha256(raw).hexdigest())
     return data
 
@@ -204,3 +245,28 @@ def test_advisory_endpoint_not_available_in_remote_mode(sample):
     app.dependency_overrides[authenticated_principal] = lambda: "local_owner"
     with TestClient(app) as client:
         assert client.get("/api/evolution/discovery/decisions").status_code == 503
+
+
+@pytest.mark.skipif(os.name != "nt", reason="real Windows NTFS ACL integration")
+def test_windows_owner_delegation_and_passkey_acl_fail_closed(sample, monkeypatch):
+    from aura_core.evolution.windows_owner_storage import (
+        require_private_acl, harden_private_acl,
+    )
+    workspace, _ = sample
+    monkeypatch.setenv("AURA_STORAGE_MODE", "local")
+    monkeypatch.setenv("AURA_EVOLUTION_AUTO_ACTIVATE", "1")
+    _signed_owner_delegation(workspace, monkeypatch)
+    owner = workspace.root / "owner"
+    passkey = owner / "owner-passkey.json"
+    passkey.write_text('{"test":"only"}', "utf-8")
+    harden_private_acl(passkey)
+    for path in (owner, owner / "autonomous_delegation.json",
+                 owner / "autonomous_delegation.pub.pem", passkey):
+        require_private_acl(path)
+    assert AutonomousDelegationVerifier(workspace).authorized_categories() == frozenset({"local_memory"})
+    # Re-enabling inherited permissions must immediately invalidate approval.
+    subprocess.run(["icacls.exe", str(owner), "/inheritance:e"],
+                   check=True, capture_output=True, timeout=10)
+    assert not AutonomousDelegationVerifier(workspace).authorized_categories()
+    with pytest.raises(PermissionError):
+        require_private_acl(owner)
