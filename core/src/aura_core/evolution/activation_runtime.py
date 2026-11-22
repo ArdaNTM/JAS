@@ -29,7 +29,10 @@ from aura_core.evolution.decision_engine import EvolutionDecisionEngine
 from aura_core.evolution.external_staging import (
     EvolutionWorkspace, _checked_path, _validated_files,
 )
-from aura_core.evolution.sandbox_preflight import IsolatedMCPPreflight, choose_python_entrypoint
+from aura_core.evolution.sandbox_preflight import (
+    IsolatedMCPPreflight, choose_python_entrypoint,
+    _MAX_TOOLS, _MAX_SCHEMA_JSON_BYTES, _schema_json_size,
+)
 from aura_core.evolution.windows_job_mcp import (
     bridge_parameters, local_binding, verify_local,
 )
@@ -54,7 +57,7 @@ from aura_core.mcp.tool_registry import MCPToolRegistry
 _SHA = re.compile(r"^[0-9a-f]{64}$")
 _TOOL = re.compile(r"^[A-Za-z0-9_.-]{1,64}$")
 _SCHEMA = "aura.external-attested-tools.v1"
-_TOOL_LIMIT_BYTES = 100_000
+_TOOL_LIMIT_BYTES = 262_144
 _CATEGORY = {
     "desktop_automation": CapabilityCategory.AUTOMATION,
     "code_analysis": CapabilityCategory.CODING,
@@ -400,7 +403,7 @@ class DelegatedMCPActivationManager:
                 or bundle["repository"] != repository
                 or bundle["runtime_tree_sha256"] != tree
                 or not isinstance(bundle["tools"], list)
-                or not 1 <= len(bundle["tools"]) <= grant["max_tools"]):
+                or not 1 <= len(bundle["tools"]) <= min(_MAX_TOOLS, grant["max_tools"])):
             raise PermissionError("Untrusted sandbox bundle")
         attestor = self._attestor(grant) if profile == "docker-stdio" else None
         local_key = None
@@ -449,6 +452,9 @@ class DelegatedMCPActivationManager:
             proof_hashes[tool.name] = hashlib.sha256(
                 json.dumps(row["attestation"], sort_keys=True).encode()
             ).hexdigest()
+        if _schema_json_size({name: tool.input_schema
+                              for name, tool in expected.items()}) > _MAX_SCHEMA_JSON_BYTES:
+            raise PermissionError("Signed MCP schemas exceed delegated size budget")
         expiry = min(expiries)
         provider = await self._connect(name, grant, entry, expiry, execution_profile=profile)
         try:
