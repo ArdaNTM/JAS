@@ -2195,6 +2195,23 @@ def create_api(
         if caps is None or providers is None:
             return GeneratedPlan(resource_scope="local-assistant", steps=())
 
+        def nullable_parameter(field: object) -> bool:
+            # FastMCP/Pydantic represent optional str | None as anyOf; expose
+            # only a bounded type hint, never copy untrusted schema prose.
+            if not isinstance(field, dict):
+                return False
+            variants = [field]
+            for key in ("anyOf", "oneOf"):
+                choices = field.get(key)
+                if isinstance(choices, list):
+                    variants.extend(item for item in choices[:16] if isinstance(item, dict))
+            return any(
+                variant.get("type") == "null"
+                or (isinstance(variant.get("type"), list)
+                    and "null" in variant["type"])
+                for variant in variants
+            )
+
         catalog = {}
         for record in sorted(
             caps.records(),
@@ -2228,6 +2245,10 @@ def create_api(
                 risk = RiskLevel(definition.risk_level)
                 catalog[definition.capability_id] = (
                     definition, risk, frozenset(properties),
+                    tuple(sorted(
+                        key for key, field in properties.items()
+                        if nullable_parameter(field)
+                    )),
                 )
             except (KeyError, LookupError, RuntimeError, TypeError, ValueError,
                     AttributeError, asyncio.TimeoutError):
@@ -2255,9 +2276,10 @@ def create_api(
                     "description": definition.description[:180],
                     "tool_name": definition.tool_name,
                     "argument_keys": sorted(keys),
+                    "nullable_arguments": list(nullable),
                     "risk": risk.value,
                 }
-                for capability, (definition, risk, keys) in catalog.items()
+                for capability, (definition, risk, keys, nullable) in catalog.items()
             ],
         }, ensure_ascii=False)
         try:
@@ -2286,7 +2308,7 @@ def create_api(
         args = proposed.get("arguments", {})
         if not isinstance(args, dict) or len(json.dumps(args, allow_nan=False)) > 8192:
             raise ValueError("Proposed tool arguments invalid or oversized")
-        definition, risk, allowed = catalog[cap]
+        definition, risk, allowed, _nullable = catalog[cap]
         if set(args) - allowed:
             raise ValueError("Tool proposal contains unregistered arguments")
         # The model cannot choose policy scope, principal, risk, operation
