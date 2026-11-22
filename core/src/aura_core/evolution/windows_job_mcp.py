@@ -295,6 +295,44 @@ def _project_script_launch(runtime: Path, entry: str) -> tuple[str, str] | None:
     return None
 
 
+def _safe_mcp_stderr_tail(data: bytes) -> str:
+    """Keep only a recognized Python import/syntax diagnostic, never raw stderr."""
+    lines = data[-2048:].decode("utf-8", "replace").splitlines()
+    for line in reversed(lines):
+        value = line.strip()
+        found = re.fullmatch(
+            r"(ModuleNotFoundError|ImportError): No module named ['\\\"]"
+            r"([A-Za-z_][A-Za-z0-9_.-]{0,100})['\\\"]",
+            value,
+        )
+        if found:
+            return found.group(1) + ": No module named " + found.group(2)
+        if re.fullmatch(r"(?:SyntaxError|IndentationError): [A-Za-z0-9 _.,:()'-]{1,160}", value):
+            return value[:200]
+    return "Untrusted MCP stderr redacted"
+
+
+def _write_mcp_diagnostic(runtime: Path, stderr_file: Path) -> None:
+    """Diagnostics are informational, never authorization evidence."""
+    if not stderr_file.is_file() or stderr_file.is_symlink():
+        return
+    try:
+        with stderr_file.open("rb") as source:
+            source.seek(max(0, stderr_file.stat().st_size - 2048))
+            tail = _safe_mcp_stderr_tail(source.read(2048))
+        logs = runtime.parents[1] / "logs"
+        _checked_path(logs)
+        destination = logs / (runtime.name + "-local-mcp-stderr.json")
+        if destination.is_symlink():
+            return
+        destination.write_text(
+            json.dumps({"reason_code": "MCP_CHILD_FAILURE", "stderr_tail": tail},
+                       sort_keys=True), encoding="utf-8",
+        )
+    except (OSError, PermissionError, ValueError):
+        return
+
+
 def _bridge(runtime: Path, entry: str) -> int:
     """Start a *suspended* child, assign Job Object, then resume; no race."""
     if os.name != "nt":
@@ -387,6 +425,8 @@ def _bridge(runtime: Path, entry: str) -> int:
 
     owned = []
     scratch = None
+    stderr_file = None
+    bridge_ok = False
     pi = PROCESS_INFORMATION()
     parent_in, child_in, parent_out, child_out, job = (HANDLE(), HANDLE(), HANDLE(), HANDLE(), HANDLE())
     try:
@@ -408,17 +448,20 @@ def _bridge(runtime: Path, entry: str) -> int:
         limits.ProcessMemoryLimit = 256 * 1024 * 1024
         if not kernel.SetInformationJobObject(job, 9, ctypes.byref(limits), ctypes.sizeof(limits)):
             raise OSError("Cannot establish mandatory Job Object limits")
-        # Keep MCP stderr separate from stdout JSON-RPC: never merge them.
-        # Suppress untrusted process diagnostics rather than logging secrets.
-        nul = kernel.CreateFileW("NUL", 0x40000000, 3, ctypes.byref(sa), 3, 0x80, None)
-        if not nul or int(nul) == ctypes.c_void_p(-1).value:
+        # Keep untrusted diagnostics away from the JSON-RPC stream and logs.
+        # Only recognized Python import/syntax errors are released after exit.
+        scratch = Path(tempfile.mkdtemp(prefix="aura-local-mcp-"))
+        stderr_file = scratch / "child.stderr"
+        child_err = kernel.CreateFileW(
+            str(stderr_file), 0x40000000, 1, ctypes.byref(sa), 2, 0x80, None,
+        )
+        if not child_err or int(child_err) == ctypes.c_void_p(-1).value:
             raise OSError("Cannot create isolated MCP stderr handle")
-        owned.append(nul)
+        owned.append(child_err)
         si = STARTUPINFO()
         si.cb = ctypes.sizeof(si)
         si.dwFlags = 0x100
-        si.hStdInput, si.hStdOutput, si.hStdError = child_in, child_out, nul
-        scratch = Path(tempfile.mkdtemp(prefix="aura-local-mcp-"))
+        si.hStdInput, si.hStdOutput, si.hStdError = child_in, child_out, child_err
         env = _scrubbed_windows_mcp_environment(scratch)
         env["PYTHONPATH"] = os.pathsep.join((str(runtime / "src"), str(runtime)))
         local_python = isolated_python(runtime) or Path(sys.executable)
@@ -487,8 +530,9 @@ def _bridge(runtime: Path, entry: str) -> int:
             # Only the numeric code crosses this boundary, never untrusted stderr.
             print(f"Local MCP job child exit code: {exit_code.value}", file=sys.stderr, flush=True)
             return 2
+        bridge_ok = True
         return 0
-    except (OSError, ValueError, PermissionError) as error:
+    except (OSError, ValueError, PermissionError, SandboxUntrusted) as error:
         print("Local MCP supervision failed: " + type(error).__name__ +
               f" (win32={ctypes.get_last_error()})", file=sys.stderr, flush=True)
         return 2
@@ -497,6 +541,13 @@ def _bridge(runtime: Path, entry: str) -> int:
         for handle in reversed(owned):
             if handle:
                 kernel.CloseHandle(handle)
+        if stderr_file is not None:
+            if bridge_ok:
+                log = runtime.parents[1] / "logs" / (runtime.name + "-local-mcp-stderr.json")
+                if not log.is_symlink():
+                    log.unlink(missing_ok=True)
+            else:
+                _write_mcp_diagnostic(runtime, stderr_file)
         if scratch is not None:
             shutil.rmtree(scratch, ignore_errors=True)
 
