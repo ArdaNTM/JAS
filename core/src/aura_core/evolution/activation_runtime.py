@@ -382,12 +382,14 @@ class DelegatedMCPActivationManager:
         attempted = 0
         # Expired sandbox evidence always retires old live providers before
         # another trust decision. No MCP call may use stale evidence.
+        expired_this_scan: set[str] = set()
         for name, active in tuple(self._active.items()):
             if not self._still_authorized(name):
                 await self.quarantine(name)
             elif time.time() >= active.attestation_expires_at:
-                # Expiry is a dependency. Disconnect now; a renewed *fresh*
-                # signed independent observation may authorize reactivation.
+                # Expiry is a dependency. Disconnect now; only a subsequent
+                # scan with independently renewed evidence can reactivate.
+                expired_this_scan.add(name)
                 await self._remove(name, quarantine=False)
                 self._persist(name.replace("__", "/"), "WAITING_ATTESTATION",
                               reason_code="EXPIRED_ATTESTATION")
@@ -407,7 +409,8 @@ class DelegatedMCPActivationManager:
                 if decision.status != "AUTO_APPROVED_BY_POLICY":
                     continue
                 name = decision.repository.replace("/", "__")
-                if (name in self._active or decision.category in existing
+                if (name in self._active or name in expired_this_scan
+                        or decision.category in existing
                         or persistent.get(decision.repository) in {"QUARANTINED", "REVOKED"}):
                     continue
                 attempted += 1
