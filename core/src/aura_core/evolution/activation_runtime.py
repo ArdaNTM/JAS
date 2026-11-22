@@ -459,7 +459,8 @@ class DelegatedMCPActivationManager:
         tree = runtime_fingerprint(self.workspace, name)
         package = self.workspace.root / "verified" / name
         bundle_file = package / "independent-attestations.json"
-        if (package / "local-windows-quarantined.json").exists():
+        marker = package / "local-windows-quarantined.json"
+        if marker.exists() or marker.is_symlink():
             raise PermissionError("Local Windows MCP candidate quarantined by independent attestor")
         if (bundle_file.is_symlink() or not bundle_file.is_file()
                 or bundle_file.stat().st_size > _TOOL_LIMIT_BYTES):
@@ -593,12 +594,22 @@ class DelegatedMCPActivationManager:
                 local_signed = (os.name == "nt" and
                                 grant.get("allow_local_windows_process", False) is True)
                 package = self.workspace.root / "verified" / name
-                # One-time upgrade recovery requires a newly signed attestor
-                # bundle; never revive Owner REVOKED or actively quarantined code.
-                recovery = (status == "QUARANTINED" and local_signed
-                            and previous.get("recovery_version", 0) == 0
-                            and not (package / "local-windows-quarantined.json").exists()
-                            and (package / "independent-attestations.json").is_file())
+                # Operator-quarantined providers and Owner revocations stay
+                # blocked. A completed independent refresh may re-enter normal
+                # verification even after a previous recovery attempt: the
+                # *entire* signed bundle, source, expiry and runtime are checked
+                # in _verify_and_connect before any capability is registered.
+                marker = package / "local-windows-quarantined.json"
+                evidence = package / "independent-attestations.json"
+                recovery = (
+                    status == "QUARANTINED"
+                    and local_signed
+                    and previous.get("reason_code") not in {
+                        "PROVIDER_FAILED_OR_REVOKED", "OWNER_REVOKED",
+                    }
+                    and not marker.exists() and not marker.is_symlink()
+                    and evidence.is_file() and not evidence.is_symlink()
+                )
                 if (name in self._active or name in expired_this_scan
                         or decision.category in existing
                         or status == "REVOKED"

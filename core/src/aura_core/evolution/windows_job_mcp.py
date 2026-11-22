@@ -234,7 +234,8 @@ class LocalWindowsMCPPreflight(IsolatedMCPPreflight):
         with source.open("rb") as stream:
             files, _, _ = _validated_files(stream)
         entry = static_python_entry(files, data.get("entrypoint_hint", ""))
-        if existing.exists():
+        reattesting = existing.exists()
+        if reattesting:
             from aura_core.evolution.activation_runtime import runtime_fingerprint
             runtime_fingerprint(self.workspace, package_name)
             runtime = existing
@@ -243,7 +244,12 @@ class LocalWindowsMCPPreflight(IsolatedMCPPreflight):
             if prepared_entry != entry:
                 raise SandboxUntrusted("Static entrypoint changed during preparation")
         from aura_core.evolution.isolated_venv import prepare_isolated_venv
-        self._verify_runtime_capacity(0)
+        baseline_bytes = self._runtime_package_bytes(package_name) if reattesting else 0
+        capacity_args = {
+            "reattesting_package": package_name if reattesting else None,
+            "baseline_bytes": baseline_bytes,
+        }
+        self._verify_runtime_capacity(0, **capacity_args)
         # Only the separately authorized attestor may install dependencies.
         # Live Windows defaults to wheel-only isolated installation; unit tests
         # may disable it without creating any host process or network activity.
@@ -251,7 +257,7 @@ class LocalWindowsMCPPreflight(IsolatedMCPPreflight):
             prepare_isolated_venv, runtime, files, self.workspace.root,
             install=self.install, entry=entry,
         )
-        self._verify_runtime_capacity(0)
+        self._verify_runtime_capacity(0, **capacity_args)
         connection = MCPConnection()
         try:
             await asyncio.wait_for(connection.connect_stdio(

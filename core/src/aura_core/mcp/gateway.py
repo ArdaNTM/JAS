@@ -46,15 +46,72 @@ def _schema_type_matches(value: Any, expected: str) -> bool:
     return predicates.get(expected, lambda _v: False)(value)
 
 
+def _assert_safe_schema_tree(schema: dict[str, Any]) -> None:
+    """Reject references and malformed combinators even in unused union branches.
+
+    Bound recursive schema inspection to avoid untrusted MCP metadata exhausting
+    the gateway before PermissionEngine-authorized provider dispatch.
+    """
+    pending: list[tuple[Any, int]] = [(schema, 0)]
+    visited = 0
+    while pending:
+        node, depth = pending.pop()
+        visited += 1
+        if visited > 8192 or depth > 32:
+            raise ValueError("MCP input schema nesting exceeds safety budget")
+        if isinstance(node, list):
+            pending.extend((child, depth + 1) for child in node)
+            continue
+        if not isinstance(node, dict):
+            continue
+        if "$ref" in node:
+            raise ValueError("MCP input schema references are not supported")
+        for mode in ("allOf", "anyOf", "oneOf"):
+            if mode in node:
+                branches = node[mode]
+                if (not isinstance(branches, list) or not 1 <= len(branches) <= 16
+                        or any(not isinstance(branch, dict) for branch in branches)):
+                    raise ValueError("Malformed MCP input schema combinator")
+        pending.extend((child, depth + 1) for child in node.values()
+                       if isinstance(child, (dict, list)))
+
+
 def _validate_json_schema(value: Any, schema: dict[str, Any], path: str = "$") -> None:
     """Validate the safety-relevant JSON Schema subset used for MCP tool inputs."""
-    if not isinstance(schema, dict) or any(k in schema for k in ("$ref", "allOf", "anyOf", "oneOf")):
+    if not isinstance(schema, dict):
         raise ValueError(f"Unsupported or invalid input schema at {path}")
+    if path == "$":
+        _assert_safe_schema_tree(schema)
+    if "$ref" in schema:
+        raise ValueError(f"Unsupported input schema reference at {path}")
+
     expected = schema.get("type")
-    if isinstance(expected, str) and not _schema_type_matches(value, expected):
-        raise ValueError(f"Invalid argument type at {path}; expected {expected}")
+    if expected is not None:
+        types = [expected] if isinstance(expected, str) else expected
+        if (not isinstance(types, list) or not types
+                or any(not isinstance(kind, str) for kind in types)
+                or any(kind not in {"object", "array", "string", "integer",
+                                    "number", "boolean", "null"} for kind in types)
+                or not any(_schema_type_matches(value, kind) for kind in types)):
+            raise ValueError(f"Invalid argument type at {path}")
     if "enum" in schema and value not in schema["enum"]:
         raise ValueError(f"Argument is outside the allowed enum at {path}")
+
+    for mode in ("allOf", "anyOf", "oneOf"):
+        if mode not in schema:
+            continue
+        branches = schema[mode]
+        matches = 0
+        for branch in branches:
+            try:
+                _validate_json_schema(value, branch, path)
+            except (ValueError, TypeError):
+                continue
+            matches += 1
+        if ((mode == "allOf" and matches != len(branches))
+                or (mode == "anyOf" and matches == 0)
+                or (mode == "oneOf" and matches != 1)):
+            raise ValueError(f"Input schema {mode} mismatch at {path}")
     if isinstance(value, dict):
         required, properties = schema.get("required", []), schema.get("properties", {})
         if not isinstance(required, list) or any(key not in value for key in required):

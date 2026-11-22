@@ -653,3 +653,82 @@ def test_independent_attestor_provisioning_never_overwrites_private_identity(tmp
     assert (workspace.root / "trust" / "sandbox-attestor.pub.pem").is_file()
     with pytest.raises(FileExistsError):
         provision_attestor(workspace=workspace, key_root=root)
+
+
+def test_quota_quarantined_inventory_reactivates_only_after_signed_fresh_evidence(
+    tmp_path, monkeypatch,
+):
+    from aura_core.evolution import activation_runtime
+
+    workspace, name, repo = _signed_fixture(tmp_path, monkeypatch)
+    kernel, _ = _kernel()
+    provider = FakeProvider()
+
+    async def factory(*_):
+        return provider
+
+    manager = DelegatedMCPActivationManager(
+        workspace=workspace, kernel=kernel, provider_factory=factory,
+    )
+    signed = manager.delegation.verified_grant()
+    assert signed is not None
+    grant = {**signed, "allow_local_windows_process": True}
+    # Emulate the separately signed Windows-local pathway without changing
+    # process-global os.name or running a host executable in the tests.
+    class WindowsOs:
+        name = "nt"
+
+        def __getattr__(self, key):
+            return getattr(os, key)
+
+    monkeypatch.setattr(activation_runtime, "os", WindowsOs())
+    manager.delegation = SimpleNamespace(verified_grant=lambda: grant)
+    manager._persist(
+        repo, "QUARANTINED", reason_code="PermissionError",
+        recovery_version=1,
+    )
+    marker = workspace.root / "verified" / name / "local-windows-quarantined.json"
+    marker.write_text('{"status":"QUARANTINED"}', encoding="utf-8")
+    assert asyncio.run(manager.scan()) == []
+    assert not kernel.capability_registry.records()
+
+    marker.unlink()
+    assert asyncio.run(manager.scan()) == [repo]
+    assert json.loads(workspace.active.read_text())["active"][0]["status"] == "ACTIVE"
+    assert kernel.capability_registry.records()
+    asyncio.run(manager.close())
+
+
+def test_quarantined_inventory_with_tampered_signature_stays_blocked(
+    tmp_path, monkeypatch,
+):
+    from aura_core.evolution import activation_runtime
+
+    workspace, name, repo = _signed_fixture(tmp_path, monkeypatch)
+    kernel, _ = _kernel()
+    manager = DelegatedMCPActivationManager(
+        workspace=workspace, kernel=kernel,
+        provider_factory=lambda *_: None,
+    )
+    grant = manager.delegation.verified_grant()
+    assert grant is not None
+    manager.delegation = SimpleNamespace(
+        verified_grant=lambda: {**grant, "allow_local_windows_process": True},
+    )
+    class WindowsOs:
+        name = "nt"
+
+        def __getattr__(self, key):
+            return getattr(os, key)
+
+    monkeypatch.setattr(activation_runtime, "os", WindowsOs())
+    manager._persist(repo, "QUARANTINED", reason_code="PermissionError")
+    bundle = workspace.root / "verified" / name / "independent-attestations.json"
+    data = json.loads(bundle.read_text("utf-8"))
+    data["tools"][0]["attestation"]["signature_b64"] = base64.b64encode(
+        b"0" * 64,
+    ).decode("ascii")
+    bundle.write_text(json.dumps(data), encoding="utf-8")
+    assert asyncio.run(manager.scan()) == []
+    assert not kernel.capability_registry.records()
+    assert json.loads(workspace.active.read_text())["active"][0]["status"] == "QUARANTINED"

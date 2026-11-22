@@ -476,6 +476,20 @@ def test_expired_signed_local_attestation_recovers_without_lifting_unrelated_qua
     assert attempted == [package]
     assert not marker.exists()
 
+    # A previous storage-only failure cannot permanently strand valid,
+    # cryptographically signed but expired independent evidence.
+    quota = {
+        **old,
+        "reason_code": "SandboxUntrusted",
+        "detail": "Evolution combined storage quota reached",
+    }
+    marker.write_text(json.dumps(quota), encoding="utf-8")
+    assert asyncio.run(worker.scan()) == [
+        {"repository": repository, "attested_tools": 1},
+    ]
+    assert attempted == [package, package]
+    assert not marker.exists()
+
     # An attacker cannot claim expiry by changing the marker or a signature.
     marker.write_text(json.dumps(old), encoding="utf-8")
     modified = json.loads(bundle_path.read_text("utf-8"))
@@ -492,7 +506,7 @@ def test_expired_signed_local_attestation_recovers_without_lifting_unrelated_qua
     }), encoding="utf-8")
     assert asyncio.run(worker.scan()) == []
     assert marker.is_file()
-    assert attempted == [package]
+    assert attempted == [package, package]
 
 
 def test_local_recovery_does_not_scan_or_install_without_signed_owner():

@@ -3,7 +3,7 @@
   "source_pr": "https://github.com/ArdaNTM/JAS/pull/158",
   "unified_snapshot": "19baa60b1139b519947270654d0c0fd59fb2516c",
   "baseline_main": "b1ffe6f534ced0d329dae273a4b949a634cb8bfa",
-  "statement": "Canonical Git blobs and source-specific regression evidence verified for five selected PR differences; PR #66/#68 missing modules merged exactly as their respective source branch blobs. PR #135/#146/#147 endpoints, providers and tests already existed under cumulative PR #152. This is NOT a semantic sign-off for every open PR. Post-F2.7 integration: canonical main.py was merged from PR #158 and main; source pin rebased to exact blob dc3a92e3 (no automatic feature completion).",
+  "statement": "Canonical Git blobs and source-specific regression evidence verified for five selected PR differences; PR #66/#68 missing modules merged exactly as their respective source branch blobs. PR #135/#146/#147 endpoints, providers and tests already existed under cumulative PR #152. This is NOT a semantic sign-off for every open PR. Post-F2.7 integration: canonical main.py was merged from PR #158 and main; source pin rebased to exact blob dc3a92e3 (no automatic feature completion). PR #187 adds a candidate canonical Gateway blob under isolated review; this lineage pin is not production Owner approval or automatic feature completion.",
   "files": [
     {
       "path": "core/src/aura_core/main.py",
@@ -133,7 +133,7 @@
     },
     {
       "path": "core/src/aura_core/mcp/gateway.py",
-      "unified_blob_sha": "d9904d3c039829154315ecbba8d380efd4e5144e",
+      "unified_blob_sha": "add4998beeacd755eb1018d45aec4571f17fc2ca",
       "canonical": "PR #127 exact file",
       "variants": [
         {
@@ -149,6 +149,13 @@
           "blob": "d9904d3c039829154315ecbba8d380efd4e5144e",
           "ancestry": "not_checked",
           "assessment": "EXACT_FILE_MATCH"
+        },
+        {
+          "pr": 187,
+          "ref": "3522118f1869afbce53bb7919add2888a41baf96",
+          "blob": "add4998beeacd755eb1018d45aec4571f17fc2ca",
+          "ancestry": "Single-PR review candidate based on approved main; gateway authorization and F2.7 remain unchanged.",
+          "assessment": "DIFF_REVIEW_REQUIRED: bounded anyOf/oneOf/allOf validation; $ref denied recursively; schema acceptance and negative-path tests added in test_mcp_gateway.py; CI/Owner sign-off not implied."
         }
       ]
     },

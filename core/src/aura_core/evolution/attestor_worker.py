@@ -328,9 +328,18 @@ class IndependentMCPAttestorWorker:
                     # not a generic failed-install retry or Owner revocation.
                     expiry_refresh = (
                         previous.get("status") == "QUARANTINED"
-                        and previous.get("reason_code") == "PermissionError"
-                        and previous.get("detail") ==
-                        "Local Windows MCP candidate quarantined by independent attestor"
+                        and (
+                            (
+                                previous.get("reason_code") == "PermissionError"
+                                and previous.get("detail") ==
+                                "Local Windows MCP candidate quarantined by independent attestor"
+                            )
+                            or (
+                                previous.get("reason_code") == "SandboxUntrusted"
+                                and previous.get("detail") ==
+                                "Evolution combined storage quota reached"
+                            )
+                        )
                         and expired_attestation_evidence(self.workspace, package, grant=grant)
                     )
                     if not expiry_refresh and not _eligible_local_recovery(previous):

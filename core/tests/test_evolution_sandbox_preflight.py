@@ -199,3 +199,127 @@ def test_runtime_preparation_respects_package_count(tmp_path):
     (worker.runtime_root / "other-package").mkdir()
     with pytest.raises(SandboxUntrusted, match="package quota"):
         worker.prepare(name)
+
+
+def test_reattest_capacity_credits_only_preexisting_runtime_bytes(tmp_path):
+    workspace = EvolutionWorkspace(tmp_path / "outside", max_bytes=1_000_000)
+    name, _ = _candidate(workspace)
+    sandbox = IsolatedMCPPreflight(
+        workspace, image="example/mcp@sha256:" + "a" * 64,
+    )
+    runtime = sandbox.prepare(name)
+    existing = runtime[0]
+    # Simulate large, preexisting isolated dependencies, not a new package.
+    (existing / "cached.dat").write_bytes(b"a" * 750_000)
+    baseline = sandbox._runtime_package_bytes(name)
+    assert baseline >= 750_000
+    sandbox._verify_runtime_capacity(
+        0, reattesting_package=name, baseline_bytes=baseline,
+    )
+    # Only the original bytes are credited; new growth still consumes quota.
+    (existing / "new.dat").write_bytes(b"b" * 1_050_000)
+    with pytest.raises(SandboxUntrusted, match="quota"):
+        sandbox._verify_runtime_capacity(
+            0, reattesting_package=name, baseline_bytes=baseline,
+        )
+    # Initial extraction and a different package cannot claim revalidation credit.
+    with pytest.raises(SandboxUntrusted, match="quota"):
+        sandbox._verify_runtime_capacity(0)
+
+
+def test_old_quarantined_staging_pruned_only_when_near_quota(tmp_path):
+    import os
+    import time
+
+    workspace = EvolutionWorkspace(tmp_path / "outside", max_bytes=1_000_000)
+    name, _ = _candidate(workspace)
+    stage = workspace.root / "staging" / name
+    stage.mkdir()
+    (stage / "old-source.bin").write_bytes(b"x" * 999_000)
+    old = time.time() - 3 * 24 * 3600
+    os.utime(stage, (old, old))
+    workspace.active.write_text(json.dumps({
+        "schema": "aura.external-capabilities.v1",
+        "active": [{
+            "repository": "demo/local-tool", "status": "QUARANTINED",
+        }],
+    }), encoding="utf-8")
+    sandbox = IsolatedMCPPreflight(
+        workspace, image="example/mcp@sha256:" + "a" * 64,
+    )
+    location, _, _ = sandbox.prepare(name)
+    assert location.is_dir()
+    assert not stage.exists()
+    assert (workspace.root / "verified" / name / "source.zip").exists()
+
+
+def test_active_or_recent_staging_is_never_pruned_for_capacity(tmp_path):
+    import os
+    import time
+
+    workspace = EvolutionWorkspace(tmp_path / "outside", max_bytes=1_000_000)
+    name, _ = _candidate(workspace)
+    stage = workspace.root / "staging" / name
+    stage.mkdir()
+    (stage / "source.bin").write_bytes(b"x" * 999_000)
+    sandbox = IsolatedMCPPreflight(
+        workspace, image="example/mcp@sha256:" + "a" * 64,
+    )
+    for status, age in (("ACTIVE", 3 * 24 * 3600), ("QUARANTINED", 30)):
+        workspace.active.write_text(json.dumps({
+            "schema": "aura.external-capabilities.v1",
+            "active": [{"repository": "demo/local-tool", "status": status}],
+        }), encoding="utf-8")
+        stamp = time.time() - age
+        os.utime(stage, (stamp, stamp))
+        with pytest.raises(SandboxUntrusted, match="quota"):
+            sandbox.prepare(name)
+        assert stage.exists()
+
+
+def test_staging_rejection_audit_can_reclaim_only_unverified_old_stage(tmp_path):
+    import os
+    import time
+
+    workspace = EvolutionWorkspace(tmp_path / "outside", max_bytes=1_000_000)
+    name, _ = _candidate(workspace)
+    stage = workspace.root / "staging" / "rejected__old"
+    stage.mkdir()
+    (stage / "source.bin").write_bytes(b"x" * 999_000)
+    old = time.time() - 3 * 24 * 3600
+    os.utime(stage, (old, old))
+    workspace.audit_rejection("rejected/old", "StagingRejected")
+    sandbox = IsolatedMCPPreflight(
+        workspace, image="example/mcp@sha256:" + "a" * 64,
+    )
+    sandbox.prepare(name)
+    assert not stage.exists()
+    assert (workspace.root / "verified" / name / "source.zip").is_file()
+
+
+def test_pruning_never_follows_staging_symlink(tmp_path):
+    import os
+    import time
+
+    workspace = EvolutionWorkspace(tmp_path / "outside", max_bytes=1_000_000)
+    name, _ = _candidate(workspace)
+    stage = workspace.root / "staging" / "rejected__old"
+    stage.mkdir()
+    (stage / "source.bin").write_bytes(b"x" * 999_000)
+    target = tmp_path / "external-secret"
+    target.write_text("retain", encoding="utf-8")
+    link = stage / "shortcut"
+    try:
+        link.symlink_to(target)
+    except (NotImplementedError, OSError):
+        pytest.skip("Symlink creation unavailable")
+    stamp = time.time() - 3 * 24 * 3600
+    os.utime(stage, (stamp, stamp))
+    workspace.audit_rejection("rejected/old", "StagingRejected")
+    sandbox = IsolatedMCPPreflight(
+        workspace, image="example/mcp@sha256:" + "a" * 64,
+    )
+    with pytest.raises(SandboxUntrusted, match="Unsafe evolution staging evidence"):
+        sandbox.prepare(name)
+    assert stage.exists()
+    assert target.read_text(encoding="utf-8") == "retain"

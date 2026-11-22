@@ -939,3 +939,51 @@ def test_gateway_classifies_mcp_v2_snake_case_tool_error() -> None:
     assert response.result == {
         "status": "failed", "error": "MCP tool execution failed"
     }
+
+
+@pytest.mark.parametrize("context", [None, "short note"])
+def test_gateway_accepts_fastmcp_nullable_anyof_without_coercion(context):
+    gateway, permissions, provider = make_gateway()
+    provider.connection.list_tools.return_value = SimpleNamespace(tools=[
+        SimpleNamespace(name="read_file", description="",
+                        inputSchema={
+                            "type": "object",
+                            "properties": {
+                                "path": {"type": "string"},
+                                "context": {
+                                    "anyOf": [{"type": "string"}, {"type": "null"}],
+                                    "default": None,
+                                },
+                            },
+                            "required": ["path"],
+                            "additionalProperties": False,
+                        }),
+    ])
+    permissions.add_policy(make_policy(AuthorizationDecision.ALLOW))
+    args = {"path": "safe.txt", "context": context}
+    result = asyncio.run(gateway.invoke(make_request(arguments=args)))
+    assert result.decision is AuthorizationDecision.ALLOW
+    provider.connection.call_tool.assert_awaited_once_with("read_file", args)
+
+
+@pytest.mark.parametrize("schema,value,accepted", [
+    ({"anyOf": [{"type": "string"}, {"type": "null"}]}, None, True),
+    ({"anyOf": [{"type": "string"}, {"type": "null"}]}, 42, False),
+    ({"oneOf": [{"type": "string"}, {"type": "null"}]}, None, True),
+    ({"oneOf": [{"type": "number"}, {"type": "integer"}]}, 42, False),
+    ({"allOf": [{"type": "string"}, {"minLength": 3}]}, "abc", True),
+    ({"allOf": [{"type": "string"}, {"minLength": 3}]}, "ab", False),
+    ({"anyOf": []}, None, False),
+    ({"oneOf": [{"type": "string"}, "not-a-schema"]}, "ok", False),
+    ({"allOf": {"type": "string"}}, "ok", False),
+    ({"anyOf": [{"$ref": "#/definitions/untrusted"}, {"type": "null"}]}, None, False),
+    ({"allOf": [{"type": "string"}, {"$ref": "#/other"}]}, "safe", False),
+])
+def test_gateway_combinators_fail_closed_and_keep_refs_forbidden(schema, value, accepted):
+    from aura_core.mcp.gateway import _validate_json_schema
+
+    if accepted:
+        _validate_json_schema(value, schema)
+    else:
+        with pytest.raises((ValueError, TypeError)):
+            _validate_json_schema(value, schema)
