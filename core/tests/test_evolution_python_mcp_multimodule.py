@@ -180,3 +180,61 @@ def test_existing_python_fastmcp_candidates_sort_before_old_non_python_queue(tmp
     assert _python_mcp_priority("example/fastmcp-python", "Python FastMCP local") < (
         _python_mcp_priority("Gentleman-Programming/engram", "Go local memory")
     )
+
+def test_non_python_legacy_staging_is_marked_unsupported_without_retry(tmp_path):
+    import asyncio
+    from types import SimpleNamespace
+    from aura_core.kernel.permissions import AuthorizationDecision
+
+    workspace = EvolutionWorkspace(tmp_path / "outside")
+    class Gateway:
+        attempts = 0
+
+        async def invoke(self, request):
+            self.attempts += 1
+            raise ValueError("No supported Python stdio MCP entrypoint")
+
+    gateway = Gateway()
+    engine = SelfDiscoveryEngine(
+        gateway=gateway, db_path=workspace.root / "catalog" / "proposals.sqlite3",
+        workspace=workspace, auto_stage=True,
+    )
+    with sqlite3.connect(engine._db_path) as db:
+        db.execute(
+            "INSERT INTO evolution_proposals "
+            "(proposal_id, repository, url, description, license, capability_hint,"
+            " created_at) VALUES (?,?,?,?,?,?,?)",
+            ("legacy-go", "Gentleman-Programming/engram",
+             "https://github.com/Gentleman-Programming/engram",
+             "Local Golang memory MCP", "MIT", "MCP", 1.0),
+        )
+    first = asyncio.run(engine._stage_pending())
+    assert first["attempted"] == 1
+    with sqlite3.connect(engine._db_path) as db:
+        status, error = db.execute(
+            "SELECT package_status, package_error FROM evolution_proposals"
+        ).fetchone()
+    assert status == "UNSUPPORTED_RUNTIME"
+    assert error == "No supported Python stdio MCP entrypoint"
+    assert asyncio.run(engine._stage_pending())["attempted"] == 0
+    assert gateway.attempts == 1
+    assert workspace.verified_packages() == []
+
+
+def test_project_specific_requires_python_checked_before_install(tmp_path):
+    from aura_core.evolution.isolated_venv import prepare_isolated_venv
+    incompatible = f">={sys.version_info.major}.{sys.version_info.minor + 1}"
+    files = {
+        "packages/roam/pyproject.toml": (
+            f"[project]\\nname='roam'\\nrequires-python='{incompatible}'\\n"
+        ).encode("utf-8"),
+        "packages/roam/src/roam/cli.py": b"from roam.server import main\\n",
+    }
+    runtime = tmp_path / "runtime" / "example__roam"
+    runtime.mkdir(parents=True)
+    with pytest.raises(SandboxUntrusted, match="PythonVersionIncompatible"):
+        prepare_isolated_venv(
+            runtime, files, tmp_path,
+            entry="packages/roam/src/roam/cli.py", install=False,
+        )
+    assert not (runtime / ".venv").exists()
