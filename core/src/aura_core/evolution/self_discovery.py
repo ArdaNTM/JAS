@@ -468,7 +468,9 @@ class SelfDiscoveryEngine:
                 "'ZIP file budget exceeded',"
                 "'Binary content is not eligible for static staging',"
                 "'Static risk/paid API signature detected'"
-                "))) "
+                "))) OR (package_status='STAGING_REJECTED' "
+                "AND stage_retry_version<2 AND "
+                "package_error='Executable or suspicious archive content rejected')) "
                 "ORDER BY created_at LIMIT 50"
             ).fetchall()
         # Once-only migration recovery of bounded legacy failures. The new
@@ -519,7 +521,7 @@ class SelfDiscoveryEngine:
                     db.execute(
                         "UPDATE evolution_proposals SET package_status=?,source_sha256=?,"
                         "package_error=NULL,stage_attempts=stage_attempts+1,"
-                        "stage_retry_version=1 WHERE repository=?",
+                        "stage_retry_version=2 WHERE repository=?",
                         ("READY_FOR_OWNER_REVIEW", digest, repository),
                     )
                 report["staged_count"] += 1
@@ -532,7 +534,7 @@ class SelfDiscoveryEngine:
                     db.execute(
                         "UPDATE evolution_proposals SET package_status='STAGING_REJECTED',"
                         "package_error=?,stage_attempts=stage_attempts+1,"
-                        "stage_retry_version=1 WHERE repository=?", (reason, repository),
+                        "stage_retry_version=2 WHERE repository=?", (reason, repository),
                     )
                 report["rejected"].append({
                     "repository": repository, "reason": reason,
