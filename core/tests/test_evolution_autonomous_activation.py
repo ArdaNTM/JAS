@@ -288,3 +288,79 @@ def test_owner_revocation_immediately_blocks_live_tool(tmp_path, monkeypatch):
         assert json.loads(workspace.active.read_text())["active"][0]["status"] == "QUARANTINED"
         assert provider.closed is True
     asyncio.run(revoke())
+
+
+def test_owner_review_one_click_denial_only_quarantines_on_next_scan(tmp_path, monkeypatch):
+    from fastapi.testclient import TestClient
+    from aura_core.evolution.owner_control_plane_http import build_local_review_app
+    workspace, name, repo = _signed_fixture(tmp_path, monkeypatch)
+    kernel, _ = _kernel()
+    provider = FakeProvider()
+    async def factory(*_):
+        return provider
+    manager = DelegatedMCPActivationManager(
+        workspace=workspace, kernel=kernel, provider_factory=factory,
+    )
+    assert asyncio.run(manager.scan()) == [repo]
+    with TestClient(build_local_review_app(workspace.root),
+                    base_url="http://localhost:8766") as client:
+        status = client.get("/api/owner/activations")
+        assert status.status_code == 200
+        assert status.json()["items"][0]["status"] == "ACTIVE"
+        rejected = client.post(
+            "/api/owner/activations/quarantine", json={"repository": repo},
+            headers={"Origin": "http://attacker.example"},
+        )
+        assert rejected.status_code == 403
+        assert client.get("/api/owner/activations").json()["items"][0]["status"] == "ACTIVE"
+        approved = client.post(
+            "/api/owner/activations/quarantine", json={"repository": repo},
+            headers={"Origin": "http://localhost:8766"},
+        )
+        assert approved.status_code == 200
+        assert approved.json()["status"] == "REVOKED"
+        assert approved.json()["authorization_granted"] is False
+        assert client.post(
+            "/api/owner/activations/quarantine",
+            json={"repository": repo}, headers={"Origin": "http://localhost:8766"},
+        ).status_code == 409
+    assert asyncio.run(manager.scan()) == []
+    assert not kernel.capability_registry.records()
+    assert provider.closed
+    assert json.loads(workspace.active.read_text())["active"][0]["status"] == "QUARANTINED"
+    assert asyncio.run(manager.scan()) == []
+
+
+def test_quarantined_external_mcp_does_not_auto_reactivate(tmp_path, monkeypatch):
+    workspace, name, repo = _signed_fixture(tmp_path, monkeypatch)
+    kernel, _ = _kernel()
+    async def factory(*_):
+        return FakeProvider()
+    manager = DelegatedMCPActivationManager(
+        workspace=workspace, kernel=kernel, provider_factory=factory,
+    )
+    assert asyncio.run(manager.scan()) == [repo]
+    asyncio.run(manager.quarantine(name))
+    assert asyncio.run(manager.scan()) == []
+    assert not kernel.provider_registry.records()
+    assert json.loads(workspace.active.read_text())["active"][0]["status"] == "QUARANTINED"
+
+
+def test_expired_independent_attestation_quarantines_or_waits(tmp_path, monkeypatch):
+    workspace, name, repo = _signed_fixture(tmp_path, monkeypatch)
+    kernel, _ = _kernel()
+    async def factory(*_):
+        return FakeProvider()
+    manager = DelegatedMCPActivationManager(
+        workspace=workspace, kernel=kernel, provider_factory=factory,
+    )
+    async def run():
+        assert await manager.scan() == [repo]
+        item = manager._active[name]
+        item.attestation_expires_at = 0
+        # Expiry must remove the live provider before new proof checks.
+        assert await manager.scan() == []
+        assert not kernel.capability_registry.records()
+        status = json.loads(workspace.active.read_text())["active"][0]["status"]
+        assert status == "WAITING_ATTESTATION"
+    asyncio.run(run())
