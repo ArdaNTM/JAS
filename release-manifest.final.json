@@ -3,9 +3,9 @@
   "version": "1.0.0-final",
   "status": "production-locked",
   "generated_at": "2026-11-22T06:55:00.000Z",
-  "git_commit": "5cf766670a31e2a7e836d1d15135759817d33afe",
+  "git_commit": "79929dbc6b72a1828a8b3f9025725544550284ac",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:104a083a4555b444125269bbdb6a47f5372da94c68f738cfbe2914473d1b5d1a",
+  "release_digest": "sha256:6a8c28fd72ec5c451ff4a53f4abf660fa391db62d15b39e232b632f0b36e73e4",
   "file_count": 464,
   "files": [
     {
@@ -910,7 +910,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/isolated_venv.py",
-      "sha256": "652ffee1a04ab4eff1db30059d6563adbcb947d4afebe8affbc1c64782ae0be7"
+      "sha256": "aa15997f0ea1ab1d87bfe08ff20b308cd3f158a16bfaf2167153640f7c2b8432"
     },
     {
       "path": "core/src/aura_core/evolution/mutation_engine.py",
@@ -1806,7 +1806,7 @@
     },
     {
       "path": "core/tests/test_evolution_windows_live_recovery.py",
-      "sha256": "db6a83b823302214a7c2dab805bcd279dfdf39151c3e34cb48623cc977b56267"
+      "sha256": "9d02d7989da302e3e0633af6ab11e5ee500cd6299e369ebe24732e9ed235a253"
     },
     {
       "path": "core/tests/test_osworld_secure_live.py",
