@@ -106,6 +106,7 @@ def test_external_nineteen_mcp_tools_visible_and_selectable_with_exact_gateway_s
     from aura_core.kernel.permissions import (
         PermissionEngine, PermissionPolicy, AuthorizationLevel, AuthorizationDecision,
     )
+    from aura_core.application.api import _external_mcp_execution_scope
 
     monkeypatch.setenv("AURA_ASSISTANT_AUTO_TOOLS_ENABLED", "1")
     class CaptureSelector:
@@ -180,15 +181,11 @@ def test_external_nineteen_mcp_tools_visible_and_selectable_with_exact_gateway_s
     assert response.status_code == 200, response.text
     assert response.json()["resource_scope"] == scope
     assert response.json()["steps"][0]["capability_id"] == cap
-    assert engine.explicit_execution_scope(
-        principal_id="local_owner", capability_id=cap, operation_id=cap,
-    ) == scope
+    assert _external_mcp_execution_scope(engine, "local_owner", cap) == scope
 
     # Scope selection never grants a policy: signed Owner revocation is final.
     engine.revoke_policy("owner-approved-memory")
-    assert engine.explicit_execution_scope(
-        principal_id="local_owner", capability_id=cap, operation_id=cap,
-    ) is None
+    assert _external_mcp_execution_scope(engine, "local_owner", cap) is None
     denied = plan()
     assert denied.status_code == 422
     assert "explicit authorized scope" in denied.json()["detail"]
@@ -198,6 +195,7 @@ def test_external_scope_never_uses_unrelated_or_ambiguous_allow_policy():
     from aura_core.kernel.permissions import (
         PermissionEngine, PermissionPolicy, AuthorizationLevel, AuthorizationDecision,
     )
+    from aura_core.application.api import _external_mcp_execution_scope
     from aura_core.kernel.capabilities import CapabilityRegistry
 
     engine = PermissionEngine(CapabilityRegistry(ServiceRegistry()))
@@ -212,9 +210,5 @@ def test_external_scope_never_uses_unrelated_or_ambiguous_allow_policy():
             resource_scope=scope, authorization_level=AuthorizationLevel.EXECUTE,
             decision=AuthorizationDecision.ALLOW,
         ))
-    assert engine.explicit_execution_scope(
-        principal_id="local_owner", capability_id=cap, operation_id=cap,
-    ) is None
-    assert engine.explicit_execution_scope(
-        principal_id="foreign", capability_id=cap, operation_id=cap,
-    ) is None
+    assert _external_mcp_execution_scope(engine, "local_owner", cap) is None
+    assert _external_mcp_execution_scope(engine, "foreign", cap) is None
