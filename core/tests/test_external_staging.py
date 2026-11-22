@@ -158,7 +158,7 @@ def test_archive_requires_real_entrypoint_and_bounded_zip():
     with pytest.raises(StagingRejected, match="entrypoint"):
         _validated_files(_zip({"worker-abc/README.md": "fully local offline"}))
     with pytest.raises(StagingRejected, match="budget"):
-        _validated_files(b"x" * 3_000_001)
+        _validated_files(b"x" * (32 * 1024 * 1024 + 1))
     with pytest.raises(StagingRejected):
         _validated_files(_zip({"worker-abc/server.py": "a" * 200_000}))
 
@@ -222,7 +222,8 @@ def test_real_github_style_zip_root_directory_is_not_rejected():
         bundle.writestr("worker-abc/", "")
         bundle.writestr("worker-abc/server.py", "from fastmcp import FastMCP\n")
         bundle.writestr("worker-abc/README.md", "Fully local and offline")
-    files, entrypoint = _validated_files(memory.getvalue())
+    files, entrypoint, skipped_binaries = _validated_files(memory.getvalue())
+    assert skipped_binaries == 0
     assert entrypoint == "server.py"
     assert "README.md" in files
 

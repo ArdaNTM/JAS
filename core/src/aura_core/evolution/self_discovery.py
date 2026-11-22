@@ -63,11 +63,30 @@ _LOCAL_TOOLS = re.compile(
 )
 
 
+_NO_KEY_EVIDENCE = re.compile(
+    r"(?i)\b(?:zero\s+api[\s_-]*keys?|no\s+api[\s_-]*keys?|"
+    r"without\s+(?:an?\s+)?api[\s_-]*key|fully\s+offline)\b"
+)
+
+
 def _local_rank(repository: str, description: str, stars: int) -> int:
-    """Deterministic, local-first ranking of untrusted metadata."""
+    """Deterministic local/no-keys score, independent of popularity alone."""
     text = repository + " " + description
     return (sum(10 for _ in _LOCAL_TOOLS.finditer(text))
+            + (20 if _NO_KEY_EVIDENCE.search(text) else 0)
             + min(8, max(0, stars) // 200))
+
+
+def _size_tier(size_kb: int | None) -> int:
+    # GitHub Search API's size is KiB, a rough project-size indicator;
+    # unknown values are neutral, never fabricated as small.
+    if size_kb is None:
+        return 1
+    if size_kb <= 15_000:
+        return 0
+    if size_kb <= 60_000:
+        return 2
+    return 3
 
 
 _UNSUPPORTED_HOST = re.compile(
@@ -238,6 +257,9 @@ class PublicGitHubDiscoveryMCPProvider:
                     raise
                 except (ValueError, TypeError, OSError):
                     continue
+                size_kb = row.get("size")
+                if type(size_kb) is not int or not 0 <= size_kb <= 2_000_000_000:
+                    size_kb = None
                 candidates.append({
                     "repository": full_name,
                     "url": "https://github.com/" + full_name,
@@ -245,6 +267,7 @@ class PublicGitHubDiscoveryMCPProvider:
                                    "Local open-source MCP / AI integration candidate",
                     "license": license_id,
                     "stars": stars,
+                    "size_kb": size_kb,
                     "capability_hint": (
                         "MCP server integration" if "mcp" in query
                         else "local inference and automation"
@@ -254,7 +277,11 @@ class PublicGitHubDiscoveryMCPProvider:
                 })
                 # Inspect up to SEARCH_PER_PAGE entries before ranking.
             candidates.sort(
-                key=lambda entry: (-entry["local_rank"], -entry["stars"], entry["repository"])
+                key=lambda entry: (
+                    0 if entry["local_rank"] >= 10 else 1,
+                    _size_tier(entry["size_kb"]),
+                    -entry["local_rank"], -entry["stars"], entry["repository"],
+                )
             )
         return {
             "items": candidates[:3],
@@ -306,6 +333,8 @@ class SelfDiscoveryEngine:
             columns = {row[1] for row in db.execute("PRAGMA table_info(evolution_proposals)")}
             if "stars" not in columns:
                 db.execute("ALTER TABLE evolution_proposals ADD COLUMN stars INTEGER")
+            if "size_kb" not in columns:
+                db.execute("ALTER TABLE evolution_proposals ADD COLUMN size_kb INTEGER")
             if "package_status" not in columns:
                 db.execute("ALTER TABLE evolution_proposals ADD COLUMN package_status TEXT")
             if "source_sha256" not in columns:
@@ -334,7 +363,7 @@ class SelfDiscoveryEngine:
         with self._connect() as db:
             rows = db.execute(
                 "SELECT proposal_id,repository,url,description,license,"
-                "capability_hint,status,created_at,stars,package_status,source_sha256,"
+                "capability_hint,status,created_at,stars,size_kb,package_status,source_sha256,"
                 "package_error,stage_attempts "
                 "FROM evolution_proposals ORDER BY created_at DESC LIMIT ?", (count,)
             ).fetchall()
@@ -342,7 +371,7 @@ class SelfDiscoveryEngine:
         for row in rows:
             record = dict(zip(
                 ("proposal_id", "repository", "url", "description", "license",
-                 "capability_hint", "status", "created_at", "stars",
+                 "capability_hint", "status", "created_at", "stars", "size_kb",
                  "package_status", "source_sha256", "package_error", "stage_attempts"), row
             ))
             # A non-executable integration blueprint is review data only.
@@ -395,23 +424,39 @@ class SelfDiscoveryEngine:
         )
         with self._connect() as db:
             rows = db.execute(
-                "SELECT repository,description,stars FROM evolution_proposals "
+                "SELECT repository,description,stars,size_kb FROM evolution_proposals "
                 "WHERE status='pending_owner_review' "
-                "AND (package_status IS NULL OR package_status='pending' "
-                "OR (package_status='STAGING_REJECTED' AND stage_attempts=0)) "
+                "AND (package_status IS NULL OR package_status IN ('pending', 'Queued') "
+                "OR (package_status='STAGING_REJECTED' AND ("
+                "(stage_attempts < 4 AND package_error IN ("
+                "'GitHub download byte budget exceeded',"
+                "'Archive download exceeds maximum byte budget',"
+                "'Expanded repository budget exceeded',"
+                "'GitHub archive/metadata unavailable or rate limited')) "
+                "OR (stage_attempts = 1 AND package_error="
+                "'Binary content is not eligible for static staging')"
+                "))) "
                 "ORDER BY created_at LIMIT 50"
             ).fetchall()
-        # Prefer free local MCP tools over generic high-star SaaS adapters.
+        # Re-evaluate the durable queue on every invocation, even if public
+        # search returns zero. Only bounded transport/budget retries and one
+        # legacy binary-only re-evaluation are eligible, never generic
+        # static risk, executable, or authorization-policy rejections.
         candidates = [
-            (repository, description, stars or 0)
-            for repository, description, stars in rows
+            (repository, description, stars or 0, size_kb)
+            for repository, description, stars, size_kb in rows
             if _valid_repository(repository)
             and not _SAAS.search(repository + " " + description)
         ]
         candidates.sort(
-            key=lambda row: (-_local_rank(row[0], row[1], row[2]), row[0])
+            key=lambda row: (
+                0 if _local_rank(row[0], row[1], row[2]) >= 10 else 1,
+                _size_tier(row[3]),
+                -_local_rank(row[0], row[1], row[2]),
+                row[0],
+            )
         )
-        for repository, _, _ in candidates[:3]:
+        for repository, _, _, _ in candidates[:3]:
             report["attempted"] += 1
             try:
                 response = await asyncio.wait_for(self.gateway.invoke(MCPGatewayRequest(
@@ -535,6 +580,9 @@ class SelfDiscoveryEngine:
                             name = row.get("repository")
                             license_id = row.get("license")
                             stars = row.get("stars")
+                            size_kb = row.get("size_kb")
+                            if type(size_kb) is not int or not 0 <= size_kb <= 2_000_000_000:
+                                size_kb = None
                             if (not _valid_repository(name)
                                     or license_id not in PERMITTED_LICENSES
                                     or row.get("url") != "https://github.com/" + name
@@ -547,20 +595,21 @@ class SelfDiscoveryEngine:
                                 cursor = db.execute(
                                     "INSERT OR IGNORE INTO evolution_proposals "
                                     "(proposal_id,repository,url,description,license,capability_hint,"
-                                    "created_at,stars) VALUES (?,?,?,?,?,?,?,?)",
+                                    "created_at,stars,size_kb) VALUES (?,?,?,?,?,?,?,?,?)",
                                     (proposal_id, name, row["url"],
                                      _safe_text(row.get("description")),
                                      license_id, _safe_text(row.get("capability_hint"), 100),
-                                     time.time(), stars),
+                                     time.time(), stars, size_kb),
                                 )
                                 saved += cursor.rowcount
                                 # Refresh genuine GitHub star count for previously
                                 # queued repositories without changing review state.
                                 if cursor.rowcount == 0:
                                     db.execute(
-                                        "UPDATE evolution_proposals SET stars=? "
+                                        "UPDATE evolution_proposals SET stars=?,"
+                                        "size_kb=COALESCE(?,size_kb) "
                                         "WHERE proposal_id=? AND repository=?",
-                                        (stars, proposal_id, name),
+                                        (stars, size_kb, proposal_id, name),
                                     )
                             except (TypeError, ValueError, KeyError):
                                 continue

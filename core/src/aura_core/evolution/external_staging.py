@@ -80,10 +80,37 @@ _PAID = re.compile(
     r"BASECAMP_ACCESS_TOKEN|paid\s+(?:subscription|api\s+key)\s+required)",
 )
 _ENTRY = ("pyproject.toml", "package.json", "server.py", "main.py", "mcp_server.py")
-_MAX_ARCHIVE = 3_000_000
-_MAX_EXTRACTED = 8_000_000
+# Download budget is separate from the pre-existing member/file-count bounds.
+_MAX_ARCHIVE = 32 * 1024 * 1024
+_MAX_EXTRACTED = 32 * 1024 * 1024
 _MAX_FILE = 750_000
 _MAX_FILES = 120
+# Only non-executable, well-known binary assets may be omitted from static
+# inspection. Unknown binary payloads and executable formats always reject.
+_PASSIVE_ASSET_SUFFIXES = frozenset({
+    ".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".bmp", ".avif",
+    ".woff", ".woff2", ".ttf", ".otf", ".eot", ".mp3", ".wav", ".ogg",
+    ".mp4", ".webm",
+})
+_EXECUTABLE_SUFFIXES = frozenset({
+    ".exe", ".dll", ".so", ".dylib", ".pyd", ".node", ".jar", ".class",
+    ".wasm", ".msi", ".com", ".scr", ".bat", ".cmd", ".ps1", ".vbs",
+    ".pyc", ".pyo", ".app", ".deb", ".rpm", ".apk", ".bin",
+})
+
+
+def _archive_budget() -> int:
+    """Reject malformed or unbounded overrides instead of disabling caps."""
+    raw = os.getenv("AURA_EVOLUTION_MAX_DOWNLOAD_BYTES")
+    if raw is None:
+        return _MAX_ARCHIVE
+    try:
+        value = int(raw)
+    except (TypeError, ValueError) as exc:
+        raise StagingRejected("Invalid evolution download budget") from exc
+    if not 1_048_576 <= value <= 64 * 1024 * 1024:
+        raise StagingRejected("Invalid evolution download budget")
+    return value
 
 
 class StagingRejected(ValueError):
@@ -245,8 +272,8 @@ class EvolutionWorkspace:
         return stage, verified
 
 
-def _validated_files(archive: bytes) -> tuple[dict[str, bytes], str]:
-    if len(archive) > _MAX_ARCHIVE:
+def _validated_files(archive: bytes, *, max_archive_bytes: int | None = None) -> tuple[dict[str, bytes], str, int]:
+    if len(archive) > (max_archive_bytes if max_archive_bytes is not None else _archive_budget()):
         raise StagingRejected("Archive download exceeds maximum byte budget")
     try:
         z = zipfile.ZipFile(io.BytesIO(archive))
@@ -256,6 +283,8 @@ def _validated_files(archive: bytes) -> tuple[dict[str, bytes], str]:
     seen: set[str] = set()
     total = 0
     archive_roots: set[str] = set()
+    skipped_binaries = 0
+    member_files = 0
     with z:
         infos = z.infolist()
         if len(infos) > _MAX_FILES + 80:
@@ -292,13 +321,23 @@ def _validated_files(archive: bytes) -> tuple[dict[str, bytes], str]:
             if key in seen:
                 raise StagingRejected("Case-fold duplicate archive member")
             seen.add(key)
-            if len(result) >= _MAX_FILES or info.file_size > _MAX_FILE:
+            member_files += 1
+            if member_files > _MAX_FILES or info.file_size > _MAX_FILE:
                 raise StagingRejected("ZIP file budget exceeded")
             if info.file_size > 100 * max(1, info.compress_size):
                 raise StagingRejected("ZIP compression ratio exceeded")
             total += info.file_size
             if total > _MAX_EXTRACTED:
                 raise StagingRejected("Expanded repository budget exceeded")
+            suffix = PurePosixPath(rel.lower()).suffix
+            if suffix in _EXECUTABLE_SUFFIXES:
+                raise StagingRejected("Executable or suspicious archive content rejected")
+            if suffix in _PASSIVE_ASSET_SUFFIXES:
+                # Path, symlink, case collision, member count, per-file,
+                # compression-ratio and total size checks all ran first.
+                # Never copy these untrusted binary assets into source/.
+                skipped_binaries += 1
+                continue
             try:
                 data = z.read(info)
             except (RuntimeError, OSError, zipfile.BadZipFile) as exc:
@@ -337,7 +376,7 @@ def _validated_files(archive: bytes) -> tuple[dict[str, bytes], str]:
                 from aura_core.evolution.self_discovery import _SAAS
                 if _SAAS.search(readable) and _PAID.search(readable):
                     raise StagingRejected("Mandatory external SaaS dependency rejected")
-    return result, entrypoints[0]
+    return result, entrypoints[0], skipped_binaries
 
 
 class GitHubStagingMCPProvider:
@@ -441,11 +480,14 @@ class GitHubStagingMCPProvider:
             sha = commits[0].get("sha") if isinstance(commits[0], dict) else None
             if not isinstance(sha, str) or not _SHA.fullmatch(sha):
                 raise StagingRejected("GitHub commit identity is invalid")
+            download_budget = _archive_budget()
             archive = await self._read(
                 client, f"https://codeload.github.com/{repository}/zip/{sha}",
-                max_bytes=_MAX_ARCHIVE,
+                max_bytes=download_budget,
             )
-        files, entrypoint = _validated_files(archive)
+        files, entrypoint, skipped_binaries = _validated_files(
+            archive, max_archive_bytes=download_budget,
+        )
         archive_sha = hashlib.sha256(archive).hexdigest()
         stage, verified = self.workspace.reserve(
             repository, len(archive) * 2 + sum(len(x) for x in files.values()) + 8192
@@ -480,6 +522,7 @@ class GitHubStagingMCPProvider:
                 "source_sha256": archive_sha,
                 "entrypoint_hint": entrypoint,
                 "static_file_count": len(files),
+                "skipped_binaries": skipped_binaries,
                 "static_checks": [
                     "bounded-zip", "no-symlinks", "no-traversal", "no-known-unsafe-pattern",
                     "windows-paths", "license-metadata-allowlist",
