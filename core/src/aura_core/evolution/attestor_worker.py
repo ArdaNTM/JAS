@@ -53,14 +53,14 @@ def _load_signer(path: Path) -> Ed25519PrivateKey:
     return key
 
 
-RECOVERY_EPOCH = "windows-isolated-wheels-20261122-v3"
+RECOVERY_EPOCH = "windows-isolated-wheels-20261122-v4"
 
 
 def _eligible_local_recovery(previous: object) -> bool:
     """One bounded retry of a prior SDK/install quarantine, never a revoke.
 
-    The v2 marker may already contain retry_count=2. Bumping the epoch alone
-    would not work unless the bounded counter also admits this v2 record.
+    A v3 marker may have retry_count=3 after the previous wheel-only retry.
+    Permit only one more signed Owner-approved recovery under v4.
     """
     if not isinstance(previous, dict):
         return False
@@ -69,13 +69,15 @@ def _eligible_local_recovery(previous: object) -> bool:
         previous.get("status") in {"QUARANTINED", "RETRYING"}
         and previous.get("reason_code") in {
             "SandboxUntrusted", "DEPENDENCY_RECOVERY",
+            "MCPError", "McpError", "ExceptionGroup",
         }
         and previous.get("recovery_epoch") != RECOVERY_EPOCH
         and previous.get("recovery_epoch") in {
             None, "windows-isolated-wheels-20261122-v1",
             "windows-isolated-wheels-20261122-v2",
+            "windows-isolated-wheels-20261122-v3",
         }
-        and type(count) is int and 0 <= count < 3
+        and type(count) is int and 0 <= count < 4
     )
 
 
@@ -313,7 +315,10 @@ class IndependentMCPAttestorWorker:
                 if quarantine.exists():
                     quarantine.unlink()
                 records.append(record)
-            except (ValueError, PermissionError, RuntimeError, OSError, TimeoutError) as exc:
+            # MCP transport libraries raise various Exception subclasses
+            # (including protocol and task-group failures). CancelledError,
+            # KeyboardInterrupt and SystemExit remain non-quarantinable.
+            except Exception as exc:
                 if local_allowed:
                     result = {
                         "status": "QUARANTINED",

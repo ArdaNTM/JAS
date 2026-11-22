@@ -206,19 +206,19 @@ def test_large_python_mcp_package_ast_up_to_250_modules_is_bounded():
         static_python_entry(files, "src/big_mcp/__main__.py")
 
 
-def test_recovery_v3_retries_v2_uv_flags_failure_once_but_never_replays():
+def test_legacy_v2_uv_flags_failure_can_retry_in_v4_without_replay():
     from aura_core.evolution.attestor_worker import (
         RECOVERY_EPOCH, _eligible_local_recovery,
     )
 
-    assert RECOVERY_EPOCH == "windows-isolated-wheels-20261122-v3"
+    assert RECOVERY_EPOCH == "windows-isolated-wheels-20261122-v4"
     v2 = {
         "status": "QUARANTINED", "reason_code": "SandboxUntrusted",
         "retry_count": 2, "recovery_epoch": "windows-isolated-wheels-20261122-v2",
     }
     assert _eligible_local_recovery(v2) is True
     assert _eligible_local_recovery({**v2, "recovery_epoch": RECOVERY_EPOCH}) is False
-    assert _eligible_local_recovery({**v2, "retry_count": 3}) is False
+    assert _eligible_local_recovery({**v2, "retry_count": 4}) is False
     assert _eligible_local_recovery({**v2, "status": "REVOKED"}) is False
     assert _eligible_local_recovery({**v2, "reason_code": "PermissionError"}) is False
     assert _eligible_local_recovery({**v2, "retry_count": True}) is False
@@ -227,6 +227,96 @@ def test_recovery_v3_retries_v2_uv_flags_failure_once_but_never_replays():
         **v2, "recovery_epoch": "windows-isolated-wheels-20261122-v1",
         "retry_count": 1,
     }) is True
+
+
+def test_v4_retries_v3_transport_quarantine_once_and_denies_replay():
+    from aura_core.evolution.attestor_worker import (
+        RECOVERY_EPOCH, _eligible_local_recovery,
+    )
+    assert RECOVERY_EPOCH == "windows-isolated-wheels-20261122-v4"
+    v3 = {
+        "status": "QUARANTINED", "reason_code": "MCPError",
+        "retry_count": 3, "recovery_epoch": "windows-isolated-wheels-20261122-v3",
+    }
+    assert _eligible_local_recovery(v3) is True
+    assert _eligible_local_recovery({**v3, "reason_code": "McpError"}) is True
+    assert _eligible_local_recovery({**v3, "reason_code": "SandboxUntrusted"}) is True
+    assert _eligible_local_recovery({**v3, "recovery_epoch": RECOVERY_EPOCH}) is False
+    assert _eligible_local_recovery({**v3, "retry_count": 4}) is False
+    assert _eligible_local_recovery({**v3, "status": "REVOKED"}) is False
+    assert _eligible_local_recovery({**v3, "reason_code": "PermissionError"}) is False
+    assert _eligible_local_recovery({**v3, "retry_count": True}) is False
+
+
+def test_attestor_scan_quarantines_mcp_transport_exception_and_keeps_scanning(
+    tmp_path, monkeypatch,
+):
+    import asyncio
+    import json
+    import os
+    from types import SimpleNamespace
+    from aura_core.evolution import attestor_worker as module
+
+    class WindowsOsProxy:
+        name = "nt"
+
+        def __getattr__(self, attr):
+            return getattr(os, attr)
+
+    # Only the worker's local opt-in check is emulated. Filesystem, signing
+    # and credential configuration are not provisioned or weakened.
+    monkeypatch.setattr(module, "os", WindowsOsProxy())
+    root = tmp_path / "evolution"
+    (root / "logs").mkdir(parents=True)
+    repositories = ["riponcm/projectmem", "devroopsaha744/TexMCP"]
+    for repo in repositories:
+        (root / "verified" / repo.replace("/", "__")).mkdir(parents=True)
+
+    worker = object.__new__(module.IndependentMCPAttestorWorker)
+    worker.workspace = SimpleNamespace(root=root)
+    worker._delegation = SimpleNamespace(
+        verified_grant=lambda: {"allow_local_windows_process": True},
+    )
+    worker._decisions = SimpleNamespace(evaluate_pending=lambda limit: [
+        SimpleNamespace(repository=repo, status="AUTO_APPROVED_BY_POLICY")
+        for repo in repositories
+    ])
+    attempts = []
+
+    class MCPError(Exception):
+        pass
+
+    async def fake_attest(package):
+        attempts.append(package)
+        if package == "riponcm__projectmem":
+            raise MCPError("Connection closed TOKEN=private_do_not_log")
+        return {"repository": "devroopsaha744/TexMCP", "attested_tools": 1}
+
+    monkeypatch.setattr(worker, "attest", fake_attest)
+    records = asyncio.run(worker.scan())
+    assert records == [{"repository": "devroopsaha744/TexMCP", "attested_tools": 1}]
+    assert attempts == ["riponcm__projectmem", "devroopsaha744__TexMCP"]
+
+    marker = root / "verified" / "riponcm__projectmem" / "local-windows-quarantined.json"
+    quarantine = json.loads(marker.read_text("utf-8"))
+    assert quarantine["status"] == "QUARANTINED"
+    assert quarantine["reason_code"] == "MCPError"
+    assert quarantine["recovery_epoch"] == "windows-isolated-wheels-20261122-v4"
+    assert "private_do_not_log" not in marker.read_text("utf-8")
+    audit = (root / "logs" / "autonomous-activations.jsonl").read_text("utf-8")
+    assert '"status": "QUARANTINED"' in audit
+    assert "private_do_not_log" not in audit
+    assert asyncio.run(worker.scan()) == records
+    assert attempts.count("riponcm__projectmem") == 1
+
+    # CancelledError intentionally inherits BaseException and must terminate
+    # the scan rather than being silently quarantined as a transport failure.
+    async def cancelled(package):
+        raise asyncio.CancelledError()
+
+    monkeypatch.setattr(worker, "attest", cancelled)
+    with pytest.raises(asyncio.CancelledError):
+        asyncio.run(worker.scan())
 
 
 def test_local_recovery_does_not_scan_or_install_without_signed_owner():

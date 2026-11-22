@@ -65,6 +65,64 @@ def test_pep621_script_wins_over_confusing_server_hint():
     assert static_python_entry(files, "server.py") == "src/memory_server/cli.py"
 
 
+def test_projectmem_multiple_scripts_select_mcp_server_not_typer_cli(tmp_path):
+    """Actual riponcm/projectmem script layout: CLI first, real stdio MCP third."""
+    files = {
+        "pyproject.toml": (
+            b"[project]\nname='projectmem'\n[project.scripts]\n"
+            b"projectmem='projectmem.cli:main'\n"
+            b"pjm='projectmem.cli:main'\n"
+            b"pjm-mcp='projectmem.mcp_server:main'\n"
+            b"pjm-edit-hook='projectmem.edit_hook:main'\n"
+        ),
+        "src/projectmem/cli.py": (
+            b"import typer\ndef main(): typer.Typer(no_args_is_help=True)()\n"
+        ),
+        "src/projectmem/mcp_server.py": (
+            b"from mcp.server.fastmcp import FastMCP\n"
+            b"mcp = FastMCP('projectmem')\n"
+            b"@mcp.tool()\ndef remember() -> str: return 'ok'\n"
+            b"def main(): mcp.run()\n"
+            b"if __name__ == '__main__': main()\n"
+        ),
+        "src/projectmem/edit_hook.py": b"def main(): pass\n",
+    }
+    selected = "src/projectmem/mcp_server.py"
+    assert choose_python_entrypoint(files, "src/projectmem/cli.py") == selected
+    assert static_python_entry(files, "pyproject.toml") == selected
+    runtime = tmp_path / "runtime" / "riponcm__projectmem"
+    runtime.mkdir(parents=True)
+    (runtime / "pyproject.toml").write_bytes(files["pyproject.toml"])
+    assert _project_script_launch(runtime, selected) == (
+        "projectmem.mcp_server", "main",
+    )
+    python = runtime / ".venv" / "Scripts" / "python.exe"
+    assert _isolated_entry_args(runtime, selected, python)[-2:] == [
+        "-m", "projectmem.mcp_server",
+    ]
+
+
+def test_script_selection_prioritizes_actual_mcp_markers_over_named_cli():
+    files = {
+        "pyproject.toml": (
+            b"[project.scripts]\n"
+            b"fake-mcp='agent.cli:main'\n"
+            b"actual-server='agent.server:main'\n"
+        ),
+        "src/agent/cli.py": b"def main(): print('help')\n",
+        "src/agent/server.py": (
+            b"from mcp.server.fastmcp import FastMCP\n"
+            b"mcp = FastMCP('agent')\n"
+            b"@mcp.tool()\ndef ping(): return 'pong'\n"
+            b"def main(): mcp.run()\n"
+        ),
+    }
+    # Marker-bearing code wins over an MCP-looking *script name*.
+    assert choose_python_entrypoint(files, "pyproject.toml") == (
+        "src/agent/server.py"
+    )
+
+
 def test_nested_pyproject_project_script_resolves_and_launches(tmp_path):
     files = {
         "packages/roam/pyproject.toml": SCRIPT,
