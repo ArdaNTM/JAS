@@ -178,6 +178,11 @@ function renderActivations(records) {
     item(card, "Category", record.category);
     item(card, "Sandbox / independent proof", record.proof_present ? "Observed metadata · independently verify" : "Missing");
     item(card, "Scoped tools", Array.isArray(record.capabilities) ? record.capabilities.join(", ") : "");
+    if (record.status === "QUARANTINED") {
+      item(card, "Failure type", record.reason_code || "Unknown");
+      item(card, "Detail", record.detail || "No safe detail available");
+      if (record.stderr_tail) item(card, "Redacted stderr tail", record.stderr_tail);
+    }
     if (record.status === "ACTIVE") {
       const button = document.createElement("button");
       button.type = "button";
