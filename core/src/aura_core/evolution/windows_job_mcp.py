@@ -76,7 +76,9 @@ def static_python_entry(files: dict[str, bytes], hint: str) -> str:
         return "/" not in path or path.startswith("tools/")
 
     modules = sorted(path for path in files if in_package(path))
-    if entry not in modules or len(modules) > 64:
+    # Larger Python-only MCP packages may split tools across many modules.
+    # Retain the existing 2 MiB aggregate and 512 KiB per-file budgets.
+    if entry not in modules or len(modules) > 250:
         raise SandboxUntrusted("Python MCP package AST module count exceeded")
     total_bytes = sum(len(files[path]) for path in modules)
     if total_bytes > 2_000_000 or any(len(files[path]) > 512_000 for path in modules):

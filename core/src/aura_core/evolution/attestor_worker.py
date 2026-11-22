@@ -53,6 +53,31 @@ def _load_signer(path: Path) -> Ed25519PrivateKey:
     return key
 
 
+RECOVERY_EPOCH = "windows-isolated-wheels-20261122-v2"
+
+
+def _eligible_local_recovery(previous: object) -> bool:
+    """One bounded retry of a prior SDK/install quarantine, never a revoke.
+
+    The v1 marker may already contain retry_count=1. Bumping the epoch alone
+    would not work because the previous gate required retry_count == 0.
+    """
+    if not isinstance(previous, dict):
+        return False
+    count = previous.get("retry_count", 0)
+    return (
+        previous.get("status") in {"QUARANTINED", "RETRYING"}
+        and previous.get("reason_code") in {
+            "SandboxUntrusted", "DEPENDENCY_RECOVERY",
+        }
+        and previous.get("recovery_epoch") != RECOVERY_EPOCH
+        and previous.get("recovery_epoch") in {
+            None, "windows-isolated-wheels-20261122-v1",
+        }
+        and type(count) is int and 0 <= count < 2
+    )
+
+
 class IndependentMCPAttestorWorker:
     def __init__(self, *, workspace: EvolutionWorkspace, key: Ed25519PrivateKey):
         self.workspace = workspace
@@ -253,8 +278,8 @@ class IndependentMCPAttestorWorker:
         records = []
         local_allowed = (os.name == "nt" and
                          grant.get("allow_local_windows_process", False) is True)
-        # Only one post-upgrade retry for legacy failed dependency preflight.
-        recovery_epoch = "windows-isolated-wheels-20261122-v1"
+        # Re-evaluate only previous SDK/install failures once under the new epoch.
+        recovery_epoch = RECOVERY_EPOCH
         for decision in self._decisions.evaluate_pending(limit=100):
             if decision.status != "AUTO_APPROVED_BY_POLICY":
                 continue
@@ -269,20 +294,17 @@ class IndependentMCPAttestorWorker:
                     if not isinstance(previous, dict):
                         continue
                     retries = previous.get("retry_count", 0)
-                    if (not isinstance(previous, dict)
-                            or previous.get("status") not in {"QUARANTINED", "RETRYING"}
-                            or previous.get("recovery_epoch") == recovery_epoch
-                            or type(retries) is not int or retries != 0):
+                    if not _eligible_local_recovery(previous):
                         continue
                     # Retain quarantine marker until fresh signed evidence is
                     # completely written. Core never activates a pending retry.
                     self._quarantine_record(package, {
                         "status": "RETRYING", "reason_code": "DEPENDENCY_RECOVERY",
                         "detail": "One-time post-upgrade isolated environment retry",
-                        "stderr_tail": "", "retry_count": 1,
+                        "stderr_tail": "", "retry_count": retries + 1,
                         "recovery_epoch": recovery_epoch,
                     })
-                    retries = 1
+                    retries += 1
                 except (OSError, ValueError, TypeError, PermissionError):
                     continue
             try:

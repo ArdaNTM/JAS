@@ -9,6 +9,7 @@ isolate the user's files/network/DPAPI and is not asserted to do so.
 from __future__ import annotations
 
 import hashlib
+from importlib import metadata
 import json
 import os
 from pathlib import Path
@@ -71,10 +72,10 @@ def declared_dependencies(
             raise SandboxUntrusted("Oversized pyproject metadata")
         try:
             project = tomllib.loads(pyproject.decode("utf-8-sig"))
-            metadata = project.get("project", {})
-            if not isinstance(metadata, dict):
+            project_metadata = project.get("project", {})
+            if not isinstance(project_metadata, dict):
                 raise SandboxUntrusted("Invalid project metadata")
-            requires = metadata.get("requires-python")
+            requires = project_metadata.get("requires-python")
             if requires is not None:
                 if not isinstance(requires, str) or len(requires) > 80:
                     raise SandboxUntrusted("Invalid requires-python declaration")
@@ -85,7 +86,7 @@ def declared_dependencies(
                     raise PythonVersionIncompatible(
                         f"PythonVersionIncompatible: requires {requires}, host is {host}"
                     )
-            declared = metadata.get("dependencies", [])
+            declared = project_metadata.get("dependencies", [])
             if not isinstance(declared, list):
                 raise SandboxUntrusted("Invalid project dependency list")
             dependencies.extend(declared)
@@ -129,9 +130,21 @@ def declared_dependencies(
         if isinstance(exc, SandboxUntrusted):
             raise
         raise SandboxUntrusted("Invalid PEP-508 requirement") from exc
-    # The AURA MCP transport is part of the separately versioned Python runtime.
-    if not any(re.split(r"[\[<=>!~\s;]", item, 1)[0].lower() == "mcp" for item in parsed):
-        parsed.append("mcp==2.0.0")
+    # Do not override a package's declared MCP SDK constraints. FastMCP is
+    # also a distinct SDK distribution and must resolve its own dependencies;
+    # forcing the Core's MCP 2.x pin here can make older FastMCP releases
+    # unsatisfiable even though MCP 2.x itself exists on PyPI.
+    from packaging.utils import canonicalize_name
+    names = {canonicalize_name(Requirement(item).name) for item in parsed}
+    if "mcp" not in names and "fastmcp" not in names:
+        try:
+            installed_version = metadata.version("mcp")
+            from packaging.version import Version
+            installed_version = str(Version(installed_version))
+        except (metadata.PackageNotFoundError, ValueError):
+            parsed.append("mcp>=1.0.0,<2.0.0")
+        else:
+            parsed.append(f"mcp=={installed_version}")
     return tuple(sorted(set(parsed)))
 
 
