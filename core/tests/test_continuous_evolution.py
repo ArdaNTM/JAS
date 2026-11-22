@@ -272,3 +272,24 @@ def test_staging_prune_preserves_active_and_rejects_links(tmp_path):
     with pytest.raises(StagingRejected):
         ws.prune_rejected_staging()
     assert secret.read_text() == "protected"
+
+
+def test_github_pagination_refuses_out_of_bounds_without_network():
+    from aura_core.evolution.self_discovery import (
+        CAPABILITY_ID, TOOL_NAME, PublicGitHubDiscoveryMCPProvider,
+    )
+    provider = PublicGitHubDiscoveryMCPProvider(
+        transport=httpx.MockTransport(
+            lambda request: pytest.fail("Out-of-bounds page reached public API")
+        ),
+    )
+    token = enter_dispatch(DispatchGrant(
+        principal_id="local_owner", capability_id=CAPABILITY_ID,
+        tool_name=TOOL_NAME, approval_consumed=False, risk_level="low",
+    ))
+    try:
+        for page in (0, 6, -1, True, "2"):
+            with pytest.raises(ValueError):
+                run(provider.call_tool(TOOL_NAME, {"query": QUERIES[0], "page": page}))
+    finally:
+        leave_dispatch(token)
