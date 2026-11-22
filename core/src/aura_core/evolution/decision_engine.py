@@ -225,6 +225,16 @@ class EvolutionDecisionEngine:
             return Decision(repository, "DUPLICATE_CAPABILITY", score,
                             "Similar category is already active", category, digest)
 
+        from aura_core.evolution.activation_delegation import ActivationDelegationVerifier
+        grant = ActivationDelegationVerifier(self.workspace).verified_grant()
+        if (grant is not None and category in grant["categories"]
+                and score >= grant["min_score"]):
+            # Delegated approval covers the *policy decision only*. Actual
+            # execution still requires an independent signed sandbox result,
+            # a live healthy isolated provider, and MCPGateway authorization.
+            return Decision(repository, "AUTO_APPROVED_BY_POLICY", score,
+                            "Delegated offline MCP utility; signed independent sandbox evidence still required",
+                            category, digest, requires_owner_receipt=False)
         permitted = self.delegations.authorized_categories()
         if category not in permitted:
             return Decision(repository, "OWNER_DELEGATION_REQUIRED", score,
