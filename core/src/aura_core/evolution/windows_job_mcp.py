@@ -215,6 +215,41 @@ class LocalWindowsMCPPreflight(IsolatedMCPPreflight):
             await connection.close()
 
 
+def _scrubbed_windows_mcp_environment(scratch: Path) -> dict[str, str]:
+    """Explicit allowlist: never copy Owner credentials or host user profile.
+
+    The MCP/Python SDK expects a writable home/cache directory on Windows;
+    redirect those paths to this bounded, disposable job-local scratch root.
+    A Job Object is NOT a user-token/filesystem/network sandbox.
+    """
+    root = Path(os.environ.get("SystemRoot") or r"C:\Windows")
+    scratch = Path(scratch).resolve()
+    roaming = scratch / "AppData" / "Roaming"
+    local = scratch / "AppData" / "Local"
+    roaming.mkdir(parents=True, exist_ok=True)
+    local.mkdir(parents=True, exist_ok=True)
+    return {
+        "SystemRoot": str(root),
+        "WINDIR": str(root),
+        "PATH": os.pathsep.join((
+            str(Path(sys.executable).parent),
+            str(Path(sys.base_prefix)),
+            str(root / "System32"),
+        )),
+        "USERPROFILE": str(scratch),
+        "HOMEDRIVE": scratch.drive,
+        "HOMEPATH": str(scratch)[len(scratch.drive):],
+        "APPDATA": str(roaming),
+        "LOCALAPPDATA": str(local),
+        "TEMP": str(scratch),
+        "TMP": str(scratch),
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "PYTHONUTF8": "1",
+        "PYTHONIOENCODING": "utf-8",
+    }
+
+
 def _bridge(runtime: Path, entry: str) -> int:
     """Start a *suspended* child, assign Job Object, then resume; no race."""
     if os.name != "nt":
@@ -305,6 +340,7 @@ def _bridge(runtime: Path, entry: str) -> int:
     kernel.GetExitCodeProcess.restype = wintypes.BOOL
 
     owned = []
+    scratch = None
     pi = PROCESS_INFORMATION()
     parent_in, child_in, parent_out, child_out, job = (HANDLE(), HANDLE(), HANDLE(), HANDLE(), HANDLE())
     try:
@@ -336,21 +372,8 @@ def _bridge(runtime: Path, entry: str) -> int:
         si.cb = ctypes.sizeof(si)
         si.dwFlags = 0x100
         si.hStdInput, si.hStdOutput, si.hStdError = child_in, child_out, nul
-        system_root = os.environ.get("SystemRoot", r"C:\\Windows")
-        env = {
-            "SystemRoot": system_root, "WINDIR": system_root,
-            # Windows venv redirector may need the trusted base Python DLL path.
-            # Do not inherit arbitrary user PATH entries or AURA secrets.
-            "PATH": os.pathsep.join((
-                str(Path(sys.executable).parent),
-                str(Path(sys.base_prefix)),
-                str(Path(system_root) / "System32"),
-            )),
-            "PYTHONDONTWRITEBYTECODE": "1", "PYTHONNOUSERSITE": "1",
-        }
-        scratch = Path(tempfile.gettempdir()) / "aura-local-mcp"
-        scratch.mkdir(parents=True, exist_ok=True)
-        env["TEMP"] = env["TMP"] = str(scratch)
+        scratch = Path(tempfile.mkdtemp(prefix="aura-local-mcp-"))
+        env = _scrubbed_windows_mcp_environment(scratch)
         packed = chr(0).join(f"{k}={v}" for k, v in sorted(env.items(), key=lambda p: p[0].lower())) + chr(0) * 2
         packed_buffer = ctypes.create_unicode_buffer(packed)
         cmd = ctypes.create_unicode_buffer(subprocess.list2cmdline(
@@ -416,6 +439,8 @@ def _bridge(runtime: Path, entry: str) -> int:
         for handle in reversed(owned):
             if handle:
                 kernel.CloseHandle(handle)
+        if scratch is not None:
+            shutil.rmtree(scratch, ignore_errors=True)
 
 
 def main() -> int:
