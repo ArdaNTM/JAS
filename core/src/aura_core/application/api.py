@@ -92,7 +92,7 @@ from aura_core.observability.pipeline_trace import PipelineTrace
 
 def _continuous_evolution_command(message: str) -> str | None:
     """Exact authenticated user command; never infer controls from model text."""
-    normalized = " ".join(message.casefold().strip(" \\t\\r\\n.!?,;").split())
+    normalized = " ".join(message.casefold().strip(" \t\r\n.!?,;").split())
     if normalized in {
         "kendini geliştir", "kendini geliştirme modunu aç",
         "sürekli kendini geliştir",
@@ -1983,10 +1983,10 @@ def create_api(
         control = await _continuous_control_reply(request, http_request, principal_id)
         if control is not None:
             async def control_stream():
-                yield json.dumps({"delta": control}, ensure_ascii=False) + "\\n"
+                yield json.dumps({"delta": control}, ensure_ascii=False) + "\n"
                 yield json.dumps({
                     "done": True, "finish_reason": "stop", "model": config.model,
-                }) + "\\n"
+                }) + "\n"
             return StreamingResponse(
                 control_stream(), media_type="application/x-ndjson",
                 headers={"Cache-Control": "no-store", "X-Content-Type-Options": "nosniff"},
