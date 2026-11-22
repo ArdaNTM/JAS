@@ -78,6 +78,33 @@ class IsolatedMCPPreflight:
         self.runtime_root.mkdir(parents=True, exist_ok=True)
         _checked_path(self.runtime_root)
 
+    def _verify_runtime_capacity(self, additional_bytes: int) -> None:
+        """Bound runtime footprint against the same external workspace quota."""
+        total = 0
+        folders = 0
+        for directory, dirs, files in os.walk(self.runtime_root, followlinks=False):
+            current = Path(directory)
+            safe_dirs = []
+            for child in dirs:
+                item = current / child
+                if item.is_symlink() or (hasattr(item, "is_junction") and item.is_junction()):
+                    raise SandboxUntrusted("Unsafe runtime directory link")
+                safe_dirs.append(child)
+            dirs[:] = safe_dirs
+            if current == self.runtime_root:
+                folders = len(dirs)
+            for filename in files:
+                item = current / filename
+                if item.is_symlink():
+                    raise SandboxUntrusted("Unsafe runtime file link")
+                total += item.stat().st_size
+                if total > self.workspace.max_bytes:
+                    raise SandboxUntrusted("Evolution runtime quota reached")
+        if folders >= self.workspace.max_items:
+            raise SandboxUntrusted("Evolution runtime package quota reached")
+        if self.workspace._usage() + total + additional_bytes > self.workspace.max_bytes:
+            raise SandboxUntrusted("Evolution combined storage quota reached")
+
     def prepare(self, package_name: str) -> tuple[Path, str, str]:
         """Metadata-only extraction, no third-party installer, no execution."""
         data, repository, digest = self.decisions._check_candidate(package_name)
@@ -93,6 +120,9 @@ class IsolatedMCPPreflight:
             if destination.is_symlink() or not destination.is_dir():
                 raise SandboxUntrusted("Unsafe runtime path")
             raise SandboxUntrusted("Runtime directory already exists; no overwrite")
+        # Static staging already bounded the ZIP. Runtime preparation must
+        # also count against the *combined* 5 GiB and package-count ceilings.
+        self._verify_runtime_capacity(sum(map(len, files.values())) + 4096)
         # Stage in an isolated tempdir under the external runtime root. All
         # relative paths were validated by the hardened ZIP reader.
         with tempfile.TemporaryDirectory(prefix=".preflight-", dir=self.runtime_root) as temporary:
