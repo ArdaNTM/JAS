@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-22T06:35:00.000Z",
+  "generated_at": "2026-11-22T06:45:00.000Z",
   "git_commit": "c7cfe64a195517f0a14868bfd846ba392de83844",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:dc85a05a302e17aa2a295dc1b6a120591be0d77e072b5ed78806f6c456320cb4",
+  "release_digest": "sha256:5ac04f0fb8b79027f2cfc900da224ed23d48ea07d2cb4026540ea74be5fc9e4e",
   "file_count": 456,
   "files": [
     {
@@ -870,7 +870,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/activation_delegation.py",
-      "sha256": "51d87572e9815346570a06baae9f1252008ef17596ff40a6d885986dcf62f803"
+      "sha256": "eecc39e6157ab92e4af7c6bbc049124a36228fc323802bccaaaa77c77af54968"
     },
     {
       "path": "core/src/aura_core/evolution/activation_runtime.py",
@@ -922,7 +922,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/owner_cli.py",
-      "sha256": "fb826466075b615c1b214b67c07d7ba93cc86312a9c9ceedfb39c239558ee87f"
+      "sha256": "043e157871d6e0a9774a4e70708ebf2cd1d1089a37077042717fc13e592530e5"
     },
     {
       "path": "core/src/aura_core/evolution/owner_control_plane.py",
