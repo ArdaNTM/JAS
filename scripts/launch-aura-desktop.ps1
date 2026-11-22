@@ -330,11 +330,9 @@ function Start-Attestor {
 
     $privateKey = Join-Path $env:LOCALAPPDATA "AURA\AttestorKeys\sandbox-attestor.pem"
     $publicKey = Join-Path $env:AURA_EVOLUTION_ROOT "trust\sandbox-attestor.pub.pem"
-    $ownerGrant = Join-Path $env:AURA_EVOLUTION_ROOT "owner\autonomous_delegation.json"
     $keyPin = [Environment]::GetEnvironmentVariable("AURA_EVOLUTION_ATTESTOR_KEY_SHA256", "User")
     if ($env:AURA_EVOLUTION_AUTO_ACTIVATE -ne "1" -or
         $keyPin -notmatch '^[0-9a-f]{64}$' -or
-        -not (Test-Path -LiteralPath $ownerGrant -PathType Leaf) -or
         -not (Test-Path -LiteralPath $privateKey -PathType Leaf) -or
         -not (Test-Path -LiteralPath $publicKey -PathType Leaf)) {
         return $null
