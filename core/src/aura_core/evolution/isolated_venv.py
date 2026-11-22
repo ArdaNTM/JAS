@@ -73,7 +73,7 @@ def declared_dependencies(files: dict[str, bytes]) -> tuple[str, ...]:
             raise SandboxUntrusted("Non-UTF8 dependency requirements") from exc
     if len(dependencies) > _MAX_REQUIREMENTS:
         raise SandboxUntrusted("Too many project dependencies")
-    if not dependencies:
+    if not dependencies and pyproject is None and requirements is None:
         return ()
     try:
         from packaging.requirements import Requirement
@@ -177,7 +177,6 @@ def prepare_isolated_venv(
             raise SandboxUntrusted("Existing isolated environment dependencies changed")
         return isolated_python(runtime)
 
-    scratch_root = workspace_root / ".uv-cache"
     with tempfile.TemporaryDirectory(prefix=".aura-install-", dir=workspace_root) as temp:
         scratch = Path(temp)
         safe_env = _installer_environment(workspace_root, scratch)
@@ -188,7 +187,7 @@ def prepare_isolated_venv(
                 commands = [
                     [uv, "venv", str(venv), "--python", sys.executable, "--no-project"],
                     [uv, "pip", "install", "--python", str(interpreter),
-                     "--no-build", "--no-deps" if False else "--only-binary", ":all:", *deps],
+                     "--no-build", "--only-binary", ":all:", *deps],
                 ]
             else:
                 commands = [
