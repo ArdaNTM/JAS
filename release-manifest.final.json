@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-22T06:45:00.000Z",
+  "generated_at": "2026-11-22T06:55:00.000Z",
   "git_commit": "c7cfe64a195517f0a14868bfd846ba392de83844",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:5ac04f0fb8b79027f2cfc900da224ed23d48ea07d2cb4026540ea74be5fc9e4e",
+  "release_digest": "sha256:8554f8ce3483ca1852b771712861ffaca9be99aac92a6739f493477d1a0291ba",
   "file_count": 456,
   "files": [
     {
@@ -870,7 +870,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/activation_delegation.py",
-      "sha256": "eecc39e6157ab92e4af7c6bbc049124a36228fc323802bccaaaa77c77af54968"
+      "sha256": "cd8f0a5197f462a7523e2b28dc34de01e58479ac877a83daf8a836b70047db27"
     },
     {
       "path": "core/src/aura_core/evolution/activation_runtime.py",
