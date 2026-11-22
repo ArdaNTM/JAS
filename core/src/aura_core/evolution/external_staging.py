@@ -491,7 +491,7 @@ def _validated_files(
                  "@modelcontextprotocol/sdk" in data.decode("utf-8"))
         )
     if not entrypoints:
-        raise StagingRejected("No recognizable MCP/local Python or JS entrypoint")
+        raise StagingRejected("No supported Python stdio MCP entrypoint")
 
     detected: set[str] = set()
     patterns = {
