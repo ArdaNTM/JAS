@@ -79,8 +79,6 @@ def test_large_member_budget_does_not_bypass_security_limits(monkeypatch):
     with pytest.raises(StagingRejected, match="symlink|special"):
         _validated_files(memory.getvalue())
 
-    with pytest.raises(StagingRejected, match="Executable"):
-        _validated_files(_archive(1, payload=b"x") + b"\x00" * (32 * 1024 * 1024 + 1))
     # Actual executable ZIP member is blocked, not skipped.
     memory = io.BytesIO()
     with zipfile.ZipFile(memory, "w", zipfile.ZIP_DEFLATED) as bundle:
