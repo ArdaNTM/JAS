@@ -138,6 +138,88 @@ def test_untrusted_dependency_install_directives_denied(malicious):
         declared_dependencies({"requirements.txt": malicious.encode()})
 
 
+def test_mcp_sdk_follows_installed_version_when_no_other_sdk_declared(monkeypatch):
+    from aura_core.evolution import isolated_venv
+    monkeypatch.setattr(isolated_venv.metadata, "version", lambda name: (
+        "1.26.4" if name == "mcp" else (_ for _ in ()).throw(LookupError(name))
+    ))
+    requirements = isolated_venv.declared_dependencies({
+        "requirements.txt": b"httpx>=0.27\n",
+    })
+    assert "mcp==1.26.4" in requirements
+    assert "mcp==2.0.0" not in requirements
+
+
+def test_mcp_sdk_fallback_when_core_metadata_missing(monkeypatch):
+    from importlib.metadata import PackageNotFoundError
+    from aura_core.evolution import isolated_venv
+
+    def missing(name):
+        raise PackageNotFoundError(name)
+
+    monkeypatch.setattr(isolated_venv.metadata, "version", missing)
+    requirements = isolated_venv.declared_dependencies({
+        "requirements.txt": b"httpx>=0.27\n",
+    })
+    assert "mcp>=1.0.0,<2.0.0" in requirements
+
+
+def test_explicit_mcp_or_fastmcp_constraints_are_not_overridden(monkeypatch):
+    from aura_core.evolution import isolated_venv
+    # The AURA host pins MCP 2.0.0, but a real FastMCP server must be
+    # allowed to resolve its own SDK transitive constraints in its .venv.
+    monkeypatch.setattr(isolated_venv.metadata, "version", lambda name: "2.0.0")
+    fastmcp_deps = isolated_venv.declared_dependencies({
+        "requirements.txt": b"fastmcp>=0.1.0\nJinja2>=3.0\n",
+    })
+    assert "mcp==2.0.0" not in fastmcp_deps
+    assert any(dep.lower().startswith("fastmcp") for dep in fastmcp_deps)
+
+    explicit_mcp = isolated_venv.declared_dependencies({
+        "pyproject.toml": b"[project]\nname='memory'\ndependencies=['mcp>=1.0,<3']\n",
+    })
+    assert "mcp>=1.0,<3" in explicit_mcp
+    assert "mcp==2.0.0" not in explicit_mcp
+
+
+def test_large_python_mcp_package_ast_up_to_250_modules_is_bounded():
+    # A deliberately large but inert Python FastMCP package. No import/run.
+    files = {
+        "src/big_mcp/__main__.py": b"from .server import main\n",
+        "src/big_mcp/server.py": (
+            b"from mcp.server.mcpserver import MCPServer\n"
+            b"mcp = MCPServer('test')\n"
+            b"@mcp.tool()\ndef ping(): return 'ok'\n"
+        ),
+    }
+    for n in range(248):
+        files[f"src/big_mcp/tools/tool_{n:03}.py"] = b"def helper(): return None\n"
+    assert len(files) == 250
+    assert static_python_entry(files, "src/big_mcp/__main__.py") == (
+        "src/big_mcp/__main__.py"
+    )
+    files["src/big_mcp/tools/tool_248.py"] = b"def too_many(): pass\n"
+    with pytest.raises(Exception, match="module count exceeded"):
+        static_python_entry(files, "src/big_mcp/__main__.py")
+
+
+def test_recovery_v2_retries_old_sdk_failure_once_but_never_replays(monkeypatch):
+    from aura_core.evolution.attestor_worker import (
+        RECOVERY_EPOCH, _eligible_local_recovery,
+    )
+    assert RECOVERY_EPOCH == "windows-isolated-wheels-20261122-v2"
+    old = {
+        "status": "QUARANTINED", "reason_code": "SandboxUntrusted",
+        "retry_count": 1, "recovery_epoch": "windows-isolated-wheels-20261122-v1",
+    }
+    assert _eligible_local_recovery(old) is True
+    assert _eligible_local_recovery({**old, "recovery_epoch": RECOVERY_EPOCH}) is False
+    assert _eligible_local_recovery({**old, "retry_count": 2}) is False
+    assert _eligible_local_recovery({**old, "status": "REVOKED"}) is False
+    assert _eligible_local_recovery({**old, "reason_code": "PermissionError"}) is False
+    assert _eligible_local_recovery({**old, "retry_count": True}) is False
+
+
 def test_isolated_src_python_is_started_as_module_for_relative_imports(tmp_path):
     from aura_core.evolution.windows_job_mcp import _isolated_entry_args
     python = tmp_path / "runtime" / "pkg" / ".venv" / "Scripts" / "python.exe"
