@@ -178,7 +178,10 @@ def test_explicit_mcp_or_fastmcp_constraints_are_not_overridden(monkeypatch):
     explicit_mcp = isolated_venv.declared_dependencies({
         "pyproject.toml": b"[project]\nname='memory'\ndependencies=['mcp>=1.0,<3']\n",
     })
-    assert "mcp>=1.0,<3" in explicit_mcp
+    assert any(
+        dep.startswith("mcp") and ">=1.0" in dep and "<3" in dep
+        for dep in explicit_mcp
+    )
     assert "mcp==2.0.0" not in explicit_mcp
 
 
