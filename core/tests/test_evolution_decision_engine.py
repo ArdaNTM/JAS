@@ -392,7 +392,7 @@ def test_windows_independent_core_reads_only_signed_owner_readonly_mirror(sample
         dst.write_bytes(src.read_bytes())
         harden_private_acl(dst)
         subprocess.run(
-            ["icacls.exe", str(dst), "/grant", "*S-1-5-11:R"],
+            ["icacls.exe", str(dst), "/grant", "*S-1-5-11:RX"],
             check=True, capture_output=True, timeout=10,
         )
     # Core cannot access the protected originals in real multi-identity
@@ -414,7 +414,7 @@ def test_windows_independent_core_reads_only_signed_owner_readonly_mirror(sample
                 _require_readonly_public_owner_mirror(mirror)
                 verdict = "ACL_ACCEPTED"
             except PermissionError as error:
-                verdict = type(error).__name__
+                verdict = str(error)
             results.append(f"{mirror.name}: {verdict}, {acl.stdout.strip()}")
         pytest.fail("Signed public mirror unexpectedly rejected: " +
                     " | ".join(results))
