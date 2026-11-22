@@ -520,7 +520,7 @@ class GitHubStagingMCPProvider:
         ),)
 
     async def _read(self, client: httpx.AsyncClient, url: str, *,
-                    max_bytes: int) -> bytes:
+                    max_bytes: int, sink: io.BufferedIOBase | None = None) -> bytes | None:
         # Explicit redirect handling instead of follow_redirects=True avoids
         # leaking API tokens or contacting an attacker-chosen third-party host.
         try:
@@ -547,11 +547,20 @@ class GitHubStagingMCPProvider:
                         continue
                     if response.status_code != 200:
                         raise StagingRejected("GitHub archive/metadata unavailable or rate limited")
-                    data = bytearray()
+                    data = bytearray() if sink is None else None
+                    received = 0
                     async for chunk in response.aiter_bytes():
-                        if len(data) + len(chunk) > max_bytes:
+                        received += len(chunk)
+                        if received > max_bytes:
                             raise StagingRejected("GitHub download byte budget exceeded")
-                        data.extend(chunk)
+                        if sink is None:
+                            data.extend(chunk)
+                        else:
+                            sink.write(chunk)
+                    if sink is not None:
+                        sink.flush()
+                        sink.seek(0)
+                        return None
                     return bytes(data)
             raise StagingRejected("GitHub archive redirect limit exceeded")
         except httpx.RequestError as exc:
@@ -567,106 +576,122 @@ class GitHubStagingMCPProvider:
         repository = arguments["repository"]
         if not _valid_repository(repository):
             raise StagingRejected("Invalid GitHub repository")
-        async with httpx.AsyncClient(
-            transport=self._transport, timeout=httpx.Timeout(15.0, connect=5.0),
-            follow_redirects=False, trust_env=False,
-        ) as client:
-            metadata = json.loads(await self._read(
-                client, f"https://api.github.com/repos/{repository}",
-                max_bytes=GITHUB_RESPONSE_MAX_BYTES,
-            ))
-            if (not isinstance(metadata, dict)
-                    or metadata.get("full_name") != repository
-                    or metadata.get("private") is True
-                    or metadata.get("archived") is True
-                    or metadata.get("fork") is True
-                    or not isinstance(metadata.get("license"), dict)
-                    or metadata["license"].get("spdx_id") not in PERMITTED_LICENSES):
-                raise StagingRejected("GitHub metadata/license does not satisfy staging policy")
-            description = str(metadata.get("description") or "")[:500]
-            from aura_core.evolution.self_discovery import _SAAS
-            if (_PLATFORM.search(description) or _PAID.search(description)
-                    or _SAAS.search(repository + " " + description)):
-                raise StagingRejected("Paid SaaS or macOS-only candidate rejected")
-            # Pin the snapshot to the current default-branch commit SHA, never
-            # interpolate a user-controlled branch/ref into an archive URL.
-            commits = json.loads(await self._read(
-                client, f"https://api.github.com/repos/{repository}/commits?per_page=1",
-                max_bytes=90_000,
-            ))
-            if not isinstance(commits, list) or not commits:
-                raise StagingRejected("No pinned GitHub commit returned")
-            sha = commits[0].get("sha") if isinstance(commits[0], dict) else None
-            if not isinstance(sha, str) or not _SHA.fullmatch(sha):
-                raise StagingRejected("GitHub commit identity is invalid")
-            download_budget = _archive_budget()
-            archive = await self._read(
-                client, f"https://codeload.github.com/{repository}/zip/{sha}",
-                max_bytes=download_budget,
+        # Spool large ZIP downloads outside the checkout (not into RAM).
+        with tempfile.TemporaryFile(mode="w+b", dir=self.workspace.root / "staging") as archive_sink:
+            async with httpx.AsyncClient(
+                transport=self._transport, timeout=httpx.Timeout(15.0, connect=5.0),
+                follow_redirects=False, trust_env=False,
+            ) as client:
+                metadata = json.loads(await self._read(
+                    client, f"https://api.github.com/repos/{repository}",
+                    max_bytes=GITHUB_RESPONSE_MAX_BYTES,
+                ))
+                if (not isinstance(metadata, dict)
+                        or metadata.get("full_name") != repository
+                        or metadata.get("private") is True
+                        or metadata.get("archived") is True
+                        or metadata.get("fork") is True
+                        or not isinstance(metadata.get("license"), dict)
+                        or metadata["license"].get("spdx_id") not in PERMITTED_LICENSES):
+                    raise StagingRejected("GitHub metadata/license does not satisfy staging policy")
+                description = str(metadata.get("description") or "")[:500]
+                from aura_core.evolution.self_discovery import _SAAS
+                if (_PLATFORM.search(description) or _PAID.search(description)
+                        or _SAAS.search(repository + " " + description)):
+                    raise StagingRejected("Paid SaaS or macOS-only candidate rejected")
+                # Pin the snapshot to the current default-branch commit SHA, never
+                # interpolate a user-controlled branch/ref into an archive URL.
+                commits = json.loads(await self._read(
+                    client, f"https://api.github.com/repos/{repository}/commits?per_page=1",
+                    max_bytes=90_000,
+                ))
+                if not isinstance(commits, list) or not commits:
+                    raise StagingRejected("No pinned GitHub commit returned")
+                sha = commits[0].get("sha") if isinstance(commits[0], dict) else None
+                if not isinstance(sha, str) or not _SHA.fullmatch(sha):
+                    raise StagingRejected("GitHub commit identity is invalid")
+                download_budget = _archive_budget()
+                await self._read(
+                    client, f"https://codeload.github.com/{repository}/zip/{sha}",
+                    max_bytes=download_budget, sink=archive_sink,
+                )
+            scan_summary: dict[str, object] = {}
+            files, entrypoint, skipped_binaries = _validated_files(
+                archive_sink, max_archive_bytes=download_budget, summary=scan_summary,
             )
-        files, entrypoint, skipped_binaries = _validated_files(
-            archive, max_archive_bytes=download_budget,
-        )
-        archive_sha = hashlib.sha256(archive).hexdigest()
-        stage, verified = self.workspace.reserve(
-            repository, len(archive) * 2 + sum(len(x) for x in files.values()) + 8192
-        )
-        # No existing evidence is overwritten. The on-disk manifest only
-        # points to pinned bytes, not a runnable command or trusted receipt.
-        if verified.exists():
-            old_manifest = verified / "aura-capability-manifest.json"
-            if old_manifest.is_file():
-                old = json.loads(old_manifest.read_text("utf-8"))
-                if old.get("source_sha256") == archive_sha and old.get("repository") == repository:
-                    self.workspace.audit(action="stage_cached", repository=repository,
-                                         result="STATIC_REVIEW_ONLY")
-                    return old
-            raise StagingRejected("Existing verified package requires independent review")
-        if stage.exists():
-            raise StagingRejected("Existing staged package requires independent review")
-        stage_tmp = Path(tempfile.mkdtemp(prefix=".staging-", dir=self.workspace.root / "staging"))
-        verified_tmp = Path(tempfile.mkdtemp(prefix=".verified-", dir=self.workspace.root / "verified"))
-        try:
-            (stage_tmp / "source.zip").write_bytes(archive)
-            for relative, data in files.items():
-                target = stage_tmp / "source" / relative
-                target.parent.mkdir(parents=True, exist_ok=True)
-                target.write_bytes(data)
-            report = {
-                "schema": "aura.static-capability-proposal.v1",
-                "repository": repository,
-                "url": "https://github.com/" + repository,
-                "license_spdx_metadata": metadata["license"]["spdx_id"],
-                "git_commit_sha": sha,
-                "source_sha256": archive_sha,
-                "entrypoint_hint": entrypoint,
-                "static_file_count": len(files),
-                "skipped_binaries": skipped_binaries,
-                "static_checks": [
-                    "bounded-zip", "no-symlinks", "no-traversal", "no-known-unsafe-pattern",
-                    "windows-paths", "license-metadata-allowlist",
-                ],
-                "status": "READY_FOR_OWNER_REVIEW",
-                "sandbox_attested": False,
-                "owner_approved": False,
-                "activation_performed": False,
-                "capability_registered": False,
-                "execution_allowed": False,
-                "warning": "Static analysis is not a safe-execution proof.",
-                "created_at": int(time.time()),
-            }
-            (verified_tmp / "source.zip").write_bytes(archive)
-            (verified_tmp / "aura-capability-manifest.json").write_text(
-                json.dumps(report, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
-                encoding="utf-8",
+            archive_size = archive_sink.seek(0, os.SEEK_END)
+            archive_sink.seek(0)
+            hasher = hashlib.sha256()
+            while block := archive_sink.read(1024 * 1024):
+                hasher.update(block)
+            archive_sha = hasher.hexdigest()
+            stage, verified = self.workspace.reserve(
+                repository, archive_size * 2 + sum(map(len, files.values())) + 8192
             )
-            stage_tmp.rename(stage)
-            verified_tmp.rename(verified)
-            self.workspace.audit(action="stage_verified", repository=repository,
-                                 result="OWNER_REVIEW_REQUIRED")
-            return report
-        finally:
-            if stage_tmp.exists():
-                shutil.rmtree(stage_tmp)
-            if verified_tmp.exists():
-                shutil.rmtree(verified_tmp)
+            # No existing evidence is overwritten. The on-disk manifest only
+            # points to pinned bytes, not a runnable command or trusted receipt.
+            if verified.exists():
+                old_manifest = verified / "aura-capability-manifest.json"
+                if old_manifest.is_file():
+                    old = json.loads(old_manifest.read_text("utf-8"))
+                    if old.get("source_sha256") == archive_sha and old.get("repository") == repository:
+                        self.workspace.audit(action="stage_cached", repository=repository,
+                                             result="STATIC_REVIEW_ONLY")
+                        return old
+                raise StagingRejected("Existing verified package requires independent review")
+            if stage.exists():
+                raise StagingRejected("Existing staged package requires independent review")
+            stage_tmp = Path(tempfile.mkdtemp(prefix=".staging-", dir=self.workspace.root / "staging"))
+            verified_tmp = Path(tempfile.mkdtemp(prefix=".verified-", dir=self.workspace.root / "verified"))
+            try:
+                archive_sink.seek(0)
+                with (stage_tmp / "source.zip").open("wb") as target:
+                    shutil.copyfileobj(archive_sink, target, 1024 * 1024)
+                for relative, data in files.items():
+                    target = stage_tmp / "source" / relative
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_bytes(data)
+                report = {
+                    "schema": "aura.static-capability-proposal.v1",
+                    "repository": repository,
+                    "url": "https://github.com/" + repository,
+                    "license_spdx_metadata": metadata["license"]["spdx_id"],
+                    "git_commit_sha": sha,
+                    "source_sha256": archive_sha,
+                    "entrypoint_hint": entrypoint,
+                    "static_file_count": len(files),
+                    "skipped_binaries": skipped_binaries,
+                    "skipped_non_source": scan_summary["skipped_non_source"],
+                    "archive_members": scan_summary["archive_members"],
+                    "expanded_bytes": scan_summary["expanded_bytes"],
+                    "detected_capabilities": scan_summary["detected_capabilities"],
+                    "static_checks": [
+                        "bounded-zip", "no-symlinks", "no-traversal", "no-known-unsafe-pattern",
+                        "windows-paths", "license-metadata-allowlist",
+                    ],
+                    "status": "READY_FOR_OWNER_REVIEW",
+                    "sandbox_attested": False,
+                    "owner_approved": False,
+                    "activation_performed": False,
+                    "capability_registered": False,
+                    "execution_allowed": False,
+                    "warning": "Static analysis is not a safe-execution proof.",
+                    "created_at": int(time.time()),
+                }
+                archive_sink.seek(0)
+                with (verified_tmp / "source.zip").open("wb") as target:
+                    shutil.copyfileobj(archive_sink, target, 1024 * 1024)
+                (verified_tmp / "aura-capability-manifest.json").write_text(
+                    json.dumps(report, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
+                    encoding="utf-8",
+                )
+                stage_tmp.rename(stage)
+                verified_tmp.rename(verified)
+                self.workspace.audit(action="stage_verified", repository=repository,
+                                     result="OWNER_REVIEW_REQUIRED")
+                return report
+            finally:
+                if stage_tmp.exists():
+                    shutil.rmtree(stage_tmp)
+                if verified_tmp.exists():
+                    shutil.rmtree(verified_tmp)
