@@ -222,6 +222,43 @@ def create_owner_control_plane(
             "owner_approved": False, "execution_allowed": False,
         }
 
+    @app.get("/api/owner/preflights")
+    def sandbox_preflights():
+        """Untrusted external observations, never an attestation or activation."""
+        if catalog_db is None:
+            return {"items": [], "mode": "untrusted_preflight"}
+        audit = Path(catalog_db).parent.parent / "logs" / "autonomous-preflight.jsonl"
+        if audit.is_symlink() or (audit.exists() and not audit.is_file()):
+            raise HTTPException(503, "Sandbox preflight journal unsafe")
+        if not audit.exists():
+            return {"items": [], "mode": "untrusted_preflight"}
+        try:
+            if audit.stat().st_size > 220_000:
+                raise HTTPException(503, "Sandbox preflight journal over budget")
+            records = []
+            for line in audit.read_text("utf-8").splitlines()[-30:]:
+                if len(line) > 2048:
+                    continue
+                data = json.loads(line)
+                if not isinstance(data, dict):
+                    continue
+                name = data.get("repository")
+                status = data.get("status")
+                if (not isinstance(name, str)
+                        or not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", name)
+                        or status not in {"QUARANTINED", "PREPARED_UNATTESTED"}):
+                    continue
+                records.append({
+                    "repository": name, "status": status,
+                    "reason_code": str(data.get("reason_code", ""))[:48],
+                    "sandbox_attested": False,
+                    "activation_performed": False,
+                })
+            return {"items": records, "mode": "untrusted_preflight",
+                    "activation_performed": False}
+        except (OSError, ValueError, TypeError, UnicodeError):
+            raise HTTPException(503, "Sandbox preflight journal unavailable")
+
     @app.post("/api/owner/challenge")
     def challenge(body: ChallengeBody):
         if read_only:
