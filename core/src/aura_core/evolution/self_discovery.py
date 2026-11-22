@@ -770,7 +770,64 @@ class SelfDiscoveryEngine:
                 (self._cycle, int(time.time()), query_count, saved, staged, status),
             )
 
-    async def run_once(self, *, full_scan: bool = False) -> dict[str, object]:
+    def _store_public_candidates(
+        self, result: dict, seen: set[str],
+    ) -> int:
+        """Deduplicate bounded candidate metadata, never treat it as approval."""
+        saved = 0
+        with self._connect() as db:
+            known = {r[0] for r in db.execute(
+                "SELECT repository FROM evolution_proposals"
+            )}
+            eligible = []
+            for row in result.get("items", [])[:SEARCH_PER_PAGE]:
+                if not isinstance(row, dict):
+                    continue
+                name, license_id, stars = (
+                    row.get("repository"), row.get("license"), row.get("stars"),
+                )
+                size_kb = row.get("size_kb")
+                if type(size_kb) is not int or not 0 <= size_kb <= 2_000_000_000:
+                    size_kb = None
+                if (not _valid_repository(name)
+                        or license_id not in PERMITTED_LICENSES
+                        or row.get("url") != "https://github.com/" + name
+                        or type(stars) is not int or not 0 <= stars <= 2_000_000_000):
+                    continue
+                eligible.append((row, name, stars, size_kb))
+            eligible.sort(key=lambda item: (
+                item[1] in known,
+                _size_tier(item[3]),
+                -_local_rank(item[1], _safe_text(item[0].get("description")), item[2]),
+                item[1],
+            ))
+            for row, name, stars, size_kb in eligible[:3]:
+                seen.add(name)
+                proposal_id = hashlib.sha256(name.casefold().encode()).hexdigest()[:24]
+                try:
+                    cursor = db.execute(
+                        "INSERT OR IGNORE INTO evolution_proposals "
+                        "(proposal_id,repository,url,description,license,capability_hint,"
+                        "created_at,stars,size_kb) VALUES (?,?,?,?,?,?,?,?,?)",
+                        (proposal_id, name, row["url"],
+                         _safe_text(row.get("description")),
+                         row["license"], _safe_text(row.get("capability_hint"), 100),
+                         time.time(), stars, size_kb),
+                    )
+                    saved += cursor.rowcount
+                    if cursor.rowcount == 0:
+                        db.execute(
+                            "UPDATE evolution_proposals SET stars=?,"
+                            "size_kb=COALESCE(?,size_kb) "
+                            "WHERE proposal_id=? AND repository=?",
+                            (stars, size_kb, proposal_id, name),
+                        )
+                except (TypeError, ValueError, KeyError):
+                    continue
+        return saved
+
+    async def run_once(self, *, full_scan: bool = False,
+                       multi_source: bool = False) -> dict[str, object]:
         async with self._lock:
             # A manual scan covers two *rotating* query slots, not the
             # entire expanding allowlist (bounded public GitHub API use).
@@ -795,7 +852,11 @@ class SelfDiscoveryEngine:
                             request_id=str(uuid4()), principal_id=self.principal_id,
                             capability_id=CAPABILITY_ID, operation_id=CAPABILITY_ID,
                             resource_scope=SCOPE, risk_level=RiskLevel.LOW,
-                            tool_name=TOOL_NAME, arguments={"query": QUERIES[index]},
+                            tool_name=TOOL_NAME, arguments=(
+                                {"query": QUERIES[index],
+                                 "page": ((self._cycle // len(QUERIES)) % MAX_SEARCH_PAGE) + 1}
+                                if multi_source else {"query": QUERIES[index]}
+                            ),
                         ))
                         if response.decision is not AuthorizationDecision.ALLOW:
                             raise PermissionError("MCPGateway denied GitHub discovery")
@@ -817,61 +878,39 @@ class SelfDiscoveryEngine:
                         continue
                     successful_queries += 1
 
-                    with self._connect() as db:
-                        # Review at most six already README-screened items and
-                        # insert up to three; catalogued popular repos must
-                        # not starve novel local candidates from the same scan.
-                        known = {r[0] for r in db.execute(
-                            "SELECT repository FROM evolution_proposals"
-                        )}
-                        eligible = []
-                        for row in result["items"][:SEARCH_PER_PAGE]:
-                            if not isinstance(row, dict):
-                                continue
-                            name = row.get("repository")
-                            license_id = row.get("license")
-                            stars = row.get("stars")
-                            size_kb = row.get("size_kb")
-                            if type(size_kb) is not int or not 0 <= size_kb <= 2_000_000_000:
-                                size_kb = None
-                            if (not _valid_repository(name)
-                                    or license_id not in PERMITTED_LICENSES
-                                    or row.get("url") != "https://github.com/" + name
-                                    or type(stars) is not int
-                                    or not 0 <= stars <= 2_000_000_000):
-                                continue
-                            eligible.append((row, name, stars, size_kb))
-                        eligible.sort(key=lambda item: (
-                            item[1] in known,
-                            _size_tier(item[3]),
-                            -_local_rank(item[1], _safe_text(item[0].get("description")), item[2]),
-                            item[1],
-                        ))
-                        for row, name, stars, size_kb in eligible[:3]:
-                            seen.add(name)
-                            proposal_id = hashlib.sha256(name.casefold().encode()).hexdigest()[:24]
-                            try:
-                                cursor = db.execute(
-                                    "INSERT OR IGNORE INTO evolution_proposals "
-                                    "(proposal_id,repository,url,description,license,capability_hint,"
-                                    "created_at,stars,size_kb) VALUES (?,?,?,?,?,?,?,?,?)",
-                                    (proposal_id, name, row["url"],
-                                     _safe_text(row.get("description")),
-                                     license_id, _safe_text(row.get("capability_hint"), 100),
-                                     time.time(), stars, size_kb),
-                                )
-                                saved += cursor.rowcount
-                                # Refresh genuine GitHub star count for previously
-                                # queued repositories without changing review state.
-                                if cursor.rowcount == 0:
-                                    db.execute(
-                                        "UPDATE evolution_proposals SET stars=?,"
-                                        "size_kb=COALESCE(?,size_kb) "
-                                        "WHERE proposal_id=? AND repository=?",
-                                        (stars, size_kb, proposal_id, name),
-                                    )
-                            except (TypeError, ValueError, KeyError):
-                                continue
+                    saved += self._store_public_candidates(result, seen)
+
+                if multi_source:
+                    # Additional discovery is not a privilege escalation. Each
+                    # fixed-origin index is a separate authorized Gateway call;
+                    # the staging Gateway still independently verifies GitHub.
+                    slot = (self._cycle // len(QUERIES)) % len(PYPI_SEEDS)
+                    for source in ("registry", "pypi"):
+                        try:
+                            response = await asyncio.wait_for(
+                                self.gateway.invoke(MCPGatewayRequest(
+                                    request_id=str(uuid4()), principal_id=self.principal_id,
+                                    capability_id=CATALOG_CAPABILITY,
+                                    operation_id=CATALOG_CAPABILITY,
+                                    resource_scope=CATALOG_SCOPE, risk_level=RiskLevel.LOW,
+                                    tool_name=CATALOG_TOOL,
+                                    arguments={"source": source, "slot": slot},
+                                )), timeout=45,
+                            )
+                            if response.decision is not AuthorizationDecision.ALLOW:
+                                raise PermissionError("MCPGateway denied public catalog discovery")
+                            result = response.result
+                            if not isinstance(result, dict) or not isinstance(result.get("items"), list):
+                                raise DiscoveryUnavailable("Invalid catalog discovery evidence")
+                            successful_queries += 1
+                            saved += self._store_public_candidates(result, seen)
+                        except PermissionError:
+                            raise
+                        except (DiscoveryUnavailable, RuntimeError, OSError,
+                                asyncio.TimeoutError) as exc:
+                            failed_queries.append({
+                                "query": source, "reason": _safe_text(str(exc), 160),
+                            })
 
                 # Even with a rate-limited search, a previously validated
                 # catalog can supply up to three inert staging candidates.
@@ -919,7 +958,7 @@ class SelfDiscoveryEngine:
                            if record["repository"] in seen]
                 self._last_error = ""
                 self._history_record(
-                    query_count=len(indexes), saved=saved, staged=staged_count,
+                    query_count=len(indexes) + (2 if multi_source else 0), saved=saved, staged=staged_count,
                     status="PARTIAL" if failed_queries else "COMPLETE",
                 )
                 return {
@@ -927,6 +966,7 @@ class SelfDiscoveryEngine:
                     "new_count": saved, "mode": "review_only",
                     "partial": bool(failed_queries),
                     "successful_queries": successful_queries,
+                    "active_sources": (["github", "registry", "pypi"] if multi_source else ["github"]),
                     "failed_queries": failed_queries,
                     "staged_count": staged_count,
                     "staging_attempted": staging_report["attempted"],
@@ -941,7 +981,7 @@ class SelfDiscoveryEngine:
             except (DiscoveryUnavailable, PermissionError, OSError,
                     RuntimeError, asyncio.TimeoutError) as exc:
                 self._last_error = str(exc)[:180]
-                self._history_record(query_count=len(indexes), saved=saved,
+                self._history_record(query_count=len(indexes) + (2 if multi_source else 0), saved=saved,
                                      staged=0, status="FAILED")
                 raise
 
