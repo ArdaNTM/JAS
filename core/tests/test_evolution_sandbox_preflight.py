@@ -142,3 +142,36 @@ def test_successful_mock_stdio_still_is_unattested(tmp_path, monkeypatch):
     assert report["sandbox_attested"] is False
     assert report["activation_performed"] is False
     assert json.loads(workspace.active.read_text())["active"] == []
+
+
+def test_owner_cli_signs_review_only_and_revokes_without_core_rights():
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    from aura_core.evolution.owner_cli import make_review_delegation
+    from aura_core.evolution.decision_engine import _canonical
+    signer = Ed25519PrivateKey.generate()
+    doc = make_review_delegation(
+        signer, categories=("local_memory", "developer_tools"),
+        duration_seconds=600, issued_at=100,
+    )
+    claims = doc["claims"]
+    assert claims["scope"] == "static-review-only"
+    assert claims["auto_activation"] is False
+    assert claims["expires_at"] == 700
+    import base64
+    signature = base64.urlsafe_b64decode(doc["signature_b64"] + "==")
+    signer.public_key().verify(signature, _canonical(claims))
+
+
+@pytest.mark.parametrize("categories,days", [
+    (("unauthorized",), 600),
+    (("local_memory", "local_memory"), 600),
+    (("local_memory",), 31 * 86400),
+])
+def test_owner_cli_invalid_delegation_denied(categories, days):
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    from aura_core.evolution.owner_cli import make_review_delegation
+    with pytest.raises(ValueError):
+        make_review_delegation(
+            Ed25519PrivateKey.generate(), categories=categories,
+            duration_seconds=days, issued_at=100,
+        )
