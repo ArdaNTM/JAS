@@ -34,10 +34,38 @@ def installation_enabled() -> bool:
     return os.name == "nt" and flag in {"1", "true", "yes", "on"}
 
 
-def declared_dependencies(files: dict[str, bytes]) -> tuple[str, ...]:
-    """Parse only PEP-508 registry requirements, never paths, URLs or pip flags."""
+class PythonVersionIncompatible(SandboxUntrusted):
+    """Candidate requires a newer/incompatible Python than the host runtime."""
+
+
+def _project_prefix(files: dict[str, bytes], entry: str | None) -> str:
+    projects = sorted(
+        (path for path in files if path == "pyproject.toml"
+         or path.endswith("/pyproject.toml")),
+        key=lambda path: (path.count("/"), path),
+    )
+    if len(projects) > 16:
+        raise SandboxUntrusted("Too many project metadata files")
+    if not projects:
+        return ""
+    if entry is None:
+        return projects[0].removesuffix("pyproject.toml")
+    matching = [
+        path.removesuffix("pyproject.toml") for path in projects
+        if entry.startswith(path.removesuffix("pyproject.toml"))
+    ]
+    if not matching:
+        return ""
+    return max(matching, key=len)
+
+
+def declared_dependencies(
+    files: dict[str, bytes], *, entry: str | None = None,
+) -> tuple[str, ...]:
+    """Parse the selected project's PEP-508 requirements, never installer flags."""
     dependencies: list[str] = []
-    pyproject = files.get("pyproject.toml")
+    prefix = _project_prefix(files, entry)
+    pyproject = files.get(prefix + "pyproject.toml")
     if pyproject is not None:
         if len(pyproject) > 128_000:
             raise SandboxUntrusted("Oversized pyproject metadata")
@@ -53,7 +81,10 @@ def declared_dependencies(files: dict[str, bytes]) -> tuple[str, ...]:
                 from packaging.specifiers import SpecifierSet
                 from packaging.version import Version
                 if Version(".".join(map(str, sys.version_info[:3]))) not in SpecifierSet(requires):
-                    raise SandboxUntrusted("Candidate requires incompatible Python version")
+                    host = f"{sys.version_info.major}.{sys.version_info.minor}"
+                    raise PythonVersionIncompatible(
+                        f"PythonVersionIncompatible: requires {requires}, host is {host}"
+                    )
             declared = metadata.get("dependencies", [])
             if not isinstance(declared, list):
                 raise SandboxUntrusted("Invalid project dependency list")
@@ -62,7 +93,9 @@ def declared_dependencies(files: dict[str, bytes]) -> tuple[str, ...]:
             if isinstance(exc, SandboxUntrusted):
                 raise
             raise SandboxUntrusted("Invalid project dependency metadata") from exc
-    requirements = files.get("requirements.txt")
+    requirements = files.get(prefix + "requirements.txt")
+    if requirements is None and prefix:
+        requirements = files.get("requirements.txt")
     if requirements is not None:
         if len(requirements) > 32_000:
             raise SandboxUntrusted("Oversized requirements text")
@@ -171,14 +204,14 @@ def _record_safe_install_failure(workspace_root: Path, runtime: Path, stderr: st
 
 def prepare_isolated_venv(
     runtime: Path, files: dict[str, bytes], workspace_root: Path, *,
-    install: bool | None = None,
+    install: bool | None = None, entry: str | None = None,
 ) -> Path | None:
     """Build a dependency-only virtualenv without executing source/build hooks.
 
     No installer is invoked when disabled. Never fall back to the Core
     interpreter after a declared dependency fails to install.
     """
-    deps = declared_dependencies(files)
+    deps = declared_dependencies(files, entry=entry)
     if not deps:
         return None
     allow = installation_enabled() if install is None else install
