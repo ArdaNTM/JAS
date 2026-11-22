@@ -222,6 +222,51 @@ def create_owner_control_plane(
             "owner_approved": False, "execution_allowed": False,
         }
 
+    @app.get("/api/owner/activations")
+    def autonomous_activations():
+        """Read-only externally stored runtime status, never an authority."""
+        if catalog_db is None:
+            return {"items": [], "mode": "untrusted_runtime_status"}
+        inventory = Path(catalog_db).parent.parent / "active_capabilities.json"
+        if (inventory.is_symlink() or (inventory.exists() and not inventory.is_file())):
+            raise HTTPException(503, "Runtime inventory path unsafe")
+        if not inventory.is_file():
+            return {"items": [], "mode": "untrusted_runtime_status"}
+        try:
+            if inventory.stat().st_size > 200_000:
+                raise HTTPException(503, "Runtime inventory exceeds read budget")
+            data = json.loads(inventory.read_text("utf-8"))
+            if not isinstance(data, dict) or not isinstance(data.get("active"), list):
+                raise HTTPException(503, "Runtime inventory invalid")
+            rows = []
+            for entry in data["active"][:100]:
+                if not isinstance(entry, dict):
+                    continue
+                repository = entry.get("repository")
+                status = entry.get("status")
+                if (not isinstance(repository, str)
+                        or not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repository)
+                        or status not in {"ACTIVE", "QUARANTINED"}):
+                    continue
+                capabilities = entry.get("capabilities", [])
+                if not isinstance(capabilities, list):
+                    capabilities = []
+                rows.append({
+                    "repository": repository,
+                    "status": status,
+                    "category": str(entry.get("category", ""))[:40],
+                    "capabilities": [
+                        x for x in capabilities[:16]
+                        if isinstance(x, str) and re.fullmatch(r"[A-Za-z0-9_.-]{1,100}", x)
+                    ],
+                    "proof_present": isinstance(entry.get("tool_attestation_sha256"), dict),
+                    "owner_revoke": "protected_owner_cli",
+                })
+            return {"items": rows, "mode": "untrusted_runtime_status",
+                    "trusted_by_this_endpoint": False}
+        except (OSError, ValueError, TypeError, UnicodeError):
+            raise HTTPException(503, "Runtime inventory unavailable")
+
     @app.get("/api/owner/preflights")
     def sandbox_preflights():
         """Untrusted external observations, never an attestation or activation."""
