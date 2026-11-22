@@ -197,6 +197,7 @@ def _record_safe_install_failure(workspace_root: Path, runtime: Path, stderr: st
         ("failed to download", "Dependency wheel download failed"),
         ("certificate verify failed", "Package index TLS certificate verification failed"),
         ("unexpected argument", "Installed uv does not support a requested option"),
+        ("cannot be used with", "Installed uv rejected conflicting CLI flags"),
         ("no module named pip", "Fallback pip not available in the isolated environment"),
     )
     low = stderr[-4096:].lower()
@@ -263,7 +264,7 @@ def prepare_isolated_venv(
                 commands = [
                     [uv, "venv", str(venv), "--python", sys.executable, "--no-project"],
                     [uv, "pip", "install", "--python", str(interpreter),
-                     "--no-build", "--only-binary", ":all:", *deps],
+                     "--only-binary", ":all:", *deps],
                 ]
             else:
                 commands = [

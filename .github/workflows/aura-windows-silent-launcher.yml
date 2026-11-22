@@ -11,6 +11,9 @@ on:
       # autonomous local startup path; exercise both Windows PowerShell hosts.
       - "core/src/aura_core/evolution/self_discovery.py"
       - "core/src/aura_core/evolution/windows_job_mcp.py"
+      # Wheel-only local MCP installation and attestor retry affect shortcut startup.
+      - "core/src/aura_core/evolution/isolated_venv.py"
+      - "core/src/aura_core/evolution/attestor_worker.py"
       - ".github/workflows/aura-windows-silent-launcher.yml"
   workflow_dispatch:
 
