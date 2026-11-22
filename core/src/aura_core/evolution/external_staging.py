@@ -88,7 +88,7 @@ _PAID = re.compile(
     r"BASECAMP_ACCESS_TOKEN|paid\s+(?:subscription|api\s+key)\s+required)",
 )
 _ENTRY = (
-    "pyproject.toml", "package.json", "server.py", "main.py",
+    "pyproject.toml", "package.json", "server.py", "main.py", "__main__.py",
     "mcp_server.py", "index.ts", "index.js", "index.mjs", "index.cjs",
 )
 _MIB = 1024 * 1024
@@ -117,9 +117,12 @@ _PASSIVE_ASSET_SUFFIXES = frozenset({
     ".woff", ".woff2", ".ttf", ".otf", ".eot", ".mp3", ".wav", ".ogg",
     ".mp4", ".webm",
 })
+# These files can be active when executed directly, but staging never does so.
+# Keep only Python/JS source; record textual helpers as skipped_non_source.
+_SKIP_SCRIPT_SUFFIXES = frozenset({".sh", ".bash", ".zsh", ".ps1", ".bat", ".cmd"})
 _EXECUTABLE_SUFFIXES = frozenset({
     ".exe", ".dll", ".so", ".dylib", ".pyd", ".node", ".jar", ".class",
-    ".wasm", ".msi", ".com", ".scr", ".bat", ".cmd", ".ps1", ".vbs",
+    ".wasm", ".msi", ".com", ".scr", ".vbs",
     ".pyc", ".pyo", ".app", ".deb", ".rpm", ".apk", ".bin",
     ".sys",
 })
@@ -411,8 +414,25 @@ def _validated_files(
             if suffix in _EXECUTABLE_SUFFIXES:
                 # Never silently drop executable payloads, even under docs/.
                 raise StagingRejected("Executable or suspicious archive content rejected")
+            if suffix in _SKIP_SCRIPT_SUFFIXES:
+                # A script suffix alone is not proof the content is inert text.
+                # Reject PE/ELF/Mach-O or unmarked NUL-laden binary masquerades
+                # (UTF-16 BOM is allowed for genuine Windows helper text).
+                try:
+                    with z.open(info) as handle:
+                        header = handle.read(min(info.file_size, 4096))
+                except (RuntimeError, OSError, zipfile.BadZipFile, EOFError) as exc:
+                    raise StagingRejected("Archive helper cannot be safely inspected") from exc
+                looks_utf16 = header.startswith((bytes.fromhex("fffe"), bytes.fromhex("feff")))
+                if (header.startswith((b"MZ", bytes.fromhex("7f454c46"),
+                                      bytes.fromhex("cffaedfe"), bytes.fromhex("feedfacf")))
+                        or (bytes([0]) in header and not looks_utf16)):
+                    raise StagingRejected("Executable or suspicious archive content rejected")
+                skipped_non_source += 1
+                continue
             passive = suffix in (_PASSIVE_ASSET_SUFFIXES | _PASSIVE_SUFFIXES)
-            ignored = (any(part.casefold() in _SKIP_DIRS for part in parts[:-1])
+            ignored = (suffix in _SKIP_SCRIPT_SUFFIXES
+                       or any(part.casefold() in _SKIP_DIRS for part in parts[:-1])
                        or rel.lower().endswith((".min.js", ".min.mjs", ".min.cjs")))
             if passive or ignored:
                 skipped_binaries += int(passive)
@@ -467,6 +487,7 @@ def _validated_files(
             path for path, data in result.items()
             if PurePosixPath(path).suffix.lower() in _SOURCE_SUFFIXES
             and ("FastMCP" in data.decode("utf-8") or
+                 "MCPServer" in data.decode("utf-8") or
                  "@modelcontextprotocol/sdk" in data.decode("utf-8"))
         )
     if not entrypoints:

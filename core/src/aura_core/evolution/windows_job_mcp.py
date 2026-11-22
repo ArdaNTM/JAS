@@ -43,41 +43,60 @@ _HEX = re.compile(r"^[0-9a-f]{64}$")
 
 
 def static_python_entry(files: dict[str, bytes], hint: str) -> str:
-    """Do not import or evaluate untrusted code while inspecting its syntax."""
+    """Metadata + bounded AST review without importing untrusted source."""
     entry = choose_python_entrypoint(files, hint)
     if not entry.endswith(".py") or len(files[entry]) > 512_000:
         raise SandboxUntrusted("Only bounded Python MCP servers are supported locally")
-    try:
-        tree = ast.parse(files[entry].decode("utf-8-sig"), filename=entry)
-    except (UnicodeError, SyntaxError, ValueError) as exc:
-        raise SandboxUntrusted("Invalid Python MCP server AST") from exc
-    symbols = {node.id for node in ast.walk(tree) if isinstance(node, ast.Name)}
-    imports = {
-        alias.name for node in ast.walk(tree)
-        if isinstance(node, (ast.Import, ast.ImportFrom))
-        for alias in node.names
-    }
-    modules = {
-        node.module for node in ast.walk(tree)
-        if isinstance(node, ast.ImportFrom) and isinstance(node.module, str)
-    }
-    fastmcp = "FastMCP" in symbols or "MCPServer" in symbols
-    declared_tools = any(
-        isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
-        and any(
-            (isinstance(d, ast.Attribute) and d.attr == "tool")
-            or (isinstance(d, ast.Call) and isinstance(d.func, ast.Attribute)
-                and d.func.attr == "tool")
-            for d in node.decorator_list
+
+    def inspect(rel: str) -> bool:
+        if rel not in files or len(files[rel]) > 512_000:
+            return False
+        try:
+            parsed = ast.parse(files[rel].decode("utf-8-sig"), filename=rel)
+        except (UnicodeError, SyntaxError, ValueError) as exc:
+            raise SandboxUntrusted("Invalid Python MCP server AST") from exc
+        symbols = {node.id for node in ast.walk(parsed) if isinstance(node, ast.Name)}
+        imports = {
+            alias.name for node in ast.walk(parsed)
+            if isinstance(node, (ast.Import, ast.ImportFrom))
+            for alias in node.names
+        }
+        modules = {
+            node.module for node in ast.walk(parsed)
+            if isinstance(node, ast.ImportFrom) and isinstance(node.module, str)
+        }
+        fastmcp = "FastMCP" in symbols or "MCPServer" in symbols
+        declared_tools = any(
+            isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+            and any(
+                (isinstance(d, ast.Attribute) and d.attr == "tool")
+                or (isinstance(d, ast.Call) and isinstance(d.func, ast.Attribute)
+                    and d.func.attr == "tool")
+                for d in node.decorator_list
+            )
+            for node in ast.walk(parsed)
         )
-        for node in ast.walk(tree)
-    )
-    if (not fastmcp or not declared_tools or
-        not any(name == "mcp" or name.startswith("mcp.") or
-                name == "fastmcp" or name.startswith("fastmcp.")
-                for name in imports | modules)):
-        raise SandboxUntrusted("AST lacks a declared FastMCP server and tool decorators")
-    return entry
+        permitted_import = any(
+            value == "mcp" or value.startswith("mcp.")
+            or value == "fastmcp" or value.startswith("fastmcp.")
+            for value in imports | modules
+        )
+        return fastmcp and declared_tools and permitted_import
+
+    if inspect(entry):
+        return entry
+    if entry.endswith("/__main__.py"):
+        try:
+            wrapper = ast.parse(files[entry].decode("utf-8-sig"), filename=entry)
+        except (UnicodeError, SyntaxError, ValueError) as exc:
+            raise SandboxUntrusted("Invalid Python MCP wrapper AST") from exc
+        root = entry.rsplit("/", 1)[0]
+        for node in ast.walk(wrapper):
+            if isinstance(node, ast.ImportFrom) and node.level >= 1 and node.module:
+                sibling = root + "/" + node.module.replace(".", "/") + ".py"
+                if inspect(sibling):
+                    return entry
+    raise SandboxUntrusted("AST lacks a declared MCP server and tool decorators")
 
 
 def local_binding(*, repository: str, source_sha256: str, tree_sha256: str,
@@ -160,8 +179,11 @@ def bridge_parameters(runtime: Path, entry: str) -> StdioServerParameters:
 class LocalWindowsMCPPreflight(IsolatedMCPPreflight):
     """Reuse the hardened ZIP extraction and quotas; never fabricate OCI pins."""
 
-    def __init__(self, workspace: EvolutionWorkspace, *, timeout_seconds: int = 20):
+    def __init__(self, workspace: EvolutionWorkspace, *, timeout_seconds: int = 20,
+                 owner_grant: dict | None = None, install: bool | None = None):
         self.workspace = workspace
+        self.owner_grant = owner_grant
+        self.install = install
         self.decisions = EvolutionDecisionEngine(workspace)
         self.runtime_root = workspace.root / "runtime"
         self.runtime_root.mkdir(parents=True, exist_ok=True)
@@ -171,6 +193,14 @@ class LocalWindowsMCPPreflight(IsolatedMCPPreflight):
     async def probe(self, package_name: str) -> dict:
         if os.name != "nt":
             raise PermissionError("Windows local MCP mode cannot be used on other hosts")
+        # Do not allow a caller to turn on host execution through an env flag.
+        # The attestor must independently verify the exact signed Owner grant.
+        from aura_core.evolution.activation_delegation import ActivationDelegationVerifier
+        signed = ActivationDelegationVerifier(self.workspace).verified_grant()
+        if (signed is None or self.owner_grant is None or
+            signed != self.owner_grant or
+            signed.get("allow_local_windows_process") is not True):
+            raise PermissionError("Signed Owner local Windows execution permission required")
         existing = self.runtime_root / package_name
         data, repository, digest = self.decisions._check_candidate(package_name)
         source = self.workspace.root / "verified" / package_name / "source.zip"
@@ -185,6 +215,16 @@ class LocalWindowsMCPPreflight(IsolatedMCPPreflight):
             runtime, prepared_entry, _ = self.prepare(package_name)
             if prepared_entry != entry:
                 raise SandboxUntrusted("Static entrypoint changed during preparation")
+        from aura_core.evolution.isolated_venv import prepare_isolated_venv
+        self._verify_runtime_capacity(0)
+        # Only the separately authorized attestor may install dependencies.
+        # Live Windows defaults to wheel-only isolated installation; unit tests
+        # may disable it without creating any host process or network activity.
+        await asyncio.to_thread(
+            prepare_isolated_venv, runtime, files, self.workspace.root,
+            install=self.install,
+        )
+        self._verify_runtime_capacity(0)
         connection = MCPConnection()
         try:
             await asyncio.wait_for(connection.connect_stdio(
@@ -250,6 +290,85 @@ def _scrubbed_windows_mcp_environment(scratch: Path) -> dict[str, str]:
     }
 
 
+def _project_script_launch(runtime: Path, entry: str) -> tuple[str, str] | None:
+    """PEP-621 module:function is resolved from bounded text, never a command."""
+    import tomllib
+    project = runtime / "pyproject.toml"
+    if not project.is_file() or project.is_symlink() or project.stat().st_size > 128_000:
+        return None
+    try:
+        metadata = tomllib.loads(project.read_text("utf-8-sig")).get("project", {})
+        if not isinstance(metadata, dict):
+            raise SandboxUntrusted("Invalid project metadata")
+        scripts = metadata.get("scripts", {})
+    except (UnicodeError, ValueError) as exc:
+        raise SandboxUntrusted("Invalid project script metadata") from exc
+    if not isinstance(scripts, dict) or len(scripts) > 64:
+        raise SandboxUntrusted("Invalid project script declarations")
+    for value in scripts.values():
+        if not isinstance(value, str):
+            continue
+        match = re.fullmatch(r"([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*):([A-Za-z_]\w*)", value.strip())
+        if match:
+            module, function = match.groups()
+            suffix = module.replace(".", "/") + ".py"
+            if entry in (suffix, "src/" + suffix):
+                return module, function
+    return None
+
+
+def _isolated_entry_args(runtime: Path, entry: str, python: Path) -> list[str]:
+    """Execute src packages as modules, preserving relative imports."""
+    if not re.fullmatch(r"[A-Za-z0-9_./-]{1,180}\.py", entry) or ".." in Path(entry).parts:
+        raise SandboxUntrusted("Invalid isolated Python MCP entrypoint")
+    if entry.startswith("src/"):
+        relative = entry.removeprefix("src/")
+        parts = relative.removesuffix(".py").split("/")
+        if all(re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", segment) for segment in parts):
+            module = ".".join(parts[:-1] if parts[-1] == "__main__" else parts)
+            if module:
+                return [str(python), "-B", "-s", "-u", "-m", module]
+    return [str(python), "-B", "-s", "-u", str(runtime / entry)]
+
+
+def _safe_mcp_stderr_tail(data: bytes) -> str:
+    """Keep only a recognized Python import/syntax diagnostic, never raw stderr."""
+    lines = data[-2048:].decode("utf-8", "replace").splitlines()
+    for line in reversed(lines):
+        value = line.strip()
+        found = re.fullmatch(
+            r"(ModuleNotFoundError|ImportError): No module named ['\"]"
+            r"([A-Za-z_][A-Za-z0-9_.-]{0,100})['\"]",
+            value,
+        )
+        if found:
+            return found.group(1) + ": No module named " + found.group(2)
+        if re.fullmatch(r"(?:SyntaxError|IndentationError): [A-Za-z0-9 _.,:()'-]{1,160}", value):
+            return value[:200]
+    return "Untrusted MCP stderr redacted"
+
+
+def _write_mcp_diagnostic(runtime: Path, stderr_file: Path) -> None:
+    """Diagnostics are informational, never authorization evidence."""
+    if not stderr_file.is_file() or stderr_file.is_symlink():
+        return
+    try:
+        with stderr_file.open("rb") as source:
+            source.seek(max(0, stderr_file.stat().st_size - 2048))
+            tail = _safe_mcp_stderr_tail(source.read(2048))
+        logs = runtime.parents[1] / "logs"
+        _checked_path(logs)
+        destination = logs / (runtime.name + "-local-mcp-stderr.json")
+        if destination.is_symlink():
+            return
+        destination.write_text(
+            json.dumps({"reason_code": "MCP_CHILD_FAILURE", "stderr_tail": tail},
+                       sort_keys=True), encoding="utf-8",
+        )
+    except (OSError, PermissionError, ValueError):
+        return
+
+
 def _bridge(runtime: Path, entry: str) -> int:
     """Start a *suspended* child, assign Job Object, then resume; no race."""
     if os.name != "nt":
@@ -261,6 +380,7 @@ def _bridge(runtime: Path, entry: str) -> int:
     import subprocess
     import threading
     import tempfile
+    from aura_core.evolution.isolated_venv import isolated_python
 
     if (not runtime.is_absolute() or runtime.is_symlink() or
         not re.fullmatch(r"[A-Za-z0-9_./-]{1,150}\.py", entry) or
@@ -341,6 +461,8 @@ def _bridge(runtime: Path, entry: str) -> int:
 
     owned = []
     scratch = None
+    stderr_file = None
+    bridge_ok = False
     pi = PROCESS_INFORMATION()
     parent_in, child_in, parent_out, child_out, job = (HANDLE(), HANDLE(), HANDLE(), HANDLE(), HANDLE())
     try:
@@ -362,23 +484,38 @@ def _bridge(runtime: Path, entry: str) -> int:
         limits.ProcessMemoryLimit = 256 * 1024 * 1024
         if not kernel.SetInformationJobObject(job, 9, ctypes.byref(limits), ctypes.sizeof(limits)):
             raise OSError("Cannot establish mandatory Job Object limits")
-        # Keep MCP stderr separate from stdout JSON-RPC: never merge them.
-        # Suppress untrusted process diagnostics rather than logging secrets.
-        nul = kernel.CreateFileW("NUL", 0x40000000, 3, ctypes.byref(sa), 3, 0x80, None)
-        if not nul or int(nul) == ctypes.c_void_p(-1).value:
+        # Keep untrusted diagnostics away from the JSON-RPC stream and logs.
+        # Only recognized Python import/syntax errors are released after exit.
+        scratch = Path(tempfile.mkdtemp(prefix="aura-local-mcp-"))
+        stderr_file = scratch / "child.stderr"
+        child_err = kernel.CreateFileW(
+            str(stderr_file), 0x40000000, 1, ctypes.byref(sa), 2, 0x80, None,
+        )
+        if not child_err or int(child_err) == ctypes.c_void_p(-1).value:
             raise OSError("Cannot create isolated MCP stderr handle")
-        owned.append(nul)
+        owned.append(child_err)
         si = STARTUPINFO()
         si.cb = ctypes.sizeof(si)
         si.dwFlags = 0x100
-        si.hStdInput, si.hStdOutput, si.hStdError = child_in, child_out, nul
-        scratch = Path(tempfile.mkdtemp(prefix="aura-local-mcp-"))
+        si.hStdInput, si.hStdOutput, si.hStdError = child_in, child_out, child_err
         env = _scrubbed_windows_mcp_environment(scratch)
+        env["PYTHONPATH"] = os.pathsep.join((str(runtime / "src"), str(runtime)))
+        local_python = isolated_python(runtime) or Path(sys.executable)
+        if (runtime / ".venv").exists() and not (runtime / ".aura-isolated-env.json").is_file():
+            raise PermissionError("Package virtual environment lacks signed runtime metadata")
+        call = _project_script_launch(runtime, entry)
+        if call:
+            module, function = call
+            # Both names were parsed as Python identifiers, never shell tokens.
+            args = [str(local_python), "-B", "-s", "-u", "-c",
+                    "import importlib; getattr(importlib.import_module(" +
+                    repr(module) + "), " + repr(function) + ")()"]
+        else:
+            args = _isolated_entry_args(runtime, entry, local_python)
         packed = chr(0).join(f"{k}={v}" for k, v in sorted(env.items(), key=lambda p: p[0].lower())) + chr(0) * 2
         packed_buffer = ctypes.create_unicode_buffer(packed)
-        cmd = ctypes.create_unicode_buffer(subprocess.list2cmdline(
-            [sys.executable, "-B", "-s", "-u", str(runtime / entry)]))
-        if not kernel.CreateProcessW(sys.executable, cmd, None, None, True,
+        cmd = ctypes.create_unicode_buffer(subprocess.list2cmdline(args))
+        if not kernel.CreateProcessW(str(local_python), cmd, None, None, True,
                                     0x4 | 0x08000000 | 0x400,
                                     ctypes.cast(packed_buffer, ctypes.c_void_p), str(runtime),
                                     ctypes.byref(si), ctypes.byref(pi)):
@@ -429,8 +566,9 @@ def _bridge(runtime: Path, entry: str) -> int:
             # Only the numeric code crosses this boundary, never untrusted stderr.
             print(f"Local MCP job child exit code: {exit_code.value}", file=sys.stderr, flush=True)
             return 2
+        bridge_ok = True
         return 0
-    except (OSError, ValueError, PermissionError) as error:
+    except (OSError, ValueError, PermissionError, SandboxUntrusted) as error:
         print("Local MCP supervision failed: " + type(error).__name__ +
               f" (win32={ctypes.get_last_error()})", file=sys.stderr, flush=True)
         return 2
@@ -439,6 +577,13 @@ def _bridge(runtime: Path, entry: str) -> int:
         for handle in reversed(owned):
             if handle:
                 kernel.CloseHandle(handle)
+        if stderr_file is not None:
+            if bridge_ok:
+                log = runtime.parents[1] / "logs" / (runtime.name + "-local-mcp-stderr.json")
+                if not log.is_symlink():
+                    log.unlink(missing_ok=True)
+            else:
+                _write_mcp_diagnostic(runtime, stderr_file)
         if scratch is not None:
             shutil.rmtree(scratch, ignore_errors=True)
 

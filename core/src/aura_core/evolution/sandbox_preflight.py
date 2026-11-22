@@ -36,23 +36,81 @@ class SandboxUntrusted(RuntimeError):
 
 
 def choose_python_entrypoint(files: dict[str, bytes], hint: str) -> str:
-    """Prefer an explicit real MCP server over pyproject/package metadata."""
-    priority = ("server.py", "main.py", "mcp_server.py")
+    """Statically resolve Python MCP entrypoints; never import project modules.
+
+    PEP 621 [project.scripts] provides a *module name*, not a shell command.
+    Only a matching retained .py file may be selected. This does not run the
+    script or install dependencies.
+    """
+    import tomllib
+
+    candidates: list[str] = []
     if hint in files and hint.endswith(".py"):
-        candidates = [hint]
-    else:
-        candidates = []
+        candidates.append(hint)
+
+    pyproject = files.get("pyproject.toml")
+    if pyproject is not None:
+        if len(pyproject) > 128_000:
+            raise SandboxUntrusted("Oversized pyproject metadata")
+        try:
+            project = tomllib.loads(pyproject.decode("utf-8-sig"))
+        except (UnicodeError, ValueError) as exc:
+            raise SandboxUntrusted("Invalid pyproject TOML") from exc
+        metadata = project.get("project", {})
+        if not isinstance(metadata, dict):
+            raise SandboxUntrusted("Invalid pyproject project metadata")
+        scripts = metadata.get("scripts", {})
+        if not isinstance(scripts, dict) or len(scripts) > 64:
+            raise SandboxUntrusted("Invalid project script mapping")
+        for name, target in sorted(scripts.items()):
+            if not isinstance(name, str) or not isinstance(target, str):
+                raise SandboxUntrusted("Non-string project entrypoint")
+            # PEP 621: importable module:function, never arbitrary shell text.
+            match = re.fullmatch(
+                r"([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*):([A-Za-z_]\w*)",
+                target.strip(),
+            )
+            if match is None:
+                continue
+            module = match.group(1).replace(".", "/")
+            for path in (f"src/{module}.py", f"{module}.py",
+                         f"src/{module}/__main__.py", f"{module}/__main__.py"):
+                if path in files and path not in candidates:
+                    candidates.append(path)
+
+    ordered = ("server.py", "main.py", "mcp_server.py", "__main__.py")
     candidates.extend(
-        key for basename in priority for key in sorted(files)
+        key for basename in ordered for key in sorted(files)
         if key.rsplit("/", 1)[-1] == basename and key not in candidates
+        and (key.startswith("src/") or "/" not in key)
     )
     for path in candidates:
         if path not in files or path.count("/") > 8:
             continue
         code = files[path]
         if any(signature in code for signature in
-               (b"FastMCP", b"mcp.server", b"Server(")):
+               (b"FastMCP", b"MCPServer", b"mcp.server", b"Server(")):
             return path
+        if path.endswith("/__main__.py"):
+            # A conventional src/package/__main__.py often imports the actual
+            # MCPServer from a sibling module. Inspect only that declared
+            # local sibling; never import or execute either file.
+            from ast import ImportFrom, parse
+            parent = path.rsplit("/", 1)[0]
+            try:
+                tree = parse(code.decode("utf-8-sig"), filename=path)
+                imported = {
+                    node.module for node in __import__("ast").walk(tree)
+                    if isinstance(node, ImportFrom) and node.module and node.level >= 1
+                }
+            except (SyntaxError, UnicodeError, ValueError):
+                continue
+            for module in imported:
+                sibling = parent + "/" + module.replace(".", "/") + ".py"
+                data = files.get(sibling, b"")
+                if len(data) <= 512_000 and any(sig in data for sig in
+                       (b"FastMCP", b"MCPServer", b"mcp.server")):
+                    return path
     raise SandboxUntrusted("No supported Python MCP entrypoint")
 
 

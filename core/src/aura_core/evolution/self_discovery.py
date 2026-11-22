@@ -455,7 +455,7 @@ class SelfDiscoveryEngine:
         )
         with self._connect() as db:
             rows = db.execute(
-                "SELECT repository,description,stars,size_kb FROM evolution_proposals "
+                "SELECT repository,description,stars,size_kb,package_error FROM evolution_proposals "
                 "WHERE status='pending_owner_review' "
                 "AND (package_status IS NULL OR package_status IN ('pending', 'Queued') "
                 "OR (package_status='STAGING_REJECTED' "
@@ -468,27 +468,32 @@ class SelfDiscoveryEngine:
                 "'ZIP file budget exceeded',"
                 "'Binary content is not eligible for static staging',"
                 "'Static risk/paid API signature detected'"
-                "))) "
+                ")) OR (package_status='STAGING_REJECTED' "
+                "AND stage_retry_version<2 AND "
+                "package_error='Executable or suspicious archive content rejected')) "
                 "ORDER BY created_at LIMIT 50"
             ).fetchall()
         # Once-only migration recovery of bounded legacy failures. The new
         # scanner still rejects actual malicious code; other policy/permission
         # failures never enter this queue. No new repo required for retry.
         candidates = [
-            (repository, description, stars or 0, size_kb)
-            for repository, description, stars, size_kb in rows
+            (repository, description, stars or 0, size_kb, reason)
+            for repository, description, stars, size_kb, reason in rows
             if _valid_repository(repository)
             and not _SAAS.search(repository + " " + description)
         ]
         candidates.sort(
             key=lambda row: (
+                # Existing active/budget queue takes precedence; legacy script
+                # false-positive retry is one-time and lower priority.
+                1 if row[4] == "Executable or suspicious archive content rejected" else 0,
                 0 if _local_rank(row[0], row[1], row[2]) >= 10 else 1,
                 _size_tier(row[3]),
                 -_local_rank(row[0], row[1], row[2]),
                 row[0],
             )
         )
-        for repository, _, _, _ in candidates[:3]:
+        for repository, _, _, _, _ in candidates[:3]:
             report["attempted"] += 1
             try:
                 response = await asyncio.wait_for(self.gateway.invoke(MCPGatewayRequest(
@@ -519,7 +524,7 @@ class SelfDiscoveryEngine:
                     db.execute(
                         "UPDATE evolution_proposals SET package_status=?,source_sha256=?,"
                         "package_error=NULL,stage_attempts=stage_attempts+1,"
-                        "stage_retry_version=1 WHERE repository=?",
+                        "stage_retry_version=2 WHERE repository=?",
                         ("READY_FOR_OWNER_REVIEW", digest, repository),
                     )
                 report["staged_count"] += 1
@@ -532,7 +537,7 @@ class SelfDiscoveryEngine:
                     db.execute(
                         "UPDATE evolution_proposals SET package_status='STAGING_REJECTED',"
                         "package_error=?,stage_attempts=stage_attempts+1,"
-                        "stage_retry_version=1 WHERE repository=?", (reason, repository),
+                        "stage_retry_version=2 WHERE repository=?", (reason, repository),
                     )
                 report["rejected"].append({
                     "repository": repository, "reason": reason,

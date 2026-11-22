@@ -202,10 +202,15 @@ def test_size_aware_local_first_priority_and_existing_budget_retries(tmp_path):
     assert engine.proposals(20)[2]["package_status"] == "READY_FOR_OWNER_REVIEW"
     assert workspace.verified_packages() == []  # Gateway proof here is simulated; no files
     assert json.loads(workspace.active.read_text())["active"] == []
-    # Ready records and security-policy rejections must never be restaged.
+    # Ready records are never restaged. One legacy script false-positive is
+    # now eligible for its single authorized Gateway recheck alongside the
+    # remaining ordinary queued candidate.
     second = asyncio.run(engine.run_once())
-    assert second["staging_attempted"] == 1
+    assert second["staging_attempted"] == 2
     assert staged[0] == "local/tiny-fastmcp"
+    assert [r.arguments["repository"] for r in calls if r.capability_id == STAGE_CAPABILITY].count("local/bad-source") == 1
+    third = asyncio.run(engine.run_once())
+    assert third["staging_attempted"] == 0
 
 
 def test_local_rank_prefers_no_key_sqlite_over_generic_star_count():
