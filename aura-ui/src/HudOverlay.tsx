@@ -4,6 +4,8 @@ import { useAuraVoice } from "./voice/useAuraVoice";
 import { useContinuousAuraVoice } from "./voice/useContinuousAuraVoice";
 import DynamicHologram3D, { type VisualizationModelId } from "./components/DynamicHologram3D";
 import HudGameStudio from "./components/HudGameStudio";
+import { getContinuousEvolutionStatus, setContinuousEvolution,
+  type ContinuousEvolutionStatus } from "./api/client";
 import "./hud.css";
 
 type Region = {
@@ -89,6 +91,8 @@ export default function HudOverlay() {
   const [question, setQuestion] = useState("Ekranda hangi nesneler var?");
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState("");
+  const [continuous, setContinuous] = useState<ContinuousEvolutionStatus | null>(null);
+  const [continuousBusy, setContinuousBusy] = useState(false);
   const [trusted, setTrusted] = useState<{ token: string; until: number; remaining: number } | null>(null);
   const trustedRef = useRef(trusted);
   trustedRef.current = trusted;
@@ -101,6 +105,31 @@ export default function HudOverlay() {
     void desktop?.hudGetScene?.().then(setScene);
     return () => { detachScene?.(); detachInteractive?.(); };
   }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    const refresh = () => {
+      void getContinuousEvolutionStatus().then(status => {
+        if (mounted) setContinuous(status);
+      }).catch(() => { if (mounted) setContinuous(null); });
+    };
+    refresh();
+    const interval = window.setInterval(refresh, 5000);
+    return () => { mounted = false; window.clearInterval(interval); };
+  }, []);
+
+  const toggleContinuous = async () => {
+    if (!continuous || continuousBusy) return;
+    setContinuousBusy(true);
+    try {
+      setContinuous(await setContinuousEvolution(continuous.state !== "RUNNING"));
+      setError("");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Kendini geliştirme durumu değiştirilemedi");
+    } finally {
+      setContinuousBusy(false);
+    }
+  };
 
   const publishObject = useCallback(async (name: string) => {
     if (!name.trim()) return;
@@ -298,6 +327,18 @@ export default function HudOverlay() {
         {activeSession ? "TRUSTED SESSION İPTAL · " + activeSession.remaining + " KALDI" :
           "TRUSTED SESSION AÇ · 90S / 3 OKUMA"}
       </button>
+      <button aria-pressed={continuous?.state === "RUNNING"}
+        disabled={continuousBusy || !continuous}
+        onClick={() => void toggleContinuous()}>
+        <span className={continuous?.state === "RUNNING" ? "hud-evolution-pulse" : ""}>
+          {continuous?.state === "RUNNING" ? "●" : "○"}
+        </span>{" "}
+        KENDİNİ GELİŞTİRME {continuous?.state === "RUNNING" ? "AÇIK" : "KAPALI"}
+      </button>
+      {continuous && <small role="status">
+        TARANAN {continuous.scanned_candidates} · KUYRUKTA {continuous.queued_packages}
+        {" · "}AKTİF {continuous.active_count} · OWNER / ATTESTOR KORUMALI
+      </small>}
       <button onClick={() => voice.state === "recording" ? voice.stop() : voice.start()}>
         {voice.state === "recording" ? "KAYDI DURDUR" : "BAS-KONUŞ"}</button>
       <button aria-pressed={wake.active} onClick={() => wake.active ? wake.stop() : void wake.start()}>
