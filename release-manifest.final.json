@@ -3,9 +3,9 @@
   "version": "1.0.0-final",
   "status": "production-locked",
   "generated_at": "2026-11-22T06:55:00.000Z",
-  "git_commit": "bd772ffc3691440bb57b1f4f5fe175d7a6e52d5f",
+  "git_commit": "eaa49e4d593de9c0f0f3d084358a58c2840cf052",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:c3d1cd8b1c78aa8287143ec30f65aa55cd523a42238a81903839380c64838c5c",
+  "release_digest": "sha256:a84369ba400df72042d868afe4556bc194c241223651bc25f05c5138b2330544",
   "file_count": 461,
   "files": [
     {
@@ -1838,7 +1838,7 @@
     },
     {
       "path": "scripts/setup-autonomous-aura.ps1",
-      "sha256": "634a88d4fb99afefe6f3a71bcaa91bb1e8348a13f29fa72d5376daf075000210"
+      "sha256": "a34dcfc4caa9a1966face3d412e562ef68f70d61887efb65ea75fed767ed458e"
     },
     {
       "path": "scripts/Test-AuraF27NativeRuntimeToken.ps1",
