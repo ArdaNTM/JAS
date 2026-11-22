@@ -69,22 +69,46 @@ _PLATFORM = re.compile(
     re.IGNORECASE,
 )
 _UNSAFE = re.compile(
-    r"(?:\beval\s*\(|\bexec\s*\(|\bos\.system\s*\(|\bsubprocess\."
-    r"(?:Popen|run|call)\s*\(|\bcurl\s+[^\r\n]*\|\s*(?:bash|sh)|"
-    r"\bpowershell\s+-enc|\bInvoke-Expression|\bpickle\.loads\s*\()",
-    re.IGNORECASE,
+    # Broad process/network imports are normal for MCP servers. Reject only
+    # high-confidence obfuscated execution, reverse shells, and direct static-IP
+    # credential exfiltration. Inert static screening is NOT sandbox attestation.
+    r"(?i)(?:\b(?:eval|exec)\s*\(\s*(?:base64\.)?b64decode\s*\("
+    r"|\b(?:eval|exec)\s*\(\s*base64\.b64decode\s*\("
+    r"|\b(?:eval|exec)\s*\(\s*atob\s*\("
+    r"|\b(?:bash|sh)\s+-i\s*>?\s*&\s*/dev/tcp/"
+    r"|\bnc\s+-e\s+/bin/(?:sh|bash)\b"
+    r"|\bcurl\s+[^\r\n]*\|\s*(?:bash|sh)\b"
+    r"|\b(?:requests|httpx)\.post\s*\(\s*['\"]https?://"
+    r"(?:\d{1,3}\.){3}\d{1,3}[^'\"]*['\"][\s\S]{0,400}"
+    r"(?:os\.getenv|os\.environ|token|secret|password))",
 )
 _PAID = re.compile(
     r"(?i)(?:OPENAI_API_KEY|ANTHROPIC_API_KEY|STRIPE_SECRET_KEY|"
     r"BRIGHTDATA_API_KEY|SHODAN_API_KEY|VIRUSTOTAL_API_KEY|"
     r"BASECAMP_ACCESS_TOKEN|paid\s+(?:subscription|api\s+key)\s+required)",
 )
-_ENTRY = ("pyproject.toml", "package.json", "server.py", "main.py", "mcp_server.py")
-# Download budget is separate from the pre-existing member/file-count bounds.
-_MAX_ARCHIVE = 32 * 1024 * 1024
-_MAX_EXTRACTED = 32 * 1024 * 1024
-_MAX_FILE = 750_000
-_MAX_ARCHIVE_MEMBERS = 1500
+_ENTRY = (
+    "pyproject.toml", "package.json", "server.py", "main.py",
+    "mcp_server.py", "index.ts", "index.js", "index.mjs", "index.cjs",
+)
+_MIB = 1024 * 1024
+_GIB = 1024 * _MIB
+_MAX_ARCHIVE = 256 * _MIB
+_MAX_EXTRACTED = 512 * _MIB
+_MAX_FILE = 32 * _MIB
+_MAX_ARCHIVE_MEMBERS = 25_000
+_MAX_STATIC_FILES = 4096
+_MAX_STATIC_BYTES = 64 * _MIB
+_SKIP_DIRS = frozenset({
+    "docs", "doc", "images", "img", "assets", "media", "videos",
+    "examples", "benchmarks", "fixtures", "testdata", ".github",
+    "node_modules", "vendor", "tests", "test",
+})
+_SOURCE_SUFFIXES = frozenset({".py", ".ts", ".js", ".mjs", ".cjs"})
+_PASSIVE_SUFFIXES = frozenset({
+    ".svg", ".pdf", ".sqlite", ".db", ".lock", ".jsonl", ".csv",
+    ".parquet", ".arrow", ".zip", ".gz", ".tar", ".7z", ".rar",
+})
 # Only non-executable, well-known binary assets may be omitted from static
 # inspection. Unknown binary payloads and executable formats always reject.
 _PASSIVE_ASSET_SUFFIXES = frozenset({
@@ -96,36 +120,42 @@ _EXECUTABLE_SUFFIXES = frozenset({
     ".exe", ".dll", ".so", ".dylib", ".pyd", ".node", ".jar", ".class",
     ".wasm", ".msi", ".com", ".scr", ".bat", ".cmd", ".ps1", ".vbs",
     ".pyc", ".pyo", ".app", ".deb", ".rpm", ".apk", ".bin",
+    ".sys",
 })
 
 
-def _archive_budget() -> int:
-    """Reject malformed or unbounded overrides instead of disabling caps."""
-    raw = os.getenv("AURA_EVOLUTION_MAX_DOWNLOAD_BYTES")
+def _budget(name: str, default: int, minimum: int, maximum: int) -> int:
+    raw = os.getenv(name)
     if raw is None:
-        return _MAX_ARCHIVE
+        return default
     try:
         value = int(raw)
     except (TypeError, ValueError) as exc:
-        raise StagingRejected("Invalid evolution download budget") from exc
-    if not 1_048_576 <= value <= 64 * 1024 * 1024:
-        raise StagingRejected("Invalid evolution download budget")
+        raise StagingRejected("Invalid evolution " + name + " budget") from exc
+    if not minimum <= value <= maximum:
+        raise StagingRejected("Invalid evolution " + name + " budget")
     return value
+
+
+def _archive_budget() -> int:
+    return _budget("AURA_EVOLUTION_MAX_DOWNLOAD_BYTES", _MAX_ARCHIVE,
+                   _MIB, 512 * _MIB)
+
+
+def _extracted_budget() -> int:
+    return _budget("AURA_EVOLUTION_MAX_EXTRACTED_BYTES", _MAX_EXTRACTED,
+                   _MIB, 1024 * _MIB)
+
+
+def _file_budget() -> int:
+    return _budget("AURA_EVOLUTION_MAX_FILE_BYTES", _MAX_FILE,
+                   1024, 64 * _MIB)
 
 
 def _archive_member_budget() -> int:
-    """Bound all ZIP entries, including directories and ignored binary assets."""
-    raw = os.getenv("AURA_EVOLUTION_MAX_ARCHIVE_MEMBERS")
-    if raw is None:
-        return _MAX_ARCHIVE_MEMBERS
-    try:
-        value = int(raw)
-    except (TypeError, ValueError) as exc:
-        raise StagingRejected("Invalid evolution archive member budget") from exc
-    # A finite administrative override; never accept unbounded ZIP metadata.
-    if not 1 <= value <= 5000:
-        raise StagingRejected("Invalid evolution archive member budget")
-    return value
+    """Bound all ZIP entries, including directories and skipped binary assets."""
+    return _budget("AURA_EVOLUTION_MAX_ARCHIVE_MEMBERS", _MAX_ARCHIVE_MEMBERS,
+                   1, 50_000)
 
 
 class StagingRejected(ValueError):
@@ -146,9 +176,14 @@ def _checked_path(path: Path) -> Path:
 class EvolutionWorkspace:
     """Outside-checkout isolated storage. Never an execution sandbox."""
 
-    def __init__(self, root: Path | str, *, max_items: int = 24,
-                 max_bytes: int = 150_000_000):
-        if not 1 <= max_items <= 100 or not 1_000_000 <= max_bytes <= 1_000_000_000:
+    def __init__(self, root: Path | str, *, max_items: int | None = None,
+                 max_bytes: int | None = None):
+        if max_items is None:
+            max_items = _budget("AURA_EVOLUTION_MAX_ITEMS", 100, 1, 250)
+        if max_bytes is None:
+            max_bytes = _budget("AURA_EVOLUTION_MAX_BYTES", 5 * _GIB,
+                                _MIB, 10 * _GIB)
+        if not 1 <= max_items <= 250 or not _MIB <= max_bytes <= 10 * _GIB:
             raise ValueError("Invalid evolution capacity budget")
         root = Path(root).expanduser()
         if not root.is_absolute():
