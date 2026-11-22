@@ -44,6 +44,8 @@ def declared_dependencies(files: dict[str, bytes]) -> tuple[str, ...]:
         try:
             project = tomllib.loads(pyproject.decode("utf-8-sig"))
             metadata = project.get("project", {})
+            if not isinstance(metadata, dict):
+                raise SandboxUntrusted("Invalid project metadata")
             requires = metadata.get("requires-python")
             if requires is not None:
                 if not isinstance(requires, str) or len(requires) > 80:
