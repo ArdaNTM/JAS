@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-22T06:30:00.000Z",
+  "generated_at": "2026-11-22T06:35:00.000Z",
   "git_commit": "c7cfe64a195517f0a14868bfd846ba392de83844",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:ce666d28376fec5304e9c14a007b67f7ce2e392666343ac197896f19f2623dcb",
+  "release_digest": "sha256:dc85a05a302e17aa2a295dc1b6a120591be0d77e072b5ed78806f6c456320cb4",
   "file_count": 456,
   "files": [
     {
@@ -870,11 +870,11 @@
     },
     {
       "path": "core/src/aura_core/evolution/activation_delegation.py",
-      "sha256": "fbc25037603758456a121bf67ff2c32c5d017f577aa8379ee3a4d2e7cc82658f"
+      "sha256": "51d87572e9815346570a06baae9f1252008ef17596ff40a6d885986dcf62f803"
     },
     {
       "path": "core/src/aura_core/evolution/activation_runtime.py",
-      "sha256": "1af6dfcb4c747b1623d3f9d998dd8c4ac9368a3e117b1af6e12164a0e1928a31"
+      "sha256": "d84c2106fcb70d43467cc94493c952d229c388227b0662a933beb6a0352e23c6"
     },
     {
       "path": "core/src/aura_core/evolution/attestor_worker.py",
@@ -922,7 +922,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/owner_cli.py",
-      "sha256": "31ac059f4137cc4f6ec2341ffe334d9ca3ec24a39af7f8ec0332b6eeccde2b1b"
+      "sha256": "fb826466075b615c1b214b67c07d7ba93cc86312a9c9ceedfb39c239558ee87f"
     },
     {
       "path": "core/src/aura_core/evolution/owner_control_plane.py",
