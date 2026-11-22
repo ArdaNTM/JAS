@@ -96,8 +96,9 @@ def test_preflight_requires_hardened_no_network_containment(tmp_path):
     assert all(x in params for x in (
         "--network", "none", "--read-only", "--cap-drop", "ALL",
         "no-new-privileges", "--pids-limit", "--memory", "--cpus",
-        "--user", "65534:65534", "readonly",
+        "--user", "65534:65534",
     ))
+    assert any(",readonly" in item for item in params)
     assert "--privileged" not in params
     assert "host" not in params
     assert params[-2:] == ["-u", "server.py"]
