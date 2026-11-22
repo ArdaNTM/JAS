@@ -204,3 +204,71 @@ def test_continuous_routes_require_local_owner_and_do_not_issue_signatures():
         assert client.post("/api/evolution/continuous/start").json()["state"] == "RUNNING"
         assert client.post("/api/evolution/continuous/stop").json()["state"] == "IDLE"
         assert manager.scans <= 1
+
+
+def test_chat_phrase_activation_is_exact_and_requires_owner():
+    from aura_core.application.api import _continuous_evolution_command, create_api
+    from aura_core.config.runtime import RuntimeConfig
+
+    assert _continuous_evolution_command("Kendini geliştir!") == "start"
+    assert _continuous_evolution_command("Sürekli kendini geliştir.") == "start"
+    assert _continuous_evolution_command("Kendini geliştirmeyi durdur") == "stop"
+    assert _continuous_evolution_command("Bence kendini geliştir") is None
+    app = create_api(config=RuntimeConfig(runtime="mock", model="test"))
+    app.state.http_bearer_token = "t" * 40
+    app.state.http_principal_id = "local_owner"
+    app.state.continuous_evolution = ContinuousEvolutionController(
+        discovery=FakeDiscovery(), activation=FakeManager(),
+    )
+    auth = {"Authorization": "Bearer " + "t" * 40}
+    with TestClient(app) as client:
+        start = client.post("/api/assistant/respond", json={
+            "message": "Kendini geliştirme modunu aç",
+        }, headers=auth)
+        assert start.status_code == 200
+        assert "Taranan:" in start.json()["assistant_reply"]
+        assert app.state.continuous_evolution.status()["state"] == "RUNNING"
+        stop = client.post("/api/assistant/respond/stream", json={
+            "message": "Kendini geliştirmeyi durdur",
+        }, headers=auth)
+        assert stop.status_code == 200
+        events = [json.loads(line) for line in stop.text.splitlines() if line.strip()]
+        assert len(events) == 2 and events[1]["done"] is True
+        assert app.state.continuous_evolution.status()["state"] == "IDLE"
+
+
+def test_staging_prune_preserves_active_and_rejects_links(tmp_path):
+    import os
+    import time
+    from aura_core.evolution.external_staging import EvolutionWorkspace, StagingRejected
+
+    ws = EvolutionWorkspace(tmp_path / "outside", max_bytes=1_000_000)
+    stale = ws.root / "staging" / "rejected__old"
+    stale.mkdir()
+    (stale / "payload.bin").write_bytes(b"x" * 100)
+    active = ws.root / "staging" / "active__safe"
+    active.mkdir()
+    (active / "payload.bin").write_bytes(b"x" * 100)
+    stamp = time.time() - 3 * 24 * 3600
+    os.utime(stale, (stamp, stamp))
+    os.utime(active, (stamp, stamp))
+    ws.active.write_text(json.dumps({
+        "schema": "aura.external-capabilities.v1",
+        "active": [{"repository": "active/safe", "status": "ACTIVE"}],
+    }), encoding="utf-8")
+    ws.audit_rejection("rejected/old", "StagingRejected")
+    assert ws.prune_rejected_staging() == 1
+    assert not stale.exists() and active.exists()
+    secret = tmp_path / "secret"
+    secret.write_text("protected")
+    trap = ws.root / "staging" / "trap__old"
+    trap.mkdir()
+    try:
+        (trap / "link").symlink_to(secret)
+    except OSError:
+        pytest.skip("Symlink permission not available")
+    os.utime(trap, (stamp, stamp))
+    ws.audit_rejection("trap/old", "StagingRejected")
+    with pytest.raises(StagingRejected):
+        ws.prune_rejected_staging()
+    assert secret.read_text() == "protected"
