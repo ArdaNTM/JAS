@@ -620,6 +620,15 @@ class SelfDiscoveryEngine:
         with self._connect() as db:
             return int(db.execute("SELECT COUNT(*) FROM evolution_proposals").fetchone()[0])
 
+    def queued_count(self) -> int:
+        """Durable bounded staging/attestation backlog, including ready evidence."""
+        with self._connect() as db:
+            return int(db.execute(
+                "SELECT COUNT(*) FROM evolution_proposals "
+                "WHERE package_status IS NULL OR package_status "
+                "IN ('pending','Queued','READY_FOR_OWNER_REVIEW')"
+            ).fetchone()[0])
+
     def status(self) -> dict[str, object]:
         return {
             "enabled": self._task is not None and not self._task.done(),
