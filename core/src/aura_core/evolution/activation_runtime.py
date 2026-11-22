@@ -85,18 +85,45 @@ def runtime_fingerprint(workspace: EvolutionWorkspace, name: str) -> str:
     _checked_path(runtime)
     with (verified / "source.zip").open("rb") as stream:
         files, _entry, _skipped = _validated_files(stream)
+    # Docker-only packages retain the original exact-source contract.
+    # An explicitly installed local .venv is hashed *into* its independently
+    # signed runtime identity; an added/modified wheel invalidates evidence.
+    venv = runtime / ".venv"
+    local_env = venv.exists()
+    marker_name = ".aura-isolated-env.json"
+    if local_env:
+        if not venv.is_dir() or venv.is_symlink() or not (runtime / marker_name).is_file():
+            raise PermissionError("Untrusted isolated dependency environment")
+        if not (venv / "Scripts" / "python.exe").is_file() and os.name == "nt":
+            raise PermissionError("Isolated runtime interpreter missing")
+    elif (runtime / marker_name).exists():
+        raise PermissionError("Isolated dependency marker without environment")
     allowed = set(files) | {".aura-untrusted-review.json"}
+    if local_env:
+        allowed.add(marker_name)
     seen: set[str] = set()
+    environment_files: list[tuple[str, str]] = []
+    environment_bytes = 0
     for path in runtime.rglob("*"):
-        if len(seen) > len(allowed) + 20:
-            raise PermissionError("Untrusted additional runtime files")
         if path.is_symlink() or (hasattr(path, "is_junction") and path.is_junction()):
             raise PermissionError("Unsafe runtime symlink/junction")
         if path.is_file():
             rel = path.relative_to(runtime).as_posix()
+            if local_env and rel.startswith(".venv/"):
+                environment_bytes += path.stat().st_size
+                if environment_bytes > 512 * 1024 * 1024 or len(environment_files) >= 25_000:
+                    raise PermissionError("Isolated dependency footprint exceeds trusted budget")
+                digest = hashlib.sha256()
+                with path.open("rb") as file:
+                    while block := file.read(1024 * 1024):
+                        digest.update(block)
+                environment_files.append((rel, digest.hexdigest()))
+                continue
             if rel not in allowed:
                 raise PermissionError("Unexpected runtime executable or data")
             seen.add(rel)
+        if len(seen) > len(allowed) + 1:
+            raise PermissionError("Untrusted additional runtime files")
     if set(files) - seen:
         raise PermissionError("Prepared runtime missing source files")
     manifest = runtime / ".aura-untrusted-review.json"
@@ -116,6 +143,18 @@ def runtime_fingerprint(workspace: EvolutionWorkspace, name: str) -> str:
         if actual != files[rel]:
             raise PermissionError("Prepared runtime source changed")
         lines.append(rel + "\t" + hashlib.sha256(actual).hexdigest() + "\n")
+    if local_env:
+        environment_marker = runtime / marker_name
+        if environment_marker.is_symlink() or environment_marker.stat().st_size > 2048:
+            raise PermissionError("Invalid isolated environment metadata")
+        metadata = json.loads(environment_marker.read_text("utf-8"))
+        if (metadata.get("schema") != "aura.windows-isolated-venv.v1"
+                or not re.fullmatch(r"[0-9a-f]{64}", str(metadata.get("dependency_sha256")))):
+            raise PermissionError("Untrusted isolated dependency lock")
+        lines.append(marker_name + "\t" +
+                     hashlib.sha256(environment_marker.read_bytes()).hexdigest() + "\n")
+        for rel, digest in sorted(environment_files):
+            lines.append(rel + "\t" + digest + "\n")
     return hashlib.sha256("".join(lines).encode("utf-8")).hexdigest()
 
 
