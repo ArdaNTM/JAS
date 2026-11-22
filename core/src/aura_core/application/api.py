@@ -70,7 +70,7 @@ from aura_core.config.backend import BackendConfig
 from aura_core.config.runtime import RuntimeConfig
 from aura_core.contracts.messages import InferenceRequest, InferenceResponse
 from aura_core.contracts.ui import UIContractResponse
-from aura_core.kernel.permissions import AuthorizationDecision, AuthorizationRequest, RiskLevel
+from aura_core.kernel.permissions import AuthorizationDecision, AuthorizationLevel, AuthorizationRequest, RiskLevel
 from aura_core.kernel.events import KernelEvent
 from aura_core.mcp.gateway import MCPGatewayRequest
 from aura_core.kernel.capabilities import ProviderType
@@ -87,6 +87,37 @@ from aura_core.memory.chat_memory import ChatMemory
 from aura_core.memory.embeddings import OllamaEmbeddingProvider
 from aura_core.memory.semantic_store import SemanticMemoryStore
 from aura_core.observability.pipeline_trace import PipelineTrace
+
+
+def _external_mcp_execution_scope(permissions, principal_id: str, capability_id: str) -> str | None:
+    """Observe (never create) the exact active Owner ALLOW scope for a plan.
+
+    PermissionEngine's policy store remains unchanged and independently
+    authoritative at MCPGateway execution time. The model cannot choose scope.
+    """
+    if permissions is None:
+        return None
+    lock = getattr(permissions, "_lock", None)
+    policies = getattr(permissions, "_policies", None)
+    if lock is None or not isinstance(policies, dict):
+        return None
+    try:
+        with lock:
+            matched = {
+                policy.resource_scope
+                for policy in policies.values()
+                if not policy.revoked
+                and policy.decision is AuthorizationDecision.ALLOW
+                and policy.authorization_level == AuthorizationLevel.EXECUTE
+                and policy.principal_id == principal_id
+                and policy.capability_id == capability_id
+                and policy.operation_id == capability_id
+                and not policy.conditions
+                and (policy.expires_at is None or policy.expires_at.timestamp() > time.time())
+            }
+    except (AttributeError, TypeError, ValueError):
+        return None
+    return next(iter(matched)) if len(matched) == 1 else None
 
 
 logger = logging.getLogger("aura_core.http")
@@ -2265,12 +2296,7 @@ def create_api(
             # Never manufacture a scope from model output or package metadata.
             # Read only the still-active explicit PermissionEngine policy.
             permissions = getattr(kernel, "permission_engine", None)
-            read_scope = getattr(permissions, "explicit_execution_scope", None)
-            if not callable(read_scope):
-                raise ValueError("External MCP lacks an explicit authorized scope")
-            scope = read_scope(
-                principal_id=principal_id, capability_id=cap, operation_id=cap,
-            )
+            scope = _external_mcp_execution_scope(permissions, principal_id, cap)
             if not isinstance(scope, str) or not scope.startswith("evolution:isolated:"):
                 raise ValueError("External MCP lacks an explicit authorized scope")
         return GeneratedPlan(
