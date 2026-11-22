@@ -3,9 +3,9 @@
   "version": "1.0.0-final",
   "status": "production-locked",
   "generated_at": "2026-11-22T06:55:00.000Z",
-  "git_commit": "c7cfe64a195517f0a14868bfd846ba392de83844",
+  "git_commit": "e3cf6628cf8de86e0a87d92b1da0dc8594da1429",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:8554f8ce3483ca1852b771712861ffaca9be99aac92a6739f493477d1a0291ba",
+  "release_digest": "sha256:7cd7bcf1e3e23fd2051f9c5fec5aae04eee4264fb2335cd478de100aeb28d93c",
   "file_count": 456,
   "files": [
     {
@@ -38,7 +38,7 @@
     },
     {
       "path": ".github/workflows/aura-windows-launcher.yml",
-      "sha256": "9bfceada308fa7a2fca3770852d6b6fd8f6c0a9c963542fec6e6707a8e94cef8"
+      "sha256": "f92f2155e109c93dc9c2657a497ef3bc7aa6844deb128fc620d8346a4b715dec"
     },
     {
       "path": ".github/workflows/aura-windows-owner-security.yml",
@@ -870,11 +870,11 @@
     },
     {
       "path": "core/src/aura_core/evolution/activation_delegation.py",
-      "sha256": "cd8f0a5197f462a7523e2b28dc34de01e58479ac877a83daf8a836b70047db27"
+      "sha256": "375136047b1d8ab52d9bc518cbbeadba407207fb0a4c8ebe82e3ace5fd3e2020"
     },
     {
       "path": "core/src/aura_core/evolution/activation_runtime.py",
-      "sha256": "d84c2106fcb70d43467cc94493c952d229c388227b0662a933beb6a0352e23c6"
+      "sha256": "c741fd131458709cfb6f863ef2b6d02032248a8b36abc9b500d3f531553a9193"
     },
     {
       "path": "core/src/aura_core/evolution/attestor_worker.py",
@@ -886,7 +886,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/decision_engine.py",
-      "sha256": "9be2dd516022a6671a285576437c892139f38d8a88d99872e6b03a4f351ecbec"
+      "sha256": "8d6b73041e5ab0f00cbb6150ec9aa16aa5dadf7256c42c95e0083581fda8a0b7"
     },
     {
       "path": "core/src/aura_core/evolution/durable_attestation.py",
@@ -922,7 +922,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/owner_cli.py",
-      "sha256": "043e157871d6e0a9774a4e70708ebf2cd1d1089a37077042717fc13e592530e5"
+      "sha256": "2bda3adac4bf58d720f2c47b07762edcc794063bfec5c97d57822b7d57d82c61"
     },
     {
       "path": "core/src/aura_core/evolution/owner_control_plane.py",
@@ -998,7 +998,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/windows_owner_storage.py",
-      "sha256": "6ce977bf43b9c21736852baba24456c117ef53776aae4a6c05e612ec09829beb"
+      "sha256": "9d37d3bb0f171d66d0eb45e7249cca585e63aaec7674cea2c5e1a4db2bd66007"
     },
     {
       "path": "core/src/aura_core/filesystem/__init__.py",
