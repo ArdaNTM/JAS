@@ -339,7 +339,13 @@ def _bridge(runtime: Path, entry: str) -> int:
         system_root = os.environ.get("SystemRoot", r"C:\\Windows")
         env = {
             "SystemRoot": system_root, "WINDIR": system_root,
-            "PATH": str(Path(sys.executable).parent) + os.pathsep + str(Path(system_root) / "System32"),
+            # Windows venv redirector may need the trusted base Python DLL path.
+            # Do not inherit arbitrary user PATH entries or AURA secrets.
+            "PATH": os.pathsep.join((
+                str(Path(sys.executable).parent),
+                str(Path(sys.base_prefix)),
+                str(Path(system_root) / "System32"),
+            )),
             "PYTHONDONTWRITEBYTECODE": "1", "PYTHONNOUSERSITE": "1",
         }
         scratch = Path(tempfile.gettempdir()) / "aura-local-mcp"
