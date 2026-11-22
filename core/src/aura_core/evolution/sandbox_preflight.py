@@ -36,22 +36,57 @@ class SandboxUntrusted(RuntimeError):
 
 
 def choose_python_entrypoint(files: dict[str, bytes], hint: str) -> str:
-    """Prefer an explicit real MCP server over pyproject/package metadata."""
-    priority = ("server.py", "main.py", "mcp_server.py")
+    """Statically resolve Python MCP entrypoints; never import project modules.
+
+    PEP 621 [project.scripts] provides a *module name*, not a shell command.
+    Only a matching retained .py file may be selected. This does not run the
+    script or install dependencies.
+    """
+    import tomllib
+
+    candidates: list[str] = []
     if hint in files and hint.endswith(".py"):
-        candidates = [hint]
-    else:
-        candidates = []
+        candidates.append(hint)
+
+    pyproject = files.get("pyproject.toml")
+    if pyproject is not None:
+        if len(pyproject) > 128_000:
+            raise SandboxUntrusted("Oversized pyproject metadata")
+        try:
+            project = tomllib.loads(pyproject.decode("utf-8-sig"))
+        except (UnicodeError, ValueError) as exc:
+            raise SandboxUntrusted("Invalid pyproject TOML") from exc
+        scripts = project.get("project", {}).get("scripts", {})
+        if not isinstance(scripts, dict) or len(scripts) > 64:
+            raise SandboxUntrusted("Invalid project script mapping")
+        for name, target in sorted(scripts.items()):
+            if not isinstance(name, str) or not isinstance(target, str):
+                raise SandboxUntrusted("Non-string project entrypoint")
+            # PEP 621: importable module:function, never arbitrary shell text.
+            match = re.fullmatch(
+                r"([A-Za-z_]\\w*(?:\\.[A-Za-z_]\\w*)*):([A-Za-z_]\\w*)",
+                target.strip(),
+            )
+            if match is None:
+                continue
+            module = match.group(1).replace(".", "/")
+            for path in (f"src/{module}.py", f"{module}.py",
+                         f"src/{module}/__main__.py", f"{module}/__main__.py"):
+                if path in files and path not in candidates:
+                    candidates.append(path)
+
+    ordered = ("server.py", "main.py", "mcp_server.py", "__main__.py")
     candidates.extend(
-        key for basename in priority for key in sorted(files)
+        key for basename in ordered for key in sorted(files)
         if key.rsplit("/", 1)[-1] == basename and key not in candidates
+        and (key.startswith("src/") or "/" not in key)
     )
     for path in candidates:
         if path not in files or path.count("/") > 8:
             continue
         code = files[path]
         if any(signature in code for signature in
-               (b"FastMCP", b"mcp.server", b"Server(")):
+               (b"FastMCP", b"MCPServer", b"mcp.server", b"Server(")):
             return path
     raise SandboxUntrusted("No supported Python MCP entrypoint")
 
