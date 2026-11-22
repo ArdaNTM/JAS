@@ -28,6 +28,10 @@ from aura_core.evolution.sandbox_attestor import (
     SandboxClaims, SignedSandboxAttestation, DOMAIN, canonical_claims,
 )
 from aura_core.mcp.mcp_provider import MCPTool
+from aura_core.evolution.windows_job_mcp import (
+    LOCAL_POLICY_SHA256, LOCAL_TESTS_SHA256,
+    LocalWindowsMCPPreflight, local_binding, local_sign,
+)
 
 
 def _load_signer(path: Path) -> Ed25519PrivateKey:
@@ -69,10 +73,31 @@ class IndependentMCPAttestorWorker:
         import hashlib
         if hashlib.sha256(raw_pub).hexdigest() != grant["attestor_key_sha256"]:
             raise PermissionError("Signing key does not match independently pinned attestor")
-        sandbox = IsolatedMCPPreflight(self.workspace, image=grant["oci_image"])
-        report = await sandbox.probe(package)
-        if report.get("status") != "PREPARED_UNATTESTED":
-            raise PermissionError("Pinned isolated MCP initialize/tools-list failed")
+        # The Docker path is unchanged; local execution is a distinct,
+        # explicitly signed, weaker Windows-only Owner decision.
+        local_opt_in = (
+            os.name == "nt" and
+            grant.get("allow_local_windows_process", False) is True
+        )
+        use_local = local_opt_in and (
+            decision.category in {"windows_automation", "desktop_automation"}
+            or grant["oci_image"] is None
+        )
+        report = None
+        if not use_local:
+            if grant["oci_image"] is None:
+                raise PermissionError("Docker OCI digest absent")
+            sandbox = IsolatedMCPPreflight(self.workspace, image=grant["oci_image"])
+            report = await sandbox.probe(package)
+            if report.get("status") != "PREPARED_UNATTESTED":
+                if not local_opt_in:
+                    raise PermissionError("Pinned isolated MCP initialize/tools-list failed")
+                use_local = True
+        if use_local:
+            # Never sign Docker isolation facts for a Windows host process.
+            report = await LocalWindowsMCPPreflight(self.workspace).probe(package)
+        if report is None or report.get("status") != "PREPARED_UNATTESTED":
+            raise PermissionError("Owner-permitted MCP initialize/tools-list failed")
         tools = report.get("tool_schemas", {})
         if (not isinstance(tools, dict) or not tools
                 or len(tools) > grant["max_tools"]):
@@ -82,35 +107,60 @@ class IndependentMCPAttestorWorker:
         records = []
         for name in sorted(tools):
             tool = MCPTool(name=name, description="", input_schema=tools[name])
-            binding = tool_binding_digest(
-                repository=decision.repository, source_sha256=decision.source_sha256,
-                tree_sha256=tree, image=grant["oci_image"],
-                tool=tool, category=decision.category,
-            )
-            claims = SandboxClaims(
-                source_sha256=decision.source_sha256,
-                tests_sha256=grant["tests_sha256"],
-                image_digest=grant["oci_image"].split("@", 1)[1],
-                policy_sha256=grant["policy_sha256"],
-                binding_digest=binding, run_id=secrets.token_hex(16),
-                runner_id=grant["attestor_runner_id"],
-                issued_at=issue, expires_at=issue + 600,
-                exit_code=0, outcome="passed",
-                network_disabled=True, rootfs_readonly=True,
-            )
-            signature = self._key.sign(DOMAIN + canonical_claims(claims))
-            envelope = SignedSandboxAttestation(
-                key_id="operator_attestor", claims=claims,
-                signature_b64=base64.b64encode(signature).decode("ascii"),
-            )
+            if use_local:
+                from aura_core.evolution.activation_delegation import canonical
+                binding = local_binding(
+                    repository=decision.repository,
+                    source_sha256=decision.source_sha256,
+                    tree_sha256=tree, tool=tool, category=decision.category,
+                )
+                claims = {
+                    "schema": "aura.local-windows-job-mcp-attestation.v1",
+                    "source_sha256": decision.source_sha256,
+                    "runtime_tree_sha256": tree,
+                    "binding_digest": binding,
+                    "policy_sha256": LOCAL_POLICY_SHA256,
+                    "tests_sha256": LOCAL_TESTS_SHA256,
+                    "owner_grant_sha256": hashlib.sha256(canonical(grant)).hexdigest(),
+                    "runner_id": grant["attestor_runner_id"],
+                    "issued_at": issue, "expires_at": issue + 600,
+                    "job_object_kill_on_close": True,
+                    "outcome": "passed",
+                }
+                proof = local_sign(self._key, claims)
+            else:
+                binding = tool_binding_digest(
+                    repository=decision.repository, source_sha256=decision.source_sha256,
+                    tree_sha256=tree, image=grant["oci_image"],
+                    tool=tool, category=decision.category,
+                )
+                claims = SandboxClaims(
+                    source_sha256=decision.source_sha256,
+                    tests_sha256=grant["tests_sha256"],
+                    image_digest=grant["oci_image"].split("@", 1)[1],
+                    policy_sha256=grant["policy_sha256"],
+                    binding_digest=binding, run_id=secrets.token_hex(16),
+                    runner_id=grant["attestor_runner_id"],
+                    issued_at=issue, expires_at=issue + 600,
+                    exit_code=0, outcome="passed",
+                    network_disabled=True, rootfs_readonly=True,
+                )
+                signature = self._key.sign(DOMAIN + canonical_claims(claims))
+                envelope = SignedSandboxAttestation(
+                    key_id="operator_attestor", claims=claims,
+                    signature_b64=base64.b64encode(signature).decode("ascii"),
+                )
+                proof = envelope.to_dict()
             records.append({
                 "name": name, "input_schema": tool.input_schema,
-                "attestation": envelope.to_dict(),
+                "attestation": proof,
             })
         payload = {
             "schema": _SCHEMA, "repository": decision.repository,
             "runtime_tree_sha256": tree, "tools": records,
         }
+        if use_local:
+            payload["execution_profile"] = "windows-job-stdio"
         path = self.workspace.root / "verified" / package / "independent-attestations.json"
         if path.is_symlink():
             raise PermissionError("Attestation output cannot follow symlinks")
