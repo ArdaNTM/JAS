@@ -194,74 +194,11 @@ class IsolatedMCPPreflight:
         return total
 
     def _prune_old_rejected_staging(self) -> None:
-        """Remove only aged, demonstrably rejected staging copies.
-
-        Verified sources, runtime, signatures and all Owner receipts are never
-        touched. No unknown or active candidate is eligible for deletion.
-        """
-        staging = self.workspace.root / "staging"
-        _checked_path(staging)
-        inventory = self.workspace.active
-        if (inventory.is_symlink() or not inventory.is_file()
-                or inventory.stat().st_size > 200_000):
-            raise SandboxUntrusted("Untrusted active capability inventory")
-        data = json.loads(inventory.read_text("utf-8"))
-        if (not isinstance(data, dict)
-                or data.get("schema") != "aura.external-capabilities.v1"
-                or not isinstance(data.get("active"), list)
-                or len(data["active"]) > self.workspace.max_items):
-            raise SandboxUntrusted("Invalid active capability inventory")
-        statuses = {}
-        for row in data["active"]:
-            if isinstance(row, dict) and isinstance(row.get("repository"), str):
-                statuses[row["repository"]] = row.get("status")
-
-        rejected: dict[str, int] = {}
-        audit = self.workspace.root / "logs" / "staging-rejections.jsonl"
-        if audit.exists() or audit.is_symlink():
-            if audit.is_symlink() or not audit.is_file() or audit.stat().st_size > 200_000:
-                raise SandboxUntrusted("Unsafe staging rejection audit")
-            for line in audit.read_text("utf-8").splitlines():
-                try:
-                    row = json.loads(line)
-                except (TypeError, ValueError):
-                    continue
-                if (isinstance(row, dict) and row.get("status") == "STAGING_REJECTED"
-                        and isinstance(row.get("repository"), str)
-                        and type(row.get("timestamp")) is int):
-                    rejected[row["repository"]] = max(
-                        rejected.get(row["repository"], 0), row["timestamp"],
-                    )
-
-        cutoff = time.time() - 24 * 3600
-        for stage in sorted(staging.iterdir(), key=lambda p: p.lstat().st_mtime):
-            if stage.is_symlink() or (hasattr(stage, "is_junction") and stage.is_junction()):
-                raise SandboxUntrusted("Unsafe staging directory link")
-            if not stage.is_dir() or stage.stat().st_mtime >= cutoff:
-                continue
-            parts = stage.name.split("__")
-            if (len(parts) != 2 or not all(re.fullmatch(r"[A-Za-z0-9_.-]+", part)
-                                          and part not in (".", "..") for part in parts)):
-                continue
-            repository = "/".join(parts)
-            status = statuses.get(repository)
-            if status not in (None, "QUARANTINED"):
-                continue
-            # A rejection alone is not evidence against a separately verified
-            # package; never prune it on the strength of an old audit record.
-            rejected_only = (status is None
-                             and not (self.workspace.root / "verified" / stage.name).exists()
-                             and rejected.get(repository, 0) >= stage.stat().st_mtime)
-            if status != "QUARANTINED" and not rejected_only:
-                continue
-            _checked_path(stage)
-            for directory, dirs, files in os.walk(stage, followlinks=False):
-                for child in dirs + files:
-                    item = Path(directory) / child
-                    if (item.is_symlink() or
-                            (hasattr(item, "is_junction") and item.is_junction())):
-                        raise SandboxUntrusted("Unsafe staged evidence link")
-            shutil.rmtree(stage)
+        """Use the workspace's single, audited safe cleanup implementation."""
+        try:
+            self.workspace.prune_rejected_staging()
+        except StagingRejected as exc:
+            raise SandboxUntrusted("Unsafe evolution staging evidence") from exc
 
     def _verify_runtime_capacity(
         self, additional_bytes: int, *,
