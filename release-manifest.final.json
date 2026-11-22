@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-22T12:45:00.000Z",
+  "generated_at": "2026-11-22T00:55:38.361Z",
   "git_commit": "c7cfe64a195517f0a14868bfd846ba392de83844",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:8fde8818d79bd57ab6568471f57b4a56df7a2e398da811d7e4824baba398ed83",
+  "release_digest": "sha256:4d753eceed28a8294c09e812f96a562436cd9c2c6ab076aaf1cf572be1fa7e7d",
   "file_count": 450,
   "files": [
     {
@@ -886,7 +886,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/external_staging.py",
-      "sha256": "a83a510aa80202a665bcd3531a87b400261fd312bcdd533770ea13ec47ad02df"
+      "sha256": "69096f4b420f8b3b1a21521f938c2ec3a567e854a2889544dd0fa788a5901fd2"
     },
     {
       "path": "core/src/aura_core/evolution/goal_tree.py",
@@ -958,7 +958,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/self_discovery.py",
-      "sha256": "c5dcf8d5c4166bbf72b436fd21968adb92d83060eb8b25ce0b8f89598ea3bba2"
+      "sha256": "f484b3690eacc073a82875eef74edf8938d11d814807cbf80bd201657a9fe017"
     },
     {
       "path": "core/src/aura_core/evolution/self_discovery_api.py",

@@ -37,13 +37,20 @@ SEARCH_PER_PAGE = 6
 PERMITTED_LICENSES = frozenset({
     "MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC",
 })
-# These are operator-owned static queries, never user/LLM supplied search URLs.
-# Two broad, operator-owned searches limit unauthenticated API use.
-# Readme-level validation still filters SaaS/mandatory API-key integrations.
+# Fixed, operator-owned allowlist; never accept LLM/user-supplied URLs.
+# Target small/local MCP implementations rather than repeating broad top-star
+# results. Each manual scan tries at most two queries to bound GitHub API use.
 QUERIES = (
-    '"mcp-server" archived:false stars:>5',
-    "fastmcp archived:false stars:>5",
+    '"fastmcp" tool archived:false stars:>5',
+    '"mcp-server" sqlite archived:false stars:>5',
+    '"mcp-server" filesystem archived:false stars:>5',
+    '"mcp-server" git archived:false stars:>5',
+    '"mcp-server" fetch archived:false stars:>5',
+    '"mcp-server" memory archived:false stars:>5',
+    '"mcp-server" browser archived:false stars:>5',
+    '"modelcontextprotocol" server python archived:false stars:>5',
 )
+MAX_QUERIES_PER_MANUAL_SCAN = 2
 _REPO = re.compile(r"^[A-Za-z0-9_.-]{1,80}/[A-Za-z0-9_.-]{1,100}$")
 
 
@@ -284,7 +291,7 @@ class PublicGitHubDiscoveryMCPProvider:
                 )
             )
         return {
-            "items": candidates[:3],
+            "items": candidates[:SEARCH_PER_PAGE],
             "source": "github.com/search/repositories",
             "verification": "metadata_and_readme_only_not_code_audit",
         }
@@ -354,6 +361,11 @@ class SelfDiscoveryEngine:
                 staged_count INTEGER NOT NULL,
                 status TEXT NOT NULL
             )""")
+            # Persist the query cursor across Windows daemon restarts; old
+            # discovery_history rows are reused without resetting proposals.
+            self._cycle = int(db.execute(
+                "SELECT COALESCE(MAX(cycle),0) FROM discovery_history"
+            ).fetchone()[0])
 
     def _connect(self):
         return sqlite3.connect(str(self._db_path), timeout=5)
@@ -432,7 +444,8 @@ class SelfDiscoveryEngine:
                 "'GitHub download byte budget exceeded',"
                 "'Archive download exceeds maximum byte budget',"
                 "'Expanded repository budget exceeded',"
-                "'GitHub archive/metadata unavailable or rate limited')) "
+                "'GitHub archive/metadata unavailable or rate limited',"
+                "'Archive has too many members')) "
                 "OR (stage_attempts = 1 AND package_error="
                 "'Binary content is not eligible for static staging')"
                 "))) "
@@ -442,6 +455,7 @@ class SelfDiscoveryEngine:
         # search returns zero. Only bounded transport/budget retries and one
         # legacy binary-only re-evaluation are eligible, never generic
         # static risk, executable, or authorization-policy rejections.
+        # Old 120-member archive rejections now qualify for bounded retries.
         candidates = [
             (repository, description, stars or 0, size_kb)
             for repository, description, stars, size_kb in rows
@@ -532,9 +546,13 @@ class SelfDiscoveryEngine:
 
     async def run_once(self, *, full_scan: bool = False) -> dict[str, object]:
         async with self._lock:
-            indexes = (
-                range(len(QUERIES)) if full_scan
-                else (self._cycle % len(QUERIES),)
+            # A manual scan covers two *rotating* query slots, not the
+            # entire expanding allowlist (bounded public GitHub API use).
+            # _cycle was restored from persisted discovery_history.
+            query_count = MAX_QUERIES_PER_MANUAL_SCAN if full_scan else 1
+            indexes = tuple(
+                (self._cycle + offset) % len(QUERIES)
+                for offset in range(query_count)
             )
             self._cycle += len(indexes)
             seen: set[str] = set()
@@ -574,7 +592,14 @@ class SelfDiscoveryEngine:
                     successful_queries += 1
 
                     with self._connect() as db:
-                        for row in result["items"][:3]:
+                        # Review at most six already README-screened items and
+                        # insert up to three; catalogued popular repos must
+                        # not starve novel local candidates from the same scan.
+                        known = {r[0] for r in db.execute(
+                            "SELECT repository FROM evolution_proposals"
+                        )}
+                        eligible = []
+                        for row in result["items"][:SEARCH_PER_PAGE]:
                             if not isinstance(row, dict):
                                 continue
                             name = row.get("repository")
@@ -589,6 +614,14 @@ class SelfDiscoveryEngine:
                                     or type(stars) is not int
                                     or not 0 <= stars <= 2_000_000_000):
                                 continue
+                            eligible.append((row, name, stars, size_kb))
+                        eligible.sort(key=lambda item: (
+                            item[1] in known,
+                            _size_tier(item[3]),
+                            -_local_rank(item[1], _safe_text(item[0].get("description")), item[2]),
+                            item[1],
+                        ))
+                        for row, name, stars, size_kb in eligible[:3]:
                             seen.add(name)
                             proposal_id = hashlib.sha256(name.casefold().encode()).hexdigest()[:24]
                             try:

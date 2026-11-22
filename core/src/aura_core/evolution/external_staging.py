@@ -84,7 +84,7 @@ _ENTRY = ("pyproject.toml", "package.json", "server.py", "main.py", "mcp_server.
 _MAX_ARCHIVE = 32 * 1024 * 1024
 _MAX_EXTRACTED = 32 * 1024 * 1024
 _MAX_FILE = 750_000
-_MAX_FILES = 120
+_MAX_ARCHIVE_MEMBERS = 1500
 # Only non-executable, well-known binary assets may be omitted from static
 # inspection. Unknown binary payloads and executable formats always reject.
 _PASSIVE_ASSET_SUFFIXES = frozenset({
@@ -110,6 +110,21 @@ def _archive_budget() -> int:
         raise StagingRejected("Invalid evolution download budget") from exc
     if not 1_048_576 <= value <= 64 * 1024 * 1024:
         raise StagingRejected("Invalid evolution download budget")
+    return value
+
+
+def _archive_member_budget() -> int:
+    """Bound all ZIP entries, including directories and ignored binary assets."""
+    raw = os.getenv("AURA_EVOLUTION_MAX_ARCHIVE_MEMBERS")
+    if raw is None:
+        return _MAX_ARCHIVE_MEMBERS
+    try:
+        value = int(raw)
+    except (TypeError, ValueError) as exc:
+        raise StagingRejected("Invalid evolution archive member budget") from exc
+    # A finite administrative override; never accept unbounded ZIP metadata.
+    if not 1 <= value <= 5000:
+        raise StagingRejected("Invalid evolution archive member budget")
     return value
 
 
@@ -285,9 +300,10 @@ def _validated_files(archive: bytes, *, max_archive_bytes: int | None = None) ->
     archive_roots: set[str] = set()
     skipped_binaries = 0
     member_files = 0
+    max_members = _archive_member_budget()
     with z:
         infos = z.infolist()
-        if len(infos) > _MAX_FILES + 80:
+        if len(infos) > max_members:
             raise StagingRejected("Archive has too many members")
         for info in infos:
             raw = info.filename
@@ -322,7 +338,7 @@ def _validated_files(archive: bytes, *, max_archive_bytes: int | None = None) ->
                 raise StagingRejected("Case-fold duplicate archive member")
             seen.add(key)
             member_files += 1
-            if member_files > _MAX_FILES or info.file_size > _MAX_FILE:
+            if member_files > max_members or info.file_size > _MAX_FILE:
                 raise StagingRejected("ZIP file budget exceeded")
             if info.file_size > 100 * max(1, info.compress_size):
                 raise StagingRejected("ZIP compression ratio exceeded")
