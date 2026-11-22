@@ -206,19 +206,19 @@ def test_large_python_mcp_package_ast_up_to_250_modules_is_bounded():
         static_python_entry(files, "src/big_mcp/__main__.py")
 
 
-def test_legacy_v2_uv_flags_failure_can_retry_in_v4_without_replay():
+def test_legacy_v2_uv_flags_failure_can_retry_in_v5_without_replay():
     from aura_core.evolution.attestor_worker import (
         RECOVERY_EPOCH, _eligible_local_recovery,
     )
 
-    assert RECOVERY_EPOCH == "windows-isolated-wheels-20261122-v4"
+    assert RECOVERY_EPOCH == "windows-isolated-wheels-20261122-v5"
     v2 = {
         "status": "QUARANTINED", "reason_code": "SandboxUntrusted",
         "retry_count": 2, "recovery_epoch": "windows-isolated-wheels-20261122-v2",
     }
     assert _eligible_local_recovery(v2) is True
     assert _eligible_local_recovery({**v2, "recovery_epoch": RECOVERY_EPOCH}) is False
-    assert _eligible_local_recovery({**v2, "retry_count": 4}) is False
+    assert _eligible_local_recovery({**v2, "retry_count": 5}) is False
     assert _eligible_local_recovery({**v2, "status": "REVOKED"}) is False
     assert _eligible_local_recovery({**v2, "reason_code": "PermissionError"}) is False
     assert _eligible_local_recovery({**v2, "retry_count": True}) is False
@@ -229,11 +229,11 @@ def test_legacy_v2_uv_flags_failure_can_retry_in_v4_without_replay():
     }) is True
 
 
-def test_v4_retries_v3_transport_quarantine_once_and_denies_replay():
+def test_v5_retries_v3_transport_quarantine_once_and_denies_replay():
     from aura_core.evolution.attestor_worker import (
         RECOVERY_EPOCH, _eligible_local_recovery,
     )
-    assert RECOVERY_EPOCH == "windows-isolated-wheels-20261122-v4"
+    assert RECOVERY_EPOCH == "windows-isolated-wheels-20261122-v5"
     v3 = {
         "status": "QUARANTINED", "reason_code": "MCPError",
         "retry_count": 3, "recovery_epoch": "windows-isolated-wheels-20261122-v3",
@@ -242,10 +242,43 @@ def test_v4_retries_v3_transport_quarantine_once_and_denies_replay():
     assert _eligible_local_recovery({**v3, "reason_code": "McpError"}) is True
     assert _eligible_local_recovery({**v3, "reason_code": "SandboxUntrusted"}) is True
     assert _eligible_local_recovery({**v3, "recovery_epoch": RECOVERY_EPOCH}) is False
-    assert _eligible_local_recovery({**v3, "retry_count": 4}) is False
+    assert _eligible_local_recovery({**v3, "retry_count": 5}) is False
     assert _eligible_local_recovery({**v3, "status": "REVOKED"}) is False
     assert _eligible_local_recovery({**v3, "reason_code": "PermissionError"}) is False
     assert _eligible_local_recovery({**v3, "retry_count": True}) is False
+
+
+def test_v5_retries_only_v4_tool_or_schema_budget_failure_once():
+    from aura_core.evolution.attestor_worker import (
+        RECOVERY_EPOCH, _eligible_local_recovery,
+    )
+    old = {
+        "status": "QUARANTINED", "reason_code": "SandboxUntrusted",
+        "detail": "Local MCP tools/list missing or oversized",
+        "retry_count": 4, "recovery_epoch": "windows-isolated-wheels-20261122-v4",
+    }
+    assert RECOVERY_EPOCH == "windows-isolated-wheels-20261122-v5"
+    assert _eligible_local_recovery(old) is True
+    assert _eligible_local_recovery({
+        **old, "reason_code": "PermissionError",
+        "detail": "External MCP exceeded delegated tool budget",
+    }) is True
+    assert _eligible_local_recovery({
+        **old, "detail": "Oversized MCP tool declarations",
+    }) is True
+    assert _eligible_local_recovery({**old, "recovery_epoch": RECOVERY_EPOCH}) is False
+    assert _eligible_local_recovery({**old, "retry_count": 5}) is False
+    assert _eligible_local_recovery({**old, "status": "REVOKED"}) is False
+    assert _eligible_local_recovery({**old, "status": "DENIED"}) is False
+    assert _eligible_local_recovery({
+        **old, "reason_code": "PermissionError",
+        "detail": "Owner activation scope or lifetime invalid",
+    }) is False
+    assert _eligible_local_recovery({
+        **old, "reason_code": "SandboxUntrusted",
+        "detail": "Untrusted executable found in MCP ZIP",
+    }) is False
+    assert _eligible_local_recovery({**old, "retry_count": True}) is False
 
 
 def test_attestor_scan_quarantines_mcp_transport_exception_and_keeps_scanning(
@@ -301,7 +334,7 @@ def test_attestor_scan_quarantines_mcp_transport_exception_and_keeps_scanning(
     quarantine = json.loads(marker.read_text("utf-8"))
     assert quarantine["status"] == "QUARANTINED"
     assert quarantine["reason_code"] == "MCPError"
-    assert quarantine["recovery_epoch"] == "windows-isolated-wheels-20261122-v4"
+    assert quarantine["recovery_epoch"] == "windows-isolated-wheels-20261122-v5"
     assert "private_do_not_log" not in marker.read_text("utf-8")
     audit = (root / "logs" / "autonomous-activations.jsonl").read_text("utf-8")
     assert '"status": "QUARANTINED"' in audit
