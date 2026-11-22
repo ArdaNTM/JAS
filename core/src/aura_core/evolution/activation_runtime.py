@@ -94,7 +94,11 @@ def runtime_fingerprint(workspace: EvolutionWorkspace, name: str) -> str:
     if not manifest.is_file() or manifest.is_symlink() or manifest.stat().st_size > 4096:
         raise PermissionError("Prepared runtime marker absent")
     data = json.loads(manifest.read_text("utf-8"))
-    digest = hashlib.sha256((verified / "source.zip").read_bytes()).hexdigest()
+    hasher = hashlib.sha256()
+    with (verified / "source.zip").open("rb") as archive_stream:
+        while chunk := archive_stream.read(1024 * 1024):
+            hasher.update(chunk)
+    digest = hasher.hexdigest()
     if data.get("source_sha256") != digest or data.get("activation_performed") is not False:
         raise PermissionError("Runtime source marker changed")
     lines = []
@@ -128,7 +132,8 @@ class DockerMCPProvider(MCPProvider):
     def __init__(self, connection: MCPConnection, *, runtime: Path,
                  archive_sha256: str, workspace: EvolutionWorkspace,
                  package: str, on_failure: Callable[[str], None],
-                 owner_authorized: Callable[[], bool]):
+                 owner_authorized: Callable[[], bool],
+                 attestation_expires_at: int):
         super().__init__(connection)
         self.runtime = runtime
         self.archive_sha256 = archive_sha256
@@ -136,18 +141,23 @@ class DockerMCPProvider(MCPProvider):
         self.package = package
         self._on_failure = on_failure
         self._owner_authorized = owner_authorized
+        self._expires = attestation_expires_at
         self._healthy = True
 
     async def list_tools(self):
-        if not self._healthy or not self._owner_authorized():
-            raise PermissionError("Quarantined or revoked external provider")
+        if (not self._healthy or not self._owner_authorized()
+                or time.time() >= self._expires):
+            self._healthy = False
+            self._on_failure(self.package)
+            raise PermissionError("Quarantined, expired or revoked external provider")
         return await super().list_tools()
 
     async def call_tool(self, name, arguments=None):
-        if not self._healthy or not self._owner_authorized():
+        if (not self._healthy or not self._owner_authorized()
+                or time.time() >= self._expires):
             self._healthy = False
             self._on_failure(self.package)
-            raise PermissionError("Quarantined or revoked external provider")
+            raise PermissionError("Quarantined, expired or revoked external provider")
         try:
             # Prevent host-side file mutation after signed sandbox evidence.
             runtime_fingerprint(self.workspace, self.package)
@@ -166,6 +176,7 @@ class _Live:
     capabilities: tuple[str, ...]
     policies: tuple[str, ...]
     category: str
+    attestation_expires_at: int
 
 
 class DelegatedMCPActivationManager:
@@ -186,8 +197,9 @@ class DelegatedMCPActivationManager:
         self._stop = asyncio.Event()
 
     def _load_inventory(self) -> dict:
-        if self._inventory.is_symlink() or not self._inventory.is_file():
-            raise PermissionError("Active inventory must be a regular external file")
+        if (self._inventory.is_symlink() or not self._inventory.is_file()
+                or self._inventory.stat().st_size > 200_000):
+            raise PermissionError("Active inventory must be a bounded external file")
         data = json.loads(self._inventory.read_text("utf-8"))
         if (not isinstance(data, dict)
                 or data.get("schema") != "aura.external-capabilities.v1"
@@ -251,7 +263,7 @@ class DelegatedMCPActivationManager:
             trusted_runner_id=grant["attestor_runner_id"],
         )
 
-    async def _connect(self, name: str, grant: dict, entry: str):
+    async def _connect(self, name: str, grant: dict, entry: str, expires_at: int):
         runtime = self.workspace.root / "runtime" / name
         if self._factory is not None:
             return await self._factory(name, grant, entry)
@@ -273,6 +285,7 @@ class DelegatedMCPActivationManager:
                 workspace=self.workspace, package=name,
                 on_failure=lambda key: asyncio.create_task(self.quarantine(key)),
                 owner_authorized=lambda: self.delegation.verified_grant() is not None,
+                attestation_expires_at=expires_at,
             )
         except BaseException:
             await connection.close()
@@ -306,6 +319,7 @@ class DelegatedMCPActivationManager:
         attestor = self._attestor(grant)
         expected: dict[str, MCPTool] = {}
         proof_hashes: dict[str, str] = {}
+        expiries: list[int] = []
         for row in bundle["tools"]:
             if not isinstance(row, dict) or set(row) != {"name", "input_schema", "attestation"}:
                 raise PermissionError("Untrusted tool attestation format")
@@ -320,11 +334,13 @@ class DelegatedMCPActivationManager:
             envelope = SignedSandboxAttestation.from_dict(row["attestation"])
             if not attestor.verify(envelope, source_sha256=sha, binding_digest=identity):
                 raise PermissionError("Independent sandbox attestation rejected")
+            expiries.append(envelope.claims.expires_at)
             expected[tool.name] = tool
             proof_hashes[tool.name] = hashlib.sha256(
                 json.dumps(row["attestation"], sort_keys=True).encode()
             ).hexdigest()
-        provider = await self._connect(name, grant, entry)
+        expiry = min(expiries)
+        provider = await self._connect(name, grant, entry, expiry)
         try:
             tools = await asyncio.wait_for(provider.list_tools(), timeout=6)
             if (len(tools) != len(expected)
@@ -336,7 +352,7 @@ class DelegatedMCPActivationManager:
             # Re-check after startup: external runner must not mutate files.
             if runtime_fingerprint(self.workspace, name) != tree:
                 raise PermissionError("Runtime changed after independent attestation")
-            return decision, provider, tools, proof_hashes
+            return decision, provider, tools, proof_hashes, expiry
         except BaseException:
             await provider.close()
             raise
@@ -350,28 +366,52 @@ class DelegatedMCPActivationManager:
             return []
         successes: list[str] = []
         attempted = 0
+        # Expired sandbox evidence always retires old live providers before
+        # another trust decision. No MCP call may use stale evidence.
+        for name, active in tuple(self._active.items()):
+            if time.time() >= active.attestation_expires_at:
+                await self.quarantine(name)
         async with self._lock:
             existing = frozenset(value.category for value in self._active.values())
+            persistent = {
+                row["repository"]: row["status"]
+                for row in self._load_inventory()["active"]
+                if isinstance(row, dict)
+                and isinstance(row.get("repository"), str)
+                and row.get("status") in {"ACTIVE", "QUARANTINED", "REVOKED",
+                                           "WAITING_ATTESTATION"}
+            }
             for decision in self.decisions.evaluate_pending(limit=100):
                 if attempted >= max(1, min(3, limit)):
                     break
                 if decision.status != "AUTO_APPROVED_BY_POLICY":
                     continue
                 name = decision.repository.replace("/", "__")
-                if name in self._active or decision.category in existing:
+                if (name in self._active or decision.category in existing
+                        or persistent.get(decision.repository) in {"QUARANTINED", "REVOKED"}):
                     continue
                 attempted += 1
                 try:
-                    details, provider, tools, proofs = await self._verify_and_connect(name, grant)
-                    await self._register(name, details, provider, tools, proofs)
+                    details, provider, tools, proofs, expiry = await self._verify_and_connect(name, grant)
+                    await self._register(name, details, provider, tools, proofs, expiry)
                     successes.append(decision.repository)
                     existing = existing | {decision.category}
                 except Exception as exc:
-                    self._persist(decision.repository, "QUARANTINED",
-                                  reason_code=type(exc).__name__)
+                    # Missing/expired attestor observation is a dependency,
+                    # not an executed provider failure. Keep eligible for a
+                    # later independently signed observation, never execute.
+                    waiting = isinstance(exc, PermissionError) and (
+                        "signed sandbox results missing" in str(exc)
+                        or "attestation rejected" in str(exc)
+                    )
+                    self._persist(
+                        decision.repository,
+                        "WAITING_ATTESTATION" if waiting else "QUARANTINED",
+                        reason_code=type(exc).__name__,
+                    )
         return successes
 
-    async def _register(self, name, decision, provider, tools, proofs):
+    async def _register(self, name, decision, provider, tools, proofs, expiry):
         short = hashlib.sha256(name.encode()).hexdigest()[:16]
         provider_id = "aura.external." + short
         service = ServiceDefinition(
@@ -419,10 +459,11 @@ class DelegatedMCPActivationManager:
                           source_sha256=decision.source_sha256,
                           provider_id=provider_id, category=decision.category,
                           capabilities=capability_ids,
-                          tool_attestation_sha256=proofs)
+                          tool_attestation_sha256=proofs,
+                          attestation_expires_at=expiry)
             self._active[name] = _Live(provider, provider_id, service.service_id,
                                        tuple(capability_ids), tuple(policy_ids),
-                                       decision.category)
+                                       decision.category, expiry)
             if self.kernel.event_bus:
                 self.kernel.event_bus.publish(KernelEvent(
                     event_type="AutonomousCapabilityActivated",
