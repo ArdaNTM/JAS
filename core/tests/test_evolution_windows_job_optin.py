@@ -102,6 +102,11 @@ def test_static_python_review_rejects_non_mcp_and_never_executes(tmp_path):
         "def hello() -> str: return 'hi'\n"
     ).encode()
     assert static_python_entry({"server.py": source}, "server.py") == "server.py"
+    v2_source = source.replace(
+        b"from mcp.server.fastmcp import FastMCP",
+        b"from mcp.server.mcpserver import MCPServer",
+    ).replace(b"FastMCP('example')", b"MCPServer('example')")
+    assert static_python_entry({"server.py": v2_source}, "server.py") == "server.py"
     assert not flag.exists()
     with pytest.raises(SandboxUntrusted):
         static_python_entry({"server.py": b"def hello(): return 1"}, "server.py")
@@ -128,7 +133,7 @@ def test_scrubbed_windows_environment_can_import_trusted_mcp_sdk(tmp_path):
     assert Path(safe["USERPROFILE"]).resolve() == tmp_path.resolve()
     check = subprocess.run(
         [sys.executable, "-B", "-s", "-c",
-         "from mcp.server.fastmcp import FastMCP; print('mcp-sdk-ready')"],
+         "from mcp.server.mcpserver import MCPServer; print('mcp-sdk-ready')"],
         cwd=tmp_path, env=safe, capture_output=True, text=True, timeout=25,
     )
     assert check.returncode == 0, check.stderr[-1200:]
@@ -143,8 +148,8 @@ def test_windows_job_object_real_mcp_initialize_and_tools_list(tmp_path):
     from aura_core.mcp.connection import MCPConnection
     server = tmp_path / "server.py"
     server.write_text(
-        "from mcp.server.fastmcp import FastMCP\n"
-        "mcp = FastMCP('job-sandbox-test')\n"
+        "from mcp.server.mcpserver import MCPServer\n"
+        "mcp = MCPServer('job-sandbox-test')\n"
         "@mcp.tool()\n"
         "def hello() -> str: return 'hello'\n"
         "if __name__ == '__main__': mcp.run(transport='stdio')\n",
