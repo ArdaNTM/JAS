@@ -111,7 +111,8 @@ try {
     if (-not $acl.AreAccessRulesProtected) { exit 11 }
     $owner = $acl.GetOwner([Security.Principal.SecurityIdentifier]).Value
     if ($owner -in @('S-1-5-11', 'S-1-1-0', 'S-1-5-32-545')) { exit 12 }
-    $valid = @($owner, 'S-1-5-18', 'S-1-5-32-544', 'S-1-5-11')
+    $self = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+    $valid = @($owner, $self, 'S-1-5-18', 'S-1-5-32-544', 'S-1-5-11')
     $authRead = $false
     foreach ($ace in $acl.Access) {
         $sid = $ace.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value
