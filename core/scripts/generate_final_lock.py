@@ -62,6 +62,11 @@ def files_to_hash() -> list[Path]:
         ROOT / "core" / "scripts" / "enroll_local_owner.py",
         ROOT / "core" / "tests" / "test_owner_enrollment.py",
         ROOT / "core" / "scripts" / "provision_windows_owner.ps1",
+        # Scope-controlled Windows Owner autonomy bootstrap and lifecycle.
+        ROOT / "scripts" / "setup-autonomous-aura.ps1",
+        ROOT / "scripts" / "launch-aura-desktop.ps1",
+        ROOT / "scripts" / "aura-processes.ps1",
+        ROOT / "core" / "tests" / "test_evolution_windows_job_optin.py",
         ROOT / ".github" / "workflows" / "aura-windows-launcher.yml",
         ROOT / ".github" / "workflows" / "aura-windows-owner-security.yml",
         ROOT / "core" / "scripts" / "generate_final_lock.py",
