@@ -16,11 +16,15 @@ logger = logging.getLogger("aura_core.evolution.continuous")
 class ContinuousEvolutionController:
     """Run bounded public discovery, staging and signed-capability rechecks."""
 
-    def __init__(self, *, discovery, activation=None, interval_seconds: int = 240):
+    def __init__(self, *, discovery, activation=None, analyzer=None,
+                 interval_seconds: int = 240):
         if type(interval_seconds) is not int or not 180 <= interval_seconds <= 900:
             raise ValueError("Continuous scan period must be 180..900 seconds")
         self.discovery = discovery
         self.activation = activation
+        self.analyzer = analyzer
+        self._local_gaps = 0
+        self._analyzed_files = 0
         self.interval_seconds = interval_seconds
         self._task: asyncio.Task | None = None
         self._stop = asyncio.Event()
@@ -62,6 +66,8 @@ class ContinuousEvolutionController:
             "proposal_count": discovery.get("proposal_count", 0),
             "static_ready_count": discovery.get("verified_static_count", 0),
             "cycles": self._cycles,
+            "local_gap_count": self._local_gaps,
+            "analyzed_files": self._analyzed_files,
             "last_run": self._last_run,
             "last_error": self._last_error,
             "last_summary": self._last_summary,
@@ -94,6 +100,12 @@ class ContinuousEvolutionController:
                 if workspace is not None:
                     # Prune only age-proven rejected metadata before every scan.
                     await asyncio.to_thread(workspace.prune_rejected_staging)
+                if self.analyzer is not None:
+                    # Read-only bounded checkout analysis; no source edits,
+                    # model access, or policy mutation is possible here.
+                    local_report = await asyncio.to_thread(self.analyzer.scan)
+                    self._local_gaps = len(local_report.proposals)
+                    self._analyzed_files = local_report.scanned_files
                 result = await self.discovery.run_once(
                     full_scan=True, multi_source=True,
                 )
@@ -101,14 +113,14 @@ class ContinuousEvolutionController:
                     # Rechecks strictly require independently signed, fresh
                     # attestations and current Owner delegation.
                     active = await self.activation.scan()
-                    self._last_active = [
-                        name for name in active if isinstance(name, str)
-                    ][:10]
-                else:
-                    self._last_active = []
+                    newly_active = [name for name in active if isinstance(name, str)][:10]
+                    if newly_active:
+                        self._last_active = newly_active
                 self._cycles += 1
                 self._last_run = int(time.time())
-                self._scanned += int(result.get("new_count", 0))
+                self._scanned += max(
+                    len(result.get("items", [])), int(result.get("new_count", 0)),
+                )
                 self._last_summary = {
                     "new_count": int(result.get("new_count", 0)),
                     "staged_count": int(result.get("staged_count", 0)),
