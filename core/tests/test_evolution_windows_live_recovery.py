@@ -352,6 +352,149 @@ def test_attestor_scan_quarantines_mcp_transport_exception_and_keeps_scanning(
         asyncio.run(worker.scan())
 
 
+def test_expired_signed_local_attestation_recovers_without_lifting_unrelated_quarantine(
+    tmp_path, monkeypatch,
+):
+    import asyncio
+    import base64
+    import hashlib
+    import json
+    import os
+    import time
+    from types import SimpleNamespace
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    from aura_core.evolution.activation_delegation import canonical
+    from aura_core.evolution.activation_runtime import (
+        DelegatedMCPActivationManager, expired_attestation_evidence,
+    )
+    from aura_core.evolution.external_staging import EvolutionWorkspace
+    from aura_core.evolution import attestor_worker as worker_module
+    from aura_core.evolution import activation_runtime as runtime_module
+    from aura_core.evolution.windows_job_mcp import (
+        LOCAL_SCHEMA, LOCAL_POLICY_SHA256, LOCAL_TESTS_SHA256, local_sign,
+    )
+
+    workspace = EvolutionWorkspace(tmp_path / "evolution")
+    repository = "riponcm/projectmem"
+    package = "riponcm__projectmem"
+    folder = workspace.root / "verified" / package
+    folder.mkdir()
+    source = b"locked prior reviewed MCP source"
+    (folder / "source.zip").write_bytes(source)
+    signer = Ed25519PrivateKey.generate()
+    public = signer.public_key().public_bytes(
+        serialization.Encoding.PEM,
+        serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+    pub_path = workspace.root / "trust" / "sandbox-attestor.pub.pem"
+    pub_path.parent.mkdir(parents=True, exist_ok=True)
+    pub_path.write_bytes(public)
+    raw = signer.public_key().public_bytes(
+        serialization.Encoding.Raw,
+        serialization.PublicFormat.Raw,
+    )
+    grant = {
+        "allow_local_windows_process": True,
+        "attestor_key_sha256": hashlib.sha256(raw).hexdigest(),
+        "attestor_runner_id": "independent_operator",
+        "max_tools": 64,
+    }
+    now = int(time.time())
+    tree = "a" * 64
+    claims = {
+        "schema": LOCAL_SCHEMA,
+        "source_sha256": hashlib.sha256(source).hexdigest(),
+        "runtime_tree_sha256": tree,
+        "binding_digest": "b" * 64,
+        "policy_sha256": LOCAL_POLICY_SHA256,
+        "tests_sha256": LOCAL_TESTS_SHA256,
+        "owner_grant_sha256": hashlib.sha256(canonical(grant)).hexdigest(),
+        "runner_id": grant["attestor_runner_id"],
+        "issued_at": now - 900, "expires_at": now - 300,
+        "job_object_kill_on_close": True,
+        "outcome": "passed",
+    }
+    envelope = local_sign(signer, claims)
+    bundle_path = folder / "independent-attestations.json"
+    bundle = {
+        "schema": "aura.external-attested-tools.v1",
+        "repository": repository, "runtime_tree_sha256": tree,
+        "execution_profile": "windows-job-stdio",
+        "tools": [{"name": "memory", "input_schema": {"type": "object"},
+                   "attestation": envelope}],
+    }
+    bundle_path.write_text(json.dumps(bundle), encoding="utf-8")
+    assert expired_attestation_evidence(workspace, package, grant=grant, now=now)
+
+    class WindowsOsProxy:
+        name = "nt"
+
+        def __getattr__(self, attr):
+            return getattr(os, attr)
+
+    monkeypatch.setattr(worker_module, "os", WindowsOsProxy())
+    monkeypatch.setattr(runtime_module, "os", WindowsOsProxy())
+
+    # A stale proof with the specifically observed feedback-loop marker is
+    # WAITING_ATTESTATION, not a permanent execution authorization or revoke.
+    marker = folder / "local-windows-quarantined.json"
+    old = {
+        "status": "QUARANTINED", "reason_code": "PermissionError",
+        "detail": "Local Windows MCP candidate quarantined by independent attestor",
+        "retry_count": 5, "recovery_epoch": "windows-isolated-wheels-20261122-v5",
+    }
+    marker.write_text(json.dumps(old), encoding="utf-8")
+    manager = DelegatedMCPActivationManager(
+        workspace=workspace, kernel=SimpleNamespace(event_bus=None),
+    )
+    manager.delegation = SimpleNamespace(verified_grant=lambda: grant)
+    pending = SimpleNamespace(status="AUTO_APPROVED_BY_POLICY", repository=repository)
+    manager.decisions = SimpleNamespace(evaluate_pending=lambda limit: [pending])
+
+    async def refused_activation(*args):
+        raise PermissionError("Local Windows MCP candidate quarantined by independent attestor")
+
+    monkeypatch.setattr(manager, "_verify_and_connect", refused_activation)
+    assert asyncio.run(manager.scan()) == []
+    inventory = json.loads(workspace.active.read_text("utf-8"))
+    assert inventory["active"][0]["status"] == "WAITING_ATTESTATION"
+
+    worker = object.__new__(worker_module.IndependentMCPAttestorWorker)
+    worker.workspace = workspace
+    worker._delegation = SimpleNamespace(verified_grant=lambda: grant)
+    worker._decisions = SimpleNamespace(evaluate_pending=lambda limit: [pending])
+    attempted = []
+    async def safe_reobserve(name):
+        attempted.append(name)
+        return {"repository": repository, "attested_tools": 1}
+
+    monkeypatch.setattr(worker, "attest", safe_reobserve)
+    assert asyncio.run(worker.scan()) == [
+        {"repository": repository, "attested_tools": 1},
+    ]
+    assert attempted == [package]
+    assert not marker.exists()
+
+    # An attacker cannot claim expiry by changing the marker or a signature.
+    marker.write_text(json.dumps(old), encoding="utf-8")
+    modified = json.loads(bundle_path.read_text("utf-8"))
+    modified["tools"][0]["attestation"]["signature_b64"] = base64.b64encode(
+        b"x" * 64,
+    ).decode("ascii")
+    bundle_path.write_text(json.dumps(modified), encoding="utf-8")
+    assert not expired_attestation_evidence(workspace, package, grant=grant)
+    assert asyncio.run(worker.scan()) == []
+    assert marker.is_file()
+    marker.write_text(json.dumps({
+        **old, "reason_code": "PermissionError",
+        "detail": "Owner activation scope or lifetime invalid",
+    }), encoding="utf-8")
+    assert asyncio.run(worker.scan()) == []
+    assert marker.is_file()
+    assert attempted == [package]
+
+
 def test_local_recovery_does_not_scan_or_install_without_signed_owner():
     import asyncio
     from types import SimpleNamespace
