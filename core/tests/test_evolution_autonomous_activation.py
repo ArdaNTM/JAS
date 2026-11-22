@@ -102,6 +102,7 @@ def _signed_fixture(tmp_path, monkeypatch):
 
     owner_signer = Ed25519PrivateKey.generate()
     attestor_signer = Ed25519PrivateKey.generate()
+    workspace._testing_attestor_signer = attestor_signer
     owner_raw = owner_signer.public_key().public_bytes(
         serialization.Encoding.Raw, serialization.PublicFormat.Raw,
     )
@@ -364,3 +365,64 @@ def test_expired_independent_attestation_quarantines_or_waits(tmp_path, monkeypa
         status = json.loads(workspace.active.read_text())["active"][0]["status"]
         assert status == "WAITING_ATTESTATION"
     asyncio.run(run())
+
+
+def test_independent_attestor_observes_mcp_and_signs_exact_gateway_binding(
+    tmp_path, monkeypatch,
+):
+    from aura_core.evolution.attestor_worker import IndependentMCPAttestorWorker
+    from aura_core.evolution.sandbox_preflight import IsolatedMCPPreflight
+    workspace, name, repo = _signed_fixture(tmp_path, monkeypatch)
+    proof_path = workspace.root / "verified" / name / "independent-attestations.json"
+    proof_path.unlink()
+    tool = FakeProvider().tools[0]
+
+    async def fake_probe(self, package_name):
+        assert package_name == name
+        return {
+            "repository": repo,
+            "status": "PREPARED_UNATTESTED",
+            "tool_schemas": {tool.name: tool.input_schema},
+            "tool_count": 1, "sandbox_attested": False,
+            "activation_performed": False,
+        }
+
+    monkeypatch.setattr(IsolatedMCPPreflight, "probe", fake_probe)
+    attestor = IndependentMCPAttestorWorker(
+        workspace=workspace, key=workspace._testing_attestor_signer,
+    )
+    evidence = asyncio.run(attestor.attest(name))
+    assert evidence["attested_tools"] == 1
+    assert proof_path.is_file()
+    kernel, gateway = _kernel()
+    async def factory(*_):
+        return FakeProvider()
+    manager = DelegatedMCPActivationManager(
+        workspace=workspace, kernel=kernel, provider_factory=factory,
+    )
+    async def live():
+        assert await manager.scan() == [repo]
+        inventory = json.loads(workspace.active.read_text())
+        capability = inventory["active"][0]["capabilities"][0]
+        scope = "evolution:isolated:" + inventory["active"][0]["source_sha256"] + ":" + tool.name
+        response = await gateway.invoke(_request(capability, tool.name, scope))
+        assert response.decision is AuthorizationDecision.ALLOW
+        assert response.result == {"local": True}
+        await manager.close()
+    asyncio.run(live())
+
+
+@pytest.mark.skipif(os.name == "nt", reason="independent Windows ACL attestor manual provisioning")
+def test_independent_attestor_provisioning_never_overwrites_private_identity(tmp_path):
+    from aura_core.evolution.attestor_worker import provision_attestor
+    workspace = EvolutionWorkspace(tmp_path / "outside")
+    root = tmp_path / "owner-only-attestor"
+    root.mkdir()
+    root.chmod(0o700)
+    digest = provision_attestor(workspace=workspace, key_root=root)
+    assert len(digest) == 64
+    private = root / "sandbox-attestor.pem"
+    assert private.stat().st_mode & 0o077 == 0
+    assert (workspace.root / "trust" / "sandbox-attestor.pub.pem").is_file()
+    with pytest.raises(FileExistsError):
+        provision_attestor(workspace=workspace, key_root=root)
