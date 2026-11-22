@@ -331,7 +331,7 @@ class IndependentMCPAttestorWorker:
                         and previous.get("reason_code") == "PermissionError"
                         and previous.get("detail") ==
                         "Local Windows MCP candidate quarantined by independent attestor"
-                        and expired_attestation_evidence(self.workspace, package)
+                        and expired_attestation_evidence(self.workspace, package, grant=grant)
                     )
                     if not expiry_refresh and not _eligible_local_recovery(previous):
                         continue
