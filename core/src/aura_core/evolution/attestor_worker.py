@@ -185,33 +185,124 @@ class IndependentMCPAttestorWorker:
         return {"repository": decision.repository, "attested_tools": len(records),
                 "independent_runner": grant["attestor_runner_id"]}
 
+    @staticmethod
+    def _safe_detail(value: object) -> str:
+        """Bound diagnostics and scrub arbitrary untrusted strings."""
+        import re
+        text = "".join(c for c in str(value) if 32 <= ord(c) <= 126)[:300]
+        text = re.sub(
+            r"(?i)(?:bearer\\s+|(?:token|secret|password|api[_-]?key)\\s*[=:]\\s*)"
+            r"[^\\s,;]+", "[REDACTED]", text,
+        )
+        text = re.sub(r"[a-fA-F0-9]{40,}", "[REDACTED-HEX]", text)
+        return text[:240]
+
+    def _read_error_tail(self, package: str) -> str:
+        path = self.workspace.root / "logs" / (package + "-local-mcp-stderr.json")
+        try:
+            if path.is_symlink() or not path.is_file() or path.stat().st_size > 2048:
+                return ""
+            data = json.loads(path.read_text("utf-8"))
+            return self._safe_detail(data.get("stderr_tail", ""))
+        except (OSError, TypeError, ValueError):
+            return ""
+
+    def _quarantine_record(self, package: str, record: dict) -> None:
+        """Atomic status document and append-only bounded metadata audit."""
+        import tempfile
+        location = self.workspace.root / "verified" / package / "local-windows-quarantined.json"
+        if location.is_symlink():
+            raise PermissionError("Untrusted local quarantine path")
+        fd, temporary = tempfile.mkstemp(prefix=".local-quarantine-", dir=location.parent)
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as stream:
+                json.dump(record, stream, sort_keys=True, separators=(",", ":"))
+                stream.flush()
+                os.fsync(stream.fileno())
+            if os.path.getsize(temporary) > 2048:
+                raise PermissionError("Oversized local quarantine record")
+            os.replace(temporary, location)
+        finally:
+            if os.path.exists(temporary):
+                os.unlink(temporary)
+
+    def _audit_local_quarantine(self, package: str, record: dict) -> None:
+        import re
+        if not re.fullmatch(r"[A-Za-z0-9_.-]+__[A-Za-z0-9_.-]+", package):
+            raise PermissionError("Untrusted quarantine identity")
+        log = self.workspace.root / "logs" / "autonomous-activations.jsonl"
+        if log.is_symlink():
+            raise PermissionError("Untrusted autonomous activation audit")
+        if log.exists() and log.stat().st_size > 200_000:
+            rotated = log.with_suffix(".previous.jsonl")
+            if rotated.is_symlink():
+                raise PermissionError("Untrusted autonomous audit rotation")
+            log.replace(rotated)
+        with log.open("a", encoding="utf-8") as stream:
+            stream.write(json.dumps({
+                "time": int(time.time()), "repository": package.replace("__", "/"),
+                "status": "QUARANTINED",
+                "reason_code": record["reason_code"],
+                "detail": record["detail"], "stderr_tail": record["stderr_tail"],
+            }, sort_keys=True) + "\n")
+
     async def scan(self) -> list[dict]:
         grant = self._delegation.verified_grant()
         if grant is None:
             return []
         records = []
+        local_allowed = (os.name == "nt" and
+                         grant.get("allow_local_windows_process", False) is True)
+        # Only one post-upgrade retry for legacy failed dependency preflight.
+        recovery_epoch = "windows-isolated-wheels-20261122-v1"
         for decision in self._decisions.evaluate_pending(limit=100):
             if decision.status != "AUTO_APPROVED_BY_POLICY":
                 continue
             package = decision.repository.replace("/", "__")
             quarantine = self.workspace.root / "verified" / package / "local-windows-quarantined.json"
-            if quarantine.exists():
-                # Owner action is required to reset a failed local execution profile.
-                continue
+            retries = 0
+            if quarantine.exists() or quarantine.is_symlink():
+                if not local_allowed or quarantine.is_symlink() or quarantine.stat().st_size > 2048:
+                    continue
+                try:
+                    previous = json.loads(quarantine.read_text("utf-8"))
+                    retries = previous.get("retry_count", 0)
+                    if (not isinstance(previous, dict)
+                            or previous.get("status") not in {"QUARANTINED", "RETRYING"}
+                            or previous.get("recovery_epoch") == recovery_epoch
+                            or type(retries) is not int or retries != 0):
+                        continue
+                    # Retain quarantine marker until fresh signed evidence is
+                    # completely written. Core never activates a pending retry.
+                    self._quarantine_record(package, {
+                        "status": "RETRYING", "reason_code": "DEPENDENCY_RECOVERY",
+                        "detail": "One-time post-upgrade isolated environment retry",
+                        "stderr_tail": "", "retry_count": 1,
+                        "recovery_epoch": recovery_epoch,
+                    })
+                    retries = 1
+                except (OSError, ValueError, TypeError, PermissionError):
+                    continue
             try:
-                records.append(await self.attest(package))
+                record = await self.attest(package)
+                if quarantine.exists():
+                    quarantine.unlink()
+                records.append(record)
             except (ValueError, PermissionError, RuntimeError, OSError, TimeoutError) as exc:
-                # Docker mode retains the original WAITING_ATTESTATION contract.
-                if (os.name == "nt" and
-                    grant.get("allow_local_windows_process", False) is True):
-                    if not quarantine.is_symlink() and not quarantine.exists():
-                        try:
-                            with quarantine.open("x", encoding="utf-8") as stream:
-                                json.dump({"status": "QUARANTINED",
-                                           "reason_code": type(exc).__name__},
-                                          stream, sort_keys=True)
-                        except (OSError, ValueError):
-                            pass
+                if local_allowed:
+                    result = {
+                        "status": "QUARANTINED",
+                        "reason_code": type(exc).__name__,
+                        "detail": self._safe_detail(exc),
+                        "stderr_tail": self._read_error_tail(package),
+                        "retry_count": retries,
+                        "recovery_epoch": recovery_epoch,
+                    }
+                    try:
+                        self._quarantine_record(package, result)
+                        self._audit_local_quarantine(package, result)
+                    except (OSError, ValueError, PermissionError):
+                        pass
                 continue
         return records
 
