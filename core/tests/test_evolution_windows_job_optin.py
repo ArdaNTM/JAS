@@ -115,6 +115,37 @@ def test_bridge_refuses_non_windows_hosts(tmp_path):
         bridge_parameters(tmp_path, "server.py")
 
 
+def test_windows_job_object_real_mcp_initialize_and_tools_list(tmp_path):
+    import asyncio
+    import os
+    if os.name != "nt":
+        pytest.skip("Only a real Windows runner can inspect Job Object behavior")
+    from aura_core.mcp.connection import MCPConnection
+    server = tmp_path / "server.py"
+    server.write_text(
+        "from mcp.server.fastmcp import FastMCP\\n"
+        "mcp = FastMCP('job-sandbox-test')\\n"
+        "@mcp.tool()\\n"
+        "def hello() -> str: return 'hello'\\n"
+        "if __name__ == '__main__': mcp.run(transport='stdio')\\n",
+        encoding="utf-8",
+    )
+
+    async def check():
+        connection = MCPConnection()
+        try:
+            await asyncio.wait_for(
+                connection.connect_stdio(bridge_parameters(tmp_path, "server.py")), timeout=20
+            )
+            response = await asyncio.wait_for(connection.list_tools(), timeout=5)
+            tools = response.tools if hasattr(response, "tools") else response
+            assert any(tool.name == "hello" for tool in tools)
+        finally:
+            await connection.close()
+
+    asyncio.run(check())
+
+
 def test_setup_keeps_real_passkey_and_does_not_bypass_owner_security():
     root = Path(__file__).resolve().parents[2]
     setup = (root / "scripts" / "setup-autonomous-aura.ps1").read_text("utf-8")
