@@ -301,6 +301,8 @@ def _bridge(runtime: Path, entry: str) -> int:
     kernel.CloseHandle.restype = wintypes.BOOL
     kernel.WaitForSingleObject.argtypes = [HANDLE, DWORD]
     kernel.WaitForSingleObject.restype = DWORD
+    kernel.GetExitCodeProcess.argtypes = [HANDLE, ctypes.POINTER(DWORD)]
+    kernel.GetExitCodeProcess.restype = wintypes.BOOL
 
     owned = []
     pi = PROCESS_INFORMATION()
@@ -389,10 +391,19 @@ def _bridge(runtime: Path, entry: str) -> int:
                 sys.stdout.buffer.flush()
         finally:
             reader.close()
-        kernel.WaitForSingleObject(pi.hProcess, 2000)
+        waited = kernel.WaitForSingleObject(pi.hProcess, 2000)
+        exit_code = DWORD()
+        if waited != 0 or not kernel.GetExitCodeProcess(pi.hProcess, ctypes.byref(exit_code)):
+            print("Local MCP job stopped streaming before child exit", file=sys.stderr, flush=True)
+            return 2
+        if exit_code.value != 0:
+            # Only the numeric code crosses this boundary, never untrusted stderr.
+            print(f"Local MCP job child exit code: {exit_code.value}", file=sys.stderr, flush=True)
+            return 2
         return 0
     except (OSError, ValueError, PermissionError) as error:
-        print("Local MCP supervision failed: " + type(error).__name__, file=sys.stderr)
+        print("Local MCP supervision failed: " + type(error).__name__ +
+              f" (win32={ctypes.get_last_error()})", file=sys.stderr, flush=True)
         return 2
     finally:
         # Closing this Job handle terminates every child under KILL_ON_JOB_CLOSE.
@@ -412,4 +423,10 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    # A stdio bridge owns an input reader which can still be blocked while its
+    # peer disconnects. Finish Job/handle cleanup inside main(), then terminate
+    # without Python's daemon-thread interpreter-finalization race.
+    code = main()
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(code)
