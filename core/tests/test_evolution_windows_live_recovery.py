@@ -87,6 +87,57 @@ def test_pep621_project_script_resolves_into_src_layout():
     assert static_python_entry(files, "pyproject.toml") == "src/memory_mcp/runner.py"
 
 
+def test_package_main_wrapper_must_import_an_ast_verified_sibling():
+    files = {
+        "src/memory_mcp/__main__.py": (
+            b"from .server import main\n"
+            b"if __name__ == '__main__': main()\n"
+        ),
+        "src/memory_mcp/server.py": (
+            b"from mcp.server.mcpserver import MCPServer\n"
+            b"mcp = MCPServer('local')\n"
+            b"@mcp.tool()\n"
+            b"def recall() -> str: return 'ok'\n"
+            b"def main(): mcp.run(transport='stdio')\n"
+        ),
+    }
+    assert choose_python_entrypoint(files, "src/memory_mcp/__main__.py") == "src/memory_mcp/__main__.py"
+    assert static_python_entry(files, "src/memory_mcp/__main__.py") == "src/memory_mcp/__main__.py"
+    files["src/memory_mcp/server.py"] = b"def main(): pass\n"
+    with pytest.raises(Exception):
+        static_python_entry(files, "src/memory_mcp/__main__.py")
+
+
+def test_wheel_install_requires_validated_owner_permission_and_can_be_disabled(tmp_path):
+    from aura_core.evolution.isolated_venv import (
+        declared_dependencies, prepare_isolated_venv,
+    )
+    files = {
+        "pyproject.toml": (
+            b"[project]\nname='safe-local'\nrequires-python='>=3.12'\n"
+            b"dependencies=['mcp>=2.0','httpx>=0.27']\n"
+        ),
+    }
+    dependencies = declared_dependencies(files)
+    assert any(s.startswith("mcp") for s in dependencies)
+    assert any(s.startswith("httpx") for s in dependencies)
+    runtime = tmp_path / "runtime" / "vendor__package"
+    runtime.mkdir(parents=True)
+    with pytest.raises(Exception, match="disabled"):
+        prepare_isolated_venv(runtime, files, tmp_path, install=False)
+    assert not (runtime / ".venv").exists()
+
+
+@pytest.mark.parametrize("malicious", [
+    "-r other.txt", "-e .", "https://evil.example/wheel",
+    "git+https://github.com/example/package", "local/relative",
+])
+def test_untrusted_dependency_install_directives_denied(malicious):
+    from aura_core.evolution.isolated_venv import declared_dependencies
+    with pytest.raises(Exception):
+        declared_dependencies({"requirements.txt": malicious.encode()})
+
+
 def test_malicious_project_script_is_not_an_arbitrary_shell_command():
     files = {
         "pyproject.toml": b"[project.scripts]\nmemory = 'os.system:run'\n",
