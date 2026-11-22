@@ -598,8 +598,7 @@ $env:AURA_STORAGE_MODE = "local"
 # by the Owner independently of the delegation document.
 $env:AURA_EVOLUTION_AUTO_ACTIVATE = "0"
 $ownerPin = [Environment]::GetEnvironmentVariable("AURA_EVOLUTION_DELEGATION_KEY_SHA256", "User")
-if ($ownerPin -match '^[0-9a-f]{64}
-$env:AURA_API_PRINCIPAL_ID = "local_owner"
+if ($ownerPin -cmatch '^[0-9a-f]{64}$env:AURA_API_PRINCIPAL_ID = "local_owner"
 $env:AURA_CHAT_MEMORY_ENABLED = "0"
 $env:AURA_BACKGROUND_THINKING_ENABLED = "1"
 $env:AURA_BACKGROUND_THINKING_PRINCIPAL_ID = "local_owner"
@@ -831,18 +830,16 @@ finally {
 }
 ) {
     $env:AURA_EVOLUTION_DELEGATION_KEY_SHA256 = $ownerPin
-    $env:AURA_EVOLUTION_AUTO_ACTIVATE = "1"
     try {
         & $Python -m aura_core.evolution.activation_delegation --verify --evolution-root $env:AURA_EVOLUTION_ROOT 2>$null | Out-Null
-        if ($LASTEXITCODE -ne 0) {
-            $env:AURA_EVOLUTION_AUTO_ACTIVATE = "0"
+        if ($LASTEXITCODE -eq 0) {
+            $env:AURA_EVOLUTION_AUTO_ACTIVATE = "1"
         }
     }
     catch {
         $env:AURA_EVOLUTION_AUTO_ACTIVATE = "0"
     }
 }
-
 $env:AURA_API_PRINCIPAL_ID = "local_owner"
 $env:AURA_CHAT_MEMORY_ENABLED = "0"
 $env:AURA_BACKGROUND_THINKING_ENABLED = "1"
