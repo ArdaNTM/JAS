@@ -368,3 +368,43 @@ def test_review_v1_is_never_accepted_as_automatic_activation(sample, monkeypatch
     _signed_owner_delegation(workspace, monkeypatch)
     assert ActivationDelegationVerifier(workspace).verified_grant() is None
     assert EvolutionDecisionEngine(workspace).evaluate("test__local-memory").status == "POLICY_ELIGIBLE_PENDING_ATTESTATION"
+
+
+@pytest.mark.skipif(os.name != "nt", reason="real Windows mirror DACL contract")
+def test_windows_independent_core_reads_only_signed_owner_readonly_mirror(sample, monkeypatch):
+    """Public signed claims are readable cross-user; private Owner ACL unchanged."""
+    from aura_core.evolution.activation_delegation import ActivationDelegationVerifier
+    from aura_core.evolution.windows_owner_storage import (
+        harden_private_acl, require_private_acl,
+    )
+    workspace, _ = sample
+    _signed_activation_delegation(workspace, monkeypatch)
+    owner = workspace.root / "owner"
+    original = (
+        owner / "autonomous_delegation.json",
+        owner / "autonomous_delegation.pub.pem",
+    )
+    mirrors = (
+        owner / "public-autonomous-delegation.json",
+        owner / "public-autonomous-delegation.pub.pem",
+    )
+    for src, dst in zip(original, mirrors):
+        dst.write_bytes(src.read_bytes())
+        harden_private_acl(dst)
+        subprocess.run(
+            ["icacls.exe", str(dst), "/grant", "*S-1-5-11:R"],
+            check=True, capture_output=True, timeout=10,
+        )
+    # Core cannot access the protected originals in real multi-identity
+    # deployment. Simulate that by removing the private copy in this fixture.
+    for private in original:
+        private.unlink()
+    verifier = ActivationDelegationVerifier(workspace)
+    assert verifier.verified_grant() is not None
+    require_private_acl(owner)
+    # Granting WRITE to ordinary authenticated users must fail closed.
+    subprocess.run(
+        ["icacls.exe", str(mirrors[0]), "/grant", "*S-1-5-11:M"],
+        check=True, capture_output=True, timeout=10,
+    )
+    assert verifier.verified_grant() is None
