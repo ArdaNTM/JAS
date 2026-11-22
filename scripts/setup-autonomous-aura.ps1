@@ -190,6 +190,7 @@ if ($LASTEXITCODE -ne 0 -or $OwnerPin -notmatch '^[0-9a-f]{64}$') {
 }
 
 foreach ($setting in @{
+    'AURA_STORAGE_MODE' = 'local'
     'AURA_EVOLUTION_ROOT' = $EvolutionRoot
     'AURA_EVOLUTION_AUTO_ACTIVATE' = '1'
     'AURA_EVOLUTION_DELEGATION_KEY_SHA256' = $OwnerPin
