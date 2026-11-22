@@ -1409,7 +1409,10 @@ def create_api(
         providers = getattr(registry_kernel, "provider_registry", None)
         if caps is not None and providers is not None:
             try:
-                for record in caps.records():
+                for record in sorted(
+                    caps.records(),
+                    key=lambda item: not item.definition.capability_id.startswith("external.mcp."),
+                ):
                     definition = record.definition
                     if (definition.provider_type is not ProviderType.MCP
                             or not definition.tool_name or not record.available
@@ -1423,7 +1426,7 @@ def create_api(
                         "tool": definition.tool_name[:96],
                         "risk": str(definition.risk_level)[:16],
                     })
-                    if len(active_tools) == 24:
+                    if len(active_tools) >= 64:
                         break
             except (KeyError, ValueError, AttributeError, RuntimeError):
                 active_tools = []
@@ -2147,7 +2150,9 @@ def create_api(
     ) -> InferenceResponse:
         return application.infer(request)
 
-    async def _model_select_governed_tool(directive: str) -> GeneratedPlan:
+    async def _model_select_governed_tool(
+        directive: str, principal_id: str,
+    ) -> GeneratedPlan:
         """Model may propose ONE registered tool; it can never authorize one.
 
         Tool registration is not an authorization. The existing TaskService
@@ -2160,7 +2165,10 @@ def create_api(
             return GeneratedPlan(resource_scope="local-assistant", steps=())
 
         catalog = {}
-        for record in caps.records():
+        for record in sorted(
+            caps.records(),
+            key=lambda item: not item.definition.capability_id.startswith("external.mcp."),
+        ):
             definition = record.definition
             if (definition.provider_type is not ProviderType.MCP
                     or not definition.tool_name
@@ -2195,7 +2203,7 @@ def create_api(
                 # An unreachable provider cannot be selected. No fallback
                 # tool instance or permission policy is synthesized.
                 continue
-            if len(catalog) >= 16:
+            if len(catalog) >= 64:
                 break
 
         if not catalog:
@@ -2253,6 +2261,18 @@ def create_api(
         # The model cannot choose policy scope, principal, risk, operation
         # identifier, provider, or tool name.
         scope = "public-web" if cap in {"internet.search", "internet.fetch"} else "local_default"
+        if cap.startswith("external.mcp."):
+            # Never manufacture a scope from model output or package metadata.
+            # Read only the still-active explicit PermissionEngine policy.
+            permissions = getattr(kernel, "permission_engine", None)
+            read_scope = getattr(permissions, "explicit_execution_scope", None)
+            if not callable(read_scope):
+                raise ValueError("External MCP lacks an explicit authorized scope")
+            scope = read_scope(
+                principal_id=principal_id, capability_id=cap, operation_id=cap,
+            )
+            if not isinstance(scope, str) or not scope.startswith("evolution:isolated:"):
+                raise ValueError("External MCP lacks an explicit authorized scope")
         return GeneratedPlan(
             resource_scope=scope,
             steps=(GeneratedStep(
@@ -2282,7 +2302,7 @@ def create_api(
                 if (os.getenv("AURA_ASSISTANT_AUTO_TOOLS_ENABLED", "0") == "1"
                         and "No governed capability matches" in str(exc)):
                     try:
-                        generated = await _model_select_governed_tool(request.directive)
+                        generated = await _model_select_governed_tool(request.directive, principal_id)
                     except (ValueError, TypeError) as invalid:
                         raise HTTPException(status_code=422, detail=str(invalid)) from invalid
                 else:
