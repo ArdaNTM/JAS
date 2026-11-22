@@ -35,6 +35,27 @@ class SandboxUntrusted(RuntimeError):
     """A candidate cannot be safely started, has failed health, or lacks proof."""
 
 
+def choose_python_entrypoint(files: dict[str, bytes], hint: str) -> str:
+    """Prefer an explicit real MCP server over pyproject/package metadata."""
+    priority = ("server.py", "main.py", "mcp_server.py")
+    if hint in files and hint.endswith(".py"):
+        candidates = [hint]
+    else:
+        candidates = []
+    candidates.extend(
+        key for basename in priority for key in sorted(files)
+        if key.rsplit("/", 1)[-1] == basename and key not in candidates
+    )
+    for path in candidates:
+        if path not in files or path.count("/") > 8:
+            continue
+        code = files[path]
+        if any(signature in code for signature in
+               (b"FastMCP", b"mcp.server", b"Server(")):
+            return path
+    raise SandboxUntrusted("No supported Python MCP entrypoint")
+
+
 class IsolatedMCPPreflight:
     """Explicit operator-run preflight using an immutable OCI image and stdio.
 
@@ -64,14 +85,7 @@ class IsolatedMCPPreflight:
         with source.open("rb") as archive:
             details: dict[str, object] = {}
             files, _entrypoint, _skipped = _validated_files(archive, summary=details)
-        entry = data.get("entrypoint_hint", "")
-        if not isinstance(entry, str) or not _SERVER.fullmatch(entry):
-            raise SandboxUntrusted("Only explicit Python MCP entrypoints supported")
-        if entry not in files:
-            raise SandboxUntrusted("MCP entrypoint was not retained by static review")
-        if not any(token in files[entry] for token in
-                   (b"FastMCP", b"mcp.server", b"Server(")):
-            raise SandboxUntrusted("No confirmed Python MCP entrypoint signature")
+        entry = choose_python_entrypoint(files, data.get("entrypoint_hint", ""))
 
         destination = self.runtime_root / package_name
         if destination.exists():
