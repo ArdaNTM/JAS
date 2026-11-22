@@ -97,7 +97,7 @@ _MAX_ARCHIVE = 256 * _MIB
 _MAX_EXTRACTED = 512 * _MIB
 _MAX_FILE = 32 * _MIB
 _MAX_ARCHIVE_MEMBERS = 25_000
-_MAX_STATIC_FILES = 4096
+_MAX_STATIC_FILES = 25_000
 _MAX_STATIC_BYTES = 64 * _MIB
 _SKIP_DIRS = frozenset({
     "docs", "doc", "images", "img", "assets", "media", "videos",
@@ -108,6 +108,7 @@ _SOURCE_SUFFIXES = frozenset({".py", ".ts", ".js", ".mjs", ".cjs"})
 _PASSIVE_SUFFIXES = frozenset({
     ".svg", ".pdf", ".sqlite", ".db", ".lock", ".jsonl", ".csv",
     ".parquet", ".arrow", ".zip", ".gz", ".tar", ".7z", ".rar",
+    ".dat",
 })
 # Only non-executable, well-known binary assets may be omitted from static
 # inspection. Unknown binary payloads and executable formats always reject.
@@ -125,15 +126,23 @@ _EXECUTABLE_SUFFIXES = frozenset({
 
 
 def _budget(name: str, default: int, minimum: int, maximum: int) -> int:
+    label = {
+        "AURA_EVOLUTION_MAX_DOWNLOAD_BYTES": "download",
+        "AURA_EVOLUTION_MAX_EXTRACTED_BYTES": "extracted",
+        "AURA_EVOLUTION_MAX_FILE_BYTES": "file",
+        "AURA_EVOLUTION_MAX_ARCHIVE_MEMBERS": "member",
+        "AURA_EVOLUTION_MAX_BYTES": "workspace",
+        "AURA_EVOLUTION_MAX_ITEMS": "item",
+    }.get(name, "capacity")
     raw = os.getenv(name)
     if raw is None:
         return default
     try:
         value = int(raw)
     except (TypeError, ValueError) as exc:
-        raise StagingRejected("Invalid evolution " + name + " budget") from exc
+        raise StagingRejected("Invalid evolution " + label + " budget") from exc
     if not minimum <= value <= maximum:
-        raise StagingRejected("Invalid evolution " + name + " budget")
+        raise StagingRejected("Invalid evolution " + label + " budget")
     return value
 
 
@@ -182,8 +191,8 @@ class EvolutionWorkspace:
             max_items = _budget("AURA_EVOLUTION_MAX_ITEMS", 100, 1, 250)
         if max_bytes is None:
             max_bytes = _budget("AURA_EVOLUTION_MAX_BYTES", 5 * _GIB,
-                                _MIB, 10 * _GIB)
-        if not 1 <= max_items <= 250 or not _MIB <= max_bytes <= 10 * _GIB:
+                                1_000_000, 10 * _GIB)
+        if not 1 <= max_items <= 250 or not 1_000_000 <= max_bytes <= 10 * _GIB:
             raise ValueError("Invalid evolution capacity budget")
         root = Path(root).expanduser()
         if not root.is_absolute():
@@ -403,7 +412,8 @@ def _validated_files(
                 # Never silently drop executable payloads, even under docs/.
                 raise StagingRejected("Executable or suspicious archive content rejected")
             passive = suffix in (_PASSIVE_ASSET_SUFFIXES | _PASSIVE_SUFFIXES)
-            ignored = any(part.casefold() in _SKIP_DIRS for part in parts[:-1])
+            ignored = (any(part.casefold() in _SKIP_DIRS for part in parts[:-1])
+                       or rel.lower().endswith((".min.js", ".min.mjs", ".min.cjs")))
             if passive or ignored:
                 skipped_binaries += int(passive)
                 skipped_non_source += int(not passive)
