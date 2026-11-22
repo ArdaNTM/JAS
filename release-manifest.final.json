@@ -3,9 +3,9 @@
   "version": "1.0.0-final",
   "status": "production-locked",
   "generated_at": "2026-11-22T06:55:00.000Z",
-  "git_commit": "3fc51bfc24bcac7eae60b509096ad9e03b95e40f",
+  "git_commit": "a70f845c2a3aec97aac9526a15ffed534821bbb3",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:5d6450ff879b7df637702e40ae4d5286af2046f8d089490574d167ddb38b91bb",
+  "release_digest": "sha256:34c35835ea9dc4112802bab83227f8dde9d11190fe94bf549c2f877e49944227",
   "file_count": 461,
   "files": [
     {
@@ -998,7 +998,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/windows_job_mcp.py",
-      "sha256": "d1094047bb2f06f4b3bd73b55488ec2d78eecb56dd08ace35e664b45aec99f28"
+      "sha256": "fbee0f146d38c594b346ef0097dfced314d68a50a93f78df854ce3fd01b9a5fb"
     },
     {
       "path": "core/src/aura_core/evolution/windows_owner_storage.py",
@@ -1794,7 +1794,7 @@
     },
     {
       "path": "core/tests/test_evolution_windows_job_optin.py",
-      "sha256": "aea126747bfac1e8e7933a7db2073b6469e940aaac4f1cfa4be7f71b01c6bb41"
+      "sha256": "a80494c397683aeb45e0df67f31ff75de2a0330e32b99ccb6579800656509423"
     },
     {
       "path": "core/tests/test_osworld_secure_live.py",
