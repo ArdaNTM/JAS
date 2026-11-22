@@ -297,7 +297,10 @@ def _project_script_launch(runtime: Path, entry: str) -> tuple[str, str] | None:
     if not project.is_file() or project.is_symlink() or project.stat().st_size > 128_000:
         return None
     try:
-        scripts = tomllib.loads(project.read_text("utf-8-sig")).get("project", {}).get("scripts", {})
+        metadata = tomllib.loads(project.read_text("utf-8-sig")).get("project", {})
+        if not isinstance(metadata, dict):
+            raise SandboxUntrusted("Invalid project metadata")
+        scripts = metadata.get("scripts", {})
     except (UnicodeError, ValueError) as exc:
         raise SandboxUntrusted("Invalid project script metadata") from exc
     if not isinstance(scripts, dict) or len(scripts) > 64:
