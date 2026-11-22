@@ -207,7 +207,7 @@ def test_staging_old_script_false_positive_retried_only_once_through_gateway(tmp
 
 def test_malformed_project_metadata_rejected_without_dynamic_loading(tmp_path):
     from aura_core.evolution.isolated_venv import declared_dependencies
-    files = {"pyproject.toml": b"project = 'untrusted scalar'\\n"}
+    files = {"pyproject.toml": b"project = 'untrusted scalar'\n"}
     with pytest.raises(Exception):
         declared_dependencies(files)
     with pytest.raises(Exception):
@@ -223,7 +223,7 @@ def test_install_failure_diagnostics_are_redacted_and_bounded(tmp_path):
     runtime.mkdir(parents=True)
     _record_safe_install_failure(
         workspace, runtime,
-        "TOKEN=secret_should_not_be_logged\\nNo matching distribution found for secret.pkg",
+        "TOKEN=secret_should_not_be_logged\nNo matching distribution found for secret.pkg",
     )
     record = json.loads(
         (workspace / "logs" / "vendor__memory-local-mcp-stderr.json").read_text("utf-8")
