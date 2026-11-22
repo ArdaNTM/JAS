@@ -316,7 +316,7 @@ def _project_script_launch(runtime: Path, entry: str) -> tuple[str, str] | None:
 
 def _isolated_entry_args(runtime: Path, entry: str, python: Path) -> list[str]:
     """Execute src packages as modules, preserving relative imports."""
-    if not re.fullmatch(r"[A-Za-z0-9_./-]{1,180}\\.py", entry) or ".." in Path(entry).parts:
+    if not re.fullmatch(r"[A-Za-z0-9_./-]{1,180}\.py", entry) or ".." in Path(entry).parts:
         raise SandboxUntrusted("Invalid isolated Python MCP entrypoint")
     if entry.startswith("src/"):
         relative = entry.removeprefix("src/")
