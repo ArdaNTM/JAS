@@ -471,18 +471,12 @@ def test_signed_windows_nineteen_mcp_tools_preflight_attest_and_activate(
         }
         for i in range(19)
     }
-    padding = 27_351 - _schema_json_size(schemas)
+    base_size = _schema_json_size(schemas)
+    schemas["memory_00"]["properties"]["query"]["description"] = ""
+    overhead = _schema_json_size(schemas) - base_size
+    padding = 27_351 - base_size - overhead
     assert padding > 0
-    schemas["memory_00"]["properties"]["query"]["description"] = "x" * (
-        padding - _schema_json_size({
-            "memory_00": schemas["memory_00"],
-        }) + _schema_json_size({
-            "memory_00": {
-                "type": "object",
-                "properties": {"query": {"type": "string"}},
-            },
-        })
-    )
+    schemas["memory_00"]["properties"]["query"]["description"] = "x" * padding
     # Schema map accounting includes all tool names and JSON overhead.
     assert _schema_json_size(schemas) == 27_351
     tools19 = tuple(
