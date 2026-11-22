@@ -3,9 +3,9 @@
   "version": "1.0.0-final",
   "status": "production-locked",
   "generated_at": "2026-11-22T06:55:00.000Z",
-  "git_commit": "20121087aa6be4a2c44d3e334658ff173656e777",
+  "git_commit": "d6e3248f251011a5b00b6ca9708d0bcab4644020",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:0a58c4359fe50f8f248e33f5c6ad8a8d1453007a4e3ddd5db4b26fadf530a5cc",
+  "release_digest": "sha256:0ba8ed210ac541d90d947cbf83121f1e99ad9eac3091c68e5b53f293e4b3aa05",
   "file_count": 464,
   "files": [
     {
@@ -366,7 +366,7 @@
     },
     {
       "path": "core/src/aura_core/application/api.py",
-      "sha256": "1f6f4ab032f2103c5bda7ae801299ec58ad7496d4d3b32131f963664491aa5fb"
+      "sha256": "2b228a1b3532c6d1af6d9319b0d74d52f94056a5b418a56fc200b1aee5e75546"
     },
     {
       "path": "core/src/aura_core/application/approval_api.py",
@@ -874,11 +874,11 @@
     },
     {
       "path": "core/src/aura_core/evolution/activation_runtime.py",
-      "sha256": "14a2244cbbe56740a331cb991dd1fcc0adae97e2390e1049980f2490b54ac469"
+      "sha256": "434ab037cab3f0f6f0c23b67e6c59c10508028e32c15944689e431d8423f2436"
     },
     {
       "path": "core/src/aura_core/evolution/attestor_worker.py",
-      "sha256": "5b446727fd1d611a24112ecba323790356d9e32252097134a8961ef149f2fd9d"
+      "sha256": "7e2cd58b1cb3f1dc1f497b95f770ecb91067589f2be978eb6a5516d9233ece3f"
     },
     {
       "path": "core/src/aura_core/evolution/autonomous_analyzer.py",
@@ -1054,7 +1054,7 @@
     },
     {
       "path": "core/src/aura_core/kernel/permissions.py",
-      "sha256": "33777ddb421a873753cdc1e63fc9c32cd01b3370fc165b24e3ae8b3fc40d8035"
+      "sha256": "73d0008e0fc775471632f1fc269a2f9e47ca988301e37c69a715b2caa76881d3"
     },
     {
       "path": "core/src/aura_core/kernel/runtime.py",
@@ -1806,7 +1806,7 @@
     },
     {
       "path": "core/tests/test_evolution_windows_live_recovery.py",
-      "sha256": "9b8c4bbf33eae2593653a2b6697968afa724e7e0cdc4e9f9a34eb7af3672b746"
+      "sha256": "00f4e9e1accbcd6076573598a479ccbe884ceff2ac771814b695aad45a9f7446"
     },
     {
       "path": "core/tests/test_osworld_secure_live.py",
@@ -1850,11 +1850,11 @@
     },
     {
       "path": "scripts/aura-processes.ps1",
-      "sha256": "6b72eb6067388eca4ce9c711953b5faa87c8c7e0caef09497e168f6dce00d129"
+      "sha256": "4222debc2f34a6b581d46eed2a0b68ad422a9a2b405ac06351dae258bb8ad091"
     },
     {
       "path": "scripts/launch-aura-desktop.ps1",
-      "sha256": "26976c2a532dd23e7aeccc5138612b82ca149118854f6e79d8b74fe4fbe93335"
+      "sha256": "70e08fd9f08ce1e70c6c8f318f5fdfe3015642cbcc012d86a4cf56cf671d2754"
     },
     {
       "path": "scripts/setup-autonomous-aura.ps1",
