@@ -1030,7 +1030,7 @@ export default function AuraJarvisBridge({
         -EndIndex $jsx2.CloseParen
 
     if ($rootClose -lt $jsx2.OpenParen -or $rootClose -gt $jsx2.CloseParen) {
-        throw 'JSX root kapanış index'i ana return sınırları dışında.'
+        throw "JSX root kapanış index'i ana return sınırları dışında."
     }
 
     # Önce aynı Bridge JSX'i varsa temizle.
