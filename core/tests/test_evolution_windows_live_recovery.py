@@ -147,6 +147,47 @@ def test_malicious_project_script_is_not_an_arbitrary_shell_command():
         choose_python_entrypoint(files, "pyproject.toml")
 
 
+def test_staging_old_script_false_positive_retried_only_once_through_gateway(tmp_path):
+    import asyncio
+    import sqlite3
+    from types import SimpleNamespace
+    from aura_core.evolution.self_discovery import SelfDiscoveryEngine
+    from aura_core.evolution.external_staging import EvolutionWorkspace
+    from aura_core.kernel.permissions import AuthorizationDecision
+
+    class DeniedGateway:
+        calls = 0
+        async def invoke(self, request):
+            self.calls += 1
+            return SimpleNamespace(decision=AuthorizationDecision.DENY, result=None)
+
+    workspace = EvolutionWorkspace(tmp_path / "evolution")
+    gateway = DeniedGateway()
+    engine = SelfDiscoveryEngine(
+        gateway=gateway, db_path=workspace.root / "catalog" / "proposals.sqlite3",
+        workspace=workspace, auto_stage=True,
+    )
+    with sqlite3.connect(engine._db_path) as db:
+        db.execute(
+            "INSERT INTO evolution_proposals "
+            "(proposal_id, repository, url, description, license, capability_hint, "
+            " status, created_at, stars, size_kb, package_status, package_error, "
+            " stage_attempts, stage_retry_version) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            ("legacy-false-positive", "sample/local-memory",
+             "https://github.com/sample/local-memory", "local memory mcp",
+             "MIT", "MCP server", "pending_owner_review", 1.0, 30, 100,
+             "STAGING_REJECTED", "Executable or suspicious archive content rejected",
+             1, 1),
+        )
+    first = asyncio.run(engine._stage_pending())
+    assert first["attempted"] == 1
+    assert gateway.calls == 1
+    second = asyncio.run(engine._stage_pending())
+    assert second["attempted"] == 0
+    assert gateway.calls == 1
+
+
 def test_launcher_restores_only_missing_user_environment():
     root = Path(__file__).resolve().parents[2]
     text = (root / "scripts" / "launch-aura-desktop.ps1").read_text("utf-8")
