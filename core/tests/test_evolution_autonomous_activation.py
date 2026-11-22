@@ -395,7 +395,7 @@ def test_signed_windows_nineteen_mcp_tools_preflight_attest_and_activate(
     pkg = workspace.root / "verified" / name
     archive = io.BytesIO()
     with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as z:
-        z.writestr("snapshot/README.md", "Local memory MCP with signed proof")
+        z.writestr("snapshot/README.md", "Fully local, offline MCP server; no API keys required; signed proof")
         z.writestr(
             "snapshot/server.py",
             "from fastmcp import FastMCP\n"
