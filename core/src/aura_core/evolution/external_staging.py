@@ -426,7 +426,7 @@ def _validated_files(
                 looks_utf16 = header.startswith((bytes.fromhex("fffe"), bytes.fromhex("feff")))
                 if (header.startswith((b"MZ", bytes.fromhex("7f454c46"),
                                       bytes.fromhex("cffaedfe"), bytes.fromhex("feedfacf")))
-                        or (b"\\x00" in header and not looks_utf16)):
+                        or (bytes([0]) in header and not looks_utf16)):
                     raise StagingRejected("Executable or suspicious archive content rejected")
                 skipped_non_source += 1
                 continue
