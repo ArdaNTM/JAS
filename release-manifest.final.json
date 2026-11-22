@@ -3,9 +3,9 @@
   "version": "1.0.0-final",
   "status": "production-locked",
   "generated_at": "2026-11-22T06:55:00.000Z",
-  "git_commit": "cb7c1618455d1b587832cb4f29d3ff8db08a051f",
+  "git_commit": "bd772ffc3691440bb57b1f4f5fe175d7a6e52d5f",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:e0aa31b0b4c135be0c8fab8ef45f9fcbb368856eabd5b78cee019742b4101c4f",
+  "release_digest": "sha256:c3d1cd8b1c78aa8287143ec30f65aa55cd523a42238a81903839380c64838c5c",
   "file_count": 461,
   "files": [
     {
@@ -42,7 +42,7 @@
     },
     {
       "path": ".github/workflows/aura-windows-owner-security.yml",
-      "sha256": "90f1a140dd78f43cb8d1da9e0f324440c67d7c1a12d6ed1318321b6a122f73a0"
+      "sha256": "f662927ca2057fe96e349f3a11c78d73384fa866b507dd2539cf3bfa87195b46"
     },
     {
       "path": "aura-ui/electron-main.cjs",
@@ -1794,7 +1794,7 @@
     },
     {
       "path": "core/tests/test_evolution_windows_job_optin.py",
-      "sha256": "49878995da5c72e7d13419718244a226645b3953a60947b978261798d2e5b00b"
+      "sha256": "d7e7611ec4b4fbeef4badf065d703466c5f5ec902d742afd57617daea56158e2"
     },
     {
       "path": "core/tests/test_osworld_secure_live.py",
@@ -1838,7 +1838,7 @@
     },
     {
       "path": "scripts/setup-autonomous-aura.ps1",
-      "sha256": "795f28bb9493e5775d01a0a7131543195339481ff5f85ad598a0b64659cb52ca"
+      "sha256": "634a88d4fb99afefe6f3a71bcaa91bb1e8348a13f29fa72d5376daf075000210"
     },
     {
       "path": "scripts/Test-AuraF27NativeRuntimeToken.ps1",
