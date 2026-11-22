@@ -341,7 +341,7 @@ def _project_script_launch(runtime: Path, entry: str) -> tuple[str, str] | None:
         if not isinstance(scripts, dict) or len(scripts) > 64:
             raise SandboxUntrusted("Invalid project script declarations")
         relative = selected.relative_to(directory).as_posix()
-        for name, value in sorted(scripts.items()):
+        for name, value in scripts.items():
             if not isinstance(name, str) or not isinstance(value, str):
                 raise SandboxUntrusted("Invalid PEP-621 script target")
             match = re.fullmatch(
