@@ -17,6 +17,7 @@ import subprocess
 import sqlite3
 import time
 from pathlib import Path
+from urllib.parse import urlsplit
 from uuid import uuid4
 
 import httpx
@@ -34,6 +35,13 @@ SCOPE = "public-github"
 # Fixed decoded response budget per GitHub public JSON request (DoS bounded).
 GITHUB_RESPONSE_MAX_BYTES = 2 * 1024 * 1024
 SEARCH_PER_PAGE = 6
+MAX_SEARCH_PAGE = 5
+CATALOG_CAPABILITY = "public.mcp.catalog.search"
+CATALOG_TOOL = "search_catalog"
+CATALOG_SCOPE = "public-mcp-catalog"
+PYPI_SEEDS = ("mcp-server-memory", "mcp-server-time", "mcp-server-fetch",
+              "mcp-server-git", "mcp-server-sqlite", "fastmcp")
+REGISTRY_TERMS = ("memory", "filesystem", "sqlite", "git", "local", "python")
 PERMITTED_LICENSES = frozenset({
     "MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC",
 })
@@ -184,7 +192,9 @@ class PublicGitHubDiscoveryMCPProvider:
             description="Search bounded public open-source GitHub repositories",
             input_schema={
                 "type": "object",
-                "properties": {"query": {"type": "string", "enum": list(QUERIES)}},
+                "properties": {"query": {"type": "string", "enum": list(QUERIES)},
+                               "page": {"type": "integer", "minimum": 1,
+                                        "maximum": MAX_SEARCH_PAGE}},
                 "required": ["query"],
                 "additionalProperties": False,
             },
@@ -226,18 +236,23 @@ class PublicGitHubDiscoveryMCPProvider:
         if (grant is None or grant.capability_id != CAPABILITY_ID
                 or grant.tool_name != TOOL_NAME or grant.principal_id != "local_owner"):
             raise PermissionError("GitHub discovery requires an authorized MCPGateway dispatch")
-        if name != TOOL_NAME or not isinstance(arguments, dict) or set(arguments) != {"query"}:
+        if (name != TOOL_NAME or not isinstance(arguments, dict)
+                or set(arguments) not in ({"query"}, {"query", "page"})):
             raise ValueError("Invalid GitHub discovery operation")
         query = arguments["query"]
+        page = arguments.get("page", 1)
         if not isinstance(query, str) or query not in QUERIES:
             raise ValueError("Unapproved GitHub search query")
+        if type(page) is not int or not 1 <= page <= MAX_SEARCH_PAGE:
+            raise ValueError("Unapproved bounded GitHub search page")
 
         async with httpx.AsyncClient(
             transport=self._transport, timeout=httpx.Timeout(12.0, connect=5.0),
             follow_redirects=False, trust_env=False,
         ) as client:
             search = await self._get(client, "/search/repositories", {
-                "q": query, "per_page": SEARCH_PER_PAGE, "sort": "stars", "order": "desc",
+                "q": query, "per_page": SEARCH_PER_PAGE, "sort": "stars",
+                "order": "desc", "page": page,
             })
             rows = search.get("items")
             if not isinstance(rows, list):
@@ -328,6 +343,166 @@ class PublicGitHubDiscoveryMCPProvider:
             "source": "github.com/search/repositories",
             "verification": "metadata_and_readme_only_not_code_audit",
         }
+
+
+
+class PublicCatalogDiscoveryMCPProvider(PublicGitHubDiscoveryMCPProvider):
+    """Read-only MCP Registry / PyPI discovery behind one explicit Gateway tool.
+
+    Registry and PyPI metadata are *untrusted hints*. Before enqueueing, an
+    exact GitHub repository, permissive SPDX license, and a README showing
+    local/no-required-key operation must be corroborated via api.github.com.
+    No dynamic URL, redirect, package installation, code or Owner grant is used.
+    """
+
+    async def list_tools(self) -> tuple[MCPTool, ...]:
+        return (MCPTool(
+            name=CATALOG_TOOL, description="Search fixed free MCP registry and PyPI indexes",
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "source": {"type": "string", "enum": ["registry", "pypi"]},
+                    "slot": {"type": "integer", "minimum": 0, "maximum": 5},
+                },
+                "required": ["source"], "additionalProperties": False,
+            },
+        ),)
+
+    @staticmethod
+    def _github_repository(value: object) -> str | None:
+        if not isinstance(value, str) or len(value) > 256:
+            return None
+        parsed = urlsplit(value)
+        if (parsed.scheme != "https" or parsed.hostname != "github.com"
+                or parsed.port not in (None, 443) or parsed.username or parsed.password
+                or parsed.query or parsed.fragment):
+            return None
+        path = parsed.path.removesuffix(".git").strip("/")
+        return path if _valid_repository(path) else None
+
+    async def _index(self, client: httpx.AsyncClient, *, source: str, slot: int) -> dict:
+        if source == "registry":
+            url = "https://registry.modelcontextprotocol.io/v0.1/servers"
+            params = {"search": REGISTRY_TERMS[slot], "version": "latest", "limit": 8}
+        else:
+            url = "https://pypi.org/pypi/" + PYPI_SEEDS[slot] + "/json"
+            params = None
+        try:
+            async with client.stream("GET", url, params=params, headers={
+                "Accept": "application/json",
+                "User-Agent": "AURA-JAS-Local-Catalog/1.0",
+            }) as response:
+                if response.status_code in (403, 429):
+                    raise DiscoveryUnavailable(source + " rate limit reached (403/429)")
+                if response.status_code == 404:
+                    return {}
+                if response.status_code != 200:
+                    raise DiscoveryUnavailable(source + " public catalog unavailable")
+                data = bytearray()
+                async for chunk in response.aiter_bytes():
+                    if len(data) + len(chunk) > 262_144:
+                        raise DiscoveryUnavailable(source + " index exceeds 256 KiB")
+                    data.extend(chunk)
+            payload = json.loads(data)
+            if not isinstance(payload, dict):
+                raise DiscoveryUnavailable("Invalid public catalog JSON response")
+            return payload
+        except (httpx.RequestError, ValueError) as exc:
+            raise DiscoveryUnavailable(source + " public catalog connection failed") from exc
+
+    async def call_tool(self, name: str,
+                        arguments: dict | None = None) -> dict[str, object]:
+        grant = current_dispatch()
+        if (grant is None or grant.capability_id != CATALOG_CAPABILITY
+                or grant.tool_name != CATALOG_TOOL or grant.principal_id != "local_owner"):
+            raise PermissionError("Public catalog requires MCPGateway authorization")
+        if (name != CATALOG_TOOL or not isinstance(arguments, dict)
+                or set(arguments) not in ({"source"}, {"source", "slot"})):
+            raise ValueError("Unsupported public catalog operation")
+        source, slot = arguments.get("source"), arguments.get("slot", 0)
+        if source not in ("registry", "pypi") or type(slot) is not int or not 0 <= slot < 6:
+            raise ValueError("Unapproved catalog source or slot")
+
+        async with httpx.AsyncClient(
+            transport=self._transport, timeout=httpx.Timeout(15.0, connect=5.0),
+            follow_redirects=False, trust_env=False,
+        ) as client:
+            payload = await self._index(client, source=source, slot=slot)
+            hints: list[tuple[str, str]] = []
+            if source == "registry":
+                rows = payload.get("servers")
+                if not isinstance(rows, list):
+                    rows = []
+                for row in rows[:8]:
+                    if not isinstance(row, dict):
+                        continue
+                    server = row.get("server", row)
+                    if not isinstance(server, dict):
+                        continue
+                    repository = server.get("repository")
+                    url = repository.get("url") if isinstance(repository, dict) else None
+                    name = self._github_repository(url)
+                    if name is not None:
+                        hints.append((name, _safe_text(server.get("description"))))
+            else:
+                info = payload.get("info")
+                if isinstance(info, dict):
+                    values = " ".join(str(info.get(key) or "")[:500]
+                                      for key in ("name", "keywords", "summary")).casefold()
+                    if "mcp" in values or "fastmcp" in values:
+                        urls = info.get("project_urls")
+                        sources = list(urls.values())[:10] if isinstance(urls, dict) else []
+                        sources.append(info.get("home_page"))
+                        for url in sources:
+                            name = self._github_repository(url)
+                            if name is not None:
+                                hints.append((name, _safe_text(info.get("summary"))))
+                                break
+
+            candidates: list[dict[str, object]] = []
+            for name, hint in hints[:4]:
+                try:
+                    repo = await self._get(client, "/repos/" + name)
+                    if (repo.get("full_name") != name or repo.get("private") is True
+                            or repo.get("archived") is True or repo.get("fork") is True
+                            or (repo.get("language") or "").casefold()
+                            in {"go", "rust", "typescript", "javascript"}):
+                        continue
+                    license_info = repo.get("license")
+                    license_id = license_info.get("spdx_id") if isinstance(license_info, dict) else None
+                    if license_id not in PERMITTED_LICENSES:
+                        continue
+                    readme = await self._get(client, "/repos/" + name + "/readme")
+                    encoded = readme.get("content")
+                    if (readme.get("encoding") != "base64"
+                            or not isinstance(encoded, str) or len(encoded) > 90_000):
+                        continue
+                    text = base64.b64decode(encoded, validate=False)[:60_000].decode(
+                        "utf-8", "replace",
+                    )
+                    if (not _POSITIVE.search(text) or _NEGATIVE.search(text)
+                            or _SAAS.search(text + " " + name)
+                            or _UNSUPPORTED_HOST.search(text)):
+                        continue
+                    stars = repo.get("stargazers_count")
+                    if type(stars) is not int or not 0 <= stars <= 2_000_000_000:
+                        stars = 0
+                    size = repo.get("size")
+                    if type(size) is not int or not 0 <= size <= 2_000_000_000:
+                        size = None
+                    candidates.append({
+                        "repository": name, "url": "https://github.com/" + name,
+                        "description": _safe_text(repo.get("description")) or hint,
+                        "license": license_id, "stars": stars, "size_kb": size,
+                        "capability_hint": "Python FastMCP (" + source + ")",
+                        "evidence": source + " hint + GitHub SPDX and local README",
+                    })
+                except FileNotFoundError:
+                    continue
+            return {
+                "items": candidates[:3], "source": source,
+                "verification": "github_license_and_local_readme_only",
+            }
 
 
 class SelfDiscoveryEngine:
