@@ -148,16 +148,71 @@ class IndependentMCPAttestorWorker:
         return records
 
 
+def provision_attestor(*, workspace: EvolutionWorkspace, key_root: Path) -> str:
+    """Explicit operator-only attestor identity. Never called from AURA Core."""
+    if (not key_root.is_absolute() or not key_root.is_dir()
+            or key_root.is_symlink()
+            or key_root.resolve().is_relative_to(Path(__file__).resolve().parents[4])):
+        raise PermissionError("Pre-provisioned external attestor trust directory required")
+    if os.name == "nt":
+        from aura_core.evolution.windows_owner_storage import (
+            require_private_acl, harden_private_acl,
+        )
+        require_private_acl(key_root)
+    elif key_root.stat().st_mode & 0o077:
+        raise PermissionError("Attestor trust directory must be owner-only")
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    from cryptography.hazmat.primitives import serialization as ser
+    from aura_core.evolution.external_staging import _checked_path
+    _checked_path(key_root)
+    signer = Ed25519PrivateKey.generate()
+    private = key_root / "sandbox-attestor.pem"
+    trust = workspace.root / "trust"
+    trust.mkdir(exist_ok=True)
+    _checked_path(trust)
+    public = trust / "sandbox-attestor.pub.pem"
+    if private.exists() or private.is_symlink() or public.exists() or public.is_symlink():
+        raise FileExistsError("Attestor identity already provisioned")
+    private_bytes = signer.private_bytes(
+        ser.Encoding.PEM, ser.PrivateFormat.PKCS8, ser.NoEncryption(),
+    )
+    with private.open("xb") as stream:
+        stream.write(private_bytes)
+    try:
+        if os.name == "nt":
+            harden_private_acl(private)
+        else:
+            private.chmod(0o600)
+        public.write_bytes(signer.public_key().public_bytes(
+            ser.Encoding.PEM, ser.PublicFormat.SubjectPublicKeyInfo,
+        ))
+    except BaseException:
+        private.unlink(missing_ok=True)
+        public.unlink(missing_ok=True)
+        raise
+    raw = signer.public_key().public_bytes(ser.Encoding.Raw, ser.PublicFormat.Raw)
+    import hashlib
+    return hashlib.sha256(raw).hexdigest()
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Separate-identity offline MCP attestation")
     parser.add_argument("--evolution-root", type=Path, required=True)
-    parser.add_argument("--private-key", type=Path, required=True)
+    parser.add_argument("--private-key", type=Path)
+    parser.add_argument("--provision-key-root", type=Path)
     parser.add_argument("--watch", action="store_true")
     parser.add_argument("--poll-seconds", type=int, default=60)
     args = parser.parse_args()
     if not 30 <= args.poll_seconds <= 3600:
         parser.error("Poll must be bounded between 30 and 3600 seconds")
     workspace = EvolutionWorkspace(args.evolution_root)
+    if args.provision_key_root is not None:
+        print("AURA_EVOLUTION_ATTESTOR_KEY_SHA256=" + provision_attestor(
+            workspace=workspace, key_root=args.provision_key_root,
+        ))
+        return 0
+    if args.private_key is None:
+        parser.error("--private-key required after independent provisioning")
     worker = IndependentMCPAttestorWorker(
         workspace=workspace, key=_load_signer(args.private_key),
     )
