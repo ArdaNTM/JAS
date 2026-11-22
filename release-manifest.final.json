@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-22T05:12:00.000Z",
+  "generated_at": "2026-11-22T05:25:00.000Z",
   "git_commit": "c7cfe64a195517f0a14868bfd846ba392de83844",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:cafb577f70726def7b57322049a1f1a5299f196ff744caf7e468e7eb20659ebf",
+  "release_digest": "sha256:bffc3623ce5c2a5e4cfa1d11917c04ce50ff6e850ac77e5bc807c9af1d8eb6bd",
   "file_count": 451,
   "files": [
     {
@@ -874,7 +874,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/decision_engine.py",
-      "sha256": "fc42796f4f6d9c332c6fb0b66e6a923c51dc2aadc78433d5c5fa989c2aa49f2e"
+      "sha256": "7c3a1b2f1223b53e6ce8b7605a5b23e094bea03b33c93bd65893216afc2a4ec3"
     },
     {
       "path": "core/src/aura_core/evolution/durable_attestation.py",
