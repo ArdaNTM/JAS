@@ -309,10 +309,23 @@ class IsolatedMCPPreflight:
                 or (folders == self.workspace.max_items and existing is None)):
             raise SandboxUntrusted("Evolution runtime package quota reached")
         credit = min(baseline_bytes, existing_total)
-        combined = self.workspace._usage() + total - credit + additional_bytes
+        try:
+            usage = self.workspace._usage()
+        except StagingRejected as exc:
+            if str(exc) != "Evolution storage quota reached":
+                raise SandboxUntrusted("Unsafe evolution staging evidence") from exc
+            self._prune_old_rejected_staging()
+            try:
+                usage = self.workspace._usage()
+            except StagingRejected as still_full:
+                raise SandboxUntrusted("Evolution combined storage quota reached") from still_full
+        combined = usage + total - credit + additional_bytes
         if combined >= self.workspace.max_bytes * 9 // 10:
             self._prune_old_rejected_staging()
-            combined = self.workspace._usage() + total - credit + additional_bytes
+            try:
+                combined = self.workspace._usage() + total - credit + additional_bytes
+            except StagingRejected as exc:
+                raise SandboxUntrusted("Evolution combined storage quota reached") from exc
         if combined > self.workspace.max_bytes:
             raise SandboxUntrusted("Evolution combined storage quota reached")
 
