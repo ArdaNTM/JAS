@@ -592,7 +592,14 @@ class SelfDiscoveryEngine:
                     successful_queries += 1
 
                     with self._connect() as db:
-                        for row in result["items"][:3]:
+                        # Review at most six already README-screened items and
+                        # insert up to three; catalogued popular repos must
+                        # not starve novel local candidates from the same scan.
+                        known = {r[0] for r in db.execute(
+                            "SELECT repository FROM evolution_proposals"
+                        )}
+                        eligible = []
+                        for row in result["items"][:SEARCH_PER_PAGE]:
                             if not isinstance(row, dict):
                                 continue
                             name = row.get("repository")
@@ -607,6 +614,14 @@ class SelfDiscoveryEngine:
                                     or type(stars) is not int
                                     or not 0 <= stars <= 2_000_000_000):
                                 continue
+                            eligible.append((row, name, stars, size_kb))
+                        eligible.sort(key=lambda item: (
+                            item[1] in known,
+                            _size_tier(item[3]),
+                            -_local_rank(item[1], _safe_text(item[0].get("description")), item[2]),
+                            item[1],
+                        ))
+                        for row, name, stars, size_kb in eligible[:3]:
                             seen.add(name)
                             proposal_id = hashlib.sha256(name.casefold().encode()).hexdigest()[:24]
                             try:
