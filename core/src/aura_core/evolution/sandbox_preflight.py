@@ -173,31 +173,147 @@ class IsolatedMCPPreflight:
         self.runtime_root.mkdir(parents=True, exist_ok=True)
         _checked_path(self.runtime_root)
 
-    def _verify_runtime_capacity(self, additional_bytes: int) -> None:
-        """Bound runtime footprint against the same external workspace quota."""
+    def _runtime_package_bytes(self, package_name: str) -> int:
+        """Measure only an existing runtime package; never follow filesystem links."""
+        if (not re.fullmatch(r"[A-Za-z0-9_.-]+__[A-Za-z0-9_.-]+", package_name)
+                or ".." in package_name):
+            raise SandboxUntrusted("Invalid runtime package identity")
+        root = self.runtime_root / package_name
+        if (root.is_symlink() or (hasattr(root, "is_junction") and root.is_junction())
+                or not root.is_dir()):
+            raise SandboxUntrusted("Unsafe runtime package directory")
+        _checked_path(root)
         total = 0
+        for directory, dirs, files in os.walk(root, followlinks=False):
+            for name in dirs + files:
+                item = Path(directory) / name
+                if item.is_symlink() or (hasattr(item, "is_junction") and item.is_junction()):
+                    raise SandboxUntrusted("Unsafe runtime package link")
+                if item.is_file():
+                    total += item.stat().st_size
+        return total
+
+    def _prune_old_rejected_staging(self) -> None:
+        """Remove only aged, demonstrably rejected staging copies.
+
+        Verified sources, runtime, signatures and all Owner receipts are never
+        touched. No unknown or active candidate is eligible for deletion.
+        """
+        staging = self.workspace.root / "staging"
+        _checked_path(staging)
+        inventory = self.workspace.active
+        if (inventory.is_symlink() or not inventory.is_file()
+                or inventory.stat().st_size > 200_000):
+            raise SandboxUntrusted("Untrusted active capability inventory")
+        data = json.loads(inventory.read_text("utf-8"))
+        if (not isinstance(data, dict)
+                or data.get("schema") != "aura.external-capabilities.v1"
+                or not isinstance(data.get("active"), list)
+                or len(data["active"]) > self.workspace.max_items):
+            raise SandboxUntrusted("Invalid active capability inventory")
+        statuses = {}
+        for row in data["active"]:
+            if isinstance(row, dict) and isinstance(row.get("repository"), str):
+                statuses[row["repository"]] = row.get("status")
+
+        rejected: dict[str, int] = {}
+        audit = self.workspace.root / "logs" / "staging-rejections.jsonl"
+        if audit.exists() or audit.is_symlink():
+            if audit.is_symlink() or not audit.is_file() or audit.stat().st_size > 200_000:
+                raise SandboxUntrusted("Unsafe staging rejection audit")
+            for line in audit.read_text("utf-8").splitlines():
+                try:
+                    row = json.loads(line)
+                except (TypeError, ValueError):
+                    continue
+                if (isinstance(row, dict) and row.get("status") == "STAGING_REJECTED"
+                        and isinstance(row.get("repository"), str)
+                        and type(row.get("timestamp")) is int):
+                    rejected[row["repository"]] = max(
+                        rejected.get(row["repository"], 0), row["timestamp"],
+                    )
+
+        cutoff = time.time() - 24 * 3600
+        for stage in sorted(staging.iterdir(), key=lambda p: p.lstat().st_mtime):
+            if stage.is_symlink() or (hasattr(stage, "is_junction") and stage.is_junction()):
+                raise SandboxUntrusted("Unsafe staging directory link")
+            if not stage.is_dir() or stage.stat().st_mtime >= cutoff:
+                continue
+            parts = stage.name.split("__")
+            if (len(parts) != 2 or not all(re.fullmatch(r"[A-Za-z0-9_.-]+", part)
+                                          and part not in (".", "..") for part in parts)):
+                continue
+            repository = "/".join(parts)
+            status = statuses.get(repository)
+            if status not in (None, "QUARANTINED"):
+                continue
+            # A rejection alone is not evidence against a separately verified
+            # package; never prune it on the strength of an old audit record.
+            rejected_only = (status is None
+                             and not (self.workspace.root / "verified" / stage.name).exists()
+                             and rejected.get(repository, 0) >= stage.stat().st_mtime)
+            if status != "QUARANTINED" and not rejected_only:
+                continue
+            _checked_path(stage)
+            for directory, dirs, files in os.walk(stage, followlinks=False):
+                for child in dirs + files:
+                    item = Path(directory) / child
+                    if (item.is_symlink() or
+                            (hasattr(item, "is_junction") and item.is_junction())):
+                        raise SandboxUntrusted("Unsafe staged evidence link")
+            shutil.rmtree(stage)
+
+    def _verify_runtime_capacity(
+        self, additional_bytes: int, *,
+        reattesting_package: str | None = None, baseline_bytes: int = 0,
+    ) -> None:
+        """Account new allocation without charging an already installed package twice.
+
+        The signed, fingerprint-checked runtime exists before the attestor may
+        request revalidation. A fixed baseline credit is shared by before/after
+        installation checks; newly installed bytes still consume the quota.
+        """
+        if (type(additional_bytes) is not int or additional_bytes < 0
+                or type(baseline_bytes) is not int or baseline_bytes < 0):
+            raise SandboxUntrusted("Invalid evolution storage reservation")
+        existing = self.runtime_root / reattesting_package if reattesting_package else None
+        if reattesting_package is not None:
+            if baseline_bytes <= 0:
+                raise SandboxUntrusted("Missing existing runtime baseline")
+            self._runtime_package_bytes(reattesting_package)
+        elif baseline_bytes:
+            raise SandboxUntrusted("Unexpected runtime quota credit")
+
+        total = 0
+        existing_total = 0
         folders = 0
         for directory, dirs, files in os.walk(self.runtime_root, followlinks=False):
             current = Path(directory)
-            safe_dirs = []
             for child in dirs:
                 item = current / child
                 if item.is_symlink() or (hasattr(item, "is_junction") and item.is_junction()):
                     raise SandboxUntrusted("Unsafe runtime directory link")
-                safe_dirs.append(child)
-            dirs[:] = safe_dirs
             if current == self.runtime_root:
                 folders = len(dirs)
             for filename in files:
                 item = current / filename
-                if item.is_symlink():
+                if item.is_symlink() or (hasattr(item, "is_junction") and item.is_junction()):
                     raise SandboxUntrusted("Unsafe runtime file link")
-                total += item.stat().st_size
-                if total > self.workspace.max_bytes:
+                size = item.stat().st_size
+                total += size
+                if existing is not None and (current == existing or existing in current.parents):
+                    existing_total += size
+                if total > self.workspace.max_bytes and existing is None:
                     raise SandboxUntrusted("Evolution runtime quota reached")
-        if folders >= self.workspace.max_items:
+        if (folders > self.workspace.max_items
+                or (folders == self.workspace.max_items and existing is None)):
             raise SandboxUntrusted("Evolution runtime package quota reached")
-        if self.workspace._usage() + total + additional_bytes > self.workspace.max_bytes:
+        credit = min(baseline_bytes, existing_total)
+        combined = self.workspace._usage() + total - credit + additional_bytes
+        if combined >= self.workspace.max_bytes * 9 // 10:
+            self._prune_old_rejected_staging()
+            combined = self.workspace._usage() + total - credit + additional_bytes
+        if combined > self.workspace.max_bytes:
             raise SandboxUntrusted("Evolution combined storage quota reached")
 
     def prepare(self, package_name: str) -> tuple[Path, str, str]:
