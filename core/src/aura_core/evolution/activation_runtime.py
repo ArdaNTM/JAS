@@ -430,6 +430,16 @@ class DelegatedMCPActivationManager:
                     payload={"repository": decision.repository,
                              "capabilities": capability_ids},
                 ))
+                self.kernel.event_bus.publish(KernelEvent(
+                    event_type="ProactiveNotificationReady",
+                    source_component="delegated_mcp_activation",
+                    payload={
+                        "principal_id": "local_owner",
+                        "message": "Otomatik etkinleştirilen yeni yetenekler: " +
+                                   ", ".join(capability_ids),
+                        "requires_user_attention": False,
+                    },
+                ))
         except BaseException:
             for policy in policy_ids:
                 try: self.kernel.permission_engine.revoke_policy(policy)
