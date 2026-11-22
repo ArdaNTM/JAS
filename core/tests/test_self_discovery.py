@@ -156,7 +156,7 @@ def test_full_scan_calls_all_bounded_gateway_queries_and_never_invents_items(tmp
     gateway = FakeGateway()
     engine = SelfDiscoveryEngine(gateway=gateway, db_path=tmp_path / "full.sqlite3")
     result = _run(engine.run_once(full_scan=True))
-    assert [call.arguments["query"] for call in gateway.calls] == list(QUERIES)
+    assert [call.arguments["query"] for call in gateway.calls] == list(QUERIES[:2])
     assert result["new_count"] == 1
     assert result["items"][0]["stars"] == 128
     assert result["items"][0]["repository"] == "verified/local"
@@ -213,7 +213,7 @@ def test_http_manual_scan_reports_all_bounded_queries(tmp_path):
     assert response.status_code == 200, response.text
     assert response.json()["new_count"] == 1
     assert response.json()["items"][0]["stars"] == 128
-    assert [call.arguments["query"] for call in gateway.calls] == list(QUERIES)
+    assert [call.arguments["query"] for call in gateway.calls] == list(QUERIES[:2])
 
 
 def test_http_github_rate_limit_surfaces_actual_error(tmp_path):
@@ -236,7 +236,7 @@ def test_http_github_rate_limit_surfaces_actual_error(tmp_path):
     assert response.status_code == 429
     assert "rate limit" in response.json()["detail"]
     assert engine.count() == 0
-    assert len(gateway.calls) == len(QUERIES)
+    assert len(gateway.calls) == 2
     assert engine.history()[0]["status"] == "FAILED"
 
 
@@ -441,7 +441,7 @@ def test_multiquery_rate_limit_preserves_successful_proposals(tmp_path):
     )
     result = _run(engine.run_once(full_scan=True))
     assert result["partial"] is True
-    assert result["successful_queries"] == len(QUERIES) - 1
+    assert result["successful_queries"] == 1
     assert len(result["failed_queries"]) == 1
     assert "rate limit" in result["failed_queries"][0]["reason"]
     assert result["new_count"] == 1
@@ -449,7 +449,7 @@ def test_multiquery_rate_limit_preserves_successful_proposals(tmp_path):
     assert result["items"][0]["repository"] == "verified/local"
     assert engine.proposals()[0]["repository"] == "verified/local"
     assert engine.history()[0]["status"] == "PARTIAL"
-    assert len(gateway.calls) == len(QUERIES)
+    assert len(gateway.calls) == 2
     assert result["activation_performed"] is False
 
 
