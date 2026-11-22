@@ -127,23 +127,27 @@ class DockerMCPProvider(MCPProvider):
 
     def __init__(self, connection: MCPConnection, *, runtime: Path,
                  archive_sha256: str, workspace: EvolutionWorkspace,
-                 package: str, on_failure: Callable[[str], None]):
+                 package: str, on_failure: Callable[[str], None],
+                 owner_authorized: Callable[[], bool]):
         super().__init__(connection)
         self.runtime = runtime
         self.archive_sha256 = archive_sha256
         self.workspace = workspace
         self.package = package
         self._on_failure = on_failure
+        self._owner_authorized = owner_authorized
         self._healthy = True
 
     async def list_tools(self):
-        if not self._healthy:
-            raise RuntimeError("Quarantined external provider")
+        if not self._healthy or not self._owner_authorized():
+            raise PermissionError("Quarantined or revoked external provider")
         return await super().list_tools()
 
     async def call_tool(self, name, arguments=None):
-        if not self._healthy:
-            raise PermissionError("Quarantined external provider")
+        if not self._healthy or not self._owner_authorized():
+            self._healthy = False
+            self._on_failure(self.package)
+            raise PermissionError("Quarantined or revoked external provider")
         try:
             # Prevent host-side file mutation after signed sandbox evidence.
             runtime_fingerprint(self.workspace, self.package)
@@ -161,6 +165,7 @@ class _Live:
     service_id: str
     capabilities: tuple[str, ...]
     policies: tuple[str, ...]
+    category: str
 
 
 class DelegatedMCPActivationManager:
@@ -265,6 +270,7 @@ class DelegatedMCPActivationManager:
                 connection, runtime=runtime, archive_sha256="",
                 workspace=self.workspace, package=name,
                 on_failure=lambda key: asyncio.create_task(self.quarantine(key)),
+                owner_authorized=lambda: self.delegation.verified_grant() is not None,
             )
         except BaseException:
             await connection.close()
@@ -336,19 +342,28 @@ class DelegatedMCPActivationManager:
     async def scan(self, *, limit: int = 3) -> list[str]:
         grant = self.delegation.verified_grant()
         if grant is None:
+            # Revoke every live capability when standing consent expires.
+            for name in tuple(self._active):
+                await self.quarantine(name)
             return []
         successes: list[str] = []
+        attempted = 0
         async with self._lock:
-            for decision in self.decisions.evaluate_pending(limit=min(limit, 20)):
+            existing = frozenset(value.category for value in self._active.values())
+            for decision in self.decisions.evaluate_pending(limit=100):
+                if attempted >= max(1, min(3, limit)):
+                    break
                 if decision.status != "AUTO_APPROVED_BY_POLICY":
                     continue
                 name = decision.repository.replace("/", "__")
-                if name in self._active:
+                if name in self._active or decision.category in existing:
                     continue
+                attempted += 1
                 try:
                     details, provider, tools, proofs = await self._verify_and_connect(name, grant)
                     await self._register(name, details, provider, tools, proofs)
                     successes.append(decision.repository)
+                    existing = existing | {decision.category}
                 except Exception as exc:
                     self._persist(decision.repository, "QUARANTINED",
                                   reason_code=type(exc).__name__)
@@ -404,7 +419,8 @@ class DelegatedMCPActivationManager:
                           capabilities=capability_ids,
                           tool_attestation_sha256=proofs)
             self._active[name] = _Live(provider, provider_id, service.service_id,
-                                       tuple(capability_ids), tuple(policy_ids))
+                                       tuple(capability_ids), tuple(policy_ids),
+                                       decision.category)
             if self.kernel.event_bus:
                 self.kernel.event_bus.publish(KernelEvent(
                     event_type="AutonomousCapabilityActivated",
