@@ -28,6 +28,9 @@ from aura_core.evolution.activation_runtime import (
 from aura_core.evolution.external_staging import EvolutionWorkspace
 from aura_core.evolution.sandbox_preflight import IsolatedMCPPreflight
 from aura_core.evolution.owner_cli import make_activation_delegation
+from aura_core.evolution.activation_delegation import (
+    SANDBOX_POLICY_SHA256, SANDBOX_TESTS_SHA256,
+)
 from aura_core.evolution.sandbox_attestor import (
     SandboxClaims, SignedSandboxAttestation, DOMAIN, canonical_claims,
 )
@@ -119,7 +122,7 @@ def _signed_fixture(tmp_path, monkeypatch):
     )
     doc = make_activation_delegation(
         owner_signer, categories=("local_memory",), image=image,
-        policy_sha256="b" * 64, tests_sha256="c" * 64,
+        policy_sha256=SANDBOX_POLICY_SHA256, tests_sha256=SANDBOX_TESTS_SHA256,
         attestor_key_sha256=hashlib.sha256(attestor_raw).hexdigest(),
         attestor_runner_id="operator_runner", days=1,
         max_tools=2, min_score=70,
@@ -157,9 +160,9 @@ def _signed_fixture(tmp_path, monkeypatch):
     )
     now = int(time.time())
     claims = SandboxClaims(
-        source_sha256=sha, tests_sha256="c" * 64,
+        source_sha256=sha, tests_sha256=SANDBOX_TESTS_SHA256,
         image_digest="sha256:" + "a" * 64,
-        policy_sha256="b" * 64, binding_digest=binding,
+        policy_sha256=SANDBOX_POLICY_SHA256, binding_digest=binding,
         run_id=secrets.token_hex(16), runner_id="operator_runner",
         issued_at=now, expires_at=now + 600,
         exit_code=0, outcome="passed", network_disabled=True,
