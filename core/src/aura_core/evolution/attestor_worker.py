@@ -23,7 +23,10 @@ from aura_core.evolution.activation_runtime import (
 )
 from aura_core.evolution.decision_engine import EvolutionDecisionEngine
 from aura_core.evolution.external_staging import EvolutionWorkspace
-from aura_core.evolution.sandbox_preflight import IsolatedMCPPreflight
+from aura_core.evolution.sandbox_preflight import (
+    IsolatedMCPPreflight, _MAX_TOOLS, _MAX_SCHEMA_JSON_BYTES,
+    _schema_json_size,
+)
 from aura_core.evolution.sandbox_attestor import (
     SandboxClaims, SignedSandboxAttestation, DOMAIN, canonical_claims,
 )
@@ -53,14 +56,14 @@ def _load_signer(path: Path) -> Ed25519PrivateKey:
     return key
 
 
-RECOVERY_EPOCH = "windows-isolated-wheels-20261122-v4"
+RECOVERY_EPOCH = "windows-isolated-wheels-20261122-v5"
 
 
 def _eligible_local_recovery(previous: object) -> bool:
     """One bounded retry of a prior SDK/install quarantine, never a revoke.
 
-    A v3 marker may have retry_count=3 after the previous wheel-only retry.
-    Permit only one more signed Owner-approved recovery under v4.
+    A v4 marker may have retry_count=4 after the previous transport retry.
+    Permit only one more signed Owner-approved recovery under v5.
     """
     if not isinstance(previous, dict):
         return False
@@ -70,14 +73,19 @@ def _eligible_local_recovery(previous: object) -> bool:
         and previous.get("reason_code") in {
             "SandboxUntrusted", "DEPENDENCY_RECOVERY",
             "MCPError", "McpError", "ExceptionGroup",
-        }
+        } or (
+            previous.get("reason_code") == "PermissionError"
+            and previous.get("recovery_epoch") == "windows-isolated-wheels-20261122-v4"
+            and previous.get("detail") == "External MCP exceeded delegated tool budget"
+        )
         and previous.get("recovery_epoch") != RECOVERY_EPOCH
         and previous.get("recovery_epoch") in {
             None, "windows-isolated-wheels-20261122-v1",
             "windows-isolated-wheels-20261122-v2",
             "windows-isolated-wheels-20261122-v3",
+            "windows-isolated-wheels-20261122-v4",
         }
-        and type(count) is int and 0 <= count < 4
+        and type(count) is int and 0 <= count < 5
     )
 
 
@@ -130,7 +138,8 @@ class IndependentMCPAttestorWorker:
             raise PermissionError("Owner-permitted MCP initialize/tools-list failed")
         tools = report.get("tool_schemas", {})
         if (not isinstance(tools, dict) or not tools
-                or len(tools) > grant["max_tools"]):
+                or len(tools) > min(_MAX_TOOLS, grant["max_tools"])
+                or _schema_json_size(tools) > _MAX_SCHEMA_JSON_BYTES):
             raise PermissionError("External MCP exceeded delegated tool budget")
         tree = runtime_fingerprint(self.workspace, package)
         issue = int(time.time())
@@ -204,7 +213,7 @@ class IndependentMCPAttestorWorker:
                 json.dump(payload, stream, sort_keys=True, separators=(",", ":"))
                 stream.flush()
                 operating_system.fsync(stream.fileno())
-            if operating_system.path.getsize(temp) > 100_000:
+            if operating_system.path.getsize(temp) > 262_144:
                 raise PermissionError("Attestation bundle too large")
             operating_system.replace(temp, path)
         finally:
