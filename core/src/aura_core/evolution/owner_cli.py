@@ -61,8 +61,8 @@ def make_activation_delegation(
     from aura_core.evolution.activation_delegation import (
         SCHEMA, canonical, validated_claims,
     )
-    if type(days) is not int or not 1 <= days <= 7:
-        raise ValueError("Only 1-7 day delegated activation allowed")
+    if type(days) is not int or not 1 <= days <= 365:
+        raise ValueError("Only 1-365 day delegated activation allowed")
     now = int(time.time()) if issued_at is None else issued_at
     claims = validated_claims({
         "schema": SCHEMA, "principal_id": "local_owner",
