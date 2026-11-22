@@ -182,6 +182,8 @@ class DelegatedMCPActivationManager:
         self._lock = asyncio.Lock()
         self._factory = provider_factory
         self._inventory = workspace.active
+        self._task: asyncio.Task | None = None
+        self._stop = asyncio.Event()
 
     def _load_inventory(self) -> dict:
         if self._inventory.is_symlink() or not self._inventory.is_file():
@@ -470,7 +472,47 @@ class DelegatedMCPActivationManager:
     async def revoke(self, repository: str) -> None:
         await self.quarantine(repository.replace("/", "__"))
 
+    async def start(self) -> None:
+        """Recover signed, still-fresh live capabilities at process startup."""
+        if self._task is not None and not self._task.done():
+            return
+        self._stop.clear()
+        try:
+            await self.scan(limit=3)
+        except (OSError, ValueError, PermissionError, RuntimeError):
+            # External code must never break Core startup.
+            pass
+        self._task = asyncio.create_task(self._run(), name="aura-delegated-mcp")
+
+    async def _run(self) -> None:
+        while not self._stop.is_set():
+            try:
+                await asyncio.wait_for(self._stop.wait(), timeout=30)
+                break
+            except asyncio.TimeoutError:
+                pass
+            try:
+                await self.scan(limit=3)
+            except (OSError, ValueError, PermissionError, RuntimeError):
+                # Failures are quarantined and audited per-package.
+                continue
+
+    def active_summary(self) -> list[dict]:
+        """Expose only metadata, never protected credentials or source code."""
+        inventory = self._load_inventory()
+        return [
+            {key: row[key] for key in
+             ("repository", "status", "capabilities", "category", "time")
+             if key in row}
+            for row in inventory["active"]
+            if isinstance(row, dict)
+        ]
+
     async def close(self) -> None:
+        self._stop.set()
+        if self._task is not None:
+            await self._task
+            self._task = None
         # Graceful shutdown closes workers and policies; retains ACTIVE
         # inventory, so restart may reload only after fresh proof validation.
         for name in tuple(self._active):
