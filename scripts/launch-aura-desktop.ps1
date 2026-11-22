@@ -55,6 +55,8 @@ $UiLogOut = Join-Path $Root "aura-ui.stdout.log"
 $UiLogErr = Join-Path $Root "aura-ui.stderr.log"
 $OwnerLogOut = Join-Path $Root "aura-owner-review.stdout.log"
 $OwnerLogErr = Join-Path $Root "aura-owner-review.stderr.log"
+$AttestorLogOut = Join-Path $Root "aura-attestor.stdout.log"
+$AttestorLogErr = Join-Path $Root "aura-attestor.stderr.log"
 
 function Stop-ProcessTreeSafe {
     param(
@@ -320,6 +322,41 @@ function Start-OwnerReview {
     if (-not $process.Start()) {
         throw "AURA Owner review process could not be started."
     }
+    return $process
+}
+
+function Start-Attestor {
+    param([Parameter(Mandatory = $true)][string]$Python)
+
+    $privateKey = Join-Path $env:LOCALAPPDATA "AURA\AttestorKeys\sandbox-attestor.pem"
+    $publicKey = Join-Path $env:AURA_EVOLUTION_ROOT "trust\sandbox-attestor.pub.pem"
+    $ownerGrant = Join-Path $env:AURA_EVOLUTION_ROOT "owner\autonomous_delegation.json"
+    $keyPin = [Environment]::GetEnvironmentVariable("AURA_EVOLUTION_ATTESTOR_KEY_SHA256", "User")
+    if ($env:AURA_EVOLUTION_AUTO_ACTIVATE -ne "1" -or
+        $keyPin -notmatch '^[0-9a-f]{64}$' -or
+        -not (Test-Path -LiteralPath $ownerGrant -PathType Leaf) -or
+        -not (Test-Path -LiteralPath $privateKey -PathType Leaf) -or
+        -not (Test-Path -LiteralPath $publicKey -PathType Leaf)) {
+        return $null
+    }
+
+    Reset-LogFile -Path $AttestorLogOut
+    Reset-LogFile -Path $AttestorLogErr
+    # The attestor independently validates Owner and key pins before signing.
+    $env:AURA_EVOLUTION_ATTESTOR_KEY_SHA256 = $keyPin
+    $command = '""' + $Python + '" -m aura_core.evolution.attestor_worker --evolution-root "' +
+               $env:AURA_EVOLUTION_ROOT + '" --private-key "' + $privateKey +
+               '" --watch > "' + $AttestorLogOut + '" 2> "' + $AttestorLogErr + '""'
+    $psi = New-Object System.Diagnostics.ProcessStartInfo
+    $psi.FileName = "cmd.exe"
+    $psi.Arguments = "/d /s /c $command"
+    $psi.WorkingDirectory = $Core
+    $psi.UseShellExecute = $false
+    $psi.CreateNoWindow = $true
+    $psi.WindowStyle = [System.Diagnostics.ProcessWindowStyle]::Hidden
+    $process = New-Object System.Diagnostics.Process
+    $process.StartInfo = $psi
+    if (-not $process.Start()) { throw "AURA independent attestor could not start." }
     return $process
 }
 
@@ -711,6 +748,7 @@ $Splash = $null
 $coreProcess = $null
 $uiProcess = $null
 $ownerProcess = $null
+$attestorProcess = $null
 $ownerWarning = $null
 
 try {
@@ -760,6 +798,23 @@ try {
         }
 
         throw $details
+    }
+
+    # Optional separate signing worker: never a reason to weaken Core startup.
+    # Absence of protected keys leaves capabilities inactive.
+    try {
+        $attestorProcess = Start-Attestor -Python $Python
+        if ($null -ne $attestorProcess -and
+            -not (Wait-ForProcessAlive -ProcessId $attestorProcess.Id -TimeoutSeconds 2)) {
+            throw "Independent attestor terminated during startup."
+        }
+    }
+    catch {
+        Write-Warning "Attestor unavailable; external MCPs remain pending attestation."
+        if ($null -ne $attestorProcess) {
+            Stop-ProcessTreeSafe -ProcessId $attestorProcess.Id
+            $attestorProcess = $null
+        }
     }
 
     $Splash.Status.Text = "STARTING OWNER REVIEW..."
@@ -833,6 +888,9 @@ catch {
 
     if ($null -ne $ownerProcess) {
         Stop-ProcessTreeSafe -ProcessId $ownerProcess.Id
+    }
+    if ($null -ne $attestorProcess) {
+        Stop-ProcessTreeSafe -ProcessId $attestorProcess.Id
     }
 
     exit 1
