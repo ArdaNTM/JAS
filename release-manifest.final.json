@@ -3,10 +3,10 @@
   "version": "1.0.0-final",
   "status": "production-locked",
   "generated_at": "2026-11-22T06:55:00.000Z",
-  "git_commit": "e3cf6628cf8de86e0a87d92b1da0dc8594da1429",
+  "git_commit": "cb7c1618455d1b587832cb4f29d3ff8db08a051f",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:7d8d68b2974d6d51ff469c3c07bc7010270643535e40b9a157eca348ee829f37",
-  "file_count": 456,
+  "release_digest": "sha256:e0aa31b0b4c135be0c8fab8ef45f9fcbb368856eabd5b78cee019742b4101c4f",
+  "file_count": 461,
   "files": [
     {
       "path": ".gitattributes",
@@ -38,7 +38,7 @@
     },
     {
       "path": ".github/workflows/aura-windows-launcher.yml",
-      "sha256": "f92f2155e109c93dc9c2657a497ef3bc7aa6844deb128fc620d8346a4b715dec"
+      "sha256": "6049163153798a1b890be2b67f509d280cc6845c7f02e5c3c2ca18e33558c032"
     },
     {
       "path": ".github/workflows/aura-windows-owner-security.yml",
@@ -238,7 +238,7 @@
     },
     {
       "path": "core/scripts/generate_final_lock.py",
-      "sha256": "236151daf2b0bbb3fef94623b6ee7c0cd3bbb5ef1cd27c433b69c4a77ffb28f0"
+      "sha256": "15bc50325fb95c914b0462a636ef9a733802f63cd47bc23f47bcaef2992a5f21"
     },
     {
       "path": "core/scripts/hardware_stage_c_acceptance.py",
@@ -870,15 +870,15 @@
     },
     {
       "path": "core/src/aura_core/evolution/activation_delegation.py",
-      "sha256": "375136047b1d8ab52d9bc518cbbeadba407207fb0a4c8ebe82e3ace5fd3e2020"
+      "sha256": "f7a89e03ca179344439ccb006d655fbe090574074a341d78bf64ce9e92211b30"
     },
     {
       "path": "core/src/aura_core/evolution/activation_runtime.py",
-      "sha256": "c741fd131458709cfb6f863ef2b6d02032248a8b36abc9b500d3f531553a9193"
+      "sha256": "b9a77ce5685d357843cbd4453eaae8b2bea3e2d0ce79dde026c6fc985ff84d7c"
     },
     {
       "path": "core/src/aura_core/evolution/attestor_worker.py",
-      "sha256": "1300288e199dea0ec34702dfce6e9b22772aef7af13ebd8e5ad1dcf27e643f2b"
+      "sha256": "04009ec0475f5c0a8aececdb0b225a45b8e8792a9cbf24acab759a54b98324a4"
     },
     {
       "path": "core/src/aura_core/evolution/autonomous_analyzer.py",
@@ -922,7 +922,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/owner_cli.py",
-      "sha256": "2bda3adac4bf58d720f2c47b07762edcc794063bfec5c97d57822b7d57d82c61"
+      "sha256": "fb937dbb2cc9815f38261c33ceea2dbf16b2e6770310012fd950d06e19b77c78"
     },
     {
       "path": "core/src/aura_core/evolution/owner_control_plane.py",
@@ -995,6 +995,10 @@
     {
       "path": "core/src/aura_core/evolution/trusted_promotion.py",
       "sha256": "70be389c046e43cd68f376efa0d6f7c6f79b87e7923047573a9f61ca05bd1739"
+    },
+    {
+      "path": "core/src/aura_core/evolution/windows_job_mcp.py",
+      "sha256": "fa5b557101ca55e241dd74892338d238014c03175eadb185916da8f30d33da87"
     },
     {
       "path": "core/src/aura_core/evolution/windows_owner_storage.py",
@@ -1789,6 +1793,10 @@
       "sha256": "d92079ad752c6b8be34b4362db4621a627fb1083ba0340ae652c391bf9ce220d"
     },
     {
+      "path": "core/tests/test_evolution_windows_job_optin.py",
+      "sha256": "49878995da5c72e7d13419718244a226645b3953a60947b978261798d2e5b00b"
+    },
+    {
       "path": "core/tests/test_osworld_secure_live.py",
       "sha256": "adb8da871f2f09e521bfa6a22b83348af231648902e0ab2ebafeb68d8a55ea1e"
     },
@@ -1813,12 +1821,24 @@
       "sha256": "4d7372b67957ca44352232f27ae5f57aa527705dd41bd604fab85916af44c63a"
     },
     {
+      "path": "scripts/aura-processes.ps1",
+      "sha256": "6b72eb6067388eca4ce9c711953b5faa87c8c7e0caef09497e168f6dce00d129"
+    },
+    {
       "path": "scripts/Invoke-AuraF27BuildRuntime.ps1",
       "sha256": "b3cd00bc3eaedcac980d6f9ffefe03ea8534596ba8138ff60c5e7b4a111f1475"
     },
     {
       "path": "scripts/Invoke-AuraF27OfflinePromotion.ps1",
       "sha256": "03ebcb6a17a78f89b2ac87419acb3743752c45fe8b97e011057b9d5cdf7330cd"
+    },
+    {
+      "path": "scripts/launch-aura-desktop.ps1",
+      "sha256": "db4a235150c45e3311dca7f023011f83d6ac3253f102d5231986426faed59ecb"
+    },
+    {
+      "path": "scripts/setup-autonomous-aura.ps1",
+      "sha256": "795f28bb9493e5775d01a0a7131543195339481ff5f85ad598a0b64659cb52ca"
     },
     {
       "path": "scripts/Test-AuraF27NativeRuntimeToken.ps1",
