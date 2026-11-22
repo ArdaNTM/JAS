@@ -53,14 +53,14 @@ def _load_signer(path: Path) -> Ed25519PrivateKey:
     return key
 
 
-RECOVERY_EPOCH = "windows-isolated-wheels-20261122-v2"
+RECOVERY_EPOCH = "windows-isolated-wheels-20261122-v3"
 
 
 def _eligible_local_recovery(previous: object) -> bool:
     """One bounded retry of a prior SDK/install quarantine, never a revoke.
 
-    The v1 marker may already contain retry_count=1. Bumping the epoch alone
-    would not work because the previous gate required retry_count == 0.
+    The v2 marker may already contain retry_count=2. Bumping the epoch alone
+    would not work unless the bounded counter also admits this v2 record.
     """
     if not isinstance(previous, dict):
         return False
@@ -73,8 +73,9 @@ def _eligible_local_recovery(previous: object) -> bool:
         and previous.get("recovery_epoch") != RECOVERY_EPOCH
         and previous.get("recovery_epoch") in {
             None, "windows-isolated-wheels-20261122-v1",
+            "windows-isolated-wheels-20261122-v2",
         }
-        and type(count) is int and 0 <= count < 2
+        and type(count) is int and 0 <= count < 3
     )
 
 
