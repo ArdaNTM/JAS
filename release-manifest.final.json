@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-22T05:25:00.000Z",
-  "git_commit": "c7cfe64a195517f0a14868bfd846ba392de83844",
+  "generated_at": "2026-11-22T06:55:00.000Z",
+  "git_commit": "a70f845c2a3aec97aac9526a15ffed534821bbb3",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:bffc3623ce5c2a5e4cfa1d11917c04ce50ff6e850ac77e5bc807c9af1d8eb6bd",
-  "file_count": 451,
+  "release_digest": "sha256:34c35835ea9dc4112802bab83227f8dde9d11190fe94bf549c2f877e49944227",
+  "file_count": 461,
   "files": [
     {
       "path": ".gitattributes",
@@ -38,11 +38,11 @@
     },
     {
       "path": ".github/workflows/aura-windows-launcher.yml",
-      "sha256": "ab00fd4a11dd5ec16cfd9df1006e125e772b39fadc0925a4697ec7f78313848d"
+      "sha256": "6049163153798a1b890be2b67f509d280cc6845c7f02e5c3c2ca18e33558c032"
     },
     {
       "path": ".github/workflows/aura-windows-owner-security.yml",
-      "sha256": "0e440b5f86364020b5674de9da7ab120665bebf836039fd938548c37ba32eedc"
+      "sha256": "f662927ca2057fe96e349f3a11c78d73384fa866b507dd2539cf3bfa87195b46"
     },
     {
       "path": "aura-ui/electron-main.cjs",
@@ -238,7 +238,7 @@
     },
     {
       "path": "core/scripts/generate_final_lock.py",
-      "sha256": "236151daf2b0bbb3fef94623b6ee7c0cd3bbb5ef1cd27c433b69c4a77ffb28f0"
+      "sha256": "15bc50325fb95c914b0462a636ef9a733802f63cd47bc23f47bcaef2992a5f21"
     },
     {
       "path": "core/scripts/hardware_stage_c_acceptance.py",
@@ -869,12 +869,24 @@
       "sha256": "34c4c7ab8a226f48f7df25e962bf56539019804768f1282eed90c9b84518a5e4"
     },
     {
+      "path": "core/src/aura_core/evolution/activation_delegation.py",
+      "sha256": "f7a89e03ca179344439ccb006d655fbe090574074a341d78bf64ce9e92211b30"
+    },
+    {
+      "path": "core/src/aura_core/evolution/activation_runtime.py",
+      "sha256": "b9a77ce5685d357843cbd4453eaae8b2bea3e2d0ce79dde026c6fc985ff84d7c"
+    },
+    {
+      "path": "core/src/aura_core/evolution/attestor_worker.py",
+      "sha256": "04009ec0475f5c0a8aececdb0b225a45b8e8792a9cbf24acab759a54b98324a4"
+    },
+    {
       "path": "core/src/aura_core/evolution/autonomous_analyzer.py",
       "sha256": "88b44effcdc93561581cdae249e0b8c1ff3e42fce318a2136354e5181ba44cf2"
     },
     {
       "path": "core/src/aura_core/evolution/decision_engine.py",
-      "sha256": "7c3a1b2f1223b53e6ce8b7605a5b23e094bea03b33c93bd65893216afc2a4ec3"
+      "sha256": "8d6b73041e5ab0f00cbb6150ec9aa16aa5dadf7256c42c95e0083581fda8a0b7"
     },
     {
       "path": "core/src/aura_core/evolution/durable_attestation.py",
@@ -909,8 +921,12 @@
       "sha256": "58e6b459b2f92f8e1b50ba2bb3c9a828523cc6784a7da68a6d3eb57075c48779"
     },
     {
+      "path": "core/src/aura_core/evolution/owner_cli.py",
+      "sha256": "fb937dbb2cc9815f38261c33ceea2dbf16b2e6770310012fd950d06e19b77c78"
+    },
+    {
       "path": "core/src/aura_core/evolution/owner_control_plane.py",
-      "sha256": "7d36b240e1c3e423bd7b2f0bfcfe448fc368682a3a33762e4ddd6f0fc2a65176"
+      "sha256": "0a0ef167040ec18af47c58c754d88b23f10d42f9958d213f346c158c22e0d532"
     },
     {
       "path": "core/src/aura_core/evolution/owner_control_plane_http.py",
@@ -946,15 +962,19 @@
     },
     {
       "path": "core/src/aura_core/evolution/owner_review.html",
-      "sha256": "0d24acff173669df43ff2ae118a355035cf6a447f108c6ab884e12cabdff79cf"
+      "sha256": "9a585db8766777fdee98cc79800f2175adb05f4b242437f86f5a550b192df397"
     },
     {
       "path": "core/src/aura_core/evolution/owner_review.js",
-      "sha256": "67fee51bbbf07edabd430dc983318d395cd921f8f054161a97b6bccff6a8ca1a"
+      "sha256": "0ab02ce77071c0953d5aa20da542bfb19c15cf3f5851fdafeb5d64b0b486f256"
     },
     {
       "path": "core/src/aura_core/evolution/sandbox_attestor.py",
       "sha256": "be2f543c11d3bc656100729befd10e0a8ba6cb020a241ccd27a027efed9b23c9"
+    },
+    {
+      "path": "core/src/aura_core/evolution/sandbox_preflight.py",
+      "sha256": "c0896d8c00ef1679be29fb9b9084ab0a36f06d1be601f85752a441834f595c5a"
     },
     {
       "path": "core/src/aura_core/evolution/sandbox_review.py",
@@ -962,11 +982,11 @@
     },
     {
       "path": "core/src/aura_core/evolution/self_discovery.py",
-      "sha256": "3a0f34db5e7608dc2aeab843299aecaa4b07be4cfa830f6765a39c392760671e"
+      "sha256": "57f9cba067cb3c6d5ea8b86bcd1ab385546870cd50a5d3cc8315dc83a62db7ba"
     },
     {
       "path": "core/src/aura_core/evolution/self_discovery_api.py",
-      "sha256": "cb1e81d0595e964f04ad6569712dc1eb39bb5eca7fd49941567170ac77d91f65"
+      "sha256": "1012f05dc7e496b4fc1ced4c339533ef81b141f0b86c03c78a6684edc7e9bd80"
     },
     {
       "path": "core/src/aura_core/evolution/skill_registry.py",
@@ -977,8 +997,12 @@
       "sha256": "70be389c046e43cd68f376efa0d6f7c6f79b87e7923047573a9f61ca05bd1739"
     },
     {
+      "path": "core/src/aura_core/evolution/windows_job_mcp.py",
+      "sha256": "fbee0f146d38c594b346ef0097dfced314d68a50a93f78df854ce3fd01b9a5fb"
+    },
+    {
       "path": "core/src/aura_core/evolution/windows_owner_storage.py",
-      "sha256": "6ce977bf43b9c21736852baba24456c117ef53776aae4a6c05e612ec09829beb"
+      "sha256": "9d37d3bb0f171d66d0eb45e7249cca585e63aaec7674cea2c5e1a4db2bd66007"
     },
     {
       "path": "core/src/aura_core/filesystem/__init__.py",
@@ -1154,7 +1178,7 @@
     },
     {
       "path": "core/src/aura_core/main.py",
-      "sha256": "a478799aa544722aef3db79765db619164b0875de7c31697db260bd655d1d4b0"
+      "sha256": "2b1e0ff3373e7bda2f80756fd1ebd6fc604c2ee52a3e105eafbcf2f5227866da"
     },
     {
       "path": "core/src/aura_core/mcp/__init__.py",
@@ -1769,6 +1793,10 @@
       "sha256": "d92079ad752c6b8be34b4362db4621a627fb1083ba0340ae652c391bf9ce220d"
     },
     {
+      "path": "core/tests/test_evolution_windows_job_optin.py",
+      "sha256": "a80494c397683aeb45e0df67f31ff75de2a0330e32b99ccb6579800656509423"
+    },
+    {
       "path": "core/tests/test_osworld_secure_live.py",
       "sha256": "adb8da871f2f09e521bfa6a22b83348af231648902e0ab2ebafeb68d8a55ea1e"
     },
@@ -1793,12 +1821,24 @@
       "sha256": "4d7372b67957ca44352232f27ae5f57aa527705dd41bd604fab85916af44c63a"
     },
     {
+      "path": "scripts/aura-processes.ps1",
+      "sha256": "6b72eb6067388eca4ce9c711953b5faa87c8c7e0caef09497e168f6dce00d129"
+    },
+    {
       "path": "scripts/Invoke-AuraF27BuildRuntime.ps1",
       "sha256": "b3cd00bc3eaedcac980d6f9ffefe03ea8534596ba8138ff60c5e7b4a111f1475"
     },
     {
       "path": "scripts/Invoke-AuraF27OfflinePromotion.ps1",
       "sha256": "03ebcb6a17a78f89b2ac87419acb3743752c45fe8b97e011057b9d5cdf7330cd"
+    },
+    {
+      "path": "scripts/launch-aura-desktop.ps1",
+      "sha256": "ab918ed1852d2acbe870ae0ff08ab50c019ae02c9af1228d28bad9840086dfe2"
+    },
+    {
+      "path": "scripts/setup-autonomous-aura.ps1",
+      "sha256": "a34dcfc4caa9a1966face3d412e562ef68f70d61887efb65ea75fed767ed458e"
     },
     {
       "path": "scripts/Test-AuraF27NativeRuntimeToken.ps1",

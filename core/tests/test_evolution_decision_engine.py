@@ -5,6 +5,8 @@ import base64
 import hashlib
 import json
 import os
+import csv
+import subprocess
 from pathlib import Path
 import time
 
@@ -41,6 +43,44 @@ def sample(tmp_path):
     return workspace, package
 
 
+def _private_windows_test_owner_state(workspace):
+    """Provision real private test NTFS ACLs; never bypass runtime ACL checks.
+
+    Pytest's ordinary tmp_path inherits broad Temp-directory ACLs on Windows.
+    Signing a real test delegation into those inherited directories must not
+    make production validation less strict. Protect only our fixture subtree.
+    """
+    if os.name != "nt":
+        return
+    from aura_core.evolution.windows_owner_storage import (
+        harden_private_acl, require_private_acl,
+    )
+    identity = subprocess.run(
+        ["whoami.exe", "/user", "/fo", "csv", "/nh"], capture_output=True,
+        text=True, timeout=10, check=True,
+    )
+    sid = next(csv.reader(identity.stdout.splitlines()))[-1].strip()
+    if not sid.startswith("S-1-5-"):
+        raise RuntimeError("Cannot establish Windows test identity")
+    # Bootstrap the fixture's private parent; harden_private_acl subsequently
+    # enforces that every child already has a protected parent.
+    root = workspace.root
+    subprocess.run(["icacls.exe", str(root), "/inheritance:r"],
+                   check=True, capture_output=True, timeout=10)
+    subprocess.run([
+        "icacls.exe", str(root), "/grant:r",
+        "*" + sid + ":(OI)(CI)F",
+        "*S-1-5-18:(OI)(CI)F",
+        "*S-1-5-32-544:(OI)(CI)F",
+    ], check=True, capture_output=True, timeout=10)
+    require_private_acl(root)
+    owner = root / "owner"
+    harden_private_acl(owner)
+    for name in ("autonomous_delegation.json",
+                 "autonomous_delegation.pub.pem"):
+        harden_private_acl(owner / name)
+
+
 def _signed_owner_delegation(workspace, monkeypatch, *, category="local_memory", expiry=None):
     signer = Ed25519PrivateKey.generate()
     pub = signer.public_key()
@@ -72,6 +112,7 @@ def _signed_owner_delegation(workspace, monkeypatch, *, category="local_memory",
         "signature_b64": base64.urlsafe_b64encode(signature).decode().rstrip("="),
     }
     (owner / "autonomous_delegation.json").write_text(json.dumps(data), "utf-8")
+    _private_windows_test_owner_state(workspace)
     monkeypatch.setenv("AURA_EVOLUTION_DELEGATION_KEY_SHA256", hashlib.sha256(raw).hexdigest())
     return data
 
@@ -166,7 +207,10 @@ def test_launcher_cannot_self_provision_owner_delegation():
     root = Path(__file__).resolve().parents[2]
     launcher = (root / "scripts" / "launch-aura-desktop.ps1").read_text("utf-8")
     assert 'autonomous_delegation.json' not in launcher
-    assert 'AURA_EVOLUTION_AUTO_ACTIVATE' not in launcher
+    assert 'sign-activation-delegation' not in launcher
+    assert 'activation_delegation --verify' in launcher
+    assert '$env:AURA_EVOLUTION_AUTO_ACTIVATE = "0"' in launcher
+    assert '$ownerPin -match' in launcher
 
 
 def test_local_authenticated_advisory_endpoint_never_activates(sample):
@@ -204,3 +248,209 @@ def test_advisory_endpoint_not_available_in_remote_mode(sample):
     app.dependency_overrides[authenticated_principal] = lambda: "local_owner"
     with TestClient(app) as client:
         assert client.get("/api/evolution/discovery/decisions").status_code == 503
+
+
+@pytest.mark.skipif(os.name != "nt", reason="real Windows NTFS ACL integration")
+def test_windows_owner_delegation_and_passkey_acl_fail_closed(sample, monkeypatch):
+    from aura_core.evolution.windows_owner_storage import (
+        require_private_acl, harden_private_acl,
+    )
+    workspace, _ = sample
+    monkeypatch.setenv("AURA_STORAGE_MODE", "local")
+    monkeypatch.setenv("AURA_EVOLUTION_AUTO_ACTIVATE", "1")
+    _signed_owner_delegation(workspace, monkeypatch)
+    owner = workspace.root / "owner"
+    passkey = owner / "owner-passkey.json"
+    passkey.write_text('{"test":"only"}', "utf-8")
+    harden_private_acl(passkey)
+    for path in (owner, owner / "autonomous_delegation.json",
+                 owner / "autonomous_delegation.pub.pem", passkey):
+        require_private_acl(path)
+    assert AutonomousDelegationVerifier(workspace).authorized_categories() == frozenset({"local_memory"})
+    # Re-enabling inherited permissions must immediately invalidate approval.
+    subprocess.run(["icacls.exe", str(owner), "/inheritance:e"],
+                   check=True, capture_output=True, timeout=10)
+    assert not AutonomousDelegationVerifier(workspace).authorized_categories()
+    with pytest.raises(PermissionError):
+        require_private_acl(owner)
+
+
+def _signed_activation_delegation(workspace, monkeypatch):
+    from aura_core.evolution.owner_cli import make_activation_delegation
+    from aura_core.evolution.activation_delegation import (
+        SANDBOX_POLICY_SHA256, SANDBOX_TESTS_SHA256,
+    )
+    signer = Ed25519PrivateKey.generate()
+    public = signer.public_key()
+    raw = public.public_bytes(
+        serialization.Encoding.Raw, serialization.PublicFormat.Raw,
+    )
+    owner = workspace.root / "owner"
+    owner.mkdir(exist_ok=True)
+    (owner / "autonomous_delegation.pub.pem").write_bytes(
+        public.public_bytes(
+            serialization.Encoding.PEM,
+            serialization.PublicFormat.SubjectPublicKeyInfo,
+        )
+    )
+    doc = make_activation_delegation(
+        signer, categories=("local_memory",),
+        image="example/mcp@sha256:" + "a" * 64,
+        policy_sha256=SANDBOX_POLICY_SHA256,
+        tests_sha256=SANDBOX_TESTS_SHA256,
+        attestor_key_sha256="d" * 64,
+        attestor_runner_id="independent_attestor",
+        days=1, max_tools=8, min_score=70,
+    )
+    (owner / "autonomous_delegation.json").write_text(json.dumps(doc), "utf-8")
+    if os.name == "posix":
+        owner.chmod(0o700)
+        (owner / "autonomous_delegation.json").chmod(0o600)
+        (owner / "autonomous_delegation.pub.pem").chmod(0o600)
+    _private_windows_test_owner_state(workspace)
+    monkeypatch.setenv("AURA_STORAGE_MODE", "local")
+    monkeypatch.setenv("AURA_EVOLUTION_AUTO_ACTIVATE", "1")
+    monkeypatch.setenv("AURA_EVOLUTION_DELEGATION_KEY_SHA256", hashlib.sha256(raw).hexdigest())
+    return doc
+
+
+def test_signed_bounded_activation_policy_is_distinct_from_runtime_registration(sample, monkeypatch):
+    from aura_core.evolution.activation_delegation import ActivationDelegationVerifier
+    workspace, _ = sample
+    grant = _signed_activation_delegation(workspace, monkeypatch)
+    assert ActivationDelegationVerifier(workspace).verified_grant() == grant["claims"]
+    result = EvolutionDecisionEngine(workspace).evaluate("test__local-memory")
+    assert result.status == "AUTO_APPROVED_BY_POLICY"
+    assert result.requires_independent_attestation is True
+    assert result.activation_performed is False
+    assert result.registration_performed is False
+    assert json.loads(workspace.active.read_text())["active"] == []
+
+
+def test_activation_delegation_denies_tampering_or_absent_flag(sample, monkeypatch):
+    from aura_core.evolution.activation_delegation import ActivationDelegationVerifier
+    workspace, _ = sample
+    doc = _signed_activation_delegation(workspace, monkeypatch)
+    verifier = ActivationDelegationVerifier(workspace)
+    document = workspace.root / "owner" / "autonomous_delegation.json"
+    assert verifier.verified_grant() is not None
+    monkeypatch.setenv("AURA_EVOLUTION_AUTO_ACTIVATE", "0")
+    assert verifier.verified_grant() is None
+    monkeypatch.setenv("AURA_EVOLUTION_AUTO_ACTIVATE", "1")
+    doc["claims"]["max_tools"] = 17
+    document.write_text(json.dumps(doc))
+    assert verifier.verified_grant() is None
+    assert EvolutionDecisionEngine(workspace).evaluate("test__local-memory").status == "OWNER_DELEGATION_REQUIRED"
+
+
+@pytest.mark.parametrize("mutate", [
+    lambda c: c.update({"auto_activation": False}),
+    lambda c: c.update({"scope": "unrestricted-host"}),
+    lambda c: c.update({"min_score": 1}),
+    lambda c: c.update({"oci_image": "python:latest"}),
+    lambda c: c.update({"attestor_key_sha256": "not-a-key"}),
+    lambda c: c.update({"expires_at": c["issued_at"] + 366 * 86400}),
+])
+def test_unsafe_activation_scopes_rejected(sample, monkeypatch, mutate):
+    from aura_core.evolution.activation_delegation import validated_claims
+    workspace, _ = sample
+    doc = _signed_activation_delegation(workspace, monkeypatch)
+    mutate(doc["claims"])
+    with pytest.raises(PermissionError):
+        validated_claims(doc["claims"], now=doc["claims"]["issued_at"])
+
+
+def test_signed_one_year_activation_is_bounded_and_scoped():
+    from aura_core.evolution.owner_cli import make_activation_delegation
+    from aura_core.evolution.activation_delegation import (
+        validated_claims, SANDBOX_POLICY_SHA256, SANDBOX_TESTS_SHA256,
+    )
+    signer = Ed25519PrivateKey.generate()
+    scopes = (
+        "windows_automation", "local_memory", "developer_tools",
+        "filesystem", "research", "browser",
+    )
+    grant = make_activation_delegation(
+        signer, categories=scopes, image="example/mcp@sha256:" + "a" * 64,
+        policy_sha256=SANDBOX_POLICY_SHA256,
+        tests_sha256=SANDBOX_TESTS_SHA256,
+        attestor_key_sha256="d" * 64, attestor_runner_id="independent_attestor",
+        days=365, max_tools=16, min_score=75,
+    )
+    assert validated_claims(grant["claims"])["expires_at"] - grant["claims"]["issued_at"] == 365 * 86400
+    assert set(grant["claims"]["categories"]) == set(scopes)
+    with pytest.raises(ValueError):
+        make_activation_delegation(
+            signer, categories=scopes, image="example/mcp@sha256:" + "a" * 64,
+            policy_sha256=SANDBOX_POLICY_SHA256,
+            tests_sha256=SANDBOX_TESTS_SHA256,
+            attestor_key_sha256="d" * 64, attestor_runner_id="independent_attestor",
+            days=366,
+        )
+
+
+def test_review_v1_is_never_accepted_as_automatic_activation(sample, monkeypatch):
+    from aura_core.evolution.activation_delegation import ActivationDelegationVerifier
+    workspace, _ = sample
+    monkeypatch.setenv("AURA_STORAGE_MODE", "local")
+    monkeypatch.setenv("AURA_EVOLUTION_AUTO_ACTIVATE", "1")
+    _signed_owner_delegation(workspace, monkeypatch)
+    assert ActivationDelegationVerifier(workspace).verified_grant() is None
+    assert EvolutionDecisionEngine(workspace).evaluate("test__local-memory").status == "POLICY_ELIGIBLE_PENDING_ATTESTATION"
+
+
+@pytest.mark.skipif(os.name != "nt", reason="real Windows mirror DACL contract")
+def test_windows_independent_core_reads_only_signed_owner_readonly_mirror(sample, monkeypatch):
+    """Public signed claims are readable cross-user; private Owner ACL unchanged."""
+    from aura_core.evolution.activation_delegation import ActivationDelegationVerifier
+    from aura_core.evolution.windows_owner_storage import (
+        harden_private_acl, require_private_acl,
+    )
+    workspace, _ = sample
+    _signed_activation_delegation(workspace, monkeypatch)
+    owner = workspace.root / "owner"
+    original = (
+        owner / "autonomous_delegation.json",
+        owner / "autonomous_delegation.pub.pem",
+    )
+    mirrors = (
+        owner / "public-autonomous-delegation.json",
+        owner / "public-autonomous-delegation.pub.pem",
+    )
+    for src, dst in zip(original, mirrors):
+        dst.write_bytes(src.read_bytes())
+        harden_private_acl(dst)
+        subprocess.run(
+            ["icacls.exe", str(dst), "/grant", "*S-1-5-11:RX"],
+            check=True, capture_output=True, timeout=10,
+        )
+    # Core cannot access the protected originals in real multi-identity
+    # deployment. Simulate that by removing the private copy in this fixture.
+    for private in original:
+        private.unlink()
+    verifier = ActivationDelegationVerifier(workspace)
+    if verifier.verified_grant() is None:
+        from aura_core.evolution.activation_delegation import (
+            _require_readonly_public_owner_mirror,
+        )
+        results = []
+        for mirror in mirrors:
+            acl = subprocess.run(
+                ["icacls.exe", str(mirror)], capture_output=True,
+                text=True, timeout=10,
+            )
+            try:
+                _require_readonly_public_owner_mirror(mirror)
+                verdict = "ACL_ACCEPTED"
+            except PermissionError as error:
+                verdict = str(error)
+            results.append(f"{mirror.name}: {verdict}, {acl.stdout.strip()}")
+        pytest.fail("Signed public mirror unexpectedly rejected: " +
+                    " | ".join(results))
+    require_private_acl(owner)
+    # Granting WRITE to ordinary authenticated users must fail closed.
+    subprocess.run(
+        ["icacls.exe", str(mirrors[0]), "/grant", "*S-1-5-11:M"],
+        check=True, capture_output=True, timeout=10,
+    )
+    assert verifier.verified_grant() is None

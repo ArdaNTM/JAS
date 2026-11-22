@@ -557,19 +557,17 @@ def build_app() -> FastAPI:
         ))
 
     evolution_workspace = None
-    if (self_discovery_enabled
-            and os.getenv("AURA_EVOLUTION_AUTO_STAGE", "1").strip() == "1"):
+    if (storage_mode is StorageMode.LOCAL
+            and (self_discovery_enabled and
+                 os.getenv("AURA_EVOLUTION_AUTO_STAGE", "1").strip() == "1"
+                 or os.getenv("AURA_EVOLUTION_AUTO_ACTIVATE", "0").strip() == "1")):
         # No checkout or system writes: only bounded inert evidence outside JAS.
         # Security trust is never established by this static scan.
         root_path = os.getenv("AURA_EVOLUTION_ROOT", "").strip()
         if not root_path:
             root_path = (r"D:\AURA\Evolution" if os.name == "nt"
                          else str(Path.home() / ".local/share/aura/evolution"))
-        evolution_workspace = EvolutionWorkspace(
-            root_path,
-            max_items=int(os.getenv("AURA_EVOLUTION_MAX_ITEMS", "24")),
-            max_bytes=int(os.getenv("AURA_EVOLUTION_MAX_BYTES", "150000000")),
-        )
+        evolution_workspace = EvolutionWorkspace(root_path)
         stage_provider = GitHubStagingMCPProvider(workspace=evolution_workspace)
         stage_service = ServiceDefinition(
             name="github_static_staging", version="1.0.0", provider="aura",
@@ -670,6 +668,17 @@ def build_app() -> FastAPI:
             workspace=evolution_workspace, auto_stage=evolution_workspace is not None,
         )
     app.include_router(self_discovery_router)
+    app.state.autonomous_activation = None
+    if (storage_mode is StorageMode.LOCAL
+            and evolution_workspace is not None
+            and os.getenv("AURA_EVOLUTION_AUTO_ACTIVATE", "0").strip() == "1"):
+        from aura_core.evolution.activation_runtime import DelegatedMCPActivationManager
+        manager = DelegatedMCPActivationManager(
+            workspace=evolution_workspace, kernel=kernel,
+        )
+        app.state.autonomous_activation = manager
+        if app.state.self_discovery is not None:
+            app.state.self_discovery.on_verified = manager.scan
     app.state.feature_catalog = feature_catalog
     app.include_router(capability_center_router)
     app.state.http_bearer_token = http_bearer_token
@@ -1172,6 +1181,9 @@ def build_app() -> FastAPI:
             # The runtime owns the sole EventBus dispatch loop. Start it only
             # after the Kernel and existing event bridge are ready.
             event_runtime.start()
+            delegated_activation = getattr(_app.state, "autonomous_activation", None)
+            if delegated_activation is not None:
+                await delegated_activation.start()
             discovery_worker = getattr(_app.state, "self_discovery", None)
             if discovery_worker is not None:
                 discovery_worker.start()
@@ -1239,6 +1251,13 @@ def build_app() -> FastAPI:
                     await discovery_worker.stop()
                 except Exception:
                     logger.exception("Self-discovery shutdown failed")
+
+            delegated_activation = getattr(app.state, "autonomous_activation", None)
+            if delegated_activation is not None:
+                try:
+                    await delegated_activation.close()
+                except Exception:
+                    logger.exception("Delegated MCP shutdown failed")
 
             local_reflection = getattr(app.state, "background_thinking", None)
             if local_reflection is not None:

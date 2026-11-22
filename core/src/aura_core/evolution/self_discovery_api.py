@@ -72,6 +72,23 @@ async def evaluated_static_candidates(
     }
 
 
+@router.get("/active")
+async def active_delegated_capabilities(
+    request: Request, principal: str = Depends(authenticated_principal),
+):
+    _engine(request, principal)
+    manager = getattr(request.app.state, "autonomous_activation", None)
+    if manager is None:
+        return {"items": [], "mode": "delegated_off", "gateway_required": True}
+    return {
+        "items": manager.active_summary(),
+        "mode": "signed_isolated_offline_mcp",
+        "gateway_required": True,
+        "owner_delegation_required": True,
+        "independent_attestation_required": True,
+    }
+
+
 @router.post("/run")
 async def run_discovery(request: Request, principal: str = Depends(authenticated_principal)):
     engine = _engine(request, principal)

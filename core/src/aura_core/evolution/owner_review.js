@@ -144,13 +144,82 @@ function renderDiscoveries(records) {
     root.append(card);
   }
 }
+async function quarantine(record, button) {
+  if (record.status !== "ACTIVE" || button.disabled) return;
+  if (!window.confirm("Quarantine " + record.repository + "? This revokes the active capability until separately reauthorized.")) return;
+  button.disabled = true;
+  try {
+    const result = await api("/api/owner/activations/quarantine", {
+      repository: record.repository,
+    });
+    status("Revoked " + result.repository + " · no new tool authorization granted");
+    await load();
+  } catch (error) {
+    status(error instanceof Error ? error.message : "Local revoke denied");
+  } finally {
+    button.disabled = false;
+  }
+}
+function renderActivations(records) {
+  const root = $("activations");
+  root.replaceChildren();
+  if (!records.length) {
+    const empty = document.createElement("p");
+    empty.textContent = "No active autonomous MCP capabilities.";
+    root.append(empty);
+    return;
+  }
+  for (const record of records) {
+    const card = document.createElement("article");
+    const heading = document.createElement("h2");
+    heading.textContent = record.repository;
+    card.append(heading);
+    item(card, "Status", record.status);
+    item(card, "Category", record.category);
+    item(card, "Sandbox / independent proof", record.proof_present ? "Observed metadata · independently verify" : "Missing");
+    item(card, "Scoped tools", Array.isArray(record.capabilities) ? record.capabilities.join(", ") : "");
+    if (record.status === "ACTIVE") {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "deny";
+      button.textContent = "Revoke / Quarantine";
+      button.addEventListener("click", () => void quarantine(record, button));
+      card.append(button);
+    }
+    root.append(card);
+  }
+}
+function renderPreflights(records) {
+  const root = $("preflights");
+  root.replaceChildren();
+  if (!records.length) {
+    const empty = document.createElement("p");
+    empty.textContent = "No isolated sandbox observations.";
+    root.append(empty);
+    return;
+  }
+  for (const record of records) {
+    const card = document.createElement("article");
+    const heading = document.createElement("h2");
+    heading.textContent = record.repository;
+    card.append(heading);
+    item(card, "Sandbox review", record.status);
+    item(card, "Failure type", record.reason_code || "None observed");
+    item(card, "Independent attestation", "Required");
+    item(card, "Activation", "Not permitted by preflight");
+    root.append(card);
+  }
+}
 async function load() {
   try {
-    const [result, proposals] = await Promise.all([
+    const [result, proposals, preflights, activations] = await Promise.all([
       api("/api/owner/pending"), api("/api/owner/discoveries"),
+      api("/api/owner/preflights"), api("/api/owner/activations"),
     ]);
     render(Array.isArray(result.items) ? result.items : []);
     renderDiscoveries(Array.isArray(proposals.items) ? proposals.items : []);
+    renderPreflights(Array.isArray(preflights.items) ? preflights.items : []);
+    renderActivations(Array.isArray(activations.items) ? activations.items : []);
     status("Review only · " + (result.items?.length ?? 0)
       + " protected approvals · " + (proposals.items?.length ?? 0)
       + " untrusted discoveries");

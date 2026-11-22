@@ -319,6 +319,9 @@ class SelfDiscoveryEngine:
         self.principal_id = principal_id
         self.workspace = workspace
         self.auto_stage = bool(auto_stage and workspace is not None)
+        # Composed Kernel callback only; never model-supplied and no default
+        # authorization. Trusted delegated manager rechecks Owner + attestor.
+        self.on_verified = None
         self.interval_seconds = max(1800, min(int(interval_seconds), 86400))
         self._lock = asyncio.Lock()
         self._stop = asyncio.Event()
@@ -688,6 +691,13 @@ class SelfDiscoveryEngine:
                             research_crosscheck = "unavailable"
                 staging_report = await self._stage_pending()
                 staged_count = staging_report["staged_count"]
+                newly_activated: list[str] = []
+                if staging_report["verified_count"] and self.on_verified is not None:
+                    try:
+                        newly_activated = await self.on_verified()
+                    except Exception:
+                        # External provider startup never disrupts discovery.
+                        newly_activated = []
                 # Preserve fail-closed 429 behavior for an empty catalog;
                 # an existing queue is a useful partial offline outcome.
                 if not successful_queries and failed_queries and not staging_report["attempted"]:
@@ -716,7 +726,8 @@ class SelfDiscoveryEngine:
                     "staging_rejected": staging_report["rejected"],
                     "static_ready_count": self.static_ready_count(),
                     "owner_review_url": "http://localhost:8766/",
-                    "activation_performed": False,
+                    "activation_performed": bool(newly_activated),
+                    "auto_activated": newly_activated,
                     "local_research_crosscheck": research_crosscheck,
                 }
             except (DiscoveryUnavailable, PermissionError, OSError,

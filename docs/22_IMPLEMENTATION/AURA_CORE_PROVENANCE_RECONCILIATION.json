@@ -7,7 +7,7 @@
   "files": [
     {
       "path": "core/src/aura_core/main.py",
-      "unified_blob_sha": "28410443134fd4a33d79b231b315a6a3170b898f",
+      "unified_blob_sha": "a41f0a9f258bc2dca440bc246d47ec02b66d4c4d",
       "canonical": "PR #172 local Owner external staging: narrow resource path PermissionEngine policy, Gateway-only static staging, no Owner passkey or sandbox boundary changes. CI and independent Owner live acceptance pending.",
       "variants": [
         {
@@ -98,6 +98,13 @@
           "pr": 172,
           "ref": "730f6d515c133b08f87733f619fbbfcfbca15462",
           "blob": "28410443134fd4a33d79b231b315a6a3170b898f",
+          "ancestry": "proposed_feature_branch",
+          "assessment": "PENDING_EXACT_HEAD_CI_AND_OWNER_ACCEPTANCE"
+        },
+        {
+          "pr": 179,
+          "ref": "feat/evolution-owner-delegation-sandbox-activation-20261122",
+          "blob": "a41f0a9f258bc2dca440bc246d47ec02b66d4c4d",
           "ancestry": "proposed_feature_branch",
           "assessment": "PENDING_EXACT_HEAD_CI_AND_OWNER_ACCEPTANCE"
         }

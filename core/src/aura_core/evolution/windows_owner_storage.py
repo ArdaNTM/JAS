@@ -37,7 +37,7 @@ def _powershell(script: str, *, path: Path) -> None:
         creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
     )
     if process.returncode != 0:
-        raise PermissionError("Owner state NTFS ACL is not private or could not be validated")
+        raise PermissionError(f"Owner state NTFS ACL is not private or could not be validated (status={process.returncode})")
 
 
 _CHECK_ACL = r"""

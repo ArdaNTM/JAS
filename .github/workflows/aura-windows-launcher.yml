@@ -27,6 +27,15 @@ on:
       - "core/src/aura_core/evolution/external_staging.py"
       - "core/src/aura_core/evolution/self_discovery.py"
       - "core/src/aura_core/evolution/decision_engine.py"
+      - "scripts/launch-aura-desktop.ps1"
+      - "scripts/setup-autonomous-aura.ps1"
+      - "core/src/aura_core/evolution/windows_job_mcp.py"
+      - "core/tests/test_evolution_windows_job_optin.py"
+      - "core/src/aura_core/evolution/activation_runtime.py"
+      - "core/src/aura_core/evolution/activation_delegation.py"
+      - "core/src/aura_core/evolution/owner_cli.py"
+      - "core/src/aura_core/evolution/sandbox_preflight.py"
+      - "core/src/aura_core/evolution/attestor_worker.py"
       - "core/src/aura_core/evolution/self_discovery_api.py"
       - "core/src/aura_core/tts/**"
       - "aura-ui/tests/aura-proxy.test.mjs"
@@ -60,6 +69,15 @@ on:
       - "core/src/aura_core/evolution/external_staging.py"
       - "core/src/aura_core/evolution/self_discovery.py"
       - "core/src/aura_core/evolution/decision_engine.py"
+      - "scripts/launch-aura-desktop.ps1"
+      - "scripts/setup-autonomous-aura.ps1"
+      - "core/src/aura_core/evolution/windows_job_mcp.py"
+      - "core/tests/test_evolution_windows_job_optin.py"
+      - "core/src/aura_core/evolution/activation_runtime.py"
+      - "core/src/aura_core/evolution/activation_delegation.py"
+      - "core/src/aura_core/evolution/owner_cli.py"
+      - "core/src/aura_core/evolution/sandbox_preflight.py"
+      - "core/src/aura_core/evolution/attestor_worker.py"
       - "core/src/aura_core/evolution/self_discovery_api.py"
       - "core/src/aura_core/tts/**"
       - "aura-ui/tests/aura-proxy.test.mjs"
@@ -76,6 +94,42 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+      - name: Parse every tracked PowerShell script (Windows PowerShell 5.1)
+        shell: powershell
+        run: |
+          $failures = @()
+          foreach ($path in @(git ls-files -- '*.ps1')) {
+            $tokens = $null
+            $errors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile(
+              (Join-Path (Get-Location).Path $path), [ref]$tokens, [ref]$errors
+            )
+            foreach ($errorItem in @($errors)) {
+              $failures += "$($path): $($errorItem.Message)"
+            }
+          }
+          if ($failures.Count -gt 0) {
+            $failures | ForEach-Object { Write-Host $_ }
+            throw "PowerShell script syntax validation failed"
+          }
+      - name: Parse every tracked PowerShell script (PowerShell 7)
+        shell: pwsh
+        run: |
+          $failures = @()
+          foreach ($path in @(git ls-files -- '*.ps1')) {
+            $tokens = $null
+            $errors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile(
+              (Join-Path (Get-Location).Path $path), [ref]$tokens, [ref]$errors
+            )
+            foreach ($errorItem in @($errors)) {
+              $failures += "$($path): $($errorItem.Message)"
+            }
+          }
+          if ($failures.Count -gt 0) {
+            $failures | ForEach-Object { Write-Host $_ }
+            throw "PowerShell script syntax validation failed"
+          }
       - name: Windows PowerShell 5.1 parser regression
         shell: cmd
         run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\test-aura-env.ps1
