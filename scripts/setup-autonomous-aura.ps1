@@ -104,7 +104,7 @@ if (-not (Test-Path -LiteralPath $Passkey)) {
         }
     }
     finally {
-        Set-Clipboard -Value '' -ErrorAction SilentlyContinue
+        cmd.exe /c "echo off | clip" | Out-Null
         Stop-Process -Id $Enrollment.Id -Force -ErrorAction SilentlyContinue
     }
     Assert-PrivateAcl $Passkey
