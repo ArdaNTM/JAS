@@ -226,9 +226,9 @@ def test_project_specific_requires_python_checked_before_install(tmp_path):
     incompatible = f">={sys.version_info.major}.{sys.version_info.minor + 1}"
     files = {
         "packages/roam/pyproject.toml": (
-            f"[project]\\nname='roam'\\nrequires-python='{incompatible}'\\n"
+            f"[project]\nname='roam'\nrequires-python='{incompatible}'\n"
         ).encode("utf-8"),
-        "packages/roam/src/roam/cli.py": b"from roam.server import main\\n",
+        "packages/roam/src/roam/cli.py": b"from roam.server import main\n",
     }
     runtime = tmp_path / "runtime" / "example__roam"
     runtime.mkdir(parents=True)
