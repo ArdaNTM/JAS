@@ -126,7 +126,7 @@ def test_github_bearer_used_only_when_provisioned(monkeypatch):
 def test_public_scan_uses_at_most_two_queries_and_six_results(monkeypatch):
     monkeypatch.delenv("GITHUB_TOKEN", raising=False)
     monkeypatch.setenv("PATH", "")
-    assert 1 <= len(QUERIES) <= 2
+    assert len(QUERIES) == 8 and len(set(QUERIES)) == 8
     requests = []
     def handler(request):
         requests.append(request)
