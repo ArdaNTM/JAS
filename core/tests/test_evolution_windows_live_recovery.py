@@ -449,7 +449,7 @@ def test_expired_signed_local_attestation_recovers_without_lifting_unrelated_qua
         workspace=workspace, kernel=SimpleNamespace(event_bus=None),
     )
     manager.delegation = SimpleNamespace(verified_grant=lambda: grant)
-    pending = SimpleNamespace(status="AUTO_APPROVED_BY_POLICY", repository=repository)
+    pending = SimpleNamespace(status="AUTO_APPROVED_BY_POLICY", repository=repository, category="local_memory")
     manager.decisions = SimpleNamespace(evaluate_pending=lambda limit: [pending])
 
     async def refused_activation(*args):
