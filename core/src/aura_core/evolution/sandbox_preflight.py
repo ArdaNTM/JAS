@@ -64,7 +64,7 @@ def choose_python_entrypoint(files: dict[str, bytes], hint: str) -> str:
                 raise SandboxUntrusted("Non-string project entrypoint")
             # PEP 621: importable module:function, never arbitrary shell text.
             match = re.fullmatch(
-                r"([A-Za-z_]\\w*(?:\\.[A-Za-z_]\\w*)*):([A-Za-z_]\\w*)",
+                r"([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*):([A-Za-z_]\w*)",
                 target.strip(),
             )
             if match is None:
