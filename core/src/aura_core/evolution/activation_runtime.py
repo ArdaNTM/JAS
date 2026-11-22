@@ -152,7 +152,12 @@ class DockerMCPProvider(MCPProvider):
             self._healthy = False
             self._on_failure(self.package)
             raise PermissionError("Quarantined, expired or revoked external provider")
-        return await super().list_tools()
+        try:
+            return await super().list_tools()
+        except Exception:
+            self._healthy = False
+            self._on_failure(self.package)
+            raise
 
     async def call_tool(self, name, arguments=None):
         if (not self._healthy or not self._owner_authorized()
