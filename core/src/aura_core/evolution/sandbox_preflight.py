@@ -177,3 +177,23 @@ class IsolatedMCPPreflight:
         }
         with path.open("a", encoding="utf-8") as stream:
             stream.write(json.dumps(record, sort_keys=True) + "\n")
+
+
+def main() -> int:
+    import argparse
+    parser = argparse.ArgumentParser(description="Operator-run isolated MCP preflight; NOT an attestor")
+    parser.add_argument("--evolution-root", type=Path, required=True)
+    parser.add_argument("--package", required=True, help="Validated owner__repository")
+    parser.add_argument("--image", required=True, help="Immutable OCI image@sha256:...")
+    args = parser.parse_args()
+    if os.getenv("AURA_STORAGE_MODE", "local").lower() != "local":
+        parser.error("Isolated evolution preflight is local-only")
+    workspace = EvolutionWorkspace(args.evolution_root)
+    sandbox = IsolatedMCPPreflight(workspace, image=args.image)
+    report = asyncio.run(sandbox.probe(args.package))
+    print(json.dumps(report, sort_keys=True))
+    return 0 if report["status"] == "PREPARED_UNATTESTED" else 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
