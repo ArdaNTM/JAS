@@ -263,6 +263,20 @@ class DelegatedMCPActivationManager:
             trusted_runner_id=grant["attestor_runner_id"],
         )
 
+    def _still_authorized(self, name: str) -> bool:
+        if self.delegation.verified_grant() is None:
+            return False
+        repository = name.replace("__", "/")
+        try:
+            records = self._load_inventory()["active"]
+            return not any(
+                isinstance(row, dict) and row.get("repository") == repository
+                and row.get("status") in {"REVOKED", "QUARANTINED"}
+                for row in records
+            )
+        except (OSError, ValueError, PermissionError, TypeError):
+            return False
+
     async def _connect(self, name: str, grant: dict, entry: str, expires_at: int):
         runtime = self.workspace.root / "runtime" / name
         if self._factory is not None:
@@ -284,7 +298,7 @@ class DelegatedMCPActivationManager:
                 connection, runtime=runtime, archive_sha256="",
                 workspace=self.workspace, package=name,
                 on_failure=lambda key: asyncio.create_task(self.quarantine(key)),
-                owner_authorized=lambda: self.delegation.verified_grant() is not None,
+                owner_authorized=lambda: self._still_authorized(name),
                 attestation_expires_at=expires_at,
             )
         except BaseException:
@@ -369,8 +383,14 @@ class DelegatedMCPActivationManager:
         # Expired sandbox evidence always retires old live providers before
         # another trust decision. No MCP call may use stale evidence.
         for name, active in tuple(self._active.items()):
-            if time.time() >= active.attestation_expires_at:
+            if not self._still_authorized(name):
                 await self.quarantine(name)
+            elif time.time() >= active.attestation_expires_at:
+                # Expiry is a dependency. Disconnect now; a renewed *fresh*
+                # signed independent observation may authorize reactivation.
+                await self._remove(name, quarantine=False)
+                self._persist(name.replace("__", "/"), "WAITING_ATTESTATION",
+                              reason_code="EXPIRED_ATTESTATION")
         async with self._lock:
             existing = frozenset(value.category for value in self._active.values())
             persistent = {
