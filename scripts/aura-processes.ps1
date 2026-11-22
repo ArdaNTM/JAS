@@ -31,7 +31,11 @@ function Test-AuraOwnedProcess {
     $nodeExe = $exe -match '(?i)(?:^|\\)node\.exe$'
     $viteOwned = $nodeExe -and (
         $command.IndexOf($vite, $comparison) -ge 0 -or
-        $command.IndexOf($viteCli, $comparison) -ge 0
+        $command.IndexOf($viteCli, $comparison) -ge 0 -or
+        # npm.cmd -> node.exe may invoke node_modules\.bin\..\vite\bin\vite.js.
+        # Require the same AURA UI root and a real Vite preview command.
+        ($command.IndexOf($uiDir, $comparison) -ge 0 -and
+         $command -match '(?i)\bvite(?:\.js)?\b.*\bpreview\b')
     )
     # Some npm preview launchers use npm.cmd via cmd.exe. Only the
     # unambiguous repo-working-directory/preview command is recognized.
