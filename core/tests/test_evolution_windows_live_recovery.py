@@ -196,7 +196,9 @@ def test_launcher_restores_only_missing_user_environment():
         "AURA_EVOLUTION_AUTO_ACTIVATE", "AURA_EVOLUTION_DELEGATION_KEY_SHA256",
         "AURA_EVOLUTION_ATTESTOR_KEY_SHA256",
     ):
-        assert f'GetEnvironmentVariable("{name}", "User")' in text
+        assert f'"{name}"' in text
+    assert 'GetEnvironmentVariable($name, "User")' in text
+    assert 'GetEnvironmentVariable($name, "Process")' in text
     assert "Start-Attestor" in text
     assert "autonomous_delegation.json" not in text
 
