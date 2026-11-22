@@ -129,7 +129,13 @@ try {
                 [Security.AccessControl.FileSystemRights]::TakeOwnership
             )
             if (($ace.FileSystemRights -band $forbidden) -ne 0) { exit 15 }
+            $rx = [Security.AccessControl.FileSystemRights]::ReadAndExecute
+            if (($ace.FileSystemRights -band $rx) -ne $rx) { exit 18 }
             $authRead = $true
+        } else {
+            $full = [Security.AccessControl.FileSystemRights]::FullControl
+            if ($ace.AccessControlType -ne 'Allow' -or
+                ($ace.FileSystemRights -band $full) -ne $full) { exit 19 }
         }
     }
     if (-not $authRead) { exit 16 }
