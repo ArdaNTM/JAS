@@ -133,8 +133,14 @@ function renderDiscoveries(records) {
     card.append(title);
     item(card, "License", record.license);
     item(card, "Description", record.description);
-    item(card, "Stage", record.package_status || "Queued");
+    item(card, "Stage", record.static_verified
+      ? "VERIFIED · static review ready (not approved)"
+      : (record.package_status || "Queued"));
     item(card, "Static review", record.package_error || "Not executed or approved");
+    if (record.static_verified && Array.isArray(record.detected_capabilities)) {
+      item(card, "Detected capabilities",
+        record.detected_capabilities.join(", ") || "None observed");
+    }
     root.append(card);
   }
 }
