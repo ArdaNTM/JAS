@@ -141,6 +141,34 @@ def _installer_environment(workspace_root: Path, scratch: Path) -> dict[str, str
     }
 
 
+def _record_safe_install_failure(workspace_root: Path, runtime: Path, stderr: str) -> None:
+    """Bounded diagnostic categories only; never persist untrusted pip text."""
+    candidates = (
+        ("no solution found", "Dependency resolution found no suitable wheel"),
+        ("no matching distribution", "No compatible wheel on package index"),
+        ("requires-python", "Dependency Python version constraint incompatible"),
+        ("requires python", "Dependency Python version constraint incompatible"),
+        ("failed to download", "Dependency wheel download failed"),
+        ("certificate verify failed", "Package index TLS certificate verification failed"),
+        ("unexpected argument", "Installed uv does not support a requested option"),
+        ("no module named pip", "Fallback pip not available in the isolated environment"),
+    )
+    low = stderr[-4096:].lower()
+    message = next((label for needle, label in candidates if needle in low),
+                   "Wheel installation failed; untrusted stderr redacted")
+    logs = workspace_root / "logs"
+    try:
+        _checked_path(logs)
+        destination = logs / (runtime.name + "-local-mcp-stderr.json")
+        if not destination.is_symlink():
+            destination.write_text(json.dumps({
+                "reason_code": "ISOLATED_DEPENDENCY_INSTALL_FAILED",
+                "stderr_tail": message,
+            }, sort_keys=True), encoding="utf-8")
+    except (OSError, ValueError, PermissionError):
+        pass
+
+
 def prepare_isolated_venv(
     runtime: Path, files: dict[str, bytes], workspace_root: Path, *,
     install: bool | None = None,
@@ -204,6 +232,7 @@ def prepare_isolated_venv(
                     check=False,
                 )
                 if result.returncode != 0:
+                    _record_safe_install_failure(workspace_root, runtime, result.stderr)
                     raise SandboxUntrusted(
                         "Isolated wheel install failed (exit " + str(result.returncode) + ")"
                     )
