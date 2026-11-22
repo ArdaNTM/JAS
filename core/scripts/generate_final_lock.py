@@ -68,6 +68,7 @@ def files_to_hash() -> list[Path]:
         ROOT / "scripts" / "aura-processes.ps1",
         ROOT / "core" / "tests" / "test_evolution_windows_job_optin.py",
         ROOT / "core" / "tests" / "test_evolution_windows_live_recovery.py",
+        ROOT / "core" / "tests" / "test_evolution_python_mcp_multimodule.py",
         ROOT / ".github" / "workflows" / "aura-windows-launcher.yml",
         ROOT / ".github" / "workflows" / "aura-windows-owner-security.yml",
         ROOT / "core" / "scripts" / "generate_final_lock.py",
