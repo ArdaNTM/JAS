@@ -70,13 +70,30 @@ def _eligible_local_recovery(previous: object) -> bool:
     count = previous.get("retry_count", 0)
     return (
         previous.get("status") in {"QUARANTINED", "RETRYING"}
-        and previous.get("reason_code") in {
-            "SandboxUntrusted", "DEPENDENCY_RECOVERY",
-            "MCPError", "McpError", "ExceptionGroup",
-        } or (
-            previous.get("reason_code") == "PermissionError"
-            and previous.get("recovery_epoch") == "windows-isolated-wheels-20261122-v4"
-            and previous.get("detail") == "External MCP exceeded delegated tool budget"
+        and (
+            (
+                previous.get("recovery_epoch") in {
+                    None, "windows-isolated-wheels-20261122-v1",
+                    "windows-isolated-wheels-20261122-v2",
+                    "windows-isolated-wheels-20261122-v3",
+                }
+                and previous.get("reason_code") in {
+                    "SandboxUntrusted", "DEPENDENCY_RECOVERY",
+                    "MCPError", "McpError", "ExceptionGroup",
+                }
+            )
+            or (
+                previous.get("recovery_epoch") == "windows-isolated-wheels-20261122-v4"
+                and (
+                    (previous.get("reason_code") == "SandboxUntrusted"
+                     and previous.get("detail") in {
+                         "Local MCP tools/list missing or oversized",
+                         "Oversized MCP tool declarations",
+                     })
+                    or (previous.get("reason_code") == "PermissionError"
+                        and previous.get("detail") == "External MCP exceeded delegated tool budget")
+                )
+            )
         )
         and previous.get("recovery_epoch") != RECOVERY_EPOCH
         and previous.get("recovery_epoch") in {
