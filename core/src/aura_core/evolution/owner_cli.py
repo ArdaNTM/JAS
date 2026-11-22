@@ -218,21 +218,27 @@ def revoke_delegation(*, owner_root: str) -> bool:
     from aura_core.evolution.windows_owner_storage import require_private_acl
     declaration = root / "autonomous_delegation.json"
     key = root / "autonomous_delegation.pub.pem"
-    if not declaration.is_file():
+    mirrors = (
+        root / "public-autonomous-delegation.json",
+        root / "public-autonomous-delegation.pub.pem",
+    )
+    if not declaration.is_file() and not any(p.exists() for p in mirrors):
         return False
-    require_private_acl(declaration)
+    if declaration.exists():
+        require_private_acl(declaration)
     if key.exists():
         require_private_acl(key)
-    declaration.unlink()
-    if key.exists():
-        key.unlink()
-    # Revocation removes the independently read-only signed public mirror;
-    # it cannot reveal or mutate the Owner signing key.
-    for name in ("public-autonomous-delegation.json",
-                 "public-autonomous-delegation.pub.pem"):
-        mirror = root / name
+    # Deny the separate Core/attestor identity *first*. A crash before private
+    # cleanup can never leave an independently readable stale standing grant.
+    for mirror in mirrors:
+        if mirror.is_symlink():
+            raise PermissionError("Public Owner mirror must not be a symlink")
         if mirror.exists():
             mirror.unlink()
+    if declaration.exists():
+        declaration.unlink()
+    if key.exists():
+        key.unlink()
     return True
 
 
