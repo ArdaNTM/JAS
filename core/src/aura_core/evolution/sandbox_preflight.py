@@ -56,7 +56,10 @@ def choose_python_entrypoint(files: dict[str, bytes], hint: str) -> str:
             project = tomllib.loads(pyproject.decode("utf-8-sig"))
         except (UnicodeError, ValueError) as exc:
             raise SandboxUntrusted("Invalid pyproject TOML") from exc
-        scripts = project.get("project", {}).get("scripts", {})
+        metadata = project.get("project", {})
+        if not isinstance(metadata, dict):
+            raise SandboxUntrusted("Invalid pyproject project metadata")
+        scripts = metadata.get("scripts", {})
         if not isinstance(scripts, dict) or len(scripts) > 64:
             raise SandboxUntrusted("Invalid project script mapping")
         for name, target in sorted(scripts.items()):
