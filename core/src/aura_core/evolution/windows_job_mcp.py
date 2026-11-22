@@ -160,8 +160,11 @@ def bridge_parameters(runtime: Path, entry: str) -> StdioServerParameters:
 class LocalWindowsMCPPreflight(IsolatedMCPPreflight):
     """Reuse the hardened ZIP extraction and quotas; never fabricate OCI pins."""
 
-    def __init__(self, workspace: EvolutionWorkspace, *, timeout_seconds: int = 20):
+    def __init__(self, workspace: EvolutionWorkspace, *, timeout_seconds: int = 20,
+                 owner_grant: dict | None = None, install: bool | None = None):
         self.workspace = workspace
+        self.owner_grant = owner_grant
+        self.install = install
         self.decisions = EvolutionDecisionEngine(workspace)
         self.runtime_root = workspace.root / "runtime"
         self.runtime_root.mkdir(parents=True, exist_ok=True)
@@ -171,6 +174,14 @@ class LocalWindowsMCPPreflight(IsolatedMCPPreflight):
     async def probe(self, package_name: str) -> dict:
         if os.name != "nt":
             raise PermissionError("Windows local MCP mode cannot be used on other hosts")
+        # Do not allow a caller to turn on host execution through an env flag.
+        # The attestor must independently verify the exact signed Owner grant.
+        from aura_core.evolution.activation_delegation import ActivationDelegationVerifier
+        signed = ActivationDelegationVerifier(self.workspace).verified_grant()
+        if (signed is None or self.owner_grant is None or
+            signed != self.owner_grant or
+            signed.get("allow_local_windows_process") is not True):
+            raise PermissionError("Signed Owner local Windows execution permission required")
         existing = self.runtime_root / package_name
         data, repository, digest = self.decisions._check_candidate(package_name)
         source = self.workspace.root / "verified" / package_name / "source.zip"
@@ -185,6 +196,16 @@ class LocalWindowsMCPPreflight(IsolatedMCPPreflight):
             runtime, prepared_entry, _ = self.prepare(package_name)
             if prepared_entry != entry:
                 raise SandboxUntrusted("Static entrypoint changed during preparation")
+        from aura_core.evolution.isolated_venv import prepare_isolated_venv
+        self._verify_runtime_capacity(0)
+        # Only the separately authorized attestor may install dependencies.
+        # Live Windows defaults to wheel-only isolated installation; unit tests
+        # may disable it without creating any host process or network activity.
+        await asyncio.to_thread(
+            prepare_isolated_venv, runtime, files, self.workspace.root,
+            install=self.install,
+        )
+        self._verify_runtime_capacity(0)
         connection = MCPConnection()
         try:
             await asyncio.wait_for(connection.connect_stdio(
