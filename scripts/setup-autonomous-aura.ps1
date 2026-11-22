@@ -168,7 +168,7 @@ if (-not (Test-Path -LiteralPath $Delegation)) {
         'filesystem', 'research', 'browser',
         '--attestor-key-sha256', $AttestorPin,
         '--attestor-runner-id', 'local_windows_operator',
-        '--days', '365', '--max-tools', '16', '--min-score', '70',
+        '--days', '365', '--max-tools', '64', '--min-score', '70',
         '--allow-local-windows-process', '--confirm-owner-authority'
     )
     if ($DockerImage) { $args += @('--image', $DockerImage) }
