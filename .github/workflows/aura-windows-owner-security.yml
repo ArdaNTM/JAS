@@ -55,6 +55,6 @@ jobs:
         run: uv sync --frozen --group dev
       - name: Windows ACL and owner governance acceptance
         run: |
-          uv run --frozen python -m pytest -q tests/test_owner_enrollment.py tests/test_owner_activation.py tests/test_governed_activation_api.py tests/test_governed_owner_receipt.py tests/test_owner_control_plane_http.py tests/test_windows_owner_acl.py
+          uv run --frozen python -m pytest -q --tb=short --basetemp="${{ runner.temp }}/aura-owner-pytest" tests/test_owner_enrollment.py tests/test_owner_activation.py tests/test_governed_activation_api.py tests/test_governed_owner_receipt.py tests/test_owner_control_plane_http.py tests/test_windows_owner_acl.py tests/test_evolution_decision_engine.py tests/test_evolution_autonomous_activation.py tests/test_evolution_sandbox_preflight.py
       - name: Verify JAS immutable production release inventory
         run: uv run --frozen python scripts/verify_final_lock.py
