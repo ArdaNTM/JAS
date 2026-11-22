@@ -161,6 +161,39 @@ def runtime_fingerprint(workspace: EvolutionWorkspace, name: str) -> str:
     return hashlib.sha256("".join(lines).encode("utf-8")).hexdigest()
 
 
+def expired_attestation_evidence(
+    workspace: EvolutionWorkspace, name: str, *, now: int | None = None,
+) -> bool:
+    """Only classify an existing bounded proof as stale, never authorize it.
+
+    The independent attestor MUST perform a fresh signed MCP handshake before
+    any new capability can activate. Arbitrary quarantine markers are not
+    eligible for expiry recovery.
+    """
+    path = workspace.root / "verified" / name / "independent-attestations.json"
+    try:
+        if path.is_symlink() or not path.is_file() or path.stat().st_size > _TOOL_LIMIT_BYTES:
+            return False
+        bundle = json.loads(path.read_text("utf-8"))
+        if (not isinstance(bundle, dict) or bundle.get("schema") != _SCHEMA
+                or bundle.get("repository") != name.replace("__", "/")
+                or not isinstance(bundle.get("tools"), list)
+                or not 1 <= len(bundle["tools"]) <= 64):
+            return False
+        current = int(time.time()) if now is None else now
+        for row in bundle["tools"]:
+            if not isinstance(row, dict) or not isinstance(row.get("attestation"), dict):
+                return False
+            claims = row["attestation"].get("claims")
+            if (not isinstance(claims, dict)
+                    or type(claims.get("expires_at")) is not int
+                    or claims["expires_at"] > current):
+                return False
+        return True
+    except (OSError, ValueError, TypeError, PermissionError):
+        return False
+
+
 def tool_binding_digest(*, repository: str, source_sha256: str, tree_sha256: str,
                         image: str, tool: MCPTool, category: str) -> str:
     if (not _TOOL.fullmatch(tool.name) or not isinstance(tool.input_schema, dict)
@@ -542,6 +575,11 @@ class DelegatedMCPActivationManager:
                         or "Sandbox runtime not prepared" in str(exc)
                         or "pinned attestor key missing" in str(exc)
                         or "attestation expired" in str(exc)
+                        or (
+                            local_signed
+                            and "Local Windows MCP candidate quarantined by independent attestor" in str(exc)
+                            and expired_attestation_evidence(self.workspace, name)
+                        )
                     )
                     self._persist(
                         decision.repository,
