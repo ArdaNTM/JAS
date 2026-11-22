@@ -145,7 +145,7 @@ class PermissionEngine:
         policy, risk, revocations and identity checks at invocation time.
         Ambiguous, conditional, expired or revoked grants fail closed.
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         with self._lock:
             matches = {
                 policy.resource_scope
