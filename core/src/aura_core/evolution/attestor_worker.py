@@ -191,9 +191,25 @@ class IndependentMCPAttestorWorker:
         for decision in self._decisions.evaluate_pending(limit=100):
             if decision.status != "AUTO_APPROVED_BY_POLICY":
                 continue
+            package = decision.repository.replace("/", "__")
+            quarantine = self.workspace.root / "verified" / package / "local-windows-quarantined.json"
+            if quarantine.exists():
+                # Owner action is required to reset a failed local execution profile.
+                continue
             try:
-                records.append(await self.attest(decision.repository.replace("/", "__")))
-            except (ValueError, PermissionError, RuntimeError, OSError, TimeoutError):
+                records.append(await self.attest(package))
+            except (ValueError, PermissionError, RuntimeError, OSError, TimeoutError) as exc:
+                # Docker mode retains the original WAITING_ATTESTATION contract.
+                if (os.name == "nt" and
+                    grant.get("allow_local_windows_process", False) is True):
+                    if not quarantine.is_symlink() and not quarantine.exists():
+                        try:
+                            with quarantine.open("x", encoding="utf-8") as stream:
+                                json.dump({"status": "QUARANTINED",
+                                           "reason_code": type(exc).__name__},
+                                          stream, sort_keys=True)
+                        except (OSError, ValueError):
+                            pass
                 continue
         return records
 
