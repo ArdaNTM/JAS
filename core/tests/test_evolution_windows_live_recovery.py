@@ -138,6 +138,23 @@ def test_untrusted_dependency_install_directives_denied(malicious):
         declared_dependencies({"requirements.txt": malicious.encode()})
 
 
+def test_isolated_src_python_is_started_as_module_for_relative_imports(tmp_path):
+    from aura_core.evolution.windows_job_mcp import _isolated_entry_args
+    python = tmp_path / "runtime" / "pkg" / ".venv" / "Scripts" / "python.exe"
+    runtime = tmp_path / "runtime" / "pkg"
+    assert _isolated_entry_args(
+        runtime, "src/memory_mcp/__main__.py", python
+    )[-2:] == ["-m", "memory_mcp"]
+    assert _isolated_entry_args(
+        runtime, "src/memory_mcp/server.py", python
+    )[-2:] == ["-m", "memory_mcp.server"]
+    assert _isolated_entry_args(
+        runtime, "server.py", python
+    )[-1] == str(runtime / "server.py")
+    with pytest.raises(Exception):
+        _isolated_entry_args(runtime, "../unsafe.py", python)
+
+
 def test_malicious_project_script_is_not_an_arbitrary_shell_command():
     files = {
         "pyproject.toml": b"[project.scripts]\nmemory = 'os.system:run'\n",
