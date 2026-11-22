@@ -349,7 +349,7 @@ def test_activation_delegation_denies_tampering_or_absent_flag(sample, monkeypat
     lambda c: c.update({"min_score": 1}),
     lambda c: c.update({"oci_image": "python:latest"}),
     lambda c: c.update({"attestor_key_sha256": "not-a-key"}),
-    lambda c: c.update({"expires_at": c["issued_at"] + 8 * 86400}),
+    lambda c: c.update({"expires_at": c["issued_at"] + 366 * 86400}),
 ])
 def test_unsafe_activation_scopes_rejected(sample, monkeypatch, mutate):
     from aura_core.evolution.activation_delegation import validated_claims
@@ -358,6 +358,35 @@ def test_unsafe_activation_scopes_rejected(sample, monkeypatch, mutate):
     mutate(doc["claims"])
     with pytest.raises(PermissionError):
         validated_claims(doc["claims"], now=doc["claims"]["issued_at"])
+
+
+def test_signed_one_year_activation_is_bounded_and_scoped():
+    from aura_core.evolution.owner_cli import make_activation_delegation
+    from aura_core.evolution.activation_delegation import (
+        validated_claims, SANDBOX_POLICY_SHA256, SANDBOX_TESTS_SHA256,
+    )
+    signer = Ed25519PrivateKey.generate()
+    scopes = (
+        "windows_automation", "local_memory", "developer_tools",
+        "filesystem", "research", "browser",
+    )
+    grant = make_activation_delegation(
+        signer, categories=scopes, image="example/mcp@sha256:" + "a" * 64,
+        policy_sha256=SANDBOX_POLICY_SHA256,
+        tests_sha256=SANDBOX_TESTS_SHA256,
+        attestor_key_sha256="d" * 64, attestor_runner_id="independent_attestor",
+        days=365, max_tools=16, min_score=75,
+    )
+    assert validated_claims(grant["claims"])["expires_at"] - grant["claims"]["issued_at"] == 365 * 86400
+    assert set(grant["claims"]["categories"]) == set(scopes)
+    with pytest.raises(ValueError):
+        make_activation_delegation(
+            signer, categories=scopes, image="example/mcp@sha256:" + "a" * 64,
+            policy_sha256=SANDBOX_POLICY_SHA256,
+            tests_sha256=SANDBOX_TESTS_SHA256,
+            attestor_key_sha256="d" * 64, attestor_runner_id="independent_attestor",
+            days=366,
+        )
 
 
 def test_review_v1_is_never_accepted_as_automatic_activation(sample, monkeypatch):
