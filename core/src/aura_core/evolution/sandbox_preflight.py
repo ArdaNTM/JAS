@@ -36,81 +36,81 @@ class SandboxUntrusted(RuntimeError):
 
 
 def choose_python_entrypoint(files: dict[str, bytes], hint: str) -> str:
-    """Statically resolve Python MCP entrypoints; never import project modules.
+    """Resolve declarative PEP-621 commands ahead of ambiguous filename hints.
 
-    PEP 621 [project.scripts] provides a *module name*, not a shell command.
-    Only a matching retained .py file may be selected. This does not run the
-    script or install dependencies.
+    Only bounded TOML and retained Python text are inspected. A selected
+    project-script target is not trusted to be an MCP until local multi-module
+    AST validation and a real initialize/tools-list handshake have passed.
     """
+    import ast
     import tomllib
 
-    candidates: list[str] = []
-    if hint in files and hint.endswith(".py"):
-        candidates.append(hint)
-
-    pyproject = files.get("pyproject.toml")
-    if pyproject is not None:
-        if len(pyproject) > 128_000:
+    projects = sorted(
+        (path for path in files if path == "pyproject.toml"
+         or path.endswith("/pyproject.toml")),
+        key=lambda path: (path.count("/"), path),
+    )
+    if len(projects) > 16:
+        raise SandboxUntrusted("Too many Python project metadata files")
+    for config in projects:
+        if len(files[config]) > 128_000:
             raise SandboxUntrusted("Oversized pyproject metadata")
         try:
-            project = tomllib.loads(pyproject.decode("utf-8-sig"))
+            metadata = tomllib.loads(files[config].decode("utf-8-sig"))
         except (UnicodeError, ValueError) as exc:
             raise SandboxUntrusted("Invalid pyproject TOML") from exc
-        metadata = project.get("project", {})
-        if not isinstance(metadata, dict):
-            raise SandboxUntrusted("Invalid pyproject project metadata")
-        scripts = metadata.get("scripts", {})
+        project = metadata.get("project", {})
+        if not isinstance(project, dict):
+            raise SandboxUntrusted("Invalid Python project metadata")
+        scripts = project.get("scripts", {})
         if not isinstance(scripts, dict) or len(scripts) > 64:
             raise SandboxUntrusted("Invalid project script mapping")
-        for name, target in sorted(scripts.items()):
-            if not isinstance(name, str) or not isinstance(target, str):
-                raise SandboxUntrusted("Non-string project entrypoint")
-            # PEP 621: importable module:function, never arbitrary shell text.
-            match = re.fullmatch(
+        prefix = config.removesuffix("pyproject.toml")
+        for name, value in sorted(scripts.items()):
+            if not isinstance(name, str) or not isinstance(value, str):
+                raise SandboxUntrusted("Invalid project script target")
+            target = re.fullmatch(
                 r"([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*):([A-Za-z_]\w*)",
-                target.strip(),
+                value.strip(),
             )
-            if match is None:
+            if target is None:
                 continue
-            module = match.group(1).replace(".", "/")
-            for path in (f"src/{module}.py", f"{module}.py",
-                         f"src/{module}/__main__.py", f"{module}/__main__.py"):
-                if path in files and path not in candidates:
-                    candidates.append(path)
+            module = target.group(1).replace(".", "/")
+            for rel in (f"src/{module}.py", f"{module}.py",
+                        f"src/{module}/__main__.py",
+                        f"{module}/__main__.py"):
+                path = prefix + rel
+                if path in files and path.count("/") <= 10:
+                    return path
 
-    ordered = ("server.py", "main.py", "mcp_server.py", "__main__.py")
+    priority = ("server.py", "main.py", "mcp_server.py", "__main__.py")
+    candidates = ([hint] if isinstance(hint, str) and hint in files
+                  and hint.endswith(".py") else [])
     candidates.extend(
-        key for basename in ordered for key in sorted(files)
-        if key.rsplit("/", 1)[-1] == basename and key not in candidates
-        and (key.startswith("src/") or "/" not in key)
+        path for basename in priority for path in sorted(files)
+        if path not in candidates and path.rsplit("/", 1)[-1] == basename
+        and (path.startswith("src/") or "/" not in path)
     )
+    # An entry may only import its FastMCP sibling; allow AST-verifiable
+    # module wrappers rather than requiring a FastMCP symbol in *that* file.
+    # Runtime execution remains blocked until independent validation.
+    deferred = []
     for path in candidates:
-        if path not in files or path.count("/") > 8:
+        if path not in files or path.count("/") > 10 or len(files[path]) > 512_000:
             continue
-        code = files[path]
-        if any(signature in code for signature in
+        content = files[path]
+        if any(s in content for s in
                (b"FastMCP", b"MCPServer", b"mcp.server", b"Server(")):
             return path
-        if path.endswith("/__main__.py"):
-            # A conventional src/package/__main__.py often imports the actual
-            # MCPServer from a sibling module. Inspect only that declared
-            # local sibling; never import or execute either file.
-            from ast import ImportFrom, parse
-            parent = path.rsplit("/", 1)[0]
-            try:
-                tree = parse(code.decode("utf-8-sig"), filename=path)
-                imported = {
-                    node.module for node in __import__("ast").walk(tree)
-                    if isinstance(node, ImportFrom) and node.module and node.level >= 1
-                }
-            except (SyntaxError, UnicodeError, ValueError):
-                continue
-            for module in imported:
-                sibling = parent + "/" + module.replace(".", "/") + ".py"
-                data = files.get(sibling, b"")
-                if len(data) <= 512_000 and any(sig in data for sig in
-                       (b"FastMCP", b"MCPServer", b"mcp.server")):
-                    return path
+        try:
+            tree = ast.parse(content.decode("utf-8-sig"), filename=path)
+        except (SyntaxError, ValueError, UnicodeError):
+            continue
+        if any(isinstance(node, (ast.Import, ast.ImportFrom))
+               for node in ast.walk(tree)):
+            deferred.append(path)
+    if deferred:
+        return deferred[0]
     raise SandboxUntrusted("No supported Python MCP entrypoint")
 
 
