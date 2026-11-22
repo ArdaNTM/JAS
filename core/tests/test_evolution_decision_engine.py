@@ -277,6 +277,9 @@ def test_windows_owner_delegation_and_passkey_acl_fail_closed(sample, monkeypatc
 
 def _signed_activation_delegation(workspace, monkeypatch):
     from aura_core.evolution.owner_cli import make_activation_delegation
+    from aura_core.evolution.activation_delegation import (
+        SANDBOX_POLICY_SHA256, SANDBOX_TESTS_SHA256,
+    )
     signer = Ed25519PrivateKey.generate()
     public = signer.public_key()
     raw = public.public_bytes(
@@ -293,8 +296,8 @@ def _signed_activation_delegation(workspace, monkeypatch):
     doc = make_activation_delegation(
         signer, categories=("local_memory",),
         image="example/mcp@sha256:" + "a" * 64,
-        policy_sha256="b" * 64,
-        tests_sha256="c" * 64,
+        policy_sha256=SANDBOX_POLICY_SHA256,
+        tests_sha256=SANDBOX_TESTS_SHA256,
         attestor_key_sha256="d" * 64,
         attestor_runner_id="independent_attestor",
         days=1, max_tools=8, min_score=70,
