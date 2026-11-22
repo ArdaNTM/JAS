@@ -598,7 +598,7 @@ $env:AURA_STORAGE_MODE = "local"
 # by the Owner independently of the delegation document.
 $env:AURA_EVOLUTION_AUTO_ACTIVATE = "0"
 $ownerPin = [Environment]::GetEnvironmentVariable("AURA_EVOLUTION_DELEGATION_KEY_SHA256", "User")
-if ($ownerPin -cmatch '^[0-9a-f]{64}$') {
+if ($ownerPin -match '^[0-9a-f]{64}$') {
     $env:AURA_EVOLUTION_DELEGATION_KEY_SHA256 = $ownerPin
     try {
         & $Python -m aura_core.evolution.activation_delegation --verify --evolution-root $env:AURA_EVOLUTION_ROOT 2>$null | Out-Null
