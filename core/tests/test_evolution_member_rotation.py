@@ -36,9 +36,10 @@ def _archive(asset_count=0, *, directories=0, payload=b"\x89PNG\x00"):
     return memory.getvalue()
 
 
-def test_archive_member_budget_default_1500_and_override(monkeypatch):
+def test_archive_member_budget_default_25000_and_override(monkeypatch):
     monkeypatch.delenv("AURA_EVOLUTION_MAX_ARCHIVE_MEMBERS", raising=False)
-    assert _archive_member_budget() == 1500
+    assert _archive_member_budget() == 25000
+    monkeypatch.setenv("AURA_EVOLUTION_MAX_ARCHIVE_MEMBERS", "1500")
     files, entrypoint, skipped = _validated_files(_archive(1498))
     assert len(files) == 2
     assert entrypoint == "server.py"
@@ -87,8 +88,9 @@ def test_large_member_budget_does_not_bypass_security_limits(monkeypatch):
         bundle.writestr("root/assets/evil.dll", b"\x00 executable")
     with pytest.raises(StagingRejected, match="Executable"):
         _validated_files(memory.getvalue())
+    monkeypatch.setenv("AURA_EVOLUTION_MAX_DOWNLOAD_BYTES", "1048576")
     with pytest.raises(StagingRejected, match="maximum byte budget"):
-        _validated_files(b"x" * (32 * 1024 * 1024 + 1))
+        _validated_files(b"x" * (1024 * 1024 + 1))
 
 
 def test_live_legacy_archive_rejection_is_retried_and_verified(tmp_path):

@@ -7,6 +7,8 @@ with private pre-provisioned state and a pinned WebAuthn credential.
 from __future__ import annotations
 
 import ipaddress
+import json
+import re
 import sqlite3
 from pathlib import Path
 from typing import Literal
@@ -166,17 +168,57 @@ def create_owner_control_plane(
             with sqlite3.connect(uri, uri=True, timeout=2) as db:
                 rows = db.execute(
                     "SELECT repository,url,description,license,capability_hint,"
-                    "package_status,package_error,stage_attempts "
+                    "package_status,package_error,stage_attempts,source_sha256 "
                     "FROM evolution_proposals WHERE status='pending_owner_review' "
                     "ORDER BY created_at DESC LIMIT 50"
                 ).fetchall()
         except sqlite3.Error as exc:
             raise HTTPException(503, "Discovery catalog unavailable") from exc
         keys = ("repository", "url", "description", "license", "capability_hint",
-                "package_status", "package_error", "stage_attempts")
+                "package_status", "package_error", "stage_attempts", "source_sha256")
+        items = []
+        for row in rows:
+            item = dict(zip(keys, row))
+            item["static_verified"] = False
+            item["detected_capabilities"] = []
+            repository = item["repository"]
+            digest = item["source_sha256"]
+            parts = repository.split("/") if isinstance(repository, str) else []
+            if (item["package_status"] == "READY_FOR_OWNER_REVIEW"
+                    and len(parts) == 2
+                    and all(re.fullmatch(r"[A-Za-z0-9_.-]{1,100}", part)
+                            and part not in (".", "..") and not part.endswith(".")
+                            for part in parts)
+                    and isinstance(digest, str) and re.fullmatch(r"[0-9a-f]{64}", digest)):
+                # Manifest is independent, untrusted, read-only static evidence.
+                # This never upgrades a proposal into a passkey approval.
+                folder = path.parent.parent / "verified" / repository.replace("/", "__")
+                manifest = folder / "aura-capability-manifest.json"
+                try:
+                    if (not folder.is_symlink() and not manifest.is_symlink()
+                            and manifest.is_file() and manifest.stat().st_size <= 16_000):
+                        evidence = json.loads(manifest.read_text("utf-8"))
+                        if (isinstance(evidence, dict)
+                                and evidence.get("repository") == repository
+                                and evidence.get("source_sha256") == digest
+                                and evidence.get("status") == "READY_FOR_OWNER_REVIEW"
+                                and evidence.get("sandbox_attested") is False
+                                and evidence.get("owner_approved") is False
+                                and evidence.get("activation_performed") is False
+                                and evidence.get("execution_allowed") is False):
+                            item["static_verified"] = True
+                            detected = evidence.get("detected_capabilities", [])
+                            if isinstance(detected, list):
+                                item["detected_capabilities"] = [
+                                    value for value in detected[:25]
+                                    if isinstance(value, str)
+                                    and re.fullmatch(r"[A-Za-z0-9_. /-]{1,40}", value)
+                                ]
+                except (OSError, ValueError, TypeError):
+                    pass
+            items.append(item)
         return {
-            "items": [dict(zip(keys, row)) for row in rows],
-            "mode": "untrusted_discovery_review",
+            "items": items, "mode": "untrusted_discovery_review",
             "owner_approved": False, "execution_allowed": False,
         }
 

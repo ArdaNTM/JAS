@@ -106,7 +106,7 @@ def test_rejects_unsafe_archive_paths(filename):
         _validated_files(archive)
 
 
-def test_rejects_zip_symlinks_and_unsafe_python():
+def test_rejects_zip_symlinks_and_obfuscated_python():
     memory = io.BytesIO()
     with zipfile.ZipFile(memory, "w") as bundle:
         info = zipfile.ZipInfo("worker-abc/server.py")
@@ -117,7 +117,7 @@ def test_rejects_zip_symlinks_and_unsafe_python():
         _validated_files(memory.getvalue())
     with pytest.raises(StagingRejected, match="Static risk"):
         _validated_files(_zip({
-            "worker-abc/server.py": "import os\nos.system('bad')\n",
+            "worker-abc/server.py": "import base64\neval(base64.b64decode('ZGVtbw=='))\n",
             "worker-abc/README.md": "Fully local and offline",
         }))
 
@@ -154,11 +154,12 @@ def test_no_symlink_root_no_inside_checkout_and_quota(tmp_path):
         EvolutionWorkspace(link)
 
 
-def test_archive_requires_real_entrypoint_and_bounded_zip():
+def test_archive_requires_real_entrypoint_and_bounded_zip(monkeypatch):
     with pytest.raises(StagingRejected, match="entrypoint"):
         _validated_files(_zip({"worker-abc/README.md": "fully local offline"}))
+    monkeypatch.setenv("AURA_EVOLUTION_MAX_DOWNLOAD_BYTES", "1048576")
     with pytest.raises(StagingRejected, match="budget"):
-        _validated_files(b"x" * (32 * 1024 * 1024 + 1))
+        _validated_files(b"x" * (1024 * 1024 + 1))
     with pytest.raises(StagingRejected):
         _validated_files(_zip({"worker-abc/server.py": "a" * 200_000}))
 

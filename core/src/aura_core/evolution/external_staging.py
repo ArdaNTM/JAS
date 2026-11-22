@@ -69,22 +69,47 @@ _PLATFORM = re.compile(
     re.IGNORECASE,
 )
 _UNSAFE = re.compile(
-    r"(?:\beval\s*\(|\bexec\s*\(|\bos\.system\s*\(|\bsubprocess\."
-    r"(?:Popen|run|call)\s*\(|\bcurl\s+[^\r\n]*\|\s*(?:bash|sh)|"
-    r"\bpowershell\s+-enc|\bInvoke-Expression|\bpickle\.loads\s*\()",
-    re.IGNORECASE,
+    # Broad process/network imports are normal for MCP servers. Reject only
+    # high-confidence obfuscated execution, reverse shells, and direct static-IP
+    # credential exfiltration. Inert static screening is NOT sandbox attestation.
+    r"(?i)(?:\b(?:eval|exec)\s*\(\s*(?:base64\.)?b64decode\s*\("
+    r"|\b(?:eval|exec)\s*\(\s*base64\.b64decode\s*\("
+    r"|\b(?:eval|exec)\s*\(\s*atob\s*\("
+    r"|\b(?:bash|sh)\s+-i\s*>?\s*&\s*/dev/tcp/"
+    r"|\bnc\s+-e\s+/bin/(?:sh|bash)\b"
+    r"|\bcurl\s+[^\r\n]*\|\s*(?:bash|sh)\b"
+    r"|\b(?:requests|httpx)\.post\s*\(\s*['\"]https?://"
+    r"(?:\d{1,3}\.){3}\d{1,3}[^'\"]*['\"][\s\S]{0,400}"
+    r"(?:os\.getenv|os\.environ|token|secret|password))",
 )
 _PAID = re.compile(
     r"(?i)(?:OPENAI_API_KEY|ANTHROPIC_API_KEY|STRIPE_SECRET_KEY|"
     r"BRIGHTDATA_API_KEY|SHODAN_API_KEY|VIRUSTOTAL_API_KEY|"
     r"BASECAMP_ACCESS_TOKEN|paid\s+(?:subscription|api\s+key)\s+required)",
 )
-_ENTRY = ("pyproject.toml", "package.json", "server.py", "main.py", "mcp_server.py")
-# Download budget is separate from the pre-existing member/file-count bounds.
-_MAX_ARCHIVE = 32 * 1024 * 1024
-_MAX_EXTRACTED = 32 * 1024 * 1024
-_MAX_FILE = 750_000
-_MAX_ARCHIVE_MEMBERS = 1500
+_ENTRY = (
+    "pyproject.toml", "package.json", "server.py", "main.py",
+    "mcp_server.py", "index.ts", "index.js", "index.mjs", "index.cjs",
+)
+_MIB = 1024 * 1024
+_GIB = 1024 * _MIB
+_MAX_ARCHIVE = 256 * _MIB
+_MAX_EXTRACTED = 512 * _MIB
+_MAX_FILE = 32 * _MIB
+_MAX_ARCHIVE_MEMBERS = 25_000
+_MAX_STATIC_FILES = 25_000
+_MAX_STATIC_BYTES = 64 * _MIB
+_SKIP_DIRS = frozenset({
+    "docs", "doc", "images", "img", "assets", "media", "videos",
+    "examples", "benchmarks", "fixtures", "testdata", ".github",
+    "node_modules", "vendor", "tests", "test",
+})
+_SOURCE_SUFFIXES = frozenset({".py", ".ts", ".js", ".mjs", ".cjs"})
+_PASSIVE_SUFFIXES = frozenset({
+    ".svg", ".pdf", ".sqlite", ".db", ".lock", ".jsonl", ".csv",
+    ".parquet", ".arrow", ".zip", ".gz", ".tar", ".7z", ".rar",
+    ".dat",
+})
 # Only non-executable, well-known binary assets may be omitted from static
 # inspection. Unknown binary payloads and executable formats always reject.
 _PASSIVE_ASSET_SUFFIXES = frozenset({
@@ -96,36 +121,50 @@ _EXECUTABLE_SUFFIXES = frozenset({
     ".exe", ".dll", ".so", ".dylib", ".pyd", ".node", ".jar", ".class",
     ".wasm", ".msi", ".com", ".scr", ".bat", ".cmd", ".ps1", ".vbs",
     ".pyc", ".pyo", ".app", ".deb", ".rpm", ".apk", ".bin",
+    ".sys",
 })
 
 
-def _archive_budget() -> int:
-    """Reject malformed or unbounded overrides instead of disabling caps."""
-    raw = os.getenv("AURA_EVOLUTION_MAX_DOWNLOAD_BYTES")
+def _budget(name: str, default: int, minimum: int, maximum: int) -> int:
+    label = {
+        "AURA_EVOLUTION_MAX_DOWNLOAD_BYTES": "download",
+        "AURA_EVOLUTION_MAX_EXTRACTED_BYTES": "extracted",
+        "AURA_EVOLUTION_MAX_FILE_BYTES": "file",
+        "AURA_EVOLUTION_MAX_ARCHIVE_MEMBERS": "member",
+        "AURA_EVOLUTION_MAX_BYTES": "workspace",
+        "AURA_EVOLUTION_MAX_ITEMS": "item",
+    }.get(name, "capacity")
+    raw = os.getenv(name)
     if raw is None:
-        return _MAX_ARCHIVE
+        return default
     try:
         value = int(raw)
     except (TypeError, ValueError) as exc:
-        raise StagingRejected("Invalid evolution download budget") from exc
-    if not 1_048_576 <= value <= 64 * 1024 * 1024:
-        raise StagingRejected("Invalid evolution download budget")
+        raise StagingRejected("Invalid evolution " + label + " budget") from exc
+    if not minimum <= value <= maximum:
+        raise StagingRejected("Invalid evolution " + label + " budget")
     return value
+
+
+def _archive_budget() -> int:
+    return _budget("AURA_EVOLUTION_MAX_DOWNLOAD_BYTES", _MAX_ARCHIVE,
+                   _MIB, 512 * _MIB)
+
+
+def _extracted_budget() -> int:
+    return _budget("AURA_EVOLUTION_MAX_EXTRACTED_BYTES", _MAX_EXTRACTED,
+                   _MIB, 1024 * _MIB)
+
+
+def _file_budget() -> int:
+    return _budget("AURA_EVOLUTION_MAX_FILE_BYTES", _MAX_FILE,
+                   1024, 64 * _MIB)
 
 
 def _archive_member_budget() -> int:
-    """Bound all ZIP entries, including directories and ignored binary assets."""
-    raw = os.getenv("AURA_EVOLUTION_MAX_ARCHIVE_MEMBERS")
-    if raw is None:
-        return _MAX_ARCHIVE_MEMBERS
-    try:
-        value = int(raw)
-    except (TypeError, ValueError) as exc:
-        raise StagingRejected("Invalid evolution archive member budget") from exc
-    # A finite administrative override; never accept unbounded ZIP metadata.
-    if not 1 <= value <= 5000:
-        raise StagingRejected("Invalid evolution archive member budget")
-    return value
+    """Bound all ZIP entries, including directories and skipped binary assets."""
+    return _budget("AURA_EVOLUTION_MAX_ARCHIVE_MEMBERS", _MAX_ARCHIVE_MEMBERS,
+                   1, 50_000)
 
 
 class StagingRejected(ValueError):
@@ -146,9 +185,14 @@ def _checked_path(path: Path) -> Path:
 class EvolutionWorkspace:
     """Outside-checkout isolated storage. Never an execution sandbox."""
 
-    def __init__(self, root: Path | str, *, max_items: int = 24,
-                 max_bytes: int = 150_000_000):
-        if not 1 <= max_items <= 100 or not 1_000_000 <= max_bytes <= 1_000_000_000:
+    def __init__(self, root: Path | str, *, max_items: int | None = None,
+                 max_bytes: int | None = None):
+        if max_items is None:
+            max_items = _budget("AURA_EVOLUTION_MAX_ITEMS", 100, 1, 250)
+        if max_bytes is None:
+            max_bytes = _budget("AURA_EVOLUTION_MAX_BYTES", 5 * _GIB,
+                                1_000_000, 10 * _GIB)
+        if not 1 <= max_items <= 250 or not 1_000_000 <= max_bytes <= 10 * _GIB:
             raise ValueError("Invalid evolution capacity budget")
         root = Path(root).expanduser()
         if not root.is_absolute():
@@ -287,46 +331,66 @@ class EvolutionWorkspace:
         return stage, verified
 
 
-def _validated_files(archive: bytes, *, max_archive_bytes: int | None = None) -> tuple[dict[str, bytes], str, int]:
-    if len(archive) > (max_archive_bytes if max_archive_bytes is not None else _archive_budget()):
+def _validated_files(
+    archive: bytes | io.BufferedIOBase, *,
+    max_archive_bytes: int | None = None,
+    summary: dict[str, object] | None = None,
+) -> tuple[dict[str, bytes], str, int]:
+    """Inspect untrusted ZIP metadata first; retain only bounded review source.
+
+    Large archives and passive assets are never extracted to the filesystem.
+    Paths, compressed sizes, special-file types and the total inflated size
+    are validated even for members outside the source-review subset.
+    """
+    if isinstance(archive, bytes):
+        archive_size = len(archive)
+        source = io.BytesIO(archive)
+    else:
+        archive.seek(0, os.SEEK_END)
+        archive_size = archive.tell()
+        archive.seek(0)
+        source = archive
+    if archive_size > (max_archive_bytes if max_archive_bytes is not None else _archive_budget()):
         raise StagingRejected("Archive download exceeds maximum byte budget")
     try:
-        z = zipfile.ZipFile(io.BytesIO(archive))
+        z = zipfile.ZipFile(source)
     except (zipfile.BadZipFile, OSError) as exc:
         raise StagingRejected("Invalid repository ZIP archive") from exc
+
     result: dict[str, bytes] = {}
     seen: set[str] = set()
-    total = 0
-    archive_roots: set[str] = set()
+    roots: set[str] = set()
     skipped_binaries = 0
-    member_files = 0
+    skipped_non_source = 0
+    total = 0
+    retained = 0
     max_members = _archive_member_budget()
+    max_file = _file_budget()
+    max_extracted = _extracted_budget()
     with z:
         infos = z.infolist()
         if len(infos) > max_members:
             raise StagingRejected("Archive has too many members")
         for info in infos:
             raw = info.filename
-            if ("\\" in raw or not _FILE.fullmatch(raw)
+            if ("\\" in raw or "//" in raw or not _FILE.fullmatch(raw)
                     or raw.startswith("/") or raw.startswith(".")):
                 raise StagingRejected("Unsafe ZIP entry name")
             segments = PurePosixPath(raw).parts
             if len(segments) == 1 and info.is_dir():
-                # GitHub's codeload archives contain a top-level directory
-                # entry before the actual source paths.
                 continue
             if len(segments) < 2 or any(part in _DENIED_PARTS for part in segments):
                 raise StagingRejected("Unsafe ZIP path segments")
-            archive_roots.add(segments[0])
-            if len(archive_roots) != 1:
+            roots.add(segments[0])
+            if len(roots) != 1:
                 raise StagingRejected("Archive has multiple source roots")
-            relative_parts = segments[1:]
-            if any(part.rstrip(" .") != part or
-                   part.split(".")[0].lower() in _WIN_RESERVED
-                   for part in relative_parts):
+            parts = segments[1:]
+            if (any(part.rstrip(" .") != part or
+                    part.split(".")[0].lower() in _WIN_RESERVED
+                    for part in parts)):
                 raise StagingRejected("Windows-unsafe archive filename")
-            rel = "/".join(relative_parts)
-            if len(rel) > 200 or len(relative_parts) > 12:
+            rel = "/".join(parts)
+            if len(rel) > 200 or len(parts) > 12:
                 raise StagingRejected("Archive nesting budget exceeded")
             mode = (info.external_attr >> 16) & 0o170000
             if mode not in (0, stat.S_IFREG, stat.S_IFDIR):
@@ -337,63 +401,112 @@ def _validated_files(archive: bytes, *, max_archive_bytes: int | None = None) ->
             if key in seen:
                 raise StagingRejected("Case-fold duplicate archive member")
             seen.add(key)
-            member_files += 1
-            if member_files > max_members or info.file_size > _MAX_FILE:
-                raise StagingRejected("ZIP file budget exceeded")
-            if info.file_size > 100 * max(1, info.compress_size):
+            if info.file_size > 100 * max(1024, info.compress_size):
                 raise StagingRejected("ZIP compression ratio exceeded")
             total += info.file_size
-            if total > _MAX_EXTRACTED:
+            if total > max_extracted:
                 raise StagingRejected("Expanded repository budget exceeded")
+
             suffix = PurePosixPath(rel.lower()).suffix
             if suffix in _EXECUTABLE_SUFFIXES:
+                # Never silently drop executable payloads, even under docs/.
                 raise StagingRejected("Executable or suspicious archive content rejected")
-            if suffix in _PASSIVE_ASSET_SUFFIXES:
-                # Path, symlink, case collision, member count, per-file,
-                # compression-ratio and total size checks all ran first.
-                # Never copy these untrusted binary assets into source/.
-                skipped_binaries += 1
+            passive = suffix in (_PASSIVE_ASSET_SUFFIXES | _PASSIVE_SUFFIXES)
+            ignored = (any(part.casefold() in _SKIP_DIRS for part in parts[:-1])
+                       or rel.lower().endswith((".min.js", ".min.mjs", ".min.cjs")))
+            if passive or ignored:
+                skipped_binaries += int(passive)
+                skipped_non_source += int(not passive)
                 continue
+            if info.file_size > max_file:
+                # Oversized active source cannot be inspected safely.
+                raise StagingRejected("ZIP file budget exceeded")
+            if (len(result) >= _MAX_STATIC_FILES
+                    or retained + info.file_size > _MAX_STATIC_BYTES):
+                raise StagingRejected("Static source inspection budget exceeded")
             try:
                 data = z.read(info)
-            except (RuntimeError, OSError, zipfile.BadZipFile) as exc:
+            except (RuntimeError, OSError, zipfile.BadZipFile, EOFError) as exc:
                 raise StagingRejected("Archive entry cannot be safely read") from exc
             if len(data) != info.file_size:
                 raise StagingRejected("Archive member size mismatch")
-            if b"\x00" in data[:4096]:
-                raise StagingRejected("Binary content is not eligible for static staging")
+            try:
+                readable = data.decode("utf-8", "strict")
+            except UnicodeDecodeError as exc:
+                if suffix in _SOURCE_SUFFIXES:
+                    raise StagingRejected("Non-UTF8 active source requires manual review") from exc
+                skipped_binaries += 1
+                continue
+            if "\x00" in readable:
+                if suffix in _SOURCE_SUFFIXES:
+                    raise StagingRejected("Binary active source requires manual review")
+                skipped_binaries += 1
+                continue
             result[rel] = data
+            retained += len(data)
+
     if not result:
         raise StagingRejected("No eligible source files found")
     readmes = [
-        data.decode("utf-8", "replace")
+        data.decode("utf-8")
         for path, data in result.items()
-        if path.rsplit("/", 1)[-1].lower() in ("readme.md", "readme.rst", "readme.txt")
+        if "/" not in path and path.lower() in
+        ("readme.md", "readme.rst", "readme.txt")
     ]
     if not readmes or not any(re.search(
         r"(?i)\b(?:offline|fully local|runs? locally|self.hosted|"
-        r"no api[ _-]?key|required no external credentials)\b",
-        readme,
+        r"(?:no|zero) api[ _-]?keys?|without (?:an? )?api[ _-]?key|"
+        r"required no external credentials)\b", readme,
     ) for readme in readmes):
         raise StagingRejected("Local/no-paid-key README evidence required")
-    entrypoints = sorted(path for path in result if path.rsplit("/", 1)[-1] in _ENTRY)
+    entrypoints = sorted(
+        path for path in result if path.rsplit("/", 1)[-1].lower() in _ENTRY
+    )
+    if not entrypoints:
+        entrypoints = sorted(
+            path for path, data in result.items()
+            if PurePosixPath(path).suffix.lower() in _SOURCE_SUFFIXES
+            and ("FastMCP" in data.decode("utf-8") or
+                 "@modelcontextprotocol/sdk" in data.decode("utf-8"))
+        )
     if not entrypoints:
         raise StagingRejected("No recognizable MCP/local Python or JS entrypoint")
+
+    detected: set[str] = set()
+    patterns = {
+        "subprocess": r"\bsubprocess\b",
+        "httpx": r"\bhttpx\b",
+        "requests": r"\brequests\b",
+        "urllib": r"\burllib\b",
+        "aiohttp": r"\baiohttp\b",
+        "sqlite3": r"\bsqlite3\b",
+        "pathlib": r"\bpathlib\b",
+        "os.getenv": r"\bos\.getenv\s*\(",
+        "FastMCP": r"\bFastMCP\b",
+        "MCP SDK": r"@modelcontextprotocol/sdk",
+    }
     for path, data in result.items():
+        lower = path.lower()
         if _PLATFORM.search(path):
             raise StagingRejected("Platform-specific macOS/MLX candidate")
-        if path.endswith((".py", ".js", ".ts", ".toml", ".json", ".md", ".txt", ".sh")):
-            readable = data.decode("utf-8", "replace")
-            if _UNSAFE.search(readable) or _PAID.search(readable):
-                raise StagingRejected("Static risk/paid API signature detected")
-            if path.lower().endswith(("readme.md", "pyproject.toml", "package.json")):
-                if _PLATFORM.search(readable):
-                    raise StagingRejected("Unsupported macOS-only integration")
-                from aura_core.evolution.self_discovery import _SAAS
-                if _SAAS.search(readable) and _PAID.search(readable):
-                    raise StagingRejected("Mandatory external SaaS dependency rejected")
+        readable = data.decode("utf-8")
+        if "/" not in path and lower in ("readme.md", "pyproject.toml", "package.json"):
+            if _PLATFORM.search(readable):
+                raise StagingRejected("Unsupported macOS-only integration")
+            if _PAID.search(readable):
+                raise StagingRejected("Mandatory paid API or external credential signature detected")
+        if PurePosixPath(lower).suffix in _SOURCE_SUFFIXES:
+            if _UNSAFE.search(readable):
+                raise StagingRejected("Static risk: obfuscated execution or reverse shell detected")
+            for capability, expression in patterns.items():
+                if re.search(expression, readable):
+                    detected.add(capability)
+    if summary is not None:
+        summary["detected_capabilities"] = sorted(detected)
+        summary["skipped_non_source"] = skipped_non_source
+        summary["archive_members"] = len(infos)
+        summary["expanded_bytes"] = total
     return result, entrypoints[0], skipped_binaries
-
 
 class GitHubStagingMCPProvider:
     """Registered Gateway-only tool: immutable-source snapshot and static audit."""
@@ -417,7 +530,7 @@ class GitHubStagingMCPProvider:
         ),)
 
     async def _read(self, client: httpx.AsyncClient, url: str, *,
-                    max_bytes: int) -> bytes:
+                    max_bytes: int, sink: io.BufferedIOBase | None = None) -> bytes | None:
         # Explicit redirect handling instead of follow_redirects=True avoids
         # leaking API tokens or contacting an attacker-chosen third-party host.
         try:
@@ -444,11 +557,20 @@ class GitHubStagingMCPProvider:
                         continue
                     if response.status_code != 200:
                         raise StagingRejected("GitHub archive/metadata unavailable or rate limited")
-                    data = bytearray()
+                    data = bytearray() if sink is None else None
+                    received = 0
                     async for chunk in response.aiter_bytes():
-                        if len(data) + len(chunk) > max_bytes:
+                        received += len(chunk)
+                        if received > max_bytes:
                             raise StagingRejected("GitHub download byte budget exceeded")
-                        data.extend(chunk)
+                        if sink is None:
+                            data.extend(chunk)
+                        else:
+                            sink.write(chunk)
+                    if sink is not None:
+                        sink.flush()
+                        sink.seek(0)
+                        return None
                     return bytes(data)
             raise StagingRejected("GitHub archive redirect limit exceeded")
         except httpx.RequestError as exc:
@@ -464,106 +586,122 @@ class GitHubStagingMCPProvider:
         repository = arguments["repository"]
         if not _valid_repository(repository):
             raise StagingRejected("Invalid GitHub repository")
-        async with httpx.AsyncClient(
-            transport=self._transport, timeout=httpx.Timeout(15.0, connect=5.0),
-            follow_redirects=False, trust_env=False,
-        ) as client:
-            metadata = json.loads(await self._read(
-                client, f"https://api.github.com/repos/{repository}",
-                max_bytes=GITHUB_RESPONSE_MAX_BYTES,
-            ))
-            if (not isinstance(metadata, dict)
-                    or metadata.get("full_name") != repository
-                    or metadata.get("private") is True
-                    or metadata.get("archived") is True
-                    or metadata.get("fork") is True
-                    or not isinstance(metadata.get("license"), dict)
-                    or metadata["license"].get("spdx_id") not in PERMITTED_LICENSES):
-                raise StagingRejected("GitHub metadata/license does not satisfy staging policy")
-            description = str(metadata.get("description") or "")[:500]
-            from aura_core.evolution.self_discovery import _SAAS
-            if (_PLATFORM.search(description) or _PAID.search(description)
-                    or _SAAS.search(repository + " " + description)):
-                raise StagingRejected("Paid SaaS or macOS-only candidate rejected")
-            # Pin the snapshot to the current default-branch commit SHA, never
-            # interpolate a user-controlled branch/ref into an archive URL.
-            commits = json.loads(await self._read(
-                client, f"https://api.github.com/repos/{repository}/commits?per_page=1",
-                max_bytes=90_000,
-            ))
-            if not isinstance(commits, list) or not commits:
-                raise StagingRejected("No pinned GitHub commit returned")
-            sha = commits[0].get("sha") if isinstance(commits[0], dict) else None
-            if not isinstance(sha, str) or not _SHA.fullmatch(sha):
-                raise StagingRejected("GitHub commit identity is invalid")
-            download_budget = _archive_budget()
-            archive = await self._read(
-                client, f"https://codeload.github.com/{repository}/zip/{sha}",
-                max_bytes=download_budget,
+        # Spool large ZIP downloads outside the checkout (not into RAM).
+        with tempfile.TemporaryFile(mode="w+b", dir=self.workspace.root / "staging") as archive_sink:
+            async with httpx.AsyncClient(
+                transport=self._transport, timeout=httpx.Timeout(15.0, connect=5.0),
+                follow_redirects=False, trust_env=False,
+            ) as client:
+                metadata = json.loads(await self._read(
+                    client, f"https://api.github.com/repos/{repository}",
+                    max_bytes=GITHUB_RESPONSE_MAX_BYTES,
+                ))
+                if (not isinstance(metadata, dict)
+                        or metadata.get("full_name") != repository
+                        or metadata.get("private") is True
+                        or metadata.get("archived") is True
+                        or metadata.get("fork") is True
+                        or not isinstance(metadata.get("license"), dict)
+                        or metadata["license"].get("spdx_id") not in PERMITTED_LICENSES):
+                    raise StagingRejected("GitHub metadata/license does not satisfy staging policy")
+                description = str(metadata.get("description") or "")[:500]
+                from aura_core.evolution.self_discovery import _SAAS
+                if (_PLATFORM.search(description) or _PAID.search(description)
+                        or _SAAS.search(repository + " " + description)):
+                    raise StagingRejected("Paid SaaS or macOS-only candidate rejected")
+                # Pin the snapshot to the current default-branch commit SHA, never
+                # interpolate a user-controlled branch/ref into an archive URL.
+                commits = json.loads(await self._read(
+                    client, f"https://api.github.com/repos/{repository}/commits?per_page=1",
+                    max_bytes=90_000,
+                ))
+                if not isinstance(commits, list) or not commits:
+                    raise StagingRejected("No pinned GitHub commit returned")
+                sha = commits[0].get("sha") if isinstance(commits[0], dict) else None
+                if not isinstance(sha, str) or not _SHA.fullmatch(sha):
+                    raise StagingRejected("GitHub commit identity is invalid")
+                download_budget = _archive_budget()
+                await self._read(
+                    client, f"https://codeload.github.com/{repository}/zip/{sha}",
+                    max_bytes=download_budget, sink=archive_sink,
+                )
+            scan_summary: dict[str, object] = {}
+            files, entrypoint, skipped_binaries = _validated_files(
+                archive_sink, max_archive_bytes=download_budget, summary=scan_summary,
             )
-        files, entrypoint, skipped_binaries = _validated_files(
-            archive, max_archive_bytes=download_budget,
-        )
-        archive_sha = hashlib.sha256(archive).hexdigest()
-        stage, verified = self.workspace.reserve(
-            repository, len(archive) * 2 + sum(len(x) for x in files.values()) + 8192
-        )
-        # No existing evidence is overwritten. The on-disk manifest only
-        # points to pinned bytes, not a runnable command or trusted receipt.
-        if verified.exists():
-            old_manifest = verified / "aura-capability-manifest.json"
-            if old_manifest.is_file():
-                old = json.loads(old_manifest.read_text("utf-8"))
-                if old.get("source_sha256") == archive_sha and old.get("repository") == repository:
-                    self.workspace.audit(action="stage_cached", repository=repository,
-                                         result="STATIC_REVIEW_ONLY")
-                    return old
-            raise StagingRejected("Existing verified package requires independent review")
-        if stage.exists():
-            raise StagingRejected("Existing staged package requires independent review")
-        stage_tmp = Path(tempfile.mkdtemp(prefix=".staging-", dir=self.workspace.root / "staging"))
-        verified_tmp = Path(tempfile.mkdtemp(prefix=".verified-", dir=self.workspace.root / "verified"))
-        try:
-            (stage_tmp / "source.zip").write_bytes(archive)
-            for relative, data in files.items():
-                target = stage_tmp / "source" / relative
-                target.parent.mkdir(parents=True, exist_ok=True)
-                target.write_bytes(data)
-            report = {
-                "schema": "aura.static-capability-proposal.v1",
-                "repository": repository,
-                "url": "https://github.com/" + repository,
-                "license_spdx_metadata": metadata["license"]["spdx_id"],
-                "git_commit_sha": sha,
-                "source_sha256": archive_sha,
-                "entrypoint_hint": entrypoint,
-                "static_file_count": len(files),
-                "skipped_binaries": skipped_binaries,
-                "static_checks": [
-                    "bounded-zip", "no-symlinks", "no-traversal", "no-known-unsafe-pattern",
-                    "windows-paths", "license-metadata-allowlist",
-                ],
-                "status": "READY_FOR_OWNER_REVIEW",
-                "sandbox_attested": False,
-                "owner_approved": False,
-                "activation_performed": False,
-                "capability_registered": False,
-                "execution_allowed": False,
-                "warning": "Static analysis is not a safe-execution proof.",
-                "created_at": int(time.time()),
-            }
-            (verified_tmp / "source.zip").write_bytes(archive)
-            (verified_tmp / "aura-capability-manifest.json").write_text(
-                json.dumps(report, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
-                encoding="utf-8",
+            archive_size = archive_sink.seek(0, os.SEEK_END)
+            archive_sink.seek(0)
+            hasher = hashlib.sha256()
+            while block := archive_sink.read(1024 * 1024):
+                hasher.update(block)
+            archive_sha = hasher.hexdigest()
+            stage, verified = self.workspace.reserve(
+                repository, archive_size * 2 + sum(map(len, files.values())) + 8192
             )
-            stage_tmp.rename(stage)
-            verified_tmp.rename(verified)
-            self.workspace.audit(action="stage_verified", repository=repository,
-                                 result="OWNER_REVIEW_REQUIRED")
-            return report
-        finally:
-            if stage_tmp.exists():
-                shutil.rmtree(stage_tmp)
-            if verified_tmp.exists():
-                shutil.rmtree(verified_tmp)
+            # No existing evidence is overwritten. The on-disk manifest only
+            # points to pinned bytes, not a runnable command or trusted receipt.
+            if verified.exists():
+                old_manifest = verified / "aura-capability-manifest.json"
+                if old_manifest.is_file():
+                    old = json.loads(old_manifest.read_text("utf-8"))
+                    if old.get("source_sha256") == archive_sha and old.get("repository") == repository:
+                        self.workspace.audit(action="stage_cached", repository=repository,
+                                             result="STATIC_REVIEW_ONLY")
+                        return old
+                raise StagingRejected("Existing verified package requires independent review")
+            if stage.exists():
+                raise StagingRejected("Existing staged package requires independent review")
+            stage_tmp = Path(tempfile.mkdtemp(prefix=".staging-", dir=self.workspace.root / "staging"))
+            verified_tmp = Path(tempfile.mkdtemp(prefix=".verified-", dir=self.workspace.root / "verified"))
+            try:
+                archive_sink.seek(0)
+                with (stage_tmp / "source.zip").open("wb") as target:
+                    shutil.copyfileobj(archive_sink, target, 1024 * 1024)
+                for relative, data in files.items():
+                    target = stage_tmp / "source" / relative
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_bytes(data)
+                report = {
+                    "schema": "aura.static-capability-proposal.v1",
+                    "repository": repository,
+                    "url": "https://github.com/" + repository,
+                    "license_spdx_metadata": metadata["license"]["spdx_id"],
+                    "git_commit_sha": sha,
+                    "source_sha256": archive_sha,
+                    "entrypoint_hint": entrypoint,
+                    "static_file_count": len(files),
+                    "skipped_binaries": skipped_binaries,
+                    "skipped_non_source": scan_summary["skipped_non_source"],
+                    "archive_members": scan_summary["archive_members"],
+                    "expanded_bytes": scan_summary["expanded_bytes"],
+                    "detected_capabilities": scan_summary["detected_capabilities"],
+                    "static_checks": [
+                        "bounded-zip", "no-symlinks", "no-traversal", "no-known-unsafe-pattern",
+                        "windows-paths", "license-metadata-allowlist",
+                    ],
+                    "status": "READY_FOR_OWNER_REVIEW",
+                    "sandbox_attested": False,
+                    "owner_approved": False,
+                    "activation_performed": False,
+                    "capability_registered": False,
+                    "execution_allowed": False,
+                    "warning": "Static analysis is not a safe-execution proof.",
+                    "created_at": int(time.time()),
+                }
+                archive_sink.seek(0)
+                with (verified_tmp / "source.zip").open("wb") as target:
+                    shutil.copyfileobj(archive_sink, target, 1024 * 1024)
+                (verified_tmp / "aura-capability-manifest.json").write_text(
+                    json.dumps(report, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
+                    encoding="utf-8",
+                )
+                stage_tmp.rename(stage)
+                verified_tmp.rename(verified)
+                self.workspace.audit(action="stage_verified", repository=repository,
+                                     result="OWNER_REVIEW_REQUIRED")
+                return report
+            finally:
+                if stage_tmp.exists():
+                    shutil.rmtree(stage_tmp)
+                if verified_tmp.exists():
+                    shutil.rmtree(verified_tmp)
