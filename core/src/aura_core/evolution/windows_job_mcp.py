@@ -313,44 +313,75 @@ def _scrubbed_windows_mcp_environment(scratch: Path) -> dict[str, str]:
 
 
 def _project_script_launch(runtime: Path, entry: str) -> tuple[str, str] | None:
-    """PEP-621 module:function is resolved from bounded text, never a command."""
+    """Validate the closest PEP-621 module:function without executing metadata."""
     import tomllib
-    project = runtime / "pyproject.toml"
-    if not project.is_file() or project.is_symlink() or project.stat().st_size > 128_000:
-        return None
-    try:
-        metadata = tomllib.loads(project.read_text("utf-8-sig")).get("project", {})
-        if not isinstance(metadata, dict):
-            raise SandboxUntrusted("Invalid project metadata")
-        scripts = metadata.get("scripts", {})
-    except (UnicodeError, ValueError) as exc:
-        raise SandboxUntrusted("Invalid project script metadata") from exc
-    if not isinstance(scripts, dict) or len(scripts) > 64:
-        raise SandboxUntrusted("Invalid project script declarations")
-    for value in scripts.values():
-        if not isinstance(value, str):
+
+    selected = runtime / entry
+    if (not runtime.is_absolute() or runtime.is_symlink()
+            or ".." in Path(entry).parts
+            or not selected.is_relative_to(runtime)):
+        raise SandboxUntrusted("Invalid Python project entry path")
+    # Prefer the closest config, e.g. packages/roam/pyproject.toml, not a
+    # different nested package or a root CLI with the same script name.
+    for directory in (selected.parent, *selected.parents):
+        if not directory.is_relative_to(runtime):
+            break
+        config = directory / "pyproject.toml"
+        if not config.exists():
             continue
-        match = re.fullmatch(r"([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*):([A-Za-z_]\w*)", value.strip())
-        if match:
+        if config.is_symlink() or not config.is_file() or config.stat().st_size > 128_000:
+            raise SandboxUntrusted("Unsafe Python project metadata")
+        try:
+            metadata = tomllib.loads(config.read_text("utf-8-sig")).get("project", {})
+            if not isinstance(metadata, dict):
+                raise SandboxUntrusted("Invalid Python project metadata")
+            scripts = metadata.get("scripts", {})
+        except (UnicodeError, ValueError) as exc:
+            raise SandboxUntrusted("Invalid project script metadata") from exc
+        if not isinstance(scripts, dict) or len(scripts) > 64:
+            raise SandboxUntrusted("Invalid project script declarations")
+        relative = selected.relative_to(directory).as_posix()
+        for name, value in sorted(scripts.items()):
+            if not isinstance(name, str) or not isinstance(value, str):
+                raise SandboxUntrusted("Invalid PEP-621 script target")
+            match = re.fullmatch(
+                r"([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*):([A-Za-z_]\w*)",
+                value.strip(),
+            )
+            if match is None:
+                continue
             module, function = match.groups()
             suffix = module.replace(".", "/") + ".py"
-            if entry in (suffix, "src/" + suffix):
+            if relative in (suffix, "src/" + suffix):
                 return module, function
     return None
 
 
 def _isolated_entry_args(runtime: Path, entry: str, python: Path) -> list[str]:
-    """Execute src packages as modules, preserving relative imports."""
-    if not re.fullmatch(r"[A-Za-z0-9_./-]{1,180}\.py", entry) or ".." in Path(entry).parts:
+    """Use -m for src modules so relative imports resolve in an isolated venv."""
+    if (not re.fullmatch(r"[A-Za-z0-9_./-]{1,180}\.py", entry)
+            or ".." in Path(entry).parts):
         raise SandboxUntrusted("Invalid isolated Python MCP entrypoint")
-    if entry.startswith("src/"):
-        relative = entry.removeprefix("src/")
-        parts = relative.removesuffix(".py").split("/")
-        if all(re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", segment) for segment in parts):
-            module = ".".join(parts[:-1] if parts[-1] == "__main__" else parts)
+    parts = entry.removesuffix(".py").split("/")
+    if "src" in parts:
+        after = parts[parts.index("src") + 1:]
+        if after and all(re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", x) for x in after):
+            module = ".".join(after[:-1] if after[-1] == "__main__" else after)
             if module:
                 return [str(python), "-B", "-s", "-u", "-m", module]
     return [str(python), "-B", "-s", "-u", str(runtime / entry)]
+
+
+def _package_pythonpath(runtime: Path, entry: str) -> str:
+    """Never load host paths. Only package-local project/src roots are exposed."""
+    if not re.fullmatch(r"[A-Za-z0-9_./-]{1,180}\.py", entry) or ".." in Path(entry).parts:
+        raise SandboxUntrusted("Invalid isolated Python source tree")
+    parts = entry.split("/")
+    prefix = parts[:parts.index("src")] if "src" in parts else []
+    bases = [runtime.joinpath(*prefix, "src"), runtime.joinpath(*prefix),
+             runtime / "src", runtime]
+    return os.pathsep.join(str(path) for path in dict.fromkeys(bases))
+
 
 
 def _safe_mcp_stderr_tail(data: bytes) -> str:
@@ -521,7 +552,7 @@ def _bridge(runtime: Path, entry: str) -> int:
         si.dwFlags = 0x100
         si.hStdInput, si.hStdOutput, si.hStdError = child_in, child_out, child_err
         env = _scrubbed_windows_mcp_environment(scratch)
-        env["PYTHONPATH"] = os.pathsep.join((str(runtime / "src"), str(runtime)))
+        env["PYTHONPATH"] = _package_pythonpath(runtime, entry)
         local_python = isolated_python(runtime) or Path(sys.executable)
         if (runtime / ".venv").exists() and not (runtime / ".aura-isolated-env.json").is_file():
             raise PermissionError("Package virtual environment lacks signed runtime metadata")
