@@ -414,6 +414,22 @@ def _validated_files(
             if suffix in _EXECUTABLE_SUFFIXES:
                 # Never silently drop executable payloads, even under docs/.
                 raise StagingRejected("Executable or suspicious archive content rejected")
+            if suffix in _SKIP_SCRIPT_SUFFIXES:
+                # A script suffix alone is not proof the content is inert text.
+                # Reject PE/ELF/Mach-O or unmarked NUL-laden binary masquerades
+                # (UTF-16 BOM is allowed for genuine Windows helper text).
+                try:
+                    with z.open(info) as handle:
+                        header = handle.read(min(info.file_size, 4096))
+                except (RuntimeError, OSError, zipfile.BadZipFile, EOFError) as exc:
+                    raise StagingRejected("Archive helper cannot be safely inspected") from exc
+                looks_utf16 = header.startswith((bytes.fromhex("fffe"), bytes.fromhex("feff")))
+                if (header.startswith((b"MZ", bytes.fromhex("7f454c46"),
+                                      bytes.fromhex("cffaedfe"), bytes.fromhex("feedfacf")))
+                        or (b"\\x00" in header and not looks_utf16)):
+                    raise StagingRejected("Executable or suspicious archive content rejected")
+                skipped_non_source += 1
+                continue
             passive = suffix in (_PASSIVE_ASSET_SUFFIXES | _PASSIVE_SUFFIXES)
             ignored = (suffix in _SKIP_SCRIPT_SUFFIXES
                        or any(part.casefold() in _SKIP_DIRS for part in parts[:-1])
