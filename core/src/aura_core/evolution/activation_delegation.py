@@ -92,20 +92,58 @@ def validated_claims(claims: object, *, now: int | None = None) -> dict:
     return claims
 
 
+def _require_readonly_public_owner_mirror(path: Path) -> None:
+    """NTFS: Owner/SYSTEM/Admin may write; Authenticated Users may READ only.
+
+    Owner root retains its independent private ACL; only these two public
+    signed, non-secret children are readable by the Core/attestor identities.
+    """
+    if os.name != "nt":
+        return
+    from aura_core.evolution.windows_owner_storage import _powershell
+    script = r"""
+$ErrorActionPreference = 'Stop'
+try {
+    $p = $env:AURA_OWNER_ACL_PATH
+    $item = Get-Item -LiteralPath $p -Force
+    if (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) { exit 10 }
+    $acl = Get-Acl -LiteralPath $p
+    if (-not $acl.AreAccessRulesProtected) { exit 11 }
+    $owner = $acl.GetOwner([Security.Principal.SecurityIdentifier]).Value
+    if ($owner -in @('S-1-5-11', 'S-1-1-0', 'S-1-5-32-545')) { exit 12 }
+    $valid = @($owner, 'S-1-5-18', 'S-1-5-32-544', 'S-1-5-11')
+    $authRead = $false
+    foreach ($ace in $acl.Access) {
+        $sid = $ace.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value
+        if ($sid -notin $valid -or $ace.IsInherited) { exit 13 }
+        if ($sid -eq 'S-1-5-11') {
+            if ($ace.AccessControlType -ne 'Allow') { exit 14 }
+            $forbidden = [Security.AccessControl.FileSystemRights]::WriteData -bor
+                         [Security.AccessControl.FileSystemRights]::AppendData -bor
+                         [Security.AccessControl.FileSystemRights]::WriteAttributes -bor
+                         [Security.AccessControl.FileSystemRights]::WriteExtendedAttributes -bor
+                         [Security.AccessControl.FileSystemRights]::Delete -bor
+                         [Security.AccessControl.FileSystemRights]::DeleteSubdirectoriesAndFiles -bor
+                         [Security.AccessControl.FileSystemRights]::ChangePermissions -bor
+                         [Security.AccessControl.FileSystemRights]::TakeOwnership
+            if (($ace.FileSystemRights -band $forbidden) -ne 0) { exit 15 }
+            $authRead = $true
+        }
+    }
+    if (-not $authRead) { exit 16 }
+} catch { exit 17 }
+"""
+    _powershell(script, path=path)
+
+
 class ActivationDelegationVerifier:
     def __init__(self, workspace: EvolutionWorkspace):
         self.workspace = workspace
 
-    def verified_grant(self) -> dict | None:
-        if (os.getenv("AURA_STORAGE_MODE", "").lower() != "local"
-                or os.getenv("AURA_EVOLUTION_AUTO_ACTIVATE", "0") != "1"):
-            return None
-        pinned = os.getenv("AURA_EVOLUTION_DELEGATION_KEY_SHA256", "")
-        if not _SHA.fullmatch(pinned):
-            return None
-        owner = self.workspace.root / "owner"
-        document = owner / "autonomous_delegation.json"
-        public_key = owner / "autonomous_delegation.pub.pem"
+    def _verify_pair(
+        self, *, owner: Path, document: Path, public_key: Path,
+        pinned: str, shared_readonly: bool,
+    ) -> dict | None:
         try:
             if (not owner.is_dir() or owner.is_symlink()
                     or any(p.is_symlink() or not p.is_file() for p in (document, public_key))
@@ -114,9 +152,13 @@ class ActivationDelegationVerifier:
                 return None
             _checked_path(owner)
             if os.name == "nt":
-                from aura_core.evolution.windows_owner_storage import require_private_acl
-                for path in (owner, document, public_key):
-                    require_private_acl(path)
+                if shared_readonly:
+                    for path in (document, public_key):
+                        _require_readonly_public_owner_mirror(path)
+                else:
+                    from aura_core.evolution.windows_owner_storage import require_private_acl
+                    for path in (owner, document, public_key):
+                        require_private_acl(path)
             else:
                 if (owner.stat().st_mode & 0o077
                         or any(p.stat().st_mode & 0o077 for p in (document, public_key))):
@@ -134,7 +176,8 @@ class ActivationDelegationVerifier:
                 return None
             claims = validated_claims(payload["claims"])
             encoded = payload["signature_b64"]
-            if not isinstance(encoded, str) or len(encoded) != 86 or not re.fullmatch(r"[a-zA-Z0-9_-]+", encoded):
+            if (not isinstance(encoded, str) or len(encoded) != 86
+                    or not re.fullmatch(r"[a-zA-Z0-9_-]+", encoded)):
                 return None
             signature = base64.urlsafe_b64decode(encoded + "==")
             if (len(signature) != 64 or
@@ -146,6 +189,33 @@ class ActivationDelegationVerifier:
                 InvalidSignature, UnicodeError, KeyError):
             return None
 
+    def verified_grant(self) -> dict | None:
+        if (os.getenv("AURA_STORAGE_MODE", "").lower() != "local"
+                or os.getenv("AURA_EVOLUTION_AUTO_ACTIVATE", "0") != "1"):
+            return None
+        pinned = os.getenv("AURA_EVOLUTION_DELEGATION_KEY_SHA256", "")
+        if not _SHA.fullmatch(pinned):
+            return None
+        owner = self.workspace.root / "owner"
+        private = self._verify_pair(
+            owner=owner,
+            document=owner / "autonomous_delegation.json",
+            public_key=owner / "autonomous_delegation.pub.pem",
+            pinned=pinned, shared_readonly=False,
+        )
+        if private is not None:
+            return private
+        # Separate restricted Windows Core/attestor accounts cannot open the
+        # Owner's private files. Owner publishes only these two signed public
+        # mirror children with explicit NTFS READ (no modify/replay) ACEs.
+        if os.name == "nt":
+            return self._verify_pair(
+                owner=owner,
+                document=owner / "public-autonomous-delegation.json",
+                public_key=owner / "public-autonomous-delegation.pub.pem",
+                pinned=pinned, shared_readonly=True,
+            )
+        return None
 
 def main() -> int:
     import argparse
