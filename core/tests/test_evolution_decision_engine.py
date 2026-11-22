@@ -167,3 +167,40 @@ def test_launcher_cannot_self_provision_owner_delegation():
     launcher = (root / "scripts" / "launch-aura-desktop.ps1").read_text("utf-8")
     assert 'autonomous_delegation.json' not in launcher
     assert 'AURA_EVOLUTION_AUTO_ACTIVATE' not in launcher
+
+
+def test_local_authenticated_advisory_endpoint_never_activates(sample):
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from aura_core.evolution.self_discovery_api import router
+    from aura_core.security.http_auth import authenticated_principal
+    workspace, _ = sample
+    app = FastAPI()
+    app.include_router(router)
+    app.state.storage_mode = "local"
+    app.state.self_discovery = type("Discovery", (), {"workspace": workspace})()
+    app.dependency_overrides[authenticated_principal] = lambda: "local_owner"
+    with TestClient(app, base_url="http://localhost:8000") as client:
+        response = client.get("/api/evolution/discovery/decisions")
+        assert response.status_code == 200
+        payload = response.json()
+        assert len(payload["items"]) == 1
+        assert payload["items"][0]["status"] == "OWNER_DELEGATION_REQUIRED"
+        assert payload["owner_receipt_required"] is True
+        assert payload["activation_performed"] is False
+    assert json.loads(workspace.active.read_text())["active"] == []
+
+
+def test_advisory_endpoint_not_available_in_remote_mode(sample):
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from aura_core.evolution.self_discovery_api import router
+    from aura_core.security.http_auth import authenticated_principal
+    workspace, _ = sample
+    app = FastAPI()
+    app.include_router(router)
+    app.state.storage_mode = "remote"
+    app.state.self_discovery = type("Discovery", (), {"workspace": workspace})()
+    app.dependency_overrides[authenticated_principal] = lambda: "local_owner"
+    with TestClient(app) as client:
+        assert client.get("/api/evolution/discovery/decisions").status_code == 503
