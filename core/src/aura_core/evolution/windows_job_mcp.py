@@ -368,7 +368,12 @@ def _bridge(runtime: Path, entry: str) -> int:
         owned.remove(parent_in)
         def input_pump():
             try:
-                shutil.copyfileobj(sys.stdin.buffer, writer, length=65536)
+                while True:
+                    data = sys.stdin.buffer.read1(65536)
+                    if not data:
+                        break
+                    writer.write(data)
+                    writer.flush()
             finally:
                 writer.close()
         t = threading.Thread(target=input_pump, daemon=True)
