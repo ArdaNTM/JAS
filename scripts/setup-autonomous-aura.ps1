@@ -8,7 +8,7 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
-if (-not $IsWindows -and $PSVersionTable.PSEdition -eq 'Core') {
+if ($env:OS -ne 'Windows_NT') {
     throw 'Windows 11 required'
 }
 if (-not [IO.Path]::IsPathRooted($EvolutionRoot)) {
