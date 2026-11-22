@@ -206,19 +206,19 @@ def test_large_python_mcp_package_ast_up_to_250_modules_is_bounded():
         static_python_entry(files, "src/big_mcp/__main__.py")
 
 
-def test_recovery_v3_retries_v2_uv_flags_failure_once_but_never_replays():
+def test_legacy_v2_uv_flags_failure_can_retry_in_v4_without_replay():
     from aura_core.evolution.attestor_worker import (
         RECOVERY_EPOCH, _eligible_local_recovery,
     )
 
-    assert RECOVERY_EPOCH == "windows-isolated-wheels-20261122-v3"
+    assert RECOVERY_EPOCH == "windows-isolated-wheels-20261122-v4"
     v2 = {
         "status": "QUARANTINED", "reason_code": "SandboxUntrusted",
         "retry_count": 2, "recovery_epoch": "windows-isolated-wheels-20261122-v2",
     }
     assert _eligible_local_recovery(v2) is True
     assert _eligible_local_recovery({**v2, "recovery_epoch": RECOVERY_EPOCH}) is False
-    assert _eligible_local_recovery({**v2, "retry_count": 3}) is False
+    assert _eligible_local_recovery({**v2, "retry_count": 4}) is False
     assert _eligible_local_recovery({**v2, "status": "REVOKED"}) is False
     assert _eligible_local_recovery({**v2, "reason_code": "PermissionError"}) is False
     assert _eligible_local_recovery({**v2, "retry_count": True}) is False
