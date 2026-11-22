@@ -250,6 +250,30 @@ def _scrubbed_windows_mcp_environment(scratch: Path) -> dict[str, str]:
     }
 
 
+def _project_script_launch(runtime: Path, entry: str) -> tuple[str, str] | None:
+    """PEP-621 module:function is resolved from bounded text, never a command."""
+    import tomllib
+    project = runtime / "pyproject.toml"
+    if not project.is_file() or project.is_symlink() or project.stat().st_size > 128_000:
+        return None
+    try:
+        scripts = tomllib.loads(project.read_text("utf-8-sig")).get("project", {}).get("scripts", {})
+    except (UnicodeError, ValueError) as exc:
+        raise SandboxUntrusted("Invalid project script metadata") from exc
+    if not isinstance(scripts, dict) or len(scripts) > 64:
+        raise SandboxUntrusted("Invalid project script declarations")
+    for value in scripts.values():
+        if not isinstance(value, str):
+            continue
+        match = re.fullmatch(r"([A-Za-z_]\\w*(?:\\.[A-Za-z_]\\w*)*):([A-Za-z_]\\w*)", value.strip())
+        if match:
+            module, function = match.groups()
+            suffix = module.replace(".", "/") + ".py"
+            if entry in (suffix, "src/" + suffix):
+                return module, function
+    return None
+
+
 def _bridge(runtime: Path, entry: str) -> int:
     """Start a *suspended* child, assign Job Object, then resume; no race."""
     if os.name != "nt":
@@ -261,6 +285,7 @@ def _bridge(runtime: Path, entry: str) -> int:
     import subprocess
     import threading
     import tempfile
+    from aura_core.evolution.isolated_venv import isolated_python
 
     if (not runtime.is_absolute() or runtime.is_symlink() or
         not re.fullmatch(r"[A-Za-z0-9_./-]{1,150}\.py", entry) or
@@ -374,11 +399,23 @@ def _bridge(runtime: Path, entry: str) -> int:
         si.hStdInput, si.hStdOutput, si.hStdError = child_in, child_out, nul
         scratch = Path(tempfile.mkdtemp(prefix="aura-local-mcp-"))
         env = _scrubbed_windows_mcp_environment(scratch)
+        env["PYTHONPATH"] = os.pathsep.join((str(runtime / "src"), str(runtime)))
+        local_python = isolated_python(runtime) or Path(sys.executable)
+        if (runtime / ".venv").exists() and not (runtime / ".aura-isolated-env.json").is_file():
+            raise PermissionError("Package virtual environment lacks signed runtime metadata")
+        call = _project_script_launch(runtime, entry)
+        if call:
+            module, function = call
+            # Both names were parsed as Python identifiers, never shell tokens.
+            args = [str(local_python), "-B", "-s", "-u", "-c",
+                    "import importlib; getattr(importlib.import_module(" +
+                    repr(module) + "), " + repr(function) + ")()"]
+        else:
+            args = [str(local_python), "-B", "-s", "-u", str(runtime / entry)]
         packed = chr(0).join(f"{k}={v}" for k, v in sorted(env.items(), key=lambda p: p[0].lower())) + chr(0) * 2
         packed_buffer = ctypes.create_unicode_buffer(packed)
-        cmd = ctypes.create_unicode_buffer(subprocess.list2cmdline(
-            [sys.executable, "-B", "-s", "-u", str(runtime / entry)]))
-        if not kernel.CreateProcessW(sys.executable, cmd, None, None, True,
+        cmd = ctypes.create_unicode_buffer(subprocess.list2cmdline(args))
+        if not kernel.CreateProcessW(str(local_python), cmd, None, None, True,
                                     0x4 | 0x08000000 | 0x400,
                                     ctypes.cast(packed_buffer, ctypes.c_void_p), str(runtime),
                                     ctypes.byref(si), ctypes.byref(pi)):
