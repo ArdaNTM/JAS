@@ -61,7 +61,7 @@ def static_python_entry(files: dict[str, bytes], hint: str) -> str:
         node.module for node in ast.walk(tree)
         if isinstance(node, ast.ImportFrom) and isinstance(node.module, str)
     }
-    fastmcp = "FastMCP" in symbols
+    fastmcp = "FastMCP" in symbols or "MCPServer" in symbols
     declared_tools = any(
         isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
         and any(
