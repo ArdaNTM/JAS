@@ -144,13 +144,36 @@ function renderDiscoveries(records) {
     root.append(card);
   }
 }
+function renderPreflights(records) {
+  const root = $("preflights");
+  root.replaceChildren();
+  if (!records.length) {
+    const empty = document.createElement("p");
+    empty.textContent = "No isolated sandbox observations.";
+    root.append(empty);
+    return;
+  }
+  for (const record of records) {
+    const card = document.createElement("article");
+    const heading = document.createElement("h2");
+    heading.textContent = record.repository;
+    card.append(heading);
+    item(card, "Sandbox review", record.status);
+    item(card, "Failure type", record.reason_code || "None observed");
+    item(card, "Independent attestation", "Required");
+    item(card, "Activation", "Not permitted by preflight");
+    root.append(card);
+  }
+}
 async function load() {
   try {
-    const [result, proposals] = await Promise.all([
+    const [result, proposals, preflights] = await Promise.all([
       api("/api/owner/pending"), api("/api/owner/discoveries"),
+      api("/api/owner/preflights"),
     ]);
     render(Array.isArray(result.items) ? result.items : []);
     renderDiscoveries(Array.isArray(proposals.items) ? proposals.items : []);
+    renderPreflights(Array.isArray(preflights.items) ? preflights.items : []);
     status("Review only · " + (result.items?.length ?? 0)
       + " protected approvals · " + (proposals.items?.length ?? 0)
       + " untrusted discoveries");
