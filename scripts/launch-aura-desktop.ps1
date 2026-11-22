@@ -21,6 +21,24 @@ $env:TRITON_CACHE_DIR = Join-Path $AuraRuntimeRoot "triton"
 # Ollama model konumu: yalnızca bu betikten başlatılan süreçlere aktarılır.
 $env:OLLAMA_MODELS = [Environment]::GetEnvironmentVariable("OLLAMA_MODELS", "User")
 
+# AURA.lnk may start from an Explorer environment older than the Owner setup.
+# Restore only absent values; process overrides remain authoritative. Signed
+# delegation is independently verified before any external MCP is enabled.
+foreach ($name in @(
+    "AURA_STORAGE_MODE",
+    "AURA_EVOLUTION_ROOT",
+    "AURA_EVOLUTION_AUTO_ACTIVATE",
+    "AURA_EVOLUTION_DELEGATION_KEY_SHA256",
+    "AURA_EVOLUTION_ATTESTOR_KEY_SHA256"
+)) {
+    if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name, "Process"))) {
+        $userValue = [Environment]::GetEnvironmentVariable($name, "User")
+        if (-not [string]::IsNullOrWhiteSpace($userValue)) {
+            [Environment]::SetEnvironmentVariable($name, $userValue, "Process")
+        }
+    }
+}
+
 if ([string]::IsNullOrWhiteSpace($env:OLLAMA_MODELS)) {
     $env:OLLAMA_MODELS = "D:\AI\Models\Ollama\models"
 }
