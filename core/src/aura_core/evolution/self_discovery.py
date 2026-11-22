@@ -455,7 +455,7 @@ class SelfDiscoveryEngine:
         )
         with self._connect() as db:
             rows = db.execute(
-                "SELECT repository,description,stars,size_kb FROM evolution_proposals "
+                "SELECT repository,description,stars,size_kb,package_error FROM evolution_proposals "
                 "WHERE status='pending_owner_review' "
                 "AND (package_status IS NULL OR package_status IN ('pending', 'Queued') "
                 "OR (package_status='STAGING_REJECTED' "
@@ -477,20 +477,23 @@ class SelfDiscoveryEngine:
         # scanner still rejects actual malicious code; other policy/permission
         # failures never enter this queue. No new repo required for retry.
         candidates = [
-            (repository, description, stars or 0, size_kb)
-            for repository, description, stars, size_kb in rows
+            (repository, description, stars or 0, size_kb, reason)
+            for repository, description, stars, size_kb, reason in rows
             if _valid_repository(repository)
             and not _SAAS.search(repository + " " + description)
         ]
         candidates.sort(
             key=lambda row: (
+                # Existing active/budget queue takes precedence; legacy script
+                # false-positive retry is one-time and lower priority.
+                1 if row[4] == "Executable or suspicious archive content rejected" else 0,
                 0 if _local_rank(row[0], row[1], row[2]) >= 10 else 1,
                 _size_tier(row[3]),
                 -_local_rank(row[0], row[1], row[2]),
                 row[0],
             )
         )
-        for repository, _, _, _ in candidates[:3]:
+        for repository, _, _, _, _ in candidates[:3]:
             report["attempted"] += 1
             try:
                 response = await asyncio.wait_for(self.gateway.invoke(MCPGatewayRequest(
