@@ -552,6 +552,13 @@ def test_signed_windows_nineteen_mcp_tools_preflight_attest_and_activate(
         ))
         assert allowed.decision is AuthorizationDecision.ALLOW
         assert denied.decision is AuthorizationDecision.DENY
+        from aura_core.application.api import _external_mcp_execution_scope
+        assert _external_mcp_execution_scope(
+            kernel.permission_engine, "local_owner", first,
+        ) == scope
+        assert _external_mcp_execution_scope(
+            kernel.permission_engine, "unauthorized", first,
+        ) is None
 
         # Negative cap and schema tests reuse the real probe, not a
         # reimplemented mock of its limits.

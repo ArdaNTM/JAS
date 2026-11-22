@@ -323,17 +323,35 @@ class IndependentMCPAttestorWorker:
                     if not isinstance(previous, dict):
                         continue
                     retries = previous.get("retry_count", 0)
-                    if not _eligible_local_recovery(previous):
+                    from aura_core.evolution.activation_runtime import expired_attestation_evidence
+                    # An expired signed observation is a renewable dependency,
+                    # not a generic failed-install retry or Owner revocation.
+                    expiry_refresh = (
+                        previous.get("status") == "QUARANTINED"
+                        and previous.get("reason_code") == "PermissionError"
+                        and previous.get("detail") ==
+                        "Local Windows MCP candidate quarantined by independent attestor"
+                        and expired_attestation_evidence(self.workspace, package, grant=grant)
+                    )
+                    if not expiry_refresh and not _eligible_local_recovery(previous):
                         continue
-                    # Retain quarantine marker until fresh signed evidence is
-                    # completely written. Core never activates a pending retry.
+                    # Retain a fail-closed marker until fresh independent
+                    # initialize/tools-list and signatures are fully written.
                     self._quarantine_record(package, {
-                        "status": "RETRYING", "reason_code": "DEPENDENCY_RECOVERY",
-                        "detail": "One-time post-upgrade isolated environment retry",
-                        "stderr_tail": "", "retry_count": retries + 1,
+                        "status": "RETRYING", "reason_code": (
+                            "ATTESTATION_REFRESH" if expiry_refresh else "DEPENDENCY_RECOVERY"
+                        ),
+                        "detail": (
+                            "Expired evidence requires a fresh signed MCP observation"
+                            if expiry_refresh else
+                            "One-time post-upgrade isolated environment retry"
+                        ),
+                        "stderr_tail": "",
+                        "retry_count": retries if expiry_refresh else retries + 1,
                         "recovery_epoch": recovery_epoch,
                     })
-                    retries += 1
+                    if not expiry_refresh:
+                        retries += 1
                 except (OSError, ValueError, TypeError, PermissionError):
                     continue
             try:
