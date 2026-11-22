@@ -222,10 +222,12 @@ def test_model_selector_preserves_fastmcp_nullable_arguments(monkeypatch):
     class NullableSelector:
         async def complete_json(self, *, system_prompt, user_prompt):
             catalog = json.loads(user_prompt)["available_tools"]
-            assert "context" in next(
+            selected = next(
                 row for row in catalog
                 if row["capability_id"] == "filesystem.read_test_data"
-            )["argument_keys"]
+            )
+            assert "context" in selected["argument_keys"]
+            assert selected["nullable_arguments"] == ["context"]
             return {
                 "capability_id": "filesystem.read_test_data",
                 "arguments": {"path": "safe.txt", "context": None},
