@@ -270,7 +270,43 @@ def create_owner_control_plane(
                     "proof_present": isinstance(entry.get("tool_attestation_sha256"), dict),
                     "owner_revoke": "protected_owner_cli",
                 })
-            return {"items": rows, "mode": "untrusted_runtime_status",
+            # Show independent attestor failures even before Core has registered
+            # an active_capabilities row. These are *untrusted diagnostic data*.
+            verified = inventory.parent / "verified"
+            if verified.is_dir() and not verified.is_symlink():
+                existing = {item["repository"] for item in rows}
+                for package in sorted(verified.iterdir())[:100]:
+                    if (not package.is_dir() or package.is_symlink()
+                            or not re.fullmatch(r"[A-Za-z0-9_.-]+__[A-Za-z0-9_.-]+", package.name)):
+                        continue
+                    document = package / "local-windows-quarantined.json"
+                    if (document.is_symlink() or not document.is_file()
+                            or document.stat().st_size > 2048):
+                        continue
+                    data = json.loads(document.read_text("utf-8"))
+                    if not isinstance(data, dict) or data.get("status") not in {"QUARANTINED", "RETRYING"}:
+                        continue
+                    repository = package.name.replace("__", "/")
+                    # Informational only: never use these fields to grant access.
+                    clean = lambda field: "".join(
+                        char for char in str(data.get(field, "")) if 32 <= ord(char) <= 126
+                    )[:240]
+                    failure = {
+                        "reason_code": clean("reason_code"),
+                        "detail": clean("detail"),
+                        "stderr_tail": clean("stderr_tail"),
+                    }
+                    if repository in existing:
+                        for row in rows:
+                            if row["repository"] == repository and row["status"] == "QUARANTINED":
+                                row.update(failure)
+                    else:
+                        rows.append({
+                            "repository": repository, "status": "QUARANTINED",
+                            "category": "", "capabilities": [], "proof_present": False,
+                            "owner_revoke": "protected_owner_cli", **failure,
+                        })
+            return {"items": rows[:100], "mode": "untrusted_runtime_status",
                     "trusted_by_this_endpoint": False}
         except (OSError, ValueError, TypeError, UnicodeError):
             raise HTTPException(503, "Runtime inventory unavailable")
