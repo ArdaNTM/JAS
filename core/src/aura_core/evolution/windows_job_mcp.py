@@ -292,6 +292,11 @@ def _bridge(runtime: Path, entry: str) -> int:
         wintypes.BOOL, DWORD, ctypes.c_void_p, wintypes.LPCWSTR,
         ctypes.POINTER(STARTUPINFO), ctypes.POINTER(PROCESS_INFORMATION)]
     kernel.CreateProcessW.restype = wintypes.BOOL
+    kernel.CreateFileW.argtypes = [
+        wintypes.LPCWSTR, DWORD, DWORD, ctypes.POINTER(SECURITY_ATTRIBUTES),
+        DWORD, DWORD, HANDLE,
+    ]
+    kernel.CreateFileW.restype = HANDLE
     kernel.CloseHandle.argtypes = [HANDLE]
     kernel.CloseHandle.restype = wintypes.BOOL
     kernel.WaitForSingleObject.argtypes = [HANDLE, DWORD]
@@ -319,10 +324,16 @@ def _bridge(runtime: Path, entry: str) -> int:
         limits.ProcessMemoryLimit = 256 * 1024 * 1024
         if not kernel.SetInformationJobObject(job, 9, ctypes.byref(limits), ctypes.sizeof(limits)):
             raise OSError("Cannot establish mandatory Job Object limits")
+        # Keep MCP stderr separate from stdout JSON-RPC: never merge them.
+        # Suppress untrusted process diagnostics rather than logging secrets.
+        nul = kernel.CreateFileW("NUL", 0x40000000, 3, ctypes.byref(sa), 3, 0x80, None)
+        if not nul or int(nul) == ctypes.c_void_p(-1).value:
+            raise OSError("Cannot create isolated MCP stderr handle")
+        owned.append(nul)
         si = STARTUPINFO()
         si.cb = ctypes.sizeof(si)
         si.dwFlags = 0x100
-        si.hStdInput, si.hStdOutput, si.hStdError = child_in, child_out, child_out
+        si.hStdInput, si.hStdOutput, si.hStdError = child_in, child_out, nul
         system_root = os.environ.get("SystemRoot", r"C:\\Windows")
         env = {
             "SystemRoot": system_root, "WINDIR": system_root,
