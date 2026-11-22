@@ -395,7 +395,9 @@ def test_signed_one_year_activation_is_bounded_and_scoped():
 ])
 def test_owner_signed_activation_budget_64_is_valid_but_65_denied(limit, allowed):
     from aura_core.evolution.owner_cli import make_activation_delegation
-    from aura_core.evolution.activation_delegation import validated_claims
+    from aura_core.evolution.activation_delegation import (
+        validated_claims, SANDBOX_POLICY_SHA256, SANDBOX_TESTS_SHA256,
+    )
     signer = Ed25519PrivateKey.generate()
     opts = dict(
         categories=("local_memory",),
