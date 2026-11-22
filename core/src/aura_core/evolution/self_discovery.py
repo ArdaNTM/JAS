@@ -361,6 +361,11 @@ class SelfDiscoveryEngine:
                 staged_count INTEGER NOT NULL,
                 status TEXT NOT NULL
             )""")
+            # Persist the query cursor across Windows daemon restarts; old
+            # discovery_history rows are reused without resetting proposals.
+            self._cycle = int(db.execute(
+                "SELECT COALESCE(MAX(cycle),0) FROM discovery_history"
+            ).fetchone()[0])
 
     def _connect(self):
         return sqlite3.connect(str(self._db_path), timeout=5)
@@ -439,7 +444,8 @@ class SelfDiscoveryEngine:
                 "'GitHub download byte budget exceeded',"
                 "'Archive download exceeds maximum byte budget',"
                 "'Expanded repository budget exceeded',"
-                "'GitHub archive/metadata unavailable or rate limited')) "
+                "'GitHub archive/metadata unavailable or rate limited',"
+                "'Archive has too many members')) "
                 "OR (stage_attempts = 1 AND package_error="
                 "'Binary content is not eligible for static staging')"
                 "))) "
@@ -449,6 +455,7 @@ class SelfDiscoveryEngine:
         # search returns zero. Only bounded transport/budget retries and one
         # legacy binary-only re-evaluation are eligible, never generic
         # static risk, executable, or authorization-policy rejections.
+        # Old 120-member archive rejections now qualify for bounded retries.
         candidates = [
             (repository, description, stars or 0, size_kb)
             for repository, description, stars, size_kb in rows
@@ -539,9 +546,13 @@ class SelfDiscoveryEngine:
 
     async def run_once(self, *, full_scan: bool = False) -> dict[str, object]:
         async with self._lock:
-            indexes = (
-                range(len(QUERIES)) if full_scan
-                else (self._cycle % len(QUERIES),)
+            # A manual scan covers two *rotating* query slots, not the
+            # entire expanding allowlist (bounded public GitHub API use).
+            # _cycle was restored from persisted discovery_history.
+            query_count = MAX_QUERIES_PER_MANUAL_SCAN if full_scan else 1
+            indexes = tuple(
+                (self._cycle + offset) % len(QUERIES)
+                for offset in range(query_count)
             )
             self._cycle += len(indexes)
             seen: set[str] = set()
