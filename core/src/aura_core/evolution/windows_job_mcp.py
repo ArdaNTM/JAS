@@ -244,7 +244,7 @@ class LocalWindowsMCPPreflight(IsolatedMCPPreflight):
         # may disable it without creating any host process or network activity.
         await asyncio.to_thread(
             prepare_isolated_venv, runtime, files, self.workspace.root,
-            install=self.install,
+            install=self.install, entry=entry,
         )
         self._verify_runtime_capacity(0)
         connection = MCPConnection()
