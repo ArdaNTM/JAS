@@ -88,6 +88,26 @@ def choose_python_entrypoint(files: dict[str, bytes], hint: str) -> str:
         if any(signature in code for signature in
                (b"FastMCP", b"MCPServer", b"mcp.server", b"Server(")):
             return path
+        if path.endswith("/__main__.py"):
+            # A conventional src/package/__main__.py often imports the actual
+            # MCPServer from a sibling module. Inspect only that declared
+            # local sibling; never import or execute either file.
+            from ast import ImportFrom, parse
+            parent = path.rsplit("/", 1)[0]
+            try:
+                tree = parse(code.decode("utf-8-sig"), filename=path)
+                imported = {
+                    node.module for node in __import__("ast").walk(tree)
+                    if isinstance(node, ImportFrom) and node.module and node.level >= 1
+                }
+            except (SyntaxError, UnicodeError, ValueError):
+                continue
+            for module in imported:
+                sibling = parent + "/" + module.replace(".", "/") + ".py"
+                data = files.get(sibling, b"")
+                if len(data) <= 512_000 and any(sig in data for sig in
+                       (b"FastMCP", b"MCPServer", b"mcp.server")):
+                    return path
     raise SandboxUntrusted("No supported Python MCP entrypoint")
 
 
