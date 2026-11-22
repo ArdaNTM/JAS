@@ -33,7 +33,7 @@ SANDBOX_POLICY = (
 )
 SANDBOX_HEALTH_TESTS = (
     b"AURA:MCP-HEALTH-OBSERVATION:v1|initialize|tools/list|"
-    b"max-tools=16|schema-bound|runtime-tree-bound"
+    b"max-tools=64|schema-bound=65536|runtime-tree-bound"
 )
 SANDBOX_POLICY_SHA256 = hashlib.sha256(SANDBOX_POLICY).hexdigest()
 SANDBOX_TESTS_SHA256 = hashlib.sha256(SANDBOX_HEALTH_TESTS).hexdigest()
@@ -92,7 +92,7 @@ def validated_claims(claims: object, *, now: int | None = None) -> dict:
         raise PermissionError("Unknown or unobserved sandbox policy/test contract")
     if not isinstance(claims["attestor_runner_id"], str) or not _ID.fullmatch(claims["attestor_runner_id"]):
         raise PermissionError("Untrusted attestor identity")
-    if (type(claims["max_tools"]) is not int or not 1 <= claims["max_tools"] <= 16
+    if (type(claims["max_tools"]) is not int or not 1 <= claims["max_tools"] <= 64
             or type(claims["min_score"]) is not int
             or not 70 <= claims["min_score"] <= 100):
         raise PermissionError("Delegated runtime budget invalid")

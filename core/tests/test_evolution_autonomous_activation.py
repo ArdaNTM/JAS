@@ -370,6 +370,223 @@ def test_expired_independent_attestation_quarantines_or_waits(tmp_path, monkeypa
     asyncio.run(run())
 
 
+def test_signed_windows_nineteen_mcp_tools_preflight_attest_and_activate(
+    tmp_path, monkeypatch,
+):
+    """Bounded 19-tool/27,351-byte full signed proof -> Gateway -> inventory.
+
+    Only the connection transport and wheel installer are inert: production
+    authorization, exact-source hashing, Ed25519 signatures and registration
+    are real. Untrusted source code is never imported or executed.
+    """
+    import shutil
+    from aura_core.evolution import (
+        activation_runtime, attestor_worker, windows_job_mcp, isolated_venv,
+    )
+    from aura_core.evolution.activation_delegation import (
+        SANDBOX_POLICY_SHA256, SANDBOX_TESTS_SHA256,
+    )
+    from aura_core.evolution.owner_cli import make_activation_delegation
+    from aura_core.evolution.sandbox_preflight import (
+        _schema_json_size, SandboxUntrusted,
+    )
+
+    workspace, name, repo = _signed_fixture(tmp_path, monkeypatch)
+    pkg = workspace.root / "verified" / name
+    archive = io.BytesIO()
+    with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as z:
+        z.writestr("snapshot/README.md", "Fully local, offline MCP server; no API keys required; signed proof")
+        z.writestr(
+            "snapshot/server.py",
+            "from fastmcp import FastMCP\n"
+            "app = FastMCP('memory')\n"
+            "@app.tool()\ndef ping() -> str: return 'pong'\n"
+            "if __name__ == '__main__': app.run()\n",
+        )
+        z.writestr("snapshot/pyproject.toml", "[project]\nname='memory'\n")
+    source = archive.getvalue()
+    (pkg / "source.zip").write_bytes(source)
+    manifest = pkg / "aura-capability-manifest.json"
+    metadata = json.loads(manifest.read_text("utf-8"))
+    metadata["source_sha256"] = hashlib.sha256(source).hexdigest()
+    manifest.write_text(json.dumps(metadata), encoding="utf-8")
+    (pkg / "independent-attestations.json").unlink()
+    shutil.rmtree(workspace.root / "runtime" / name)
+    IsolatedMCPPreflight(
+        workspace, image="example/mcp@sha256:" + "a" * 64,
+    ).prepare(name)
+
+    owner_signer = Ed25519PrivateKey.generate()
+    attestor_signer = workspace._testing_attestor_signer
+    owner_raw = owner_signer.public_key().public_bytes(
+        serialization.Encoding.Raw, serialization.PublicFormat.Raw,
+    )
+    attestor_raw = attestor_signer.public_key().public_bytes(
+        serialization.Encoding.Raw, serialization.PublicFormat.Raw,
+    )
+    grant = make_activation_delegation(
+        owner_signer, categories=("local_memory",), image=None,
+        policy_sha256=SANDBOX_POLICY_SHA256,
+        tests_sha256=SANDBOX_TESTS_SHA256,
+        attestor_key_sha256=hashlib.sha256(attestor_raw).hexdigest(),
+        attestor_runner_id="operator_runner",
+        days=1, max_tools=64, min_score=70,
+        allow_local_windows_process=True,
+    )
+    owner_dir = workspace.root / "owner"
+    (owner_dir / "autonomous_delegation.pub.pem").write_bytes(
+        owner_signer.public_key().public_bytes(
+            serialization.Encoding.PEM,
+            serialization.PublicFormat.SubjectPublicKeyInfo,
+        )
+    )
+    (owner_dir / "autonomous_delegation.json").write_text(
+        json.dumps(grant), encoding="utf-8",
+    )
+    if os.name == "nt":
+        from test_evolution_decision_engine import _private_windows_test_owner_state
+        _private_windows_test_owner_state(workspace)
+    else:
+        for p in owner_dir.iterdir():
+            p.chmod(0o600)
+    monkeypatch.setenv(
+        "AURA_EVOLUTION_DELEGATION_KEY_SHA256",
+        hashlib.sha256(owner_raw).hexdigest(),
+    )
+
+    # No modification to the real process-wide os.name (pathlib/ACL safety).
+    class EmulatedWindows:
+        name = "nt"
+
+        def __getattr__(self, attr):
+            return getattr(os, attr)
+
+    for module in (windows_job_mcp, attestor_worker, activation_runtime):
+        monkeypatch.setattr(module, "os", EmulatedWindows())
+
+    schemas = {
+        f"memory_{i:02d}": {
+            "type": "object",
+            "properties": {"query": {"type": "string"}},
+        }
+        for i in range(19)
+    }
+    base_size = _schema_json_size(schemas)
+    schemas["memory_00"]["properties"]["query"]["description"] = ""
+    overhead = _schema_json_size(schemas) - base_size
+    padding = 27_351 - base_size - overhead
+    assert padding > 0
+    schemas["memory_00"]["properties"]["query"]["description"] = "x" * padding
+    # Schema map accounting includes all tool names and JSON overhead.
+    assert _schema_json_size(schemas) == 27_351
+    tools19 = tuple(
+        MCPTool(name=n, description="", input_schema=s) for n, s in schemas.items()
+    )
+    current = {"tools": list(tools19)}
+
+    class InertConnection:
+        async def connect_stdio(self, params):
+            assert params.command
+        async def list_tools(self):
+            return SimpleNamespace(tools=list(current["tools"]))
+        async def close(self):
+            pass
+
+    monkeypatch.setattr(windows_job_mcp, "MCPConnection", InertConnection)
+    monkeypatch.setattr(
+        isolated_venv, "prepare_isolated_venv",
+        lambda *args, **kwargs: None,
+    )
+
+    class FakeNineteenProvider:
+        calls = 0
+        async def list_tools(self):
+            return tools19
+        async def call_tool(self, name, arguments=None):
+            self.calls += 1
+            return {"tool": name}
+        async def close(self):
+            pass
+
+    async def factory(*_):
+        return FakeNineteenProvider()
+
+    kernel, gateway = _kernel()
+    manager = DelegatedMCPActivationManager(
+        workspace=workspace, kernel=kernel, provider_factory=factory,
+    )
+
+    async def run():
+        preflight = windows_job_mcp.LocalWindowsMCPPreflight(
+            workspace, owner_grant=grant["claims"],
+        )
+        report = await preflight.probe(name)
+        assert report["status"] == "PREPARED_UNATTESTED"
+        assert len(report["tool_schemas"]) == 19
+        assert _schema_json_size(report["tool_schemas"]) == 27_351
+
+        attestor = attestor_worker.IndependentMCPAttestorWorker(
+            workspace=workspace, key=attestor_signer,
+        )
+        evidence = await attestor.scan()
+        assert len(evidence) == 1 and evidence[0]["attested_tools"] == 19
+        bundle = json.loads(
+            (pkg / "independent-attestations.json").read_text("utf-8")
+        )
+        assert len(bundle["tools"]) == 19
+        assert bundle["execution_profile"] == "windows-job-stdio"
+
+        assert await manager.scan() == [repo]
+        inventory = json.loads(workspace.active.read_text("utf-8"))
+        active = [x for x in inventory["active"] if x["status"] == "ACTIVE"]
+        assert len(active) == 1
+        assert active[0]["repository"] == repo
+        assert len(active[0]["capabilities"]) == 19
+        assert len(kernel.capability_registry.records()) == 19
+        first = active[0]["capabilities"][0]
+        tool = first.rsplit(".", 1)[-1]
+        scope = "evolution:isolated:" + active[0]["source_sha256"] + ":" + tool
+        allowed = await gateway.invoke(_request(first, tool, scope))
+        denied = await gateway.invoke(_request(
+            first, tool, scope, principal="unsigned-actor",
+        ))
+        assert allowed.decision is AuthorizationDecision.ALLOW
+        assert denied.decision is AuthorizationDecision.DENY
+
+        # Negative cap and schema tests reuse the real probe, not a
+        # reimplemented mock of its limits.
+        extra = tuple(
+            MCPTool(name=f"extra_{i:02d}", description="",
+                    input_schema={"type": "object"})
+            for i in range(45)
+        )
+        current["tools"] = list(tools19 + extra)
+        assert len((await preflight.probe(name))["tool_schemas"]) == 64
+        current["tools"].append(MCPTool(
+            name="overflow_65", description="", input_schema={"type": "object"},
+        ))
+        with pytest.raises(SandboxUntrusted, match="oversized"):
+            await preflight.probe(name)
+        current["tools"] = list(tools19)
+        huge = {k: dict(v) for k, v in schemas.items()}
+        huge["memory_00"] = {
+            "type": "object",
+            "properties": {"query": {
+                "type": "string", "description": "x" * 65_536,
+            }},
+        }
+        current["tools"] = [
+            MCPTool(name=k, description="", input_schema=v)
+            for k, v in huge.items()
+        ]
+        with pytest.raises(SandboxUntrusted, match="Oversized"):
+            await preflight.probe(name)
+
+        await manager.close()
+
+    asyncio.run(run())
+
+
 def test_independent_attestor_observes_mcp_and_signs_exact_gateway_binding(
     tmp_path, monkeypatch,
 ):

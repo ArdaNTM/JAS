@@ -375,7 +375,7 @@ def test_signed_one_year_activation_is_bounded_and_scoped():
         policy_sha256=SANDBOX_POLICY_SHA256,
         tests_sha256=SANDBOX_TESTS_SHA256,
         attestor_key_sha256="d" * 64, attestor_runner_id="independent_attestor",
-        days=365, max_tools=16, min_score=75,
+        days=365, max_tools=64, min_score=75,
     )
     assert validated_claims(grant["claims"])["expires_at"] - grant["claims"]["issued_at"] == 365 * 86400
     assert set(grant["claims"]["categories"]) == set(scopes)
@@ -387,6 +387,33 @@ def test_signed_one_year_activation_is_bounded_and_scoped():
             attestor_key_sha256="d" * 64, attestor_runner_id="independent_attestor",
             days=366,
         )
+
+
+@pytest.mark.parametrize("limit,allowed", [
+    (1, True), (16, True), (19, True), (64, True),
+    (65, False), (0, False), (True, False),
+])
+def test_owner_signed_activation_budget_64_is_valid_but_65_denied(limit, allowed):
+    from aura_core.evolution.owner_cli import make_activation_delegation
+    from aura_core.evolution.activation_delegation import (
+        validated_claims, SANDBOX_POLICY_SHA256, SANDBOX_TESTS_SHA256,
+    )
+    signer = Ed25519PrivateKey.generate()
+    opts = dict(
+        categories=("local_memory",),
+        image="example/mcp@sha256:" + "a" * 64,
+        policy_sha256=SANDBOX_POLICY_SHA256,
+        tests_sha256=SANDBOX_TESTS_SHA256,
+        attestor_key_sha256="d" * 64,
+        attestor_runner_id="independent_attestor",
+        max_tools=limit, min_score=70,
+    )
+    if not allowed:
+        with pytest.raises(PermissionError):
+            make_activation_delegation(signer, **opts)
+    else:
+        doc = make_activation_delegation(signer, **opts)
+        assert validated_claims(doc["claims"])["max_tools"] == limit
 
 
 def test_review_v1_is_never_accepted_as_automatic_activation(sample, monkeypatch):

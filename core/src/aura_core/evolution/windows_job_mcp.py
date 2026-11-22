@@ -25,7 +25,10 @@ from mcp.client.stdio import StdioServerParameters
 
 from aura_core.evolution.decision_engine import EvolutionDecisionEngine
 from aura_core.evolution.external_staging import EvolutionWorkspace, _checked_path, _validated_files
-from aura_core.evolution.sandbox_preflight import IsolatedMCPPreflight, SandboxUntrusted, choose_python_entrypoint
+from aura_core.evolution.sandbox_preflight import (
+    IsolatedMCPPreflight, SandboxUntrusted, choose_python_entrypoint,
+    _MAX_TOOLS, _MAX_SCHEMA_JSON_BYTES, _schema_json_size,
+)
 from aura_core.mcp.connection import MCPConnection
 
 LOCAL_SCHEMA = "aura.local-windows-job-mcp-attestation.v1"
@@ -37,7 +40,7 @@ LOCAL_POLICY_SHA256 = hashlib.sha256(
 ).hexdigest()
 LOCAL_TESTS_SHA256 = hashlib.sha256(
     b"WINDOWS-JOB-HEALTH:v1|ast-checked|initialize|tools/list|"
-    b"max-tools=16|runtime-tree-sha256|schema-exact"
+    b"max-tools=64|schema-bound=65536|runtime-tree-sha256|schema-exact"
 ).hexdigest()
 _HEX = re.compile(r"^[0-9a-f]{64}$")
 
@@ -255,7 +258,7 @@ class LocalWindowsMCPPreflight(IsolatedMCPPreflight):
                 bridge_parameters(runtime, entry)), timeout=self.timeout)
             result = await asyncio.wait_for(connection.list_tools(), timeout=5)
             tools = result.tools if hasattr(result, "tools") else result
-            if not isinstance(tools, (list, tuple)) or not 1 <= len(tools) <= 16:
+            if not isinstance(tools, (list, tuple)) or not 1 <= len(tools) <= _MAX_TOOLS:
                 raise SandboxUntrusted("Local MCP tools/list missing or oversized")
             schemas = {}
             for tool in tools:
@@ -268,7 +271,7 @@ class LocalWindowsMCPPreflight(IsolatedMCPPreflight):
                     not isinstance(schema, dict) or name in schemas):
                     raise SandboxUntrusted("Invalid or duplicate MCP tool schema")
                 schemas[name] = schema
-            if sum(len(json.dumps(x)) for x in schemas.values()) > 32_000:
+            if _schema_json_size(schemas) > _MAX_SCHEMA_JSON_BYTES:
                 raise SandboxUntrusted("Oversized MCP tool declarations")
             from aura_core.evolution.activation_runtime import runtime_fingerprint
             tree = runtime_fingerprint(self.workspace, package_name)
