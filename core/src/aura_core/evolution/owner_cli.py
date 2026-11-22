@@ -56,6 +56,7 @@ def make_activation_delegation(
     policy_sha256: str, tests_sha256: str,
     attestor_key_sha256: str, attestor_runner_id: str,
     days: int = 1, max_tools: int = 8, min_score: int = 75,
+    allow_local_windows_process: bool = False,
     issued_at: int | None = None,
 ) -> dict:
     from aura_core.evolution.activation_delegation import (
@@ -63,12 +64,17 @@ def make_activation_delegation(
     )
     if type(days) is not int or not 1 <= days <= 365:
         raise ValueError("Only 1-365 day delegated activation allowed")
+    if type(allow_local_windows_process) is not bool:
+        raise ValueError("Local Windows execution must be an explicit boolean")
     now = int(time.time()) if issued_at is None else issued_at
     claims = validated_claims({
         "schema": SCHEMA, "principal_id": "local_owner",
         "issued_at": now, "expires_at": now + days * 86400,
-        "categories": sorted(categories), "scope": "offline-container-stdio",
+        "categories": sorted(categories),
+        "scope": ("offline-container-stdio+windows-job-stdio"
+                  if allow_local_windows_process else "offline-container-stdio"),
         "auto_activation": True, "oci_image": image,
+        "allow_local_windows_process": allow_local_windows_process,
         "policy_sha256": policy_sha256, "tests_sha256": tests_sha256,
         "attestor_key_sha256": attestor_key_sha256,
         "attestor_runner_id": attestor_runner_id,
@@ -191,6 +197,7 @@ def sign_activation_delegation(
     policy_sha256: str, tests_sha256: str, attestor_key_sha256: str,
     attestor_runner_id: str, days: int = 1,
     max_tools: int = 8, min_score: int = 75,
+    allow_local_windows_process: bool = False,
 ) -> str:
     root = _root(owner_root)
     signer = _owner_signer(root)
@@ -200,6 +207,7 @@ def sign_activation_delegation(
         attestor_key_sha256=attestor_key_sha256,
         attestor_runner_id=attestor_runner_id, days=days,
         max_tools=max_tools, min_score=min_score,
+        allow_local_windows_process=allow_local_windows_process,
     )
     return _persist_owner_signature(root, signer, claims, activation=True)
 
@@ -257,7 +265,7 @@ def main() -> int:
         "AURA_EVOLUTION_OWNER_ROOT", r"D:\AURA\Evolution\owner"))
     activation.add_argument("--categories", nargs="+", choices=sorted(_DEPLOYED_CATEGORIES),
                             required=True)
-    activation.add_argument("--image", required=True)
+    activation.add_argument("--image", default=None, help="Real OCI digest; optional only with explicit local Windows execution")
     from aura_core.evolution.activation_delegation import (
         SANDBOX_POLICY_SHA256, SANDBOX_TESTS_SHA256,
     )
@@ -268,6 +276,8 @@ def main() -> int:
     activation.add_argument("--max-tools", type=int, default=8)
     activation.add_argument("--min-score", type=int, default=75)
     activation.add_argument("--days", type=int, default=1)
+    activation.add_argument("--allow-local-windows-process", action="store_true",
+                            help="Owner accepts that Windows Job Objects do not protect same-user secrets")
     activation.add_argument("--confirm-owner-authority", action="store_true")
     revoke = sub.add_parser("revoke-delegation")
     revoke.add_argument("--owner-root", default=os.getenv(
@@ -294,7 +304,7 @@ def main() -> int:
             attestor_key_sha256=args.attestor_key_sha256,
             attestor_runner_id=args.attestor_runner_id,
             max_tools=args.max_tools, min_score=args.min_score,
-            days=args.days,
+            days=args.days, allow_local_windows_process=args.allow_local_windows_process,
         )
         print("Isolated offline MCP Owner delegation signed with protected DPAPI identity")
         print("AURA_EVOLUTION_DELEGATION_KEY_SHA256=" + fingerprint)
