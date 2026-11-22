@@ -273,7 +273,8 @@ def main() -> int:
     activation.add_argument("--tests-sha256", default=SANDBOX_TESTS_SHA256)
     activation.add_argument("--attestor-key-sha256", required=True)
     activation.add_argument("--attestor-runner-id", required=True)
-    activation.add_argument("--max-tools", type=int, default=8)
+    activation.add_argument("--max-tools", type=int, default=8,
+                            help="Explicit signed MCP tool ceiling (1-64)")
     activation.add_argument("--min-score", type=int, default=75)
     activation.add_argument("--days", type=int, default=1)
     activation.add_argument("--allow-local-windows-process", action="store_true",
