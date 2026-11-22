@@ -66,7 +66,7 @@ def choose_python_entrypoint(files: dict[str, bytes], hint: str) -> str:
         if not isinstance(scripts, dict) or len(scripts) > 64:
             raise SandboxUntrusted("Invalid project script mapping")
         prefix = config.removesuffix("pyproject.toml")
-        for name, value in sorted(scripts.items()):
+        for name, value in scripts.items():
             if not isinstance(name, str) or not isinstance(value, str):
                 raise SandboxUntrusted("Invalid project script target")
             target = re.fullmatch(
