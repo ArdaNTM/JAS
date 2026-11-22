@@ -23,6 +23,20 @@ from aura_core.evolution.external_staging import EvolutionWorkspace, _checked_pa
 
 DOMAIN = b"AURA:OWNER-ISOLATED-MCP-ACTIVATION:v2\n"
 SCHEMA = "aura.owner-autonomy-delegation.v2"
+# These fixed, reviewable contracts describe the only allowed execution
+# profile and independently observed MCP health checks. Owner cannot choose
+# an arbitrary test/policy hash that the attestor merely echoes.
+SANDBOX_POLICY = (
+    b"AURA:ISOLATED-MCP-DOCKER-POLICY:v1|network=none|read-only-rootfs|"
+    b"read-only-source|cap-drop=ALL|no-new-privileges|pids=64|"
+    b"memory=256m|cpus=1|user=65534:65534|tmpfs-noexec"
+)
+SANDBOX_HEALTH_TESTS = (
+    b"AURA:MCP-HEALTH-OBSERVATION:v1|initialize|tools/list|"
+    b"max-tools=16|schema-bound|runtime-tree-bound"
+)
+SANDBOX_POLICY_SHA256 = hashlib.sha256(SANDBOX_POLICY).hexdigest()
+SANDBOX_TESTS_SHA256 = hashlib.sha256(SANDBOX_HEALTH_TESTS).hexdigest()
 _IMAGE = re.compile(r"^[A-Za-z0-9._/-]+@sha256:[a-f0-9]{64}$")
 _SHA = re.compile(r"^[0-9a-f]{64}$")
 _ID = re.compile(r"^[a-zA-Z0-9_-]{3,64}$")
@@ -66,6 +80,9 @@ def validated_claims(claims: object, *, now: int | None = None) -> dict:
     if any(not isinstance(claims[key], str) or not _SHA.fullmatch(claims[key])
            for key in ("policy_sha256", "tests_sha256", "attestor_key_sha256")):
         raise PermissionError("Independent attestor trust pins missing")
+    if (claims["policy_sha256"] != SANDBOX_POLICY_SHA256
+            or claims["tests_sha256"] != SANDBOX_TESTS_SHA256):
+        raise PermissionError("Unknown or unobserved sandbox policy/test contract")
     if not isinstance(claims["attestor_runner_id"], str) or not _ID.fullmatch(claims["attestor_runner_id"]):
         raise PermissionError("Untrusted attestor identity")
     if (type(claims["max_tools"]) is not int or not 1 <= claims["max_tools"] <= 16
