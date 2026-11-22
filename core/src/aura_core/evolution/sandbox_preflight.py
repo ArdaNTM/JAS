@@ -138,7 +138,17 @@ class IsolatedMCPPreflight:
                   "tool_count": 0}
         connection = MCPConnection()
         try:
-            runtime, entry, digest = self.prepare(package_name)
+            existing = self.runtime_root / package_name
+            if existing.exists():
+                from aura_core.evolution.activation_runtime import runtime_fingerprint
+                runtime_fingerprint(self.workspace, package_name)
+                metadata, _, digest = self.decisions._check_candidate(package_name)
+                with (self.workspace.root / "verified" / package_name / "source.zip").open("rb") as source:
+                    files, _, _ = _validated_files(source)
+                entry = choose_python_entrypoint(files, metadata.get("entrypoint_hint", ""))
+                runtime = existing
+            else:
+                runtime, entry, digest = self.prepare(package_name)
             docker = shutil.which("docker")
             if not docker:
                 raise SandboxUntrusted("Docker sandbox runtime unavailable")
