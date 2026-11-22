@@ -95,7 +95,9 @@ class IndependentMCPAttestorWorker:
                 use_local = True
         if use_local:
             # Never sign Docker isolation facts for a Windows host process.
-            report = await LocalWindowsMCPPreflight(self.workspace).probe(package)
+            report = await LocalWindowsMCPPreflight(
+                self.workspace, owner_grant=grant,
+            ).probe(package)
         if report is None or report.get("status") != "PREPARED_UNATTESTED":
             raise PermissionError("Owner-permitted MCP initialize/tools-list failed")
         tools = report.get("tool_schemas", {})
