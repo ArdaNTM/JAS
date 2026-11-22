@@ -206,21 +206,27 @@ def test_large_python_mcp_package_ast_up_to_250_modules_is_bounded():
         static_python_entry(files, "src/big_mcp/__main__.py")
 
 
-def test_recovery_v2_retries_old_sdk_failure_once_but_never_replays(monkeypatch):
+def test_recovery_v3_retries_v2_uv_flags_failure_once_but_never_replays():
     from aura_core.evolution.attestor_worker import (
         RECOVERY_EPOCH, _eligible_local_recovery,
     )
-    assert RECOVERY_EPOCH == "windows-isolated-wheels-20261122-v2"
-    old = {
+
+    assert RECOVERY_EPOCH == "windows-isolated-wheels-20261122-v3"
+    v2 = {
         "status": "QUARANTINED", "reason_code": "SandboxUntrusted",
-        "retry_count": 1, "recovery_epoch": "windows-isolated-wheels-20261122-v1",
+        "retry_count": 2, "recovery_epoch": "windows-isolated-wheels-20261122-v2",
     }
-    assert _eligible_local_recovery(old) is True
-    assert _eligible_local_recovery({**old, "recovery_epoch": RECOVERY_EPOCH}) is False
-    assert _eligible_local_recovery({**old, "retry_count": 2}) is False
-    assert _eligible_local_recovery({**old, "status": "REVOKED"}) is False
-    assert _eligible_local_recovery({**old, "reason_code": "PermissionError"}) is False
-    assert _eligible_local_recovery({**old, "retry_count": True}) is False
+    assert _eligible_local_recovery(v2) is True
+    assert _eligible_local_recovery({**v2, "recovery_epoch": RECOVERY_EPOCH}) is False
+    assert _eligible_local_recovery({**v2, "retry_count": 3}) is False
+    assert _eligible_local_recovery({**v2, "status": "REVOKED"}) is False
+    assert _eligible_local_recovery({**v2, "reason_code": "PermissionError"}) is False
+    assert _eligible_local_recovery({**v2, "retry_count": True}) is False
+    # Machines jumping directly from v1 still get a bounded upgrade retry.
+    assert _eligible_local_recovery({
+        **v2, "recovery_epoch": "windows-isolated-wheels-20261122-v1",
+        "retry_count": 1,
+    }) is True
 
 
 def test_local_recovery_does_not_scan_or_install_without_signed_owner():
@@ -312,6 +318,70 @@ def test_malformed_project_metadata_rejected_without_dynamic_loading(tmp_path):
         declared_dependencies(files)
     with pytest.raises(Exception):
         choose_python_entrypoint(files, "pyproject.toml")
+
+
+def test_uv_0100_uses_wheel_only_without_conflicting_no_build(monkeypatch, tmp_path):
+    """Spy on argv without launching uv, installing wheels or importing candidate code."""
+    import os
+    from types import SimpleNamespace
+    from aura_core.evolution import isolated_venv
+
+    workspace = tmp_path / "external"
+    runtime = workspace / "runtime" / "vendor__local"
+    runtime.mkdir(parents=True)
+    commands = []
+    monkeypatch.setattr(isolated_venv.shutil, "which", lambda name: "uv")
+
+    def fake_run(command, **kwargs):
+        commands.append(command)
+        assert kwargs["cwd"] == runtime
+        assert kwargs["check"] is False
+        assert kwargs["timeout"] == isolated_venv._MAX_INSTALL_SECONDS
+        if command[1] == "venv":
+            python = runtime / ".venv" / (
+                "Scripts/python.exe" if os.name == "nt" else "bin/python"
+            )
+            python.parent.mkdir(parents=True)
+            python.write_bytes(b"test stub, never executed")
+        return SimpleNamespace(returncode=0, stderr="")
+
+    monkeypatch.setattr(isolated_venv.subprocess, "run", fake_run)
+    result = isolated_venv.prepare_isolated_venv(
+        runtime, {"requirements.txt": b"fastmcp>=0.1.0\n"},
+        workspace, install=True,
+    )
+    assert result is not None
+    assert len(commands) == 2
+    assert commands[0][1] == "venv"
+    install = commands[1]
+    assert install[1:3] == ["pip", "install"]
+    assert install.count("--only-binary") == 1
+    assert install[install.index("--only-binary") + 1] == ":all:"
+    assert "--no-build" not in install
+    assert "--no-build-isolation" not in install
+    assert "--python" in install
+    assert (runtime / ".aura-isolated-env.json").is_file()
+
+
+def test_uv_conflicting_flags_diagnostic_is_safe_and_bounded(tmp_path):
+    import json
+    from aura_core.evolution.isolated_venv import _record_safe_install_failure
+
+    workspace = tmp_path / "external"
+    (workspace / "logs").mkdir(parents=True)
+    runtime = workspace / "runtime" / "vendor__memory"
+    runtime.mkdir(parents=True)
+    _record_safe_install_failure(
+        workspace, runtime,
+        "TOKEN=top-secret\nerror: the argument '--no-build' cannot be used with "
+        "'--only-binary <ONLY_BINARY>'",
+    )
+    receipt = json.loads(
+        (workspace / "logs" / "vendor__memory-local-mcp-stderr.json").read_text("utf-8")
+    )
+    assert receipt["reason_code"] == "ISOLATED_DEPENDENCY_INSTALL_FAILED"
+    assert receipt["stderr_tail"] == "Installed uv rejected conflicting CLI flags"
+    assert "top-secret" not in json.dumps(receipt)
 
 
 def test_install_failure_diagnostics_are_redacted_and_bounded(tmp_path):
