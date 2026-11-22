@@ -275,3 +275,51 @@ def test_active_or_recent_staging_is_never_pruned_for_capacity(tmp_path):
         with pytest.raises(SandboxUntrusted, match="quota"):
             sandbox.prepare(name)
         assert stage.exists()
+
+
+def test_staging_rejection_audit_can_reclaim_only_unverified_old_stage(tmp_path):
+    import os
+    import time
+
+    workspace = EvolutionWorkspace(tmp_path / "outside", max_bytes=1_000_000)
+    name, _ = _candidate(workspace)
+    stage = workspace.root / "staging" / "rejected__old"
+    stage.mkdir()
+    (stage / "source.bin").write_bytes(b"x" * 999_000)
+    old = time.time() - 3 * 24 * 3600
+    os.utime(stage, (old, old))
+    workspace.audit_rejection("rejected/old", "StagingRejected")
+    sandbox = IsolatedMCPPreflight(
+        workspace, image="example/mcp@sha256:" + "a" * 64,
+    )
+    sandbox.prepare(name)
+    assert not stage.exists()
+    assert (workspace.root / "verified" / name / "source.zip").is_file()
+
+
+def test_pruning_never_follows_staging_symlink(tmp_path):
+    import os
+    import time
+
+    workspace = EvolutionWorkspace(tmp_path / "outside", max_bytes=1_000_000)
+    name, _ = _candidate(workspace)
+    stage = workspace.root / "staging" / "rejected__old"
+    stage.mkdir()
+    (stage / "source.bin").write_bytes(b"x" * 999_000)
+    target = tmp_path / "external-secret"
+    target.write_text("retain", encoding="utf-8")
+    link = stage / "shortcut"
+    try:
+        link.symlink_to(target)
+    except (NotImplementedError, OSError):
+        pytest.skip("Symlink creation unavailable")
+    stamp = time.time() - 3 * 24 * 3600
+    os.utime(stage, (stamp, stamp))
+    workspace.audit_rejection("rejected/old", "StagingRejected")
+    sandbox = IsolatedMCPPreflight(
+        workspace, image="example/mcp@sha256:" + "a" * 64,
+    )
+    with pytest.raises(SandboxUntrusted, match="Unsafe staged evidence link"):
+        sandbox.prepare(name)
+    assert stage.exists()
+    assert target.read_text(encoding="utf-8") == "retain"
