@@ -13,6 +13,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import subprocess
 import time
 
 from cryptography.hazmat.primitives import serialization
@@ -107,7 +108,45 @@ def _write_owner_document(path: Path, data: bytes) -> None:
         raise
 
 
-def _persist_owner_signature(root: Path, signer, document: dict) -> str:
+def _publish_readonly_delegation(root: Path, document: dict, public: bytes) -> None:
+    """Mirror *only signed public claims* for independent Core/attestor SIDs.
+
+    Owner's private directory stays inaccessible. Both mirror files remain
+    inside that Owner-protected directory but grant authenticated Windows
+    identities READ ONLY (never modify); traversal is OS-controlled.
+    """
+    if os.name != "nt":
+        return
+    from aura_core.evolution.windows_owner_storage import harden_private_acl
+    mirrors = (
+        (root / "public-autonomous-delegation.pub.pem", public),
+        (root / "public-autonomous-delegation.json",
+         json.dumps(document, sort_keys=True, separators=(",", ":")).encode("utf-8")),
+    )
+    created = []
+    try:
+        for target, blob in mirrors:
+            if target.is_symlink() or target.exists():
+                raise FileExistsError("Independent Owner public delegation already exists")
+            target.write_bytes(blob)
+            created.append(target)
+            harden_private_acl(target)
+            icacls = Path(os.getenv("SystemRoot", r"C:\Windows")) / "System32" / "icacls.exe"
+            result = subprocess.run(
+                [str(icacls), str(target), "/grant", "*S-1-5-11:R"],
+                capture_output=True, text=True, timeout=15, check=False,
+            )
+            if result.returncode != 0:
+                raise PermissionError("Read-only Owner delegation publication failed")
+    except BaseException:
+        for target in reversed(created):
+            target.unlink(missing_ok=True)
+        raise
+
+
+def _persist_owner_signature(
+    root: Path, signer, document: dict, *, activation: bool = False,
+) -> str:
     """Non-overwriting signed declaration; never mints arbitrary new Owner keys."""
     public = signer.public_key().public_bytes(
         encoding=serialization.Encoding.PEM,
@@ -129,6 +168,13 @@ def _persist_owner_signature(root: Path, signer, document: dict) -> str:
     except BaseException:
         key_file.unlink(missing_ok=True)
         raise
+    if activation:
+        try:
+            _publish_readonly_delegation(root, document, public)
+        except BaseException:
+            declaration.unlink(missing_ok=True)
+            key_file.unlink(missing_ok=True)
+            raise
     return hashlib.sha256(raw).hexdigest()
 
 
@@ -155,7 +201,7 @@ def sign_activation_delegation(
         attestor_runner_id=attestor_runner_id, days=days,
         max_tools=max_tools, min_score=min_score,
     )
-    return _persist_owner_signature(root, signer, claims)
+    return _persist_owner_signature(root, signer, claims, activation=True)
 
 
 def sign_delegation(*, owner_root: str, categories: tuple[str, ...],
@@ -180,6 +226,13 @@ def revoke_delegation(*, owner_root: str) -> bool:
     declaration.unlink()
     if key.exists():
         key.unlink()
+    # Revocation removes the independently read-only signed public mirror;
+    # it cannot reveal or mutate the Owner signing key.
+    for name in ("public-autonomous-delegation.json",
+                 "public-autonomous-delegation.pub.pem"):
+        mirror = root / name
+        if mirror.exists():
+            mirror.unlink()
     return True
 
 
