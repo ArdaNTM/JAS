@@ -56,12 +56,16 @@ def canonical(claims: dict) -> bytes:
 
 
 def validated_claims(claims: object, *, now: int | None = None) -> dict:
-    if not isinstance(claims, dict) or set(claims) != _REQUIRED:
+    if not isinstance(claims, dict) or set(claims) not in (_REQUIRED, _REQUIRED | {"allow_local_windows_process"}):
         raise PermissionError("Unexpected Owner delegation fields")
+    if type(claims.get("allow_local_windows_process", False)) is not bool:
+        raise PermissionError("Unsigned or invalid local Windows execution permission")
     current = int(time.time()) if now is None else now
     if (claims["schema"] != SCHEMA
             or claims["principal_id"] != "local_owner"
-            or claims["scope"] != "offline-container-stdio"
+            or claims["scope"] != ("offline-container-stdio+windows-job-stdio"
+                                    if claims.get("allow_local_windows_process", False)
+                                    else "offline-container-stdio")
             or claims["auto_activation"] is not True
             or type(claims["issued_at"]) is not int
             or type(claims["expires_at"]) is not int
@@ -75,7 +79,10 @@ def validated_claims(claims: object, *, now: int | None = None) -> dict:
             or len(categories) != len(set(categories))
             or not set(categories) <= _DEPLOYED_CATEGORIES):
         raise PermissionError("Invalid delegated category list")
-    if not isinstance(claims["oci_image"], str) or not _IMAGE.fullmatch(claims["oci_image"]):
+    if claims["oci_image"] is None:
+        if not claims.get("allow_local_windows_process", False):
+            raise PermissionError("Missing Docker image without explicit local Windows approval")
+    elif not isinstance(claims["oci_image"], str) or not _IMAGE.fullmatch(claims["oci_image"]):
         raise PermissionError("Unpinned isolated runtime image")
     if any(not isinstance(claims[key], str) or not _SHA.fullmatch(claims[key])
            for key in ("policy_sha256", "tests_sha256", "attestor_key_sha256")):
