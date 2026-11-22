@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   getDiscoveryProposals, getVerifiedEvolutionPackages,
+  getContinuousEvolutionStatus, setContinuousEvolution,
+  type ContinuousEvolutionStatus,
   type DiscoveryProposal, type StaticEvolutionPackage,
 } from "../api/client";
 
@@ -39,8 +41,32 @@ export default function EvolutionReviewPanel() {
   const [drafts, setDrafts] = useState<ReviewDraft[]>([]);
   const [message, setMessage] = useState("Evolution incelemesi yalnızca görüntüleme modundadır.");
   const [discovered, setDiscovered] = useState<DiscoveryProposal[]>([]);
+  const [continuous, setContinuous] = useState<ContinuousEvolutionStatus | null>(null);
+  const [continuousBusy, setContinuousBusy] = useState(false);
+  const [continuousError, setContinuousError] = useState("");
   const [discoveryCount, setDiscoveryCount] = useState(0);
   const [staticReady, setStaticReady] = useState<StaticEvolutionPackage[]>([]);
+  const refreshContinuous = useCallback(async () => {
+    try {
+      const current = await getContinuousEvolutionStatus();
+      setContinuous(current);
+      setContinuousError("");
+    } catch {
+      setContinuous(null);
+    }
+  }, []);
+  const toggleContinuous = useCallback(async () => {
+    setContinuousBusy(true);
+    try {
+      const next = await setContinuousEvolution(continuous?.state !== "RUNNING");
+      setContinuous(next);
+      setContinuousError("");
+    } catch (error) {
+      setContinuousError(error instanceof Error ? error.message : "Sürekli mod açılamadı");
+    } finally {
+      setContinuousBusy(false);
+    }
+  }, [continuous?.state]);
   const refreshDiscovered = useCallback(async () => {
     try {
       const result = await getDiscoveryProposals();
@@ -57,9 +83,14 @@ export default function EvolutionReviewPanel() {
   }, []);
   useEffect(() => {
     void refreshDiscovered();
-    const timer = window.setInterval(() => void refreshDiscovered(), 15000);
-    return () => window.clearInterval(timer);
-  }, [refreshDiscovered]);
+    void refreshContinuous();
+    const discoveryTimer = window.setInterval(() => void refreshDiscovered(), 15000);
+    const statusTimer = window.setInterval(() => void refreshContinuous(), 5000);
+    return () => {
+      window.clearInterval(discoveryTimer);
+      window.clearInterval(statusTimer);
+    };
+  }, [refreshDiscovered, refreshContinuous]);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -105,10 +136,27 @@ export default function EvolutionReviewPanel() {
           <p className="text-[10px] font-bold tracking-[.28em] text-cyan-400">
             EVOLUTION / PRIMAL ANCHOR
           </p>
-          <p className="mt-2 text-slate-400">Gelişim önerileri · Onay ve çalıştırma bu HUD içinde mümkün değil.</p>
+          <p className="mt-2 text-slate-400">Gelişim önerileri · HUD yalnızca taramayı başlatır; Owner onayı ve imzalama ayrı yetkilerdir.</p>
           <p className="mt-2 text-[10px] text-cyan-300">
             GitHub öneri kuyruğu: {discoveryCount} · Statik paketi hazır: {staticReady.length}
           </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button type="button"
+            aria-pressed={continuous?.state === "RUNNING"}
+            disabled={continuousBusy || continuous === null}
+            onClick={() => void toggleContinuous()}
+            className="rounded border border-cyan-800 px-3 py-2 text-cyan-300 hover:border-cyan-400 disabled:opacity-50">
+            <span className={continuous?.state === "RUNNING" ? "inline-block animate-pulse" : ""}>
+              {continuous?.state === "RUNNING" ? "● " : "○ "}
+            </span>
+            {continuous?.state === "RUNNING" ? "KENDİNİ GELİŞTİRME · AÇIK" : "KENDİNİ GELİŞTİRME · KAPALI"}
+          </button>
+          {continuous && <span role="status" className="text-[10px] text-cyan-300">
+            Taranan: {continuous.scanned_candidates} · Kuyrukta: {continuous.queued_packages}
+            {" · "}Aktif: {continuous.active_count}
+          </span>}
+          {continuousError && <span role="alert" className="text-amber-300">{continuousError}</span>}
         </div>
         <button
           type="button"
@@ -147,7 +195,7 @@ export default function EvolutionReviewPanel() {
           )}
           {discovered.length > 0 && (
             <div className="space-y-2 border-t border-cyan-950 pt-4">
-              <h3 className="text-cyan-300">ÜCRETSİZ GITHUB KEŞFİ · ÖNERİ: {discoveryCount}</h3>
+              <h3 className="text-cyan-300">ÜCRETSİZ MCP / GITHUB / PYPI KEŞFİ · ÖNERİ: {discoveryCount}</h3>
               {discovered.slice(0, 20).map((item) => (
                 <div key={item.proposal_id} className="rounded border border-cyan-950 p-3">
                   <a href={item.url} target="_blank" rel="noopener noreferrer"
