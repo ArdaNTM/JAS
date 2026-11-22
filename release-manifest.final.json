@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-22T05:58:00.000Z",
+  "generated_at": "2026-11-22T06:15:00.000Z",
   "git_commit": "c7cfe64a195517f0a14868bfd846ba392de83844",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:e3ef9cd662b2b2910fb866538ea9b577e1826cd4f51a2c006f167705f329a101",
+  "release_digest": "sha256:208615f59fe88a0d3a95f112d441b4e4819f95cf2153a049ab2297f1cc2cecd4",
   "file_count": 456,
   "files": [
     {
@@ -874,7 +874,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/activation_runtime.py",
-      "sha256": "125706b49d714b0607e0532c485b99de8c67e91bfe32b1e358d2e557c71de850"
+      "sha256": "1af6dfcb4c747b1623d3f9d998dd8c4ac9368a3e117b1af6e12164a0e1928a31"
     },
     {
       "path": "core/src/aura_core/evolution/attestor_worker.py",
@@ -974,7 +974,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/sandbox_preflight.py",
-      "sha256": "ee043f41e6470d2578bbd2926e62cdaff11e292012bd227c394038f4258d2031"
+      "sha256": "c0896d8c00ef1679be29fb9b9084ab0a36f06d1be601f85752a441834f595c5a"
     },
     {
       "path": "core/src/aura_core/evolution/sandbox_review.py",
