@@ -28,7 +28,14 @@ from aura_core.mcp.connection import MCPConnection
 
 _IMAGE = re.compile(r"^[a-zA-Z0-9._/-]+@sha256:[0-9a-f]{64}$")
 _SERVER = re.compile(r"^[a-zA-Z0-9._/-]{1,150}\.py$")
-_MAX_TOOLS = 32
+_MAX_TOOLS = 64
+_MAX_SCHEMA_JSON_BYTES = 65_536
+
+
+def _schema_json_size(schemas: dict[str, dict]) -> int:
+    """Account for all tool names, schemas, and JSON overhead in UTF-8 bytes."""
+    return len(json.dumps(schemas, sort_keys=True, separators=(",", ":"),
+                          ensure_ascii=True).encode("ascii"))
 
 
 class SandboxUntrusted(RuntimeError):
@@ -281,7 +288,8 @@ class IsolatedMCPPreflight:
                    or not isinstance(tool.input_schema, dict) for tool in tools):
                 raise SandboxUntrusted("Invalid MCP tool schema")
             if (len({tool.name for tool in tools}) != len(tools)
-                    or sum(len(json.dumps(tool.input_schema)) for tool in tools) > 32_000):
+                    or _schema_json_size({tool.name: tool.input_schema
+                                          for tool in tools}) > _MAX_SCHEMA_JSON_BYTES):
                 raise SandboxUntrusted("Duplicate tools or oversized MCP schemas")
             result = {
                 "repository": repository, "status": "PREPARED_UNATTESTED",
