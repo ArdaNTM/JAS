@@ -205,6 +205,33 @@ def test_staging_old_script_false_positive_retried_only_once_through_gateway(tmp
     assert gateway.calls == 1
 
 
+def test_malformed_project_metadata_rejected_without_dynamic_loading(tmp_path):
+    from aura_core.evolution.isolated_venv import declared_dependencies
+    files = {"pyproject.toml": b"project = 'untrusted scalar'\\n"}
+    with pytest.raises(Exception):
+        declared_dependencies(files)
+    with pytest.raises(Exception):
+        choose_python_entrypoint(files, "pyproject.toml")
+
+
+def test_install_failure_diagnostics_are_redacted_and_bounded(tmp_path):
+    import json
+    from aura_core.evolution.isolated_venv import _record_safe_install_failure
+    workspace = tmp_path / "evolution"
+    (workspace / "logs").mkdir(parents=True)
+    runtime = workspace / "runtime" / "vendor__memory"
+    runtime.mkdir(parents=True)
+    _record_safe_install_failure(
+        workspace, runtime,
+        "TOKEN=secret_should_not_be_logged\\nNo matching distribution found for secret.pkg",
+    )
+    record = json.loads(
+        (workspace / "logs" / "vendor__memory-local-mcp-stderr.json").read_text("utf-8")
+    )
+    assert record["stderr_tail"] == "No compatible wheel on package index"
+    assert "secret_should_not_be_logged" not in json.dumps(record)
+
+
 def test_launcher_restores_only_missing_user_environment():
     root = Path(__file__).resolve().parents[2]
     text = (root / "scripts" / "launch-aura-desktop.ps1").read_text("utf-8")
