@@ -212,3 +212,50 @@ def test_external_scope_never_uses_unrelated_or_ambiguous_allow_policy():
         ))
     assert _external_mcp_execution_scope(engine, "local_owner", cap) is None
     assert _external_mcp_execution_scope(engine, "foreign", cap) is None
+
+
+def test_model_selector_preserves_fastmcp_nullable_arguments(monkeypatch):
+    import json
+
+    monkeypatch.setenv("AURA_ASSISTANT_AUTO_TOOLS_ENABLED", "1")
+
+    class NullableSelector:
+        async def complete_json(self, *, system_prompt, user_prompt):
+            catalog = json.loads(user_prompt)["available_tools"]
+            assert "context" in next(
+                row for row in catalog
+                if row["capability_id"] == "filesystem.read_test_data"
+            )["argument_keys"]
+            return {
+                "capability_id": "filesystem.read_test_data",
+                "arguments": {"path": "safe.txt", "context": None},
+            }
+
+    api = client(NullableSelector())
+    provider = api.app.state.kernel.provider_registry.resolve("filesystem.test")
+
+    async def nullable_tools():
+        return [SimpleNamespace(
+            name="read_data",
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string"},
+                    "context": {
+                        "anyOf": [{"type": "string"}, {"type": "null"}],
+                        "default": None,
+                    },
+                },
+            },
+        )]
+
+    monkeypatch.setattr(provider, "list_tools", nullable_tools)
+    response = api.post(
+        "/api/tasks/plan",
+        headers={"Authorization": "Bearer " + "t" * 40},
+        json={"directive": "Read my safe note"},
+    )
+    assert response.status_code == 200
+    assert response.json()["steps"][0]["arguments"] == {
+        "path": "safe.txt", "context": None,
+    }
