@@ -5,6 +5,10 @@ on:
     paths:
       - "core/src/aura_core/evolution/external_staging.py"
       - "core/src/aura_core/evolution/self_discovery.py"
+      # Dependency selection and attestor retry are part of external MCP safety.
+      - "core/src/aura_core/evolution/isolated_venv.py"
+      - "core/src/aura_core/evolution/windows_job_mcp.py"
+      - "core/src/aura_core/evolution/attestor_worker.py"
       - "core/tests/test_external_staging.py"
       - "core/tests/test_self_discovery.py"
       - ".github/workflows/aura-external-evolution-windows.yml"
