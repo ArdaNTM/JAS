@@ -322,20 +322,42 @@ class EvolutionWorkspace:
         return stage, verified
 
 
-def _validated_files(archive: bytes, *, max_archive_bytes: int | None = None) -> tuple[dict[str, bytes], str, int]:
-    if len(archive) > (max_archive_bytes if max_archive_bytes is not None else _archive_budget()):
+def _validated_files(
+    archive: bytes | io.BufferedIOBase, *,
+    max_archive_bytes: int | None = None,
+    summary: dict[str, object] | None = None,
+) -> tuple[dict[str, bytes], str, int]:
+    """Inspect untrusted ZIP metadata first; retain only bounded review source.
+
+    Large archives and passive assets are never extracted to the filesystem.
+    Paths, compressed sizes, special-file types and the total inflated size
+    are validated even for members outside the source-review subset.
+    """
+    if isinstance(archive, bytes):
+        archive_size = len(archive)
+        source = io.BytesIO(archive)
+    else:
+        archive.seek(0, os.SEEK_END)
+        archive_size = archive.tell()
+        archive.seek(0)
+        source = archive
+    if archive_size > (max_archive_bytes if max_archive_bytes is not None else _archive_budget()):
         raise StagingRejected("Archive download exceeds maximum byte budget")
     try:
-        z = zipfile.ZipFile(io.BytesIO(archive))
+        z = zipfile.ZipFile(source)
     except (zipfile.BadZipFile, OSError) as exc:
         raise StagingRejected("Invalid repository ZIP archive") from exc
+
     result: dict[str, bytes] = {}
     seen: set[str] = set()
-    total = 0
-    archive_roots: set[str] = set()
+    roots: set[str] = set()
     skipped_binaries = 0
-    member_files = 0
+    skipped_non_source = 0
+    total = 0
+    retained = 0
     max_members = _archive_member_budget()
+    max_file = _file_budget()
+    max_extracted = _extracted_budget()
     with z:
         infos = z.infolist()
         if len(infos) > max_members:
@@ -347,21 +369,19 @@ def _validated_files(archive: bytes, *, max_archive_bytes: int | None = None) ->
                 raise StagingRejected("Unsafe ZIP entry name")
             segments = PurePosixPath(raw).parts
             if len(segments) == 1 and info.is_dir():
-                # GitHub's codeload archives contain a top-level directory
-                # entry before the actual source paths.
                 continue
             if len(segments) < 2 or any(part in _DENIED_PARTS for part in segments):
                 raise StagingRejected("Unsafe ZIP path segments")
-            archive_roots.add(segments[0])
-            if len(archive_roots) != 1:
+            roots.add(segments[0])
+            if len(roots) != 1:
                 raise StagingRejected("Archive has multiple source roots")
-            relative_parts = segments[1:]
-            if any(part.rstrip(" .") != part or
-                   part.split(".")[0].lower() in _WIN_RESERVED
-                   for part in relative_parts):
+            parts = segments[1:]
+            if (any(part.rstrip(" .") != part or
+                    part.split(".")[0].lower() in _WIN_RESERVED
+                    for part in parts)):
                 raise StagingRejected("Windows-unsafe archive filename")
-            rel = "/".join(relative_parts)
-            if len(rel) > 200 or len(relative_parts) > 12:
+            rel = "/".join(parts)
+            if len(rel) > 200 or len(parts) > 12:
                 raise StagingRejected("Archive nesting budget exceeded")
             mode = (info.external_attr >> 16) & 0o170000
             if mode not in (0, stat.S_IFREG, stat.S_IFDIR):
@@ -372,63 +392,111 @@ def _validated_files(archive: bytes, *, max_archive_bytes: int | None = None) ->
             if key in seen:
                 raise StagingRejected("Case-fold duplicate archive member")
             seen.add(key)
-            member_files += 1
-            if member_files > max_members or info.file_size > _MAX_FILE:
-                raise StagingRejected("ZIP file budget exceeded")
-            if info.file_size > 100 * max(1, info.compress_size):
+            if info.file_size > 100 * max(1024, info.compress_size):
                 raise StagingRejected("ZIP compression ratio exceeded")
             total += info.file_size
-            if total > _MAX_EXTRACTED:
+            if total > max_extracted:
                 raise StagingRejected("Expanded repository budget exceeded")
+
             suffix = PurePosixPath(rel.lower()).suffix
             if suffix in _EXECUTABLE_SUFFIXES:
+                # Never silently drop executable payloads, even under docs/.
                 raise StagingRejected("Executable or suspicious archive content rejected")
-            if suffix in _PASSIVE_ASSET_SUFFIXES:
-                # Path, symlink, case collision, member count, per-file,
-                # compression-ratio and total size checks all ran first.
-                # Never copy these untrusted binary assets into source/.
-                skipped_binaries += 1
+            passive = suffix in (_PASSIVE_ASSET_SUFFIXES | _PASSIVE_SUFFIXES)
+            ignored = any(part.casefold() in _SKIP_DIRS for part in parts[:-1])
+            if passive or ignored:
+                skipped_binaries += int(passive)
+                skipped_non_source += int(not passive)
                 continue
+            if info.file_size > max_file:
+                # Oversized active source cannot be inspected safely.
+                raise StagingRejected("ZIP file budget exceeded")
+            if (len(result) >= _MAX_STATIC_FILES
+                    or retained + info.file_size > _MAX_STATIC_BYTES):
+                raise StagingRejected("Static source inspection budget exceeded")
             try:
                 data = z.read(info)
-            except (RuntimeError, OSError, zipfile.BadZipFile) as exc:
+            except (RuntimeError, OSError, zipfile.BadZipFile, EOFError) as exc:
                 raise StagingRejected("Archive entry cannot be safely read") from exc
             if len(data) != info.file_size:
                 raise StagingRejected("Archive member size mismatch")
-            if b"\x00" in data[:4096]:
-                raise StagingRejected("Binary content is not eligible for static staging")
+            try:
+                readable = data.decode("utf-8", "strict")
+            except UnicodeDecodeError as exc:
+                if suffix in _SOURCE_SUFFIXES:
+                    raise StagingRejected("Non-UTF8 active source requires manual review") from exc
+                skipped_binaries += 1
+                continue
+            if "\x00" in readable:
+                if suffix in _SOURCE_SUFFIXES:
+                    raise StagingRejected("Binary active source requires manual review")
+                skipped_binaries += 1
+                continue
             result[rel] = data
+            retained += len(data)
+
     if not result:
         raise StagingRejected("No eligible source files found")
     readmes = [
-        data.decode("utf-8", "replace")
+        data.decode("utf-8")
         for path, data in result.items()
-        if path.rsplit("/", 1)[-1].lower() in ("readme.md", "readme.rst", "readme.txt")
+        if "/" not in path and path.lower() in
+        ("readme.md", "readme.rst", "readme.txt")
     ]
     if not readmes or not any(re.search(
         r"(?i)\b(?:offline|fully local|runs? locally|self.hosted|"
-        r"no api[ _-]?key|required no external credentials)\b",
-        readme,
+        r"(?:no|zero) api[ _-]?keys?|without (?:an? )?api[ _-]?key|"
+        r"required no external credentials)\b", readme,
     ) for readme in readmes):
         raise StagingRejected("Local/no-paid-key README evidence required")
-    entrypoints = sorted(path for path in result if path.rsplit("/", 1)[-1] in _ENTRY)
+    entrypoints = sorted(
+        path for path in result if path.rsplit("/", 1)[-1].lower() in _ENTRY
+    )
+    if not entrypoints:
+        entrypoints = sorted(
+            path for path, data in result.items()
+            if PurePosixPath(path).suffix.lower() in _SOURCE_SUFFIXES
+            and ("FastMCP" in data.decode("utf-8") or
+                 "@modelcontextprotocol/sdk" in data.decode("utf-8"))
+        )
     if not entrypoints:
         raise StagingRejected("No recognizable MCP/local Python or JS entrypoint")
+
+    detected: set[str] = set()
+    patterns = {
+        "subprocess": r"\bsubprocess\b",
+        "httpx": r"\bhttpx\b",
+        "requests": r"\brequests\b",
+        "urllib": r"\burllib\b",
+        "aiohttp": r"\baiohttp\b",
+        "sqlite3": r"\bsqlite3\b",
+        "pathlib": r"\bpathlib\b",
+        "os.getenv": r"\bos\.getenv\s*\(",
+        "FastMCP": r"\bFastMCP\b",
+        "MCP SDK": r"@modelcontextprotocol/sdk",
+    }
     for path, data in result.items():
+        lower = path.lower()
         if _PLATFORM.search(path):
             raise StagingRejected("Platform-specific macOS/MLX candidate")
-        if path.endswith((".py", ".js", ".ts", ".toml", ".json", ".md", ".txt", ".sh")):
-            readable = data.decode("utf-8", "replace")
-            if _UNSAFE.search(readable) or _PAID.search(readable):
-                raise StagingRejected("Static risk/paid API signature detected")
-            if path.lower().endswith(("readme.md", "pyproject.toml", "package.json")):
-                if _PLATFORM.search(readable):
-                    raise StagingRejected("Unsupported macOS-only integration")
-                from aura_core.evolution.self_discovery import _SAAS
-                if _SAAS.search(readable) and _PAID.search(readable):
-                    raise StagingRejected("Mandatory external SaaS dependency rejected")
+        readable = data.decode("utf-8")
+        if "/" not in path and lower in ("readme.md", "pyproject.toml", "package.json"):
+            if _PLATFORM.search(readable):
+                raise StagingRejected("Unsupported macOS-only integration")
+            if _PAID.search(readable):
+                raise StagingRejected("Mandatory paid API or external credential signature detected")
+        if PurePosixPath(lower).suffix in _SOURCE_SUFFIXES:
+            if _UNSAFE.search(readable):
+                raise StagingRejected("Static risk: obfuscated execution or reverse shell detected")
+            for capability, expression in patterns.items():
+                if re.search(expression, readable):
+                    detected.add(capability)
+    if summary is not None:
+        summary["detected_capabilities"] = sorted(detected)
+        summary["skipped_non_source"] = skipped_non_source
+        summary["archive_members"] = len(infos)
+        summary["expanded_bytes"] = total
     return result, entrypoints[0], skipped_binaries
-
 
 class GitHubStagingMCPProvider:
     """Registered Gateway-only tool: immutable-source snapshot and static audit."""
