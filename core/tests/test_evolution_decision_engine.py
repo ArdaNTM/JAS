@@ -207,7 +207,10 @@ def test_launcher_cannot_self_provision_owner_delegation():
     root = Path(__file__).resolve().parents[2]
     launcher = (root / "scripts" / "launch-aura-desktop.ps1").read_text("utf-8")
     assert 'autonomous_delegation.json' not in launcher
-    assert 'AURA_EVOLUTION_AUTO_ACTIVATE' not in launcher
+    assert 'sign-activation-delegation' not in launcher
+    assert 'activation_delegation --verify' in launcher
+    assert '$env:AURA_EVOLUTION_AUTO_ACTIVATE = "0"' in launcher
+    assert '$ownerPin -match' in launcher
 
 
 def test_local_authenticated_advisory_endpoint_never_activates(sample):
