@@ -41,14 +41,14 @@ PERMITTED_LICENSES = frozenset({
 # Target small/local MCP implementations rather than repeating broad top-star
 # results. Each manual scan tries at most two queries to bound GitHub API use.
 QUERIES = (
+    '"FastMCP" "mcp.tool" language:Python size:<25000 archived:false stars:>5',
+    '"from mcp.server.fastmcp import FastMCP" language:Python size:<25000 archived:false stars:>5',
+    '"from fastmcp import FastMCP" language:Python size:<25000 archived:false stars:>5',
     '"fastmcp" server language:Python size:<25000 archived:false stars:>5',
     '"mcp" server language:Python size:<25000 archived:false stars:>5',
     '"modelcontextprotocol" server language:Python size:<25000 archived:false stars:>5',
-    '"@modelcontextprotocol/sdk" language:TypeScript size:<25000 archived:false stars:>5',
-    '"mcp-server" filesystem language:TypeScript size:<25000 archived:false stars:>5',
     '"mcp-server" sqlite language:Python size:<25000 archived:false stars:>5',
-    '"mcp-server" git language:Python size:<25000 archived:false stars:>5',
-    '"mcp-server" memory language:TypeScript size:<25000 archived:false stars:>5',
+    '"mcp-server" memory language:Python size:<25000 archived:false stars:>5',
 )
 MAX_QUERIES_PER_MANUAL_SCAN = 2
 _REPO = re.compile(r"^[A-Za-z0-9_.-]{1,80}/[A-Za-z0-9_.-]{1,100}$")
@@ -82,6 +82,22 @@ def _local_rank(repository: str, description: str, stars: int) -> int:
     return (sum(10 for _ in _LOCAL_TOOLS.finditer(text))
             + (20 if _NO_KEY_EVIDENCE.search(text) else 0)
             + min(8, max(0, stars) // 200))
+
+
+def _python_mcp_priority(repository: str, description: str) -> int:
+    """Rank Python FastMCP evidence ahead of legacy Go/Node/TS proposals.
+
+    Metadata is advisory, never activation authority. Static archive screening
+    and the signed Owner / independent MCP handshake remain mandatory.
+    """
+    value = (repository + " " + description).casefold()
+    if "fastmcp" in value or (
+        "python" in value and ("mcp" in value or "stdio" in value)
+    ):
+        return 0
+    if re.search(r"(?i)\\b(?:golang|go[- ]based|node(?:\\.js)?|typescript|rust|django)\\b", value):
+        return 2
+    return 1
 
 
 def _size_tier(size_kb: int | None) -> int:
@@ -244,6 +260,14 @@ class PublicGitHubDiscoveryMCPProvider:
                         or row.get("fork") is True):
                     continue
                 description_hint = str(row.get("description") or "")
+                # GitHub's primary language is untrusted metadata, but explicit
+                # non-Python results should not consume a Python stdio queue
+                # slot; existing catalog rows still undergo ZIP screening.
+                language = row.get("language")
+                if isinstance(language, str) and language.casefold() in {
+                    "go", "rust", "javascript", "typescript"
+                }:
+                    continue
                 if (_UNSUPPORTED_HOST.search(description_hint)
                         or _SAAS.search(full_name + " " + description_hint)):
                     continue
@@ -487,6 +511,7 @@ class SelfDiscoveryEngine:
                 # Existing active/budget queue takes precedence; legacy script
                 # false-positive retry is one-time and lower priority.
                 1 if row[4] == "Executable or suspicious archive content rejected" else 0,
+                _python_mcp_priority(row[0], row[1]),
                 0 if _local_rank(row[0], row[1], row[2]) >= 10 else 1,
                 _size_tier(row[3]),
                 -_local_rank(row[0], row[1], row[2]),
@@ -533,11 +558,14 @@ class SelfDiscoveryEngine:
                     OSError, asyncio.TimeoutError) as exc:
                 reason = _safe_text(str(exc), 160) or type(exc).__name__
                 logger.warning("Static staging rejected %s: %s", repository, reason)
+                unsupported = "No supported Python stdio MCP entrypoint" in reason
                 with self._connect() as db:
                     db.execute(
-                        "UPDATE evolution_proposals SET package_status='STAGING_REJECTED',"
+                        "UPDATE evolution_proposals SET package_status=?,"
                         "package_error=?,stage_attempts=stage_attempts+1,"
-                        "stage_retry_version=2 WHERE repository=?", (reason, repository),
+                        "stage_retry_version=2 WHERE repository=?",
+                        ("UNSUPPORTED_RUNTIME" if unsupported else "STAGING_REJECTED",
+                         reason, repository),
                     )
                 report["rejected"].append({
                     "repository": repository, "reason": reason,
