@@ -43,41 +43,60 @@ _HEX = re.compile(r"^[0-9a-f]{64}$")
 
 
 def static_python_entry(files: dict[str, bytes], hint: str) -> str:
-    """Do not import or evaluate untrusted code while inspecting its syntax."""
+    """Metadata + bounded AST review without importing untrusted source."""
     entry = choose_python_entrypoint(files, hint)
     if not entry.endswith(".py") or len(files[entry]) > 512_000:
         raise SandboxUntrusted("Only bounded Python MCP servers are supported locally")
-    try:
-        tree = ast.parse(files[entry].decode("utf-8-sig"), filename=entry)
-    except (UnicodeError, SyntaxError, ValueError) as exc:
-        raise SandboxUntrusted("Invalid Python MCP server AST") from exc
-    symbols = {node.id for node in ast.walk(tree) if isinstance(node, ast.Name)}
-    imports = {
-        alias.name for node in ast.walk(tree)
-        if isinstance(node, (ast.Import, ast.ImportFrom))
-        for alias in node.names
-    }
-    modules = {
-        node.module for node in ast.walk(tree)
-        if isinstance(node, ast.ImportFrom) and isinstance(node.module, str)
-    }
-    fastmcp = "FastMCP" in symbols or "MCPServer" in symbols
-    declared_tools = any(
-        isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
-        and any(
-            (isinstance(d, ast.Attribute) and d.attr == "tool")
-            or (isinstance(d, ast.Call) and isinstance(d.func, ast.Attribute)
-                and d.func.attr == "tool")
-            for d in node.decorator_list
+
+    def inspect(rel: str) -> bool:
+        if rel not in files or len(files[rel]) > 512_000:
+            return False
+        try:
+            parsed = ast.parse(files[rel].decode("utf-8-sig"), filename=rel)
+        except (UnicodeError, SyntaxError, ValueError) as exc:
+            raise SandboxUntrusted("Invalid Python MCP server AST") from exc
+        symbols = {node.id for node in ast.walk(parsed) if isinstance(node, ast.Name)}
+        imports = {
+            alias.name for node in ast.walk(parsed)
+            if isinstance(node, (ast.Import, ast.ImportFrom))
+            for alias in node.names
+        }
+        modules = {
+            node.module for node in ast.walk(parsed)
+            if isinstance(node, ast.ImportFrom) and isinstance(node.module, str)
+        }
+        fastmcp = "FastMCP" in symbols or "MCPServer" in symbols
+        declared_tools = any(
+            isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+            and any(
+                (isinstance(d, ast.Attribute) and d.attr == "tool")
+                or (isinstance(d, ast.Call) and isinstance(d.func, ast.Attribute)
+                    and d.func.attr == "tool")
+                for d in node.decorator_list
+            )
+            for node in ast.walk(parsed)
         )
-        for node in ast.walk(tree)
-    )
-    if (not fastmcp or not declared_tools or
-        not any(name == "mcp" or name.startswith("mcp.") or
-                name == "fastmcp" or name.startswith("fastmcp.")
-                for name in imports | modules)):
-        raise SandboxUntrusted("AST lacks a declared FastMCP server and tool decorators")
-    return entry
+        permitted_import = any(
+            value == "mcp" or value.startswith("mcp.")
+            or value == "fastmcp" or value.startswith("fastmcp.")
+            for value in imports | modules
+        )
+        return fastmcp and declared_tools and permitted_import
+
+    if inspect(entry):
+        return entry
+    if entry.endswith("/__main__.py"):
+        try:
+            wrapper = ast.parse(files[entry].decode("utf-8-sig"), filename=entry)
+        except (UnicodeError, SyntaxError, ValueError) as exc:
+            raise SandboxUntrusted("Invalid Python MCP wrapper AST") from exc
+        root = entry.rsplit("/", 1)[0]
+        for node in ast.walk(wrapper):
+            if isinstance(node, ast.ImportFrom) and node.level >= 1 and node.module:
+                sibling = root + "/" + node.module.replace(".", "/") + ".py"
+                if inspect(sibling):
+                    return entry
+    raise SandboxUntrusted("AST lacks a declared MCP server and tool decorators")
 
 
 def local_binding(*, repository: str, source_sha256: str, tree_sha256: str,
