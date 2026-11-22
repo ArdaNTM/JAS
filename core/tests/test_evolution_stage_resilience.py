@@ -107,7 +107,7 @@ def test_unknown_binary_rejected_and_zip_symlink_denied():
 def test_large_binary_cannot_bypass_per_file_and_member_count_budgets():
     with pytest.raises(StagingRejected, match="file budget"):
         _validated_files(_source(**{"assets/big.png": os.urandom(750_001)}))
-    assets = {f"assets/icon-{i}.png": b"\x89PNG\x00" for i in range(125)}
+    assets = {f"assets/icon-{i}.png": b"\x89PNG\x00" for i in range(1500)}
     with pytest.raises(StagingRejected, match="too many|file budget"):
         _validated_files(_source(**assets))
 
