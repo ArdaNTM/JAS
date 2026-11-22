@@ -199,8 +199,11 @@ def main() -> int:
     activation.add_argument("--categories", nargs="+", choices=sorted(_DEPLOYED_CATEGORIES),
                             required=True)
     activation.add_argument("--image", required=True)
-    activation.add_argument("--policy-sha256", required=True)
-    activation.add_argument("--tests-sha256", required=True)
+    from aura_core.evolution.activation_delegation import (
+        SANDBOX_POLICY_SHA256, SANDBOX_TESTS_SHA256,
+    )
+    activation.add_argument("--policy-sha256", default=SANDBOX_POLICY_SHA256)
+    activation.add_argument("--tests-sha256", default=SANDBOX_TESTS_SHA256)
     activation.add_argument("--attestor-key-sha256", required=True)
     activation.add_argument("--attestor-runner-id", required=True)
     activation.add_argument("--max-tools", type=int, default=8)
