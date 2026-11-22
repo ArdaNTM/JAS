@@ -112,7 +112,7 @@ def runtime_fingerprint(workspace: EvolutionWorkspace, name: str) -> str:
 
 def tool_binding_digest(*, repository: str, source_sha256: str, tree_sha256: str,
                         image: str, tool: MCPTool, category: str) -> str:
-    if (not _TO.fullmatch(tool.name) or not isinstance(tool.input_schema, dict)
+    if (not _TOOL.fullmatch(tool.name) or not isinstance(tool.input_schema, dict)
             or not _SHA.fullmatch(tree_sha256)):
         raise PermissionError("Unsupported MCP tool or runtime identity")
     return canonical_hash({
@@ -338,7 +338,7 @@ class DelegatedMCPActivationManager:
             if not isinstance(row, dict) or set(row) != {"name", "input_schema", "attestation"}:
                 raise PermissionError("Untrusted tool attestation format")
             tool = MCPTool(name=row["name"], description="", input_schema=row["input_schema"])
-            if tool.name in expected or not _TO.fullmatch(tool.name):
+            if tool.name in expected or not _TOOL.fullmatch(tool.name):
                 raise PermissionError("Duplicate or unsupported external tool")
             identity = tool_binding_digest(
                 repository=repository, source_sha256=sha,
