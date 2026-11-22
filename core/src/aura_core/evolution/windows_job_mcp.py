@@ -286,7 +286,7 @@ def _project_script_launch(runtime: Path, entry: str) -> tuple[str, str] | None:
     for value in scripts.values():
         if not isinstance(value, str):
             continue
-        match = re.fullmatch(r"([A-Za-z_]\\w*(?:\\.[A-Za-z_]\\w*)*):([A-Za-z_]\\w*)", value.strip())
+        match = re.fullmatch(r"([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*):([A-Za-z_]\w*)", value.strip())
         if match:
             module, function = match.groups()
             suffix = module.replace(".", "/") + ".py"
@@ -301,8 +301,8 @@ def _safe_mcp_stderr_tail(data: bytes) -> str:
     for line in reversed(lines):
         value = line.strip()
         found = re.fullmatch(
-            r"(ModuleNotFoundError|ImportError): No module named ['\\\"]"
-            r"([A-Za-z_][A-Za-z0-9_.-]{0,100})['\\\"]",
+            r"(ModuleNotFoundError|ImportError): No module named ['\"]"
+            r"([A-Za-z_][A-Za-z0-9_.-]{0,100})['\"]",
             value,
         )
         if found:
