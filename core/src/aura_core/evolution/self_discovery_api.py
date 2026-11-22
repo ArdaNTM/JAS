@@ -53,6 +53,25 @@ async def verified_static_packages(request: Request, principal: str = Depends(au
     }
 
 
+@router.get("/decisions")
+async def evaluated_static_candidates(
+    request: Request, principal: str = Depends(authenticated_principal),
+):
+    """Advisory benefit rankings; never an activation or a policy grant."""
+    engine = _engine(request, principal)
+    if engine.workspace is None:
+        return {"items": [], "activation_performed": False,
+                "owner_receipt_required": True}
+    from aura_core.evolution.decision_engine import EvolutionDecisionEngine
+    decisions = EvolutionDecisionEngine(engine.workspace).evaluate_pending(limit=30)
+    return {
+        "items": [decision.public() for decision in decisions],
+        "activation_performed": False,
+        "owner_receipt_required": True,
+        "independent_sandbox_attestation_required": True,
+    }
+
+
 @router.post("/run")
 async def run_discovery(request: Request, principal: str = Depends(authenticated_principal)):
     engine = _engine(request, principal)
