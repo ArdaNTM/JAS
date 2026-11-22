@@ -72,10 +72,10 @@ def declared_dependencies(
             raise SandboxUntrusted("Oversized pyproject metadata")
         try:
             project = tomllib.loads(pyproject.decode("utf-8-sig"))
-            metadata = project.get("project", {})
-            if not isinstance(metadata, dict):
+            project_metadata = project.get("project", {})
+            if not isinstance(project_metadata, dict):
                 raise SandboxUntrusted("Invalid project metadata")
-            requires = metadata.get("requires-python")
+            requires = project_metadata.get("requires-python")
             if requires is not None:
                 if not isinstance(requires, str) or len(requires) > 80:
                     raise SandboxUntrusted("Invalid requires-python declaration")
@@ -86,7 +86,7 @@ def declared_dependencies(
                     raise PythonVersionIncompatible(
                         f"PythonVersionIncompatible: requires {requires}, host is {host}"
                     )
-            declared = metadata.get("dependencies", [])
+            declared = project_metadata.get("dependencies", [])
             if not isinstance(declared, list):
                 raise SandboxUntrusted("Invalid project dependency list")
             dependencies.extend(declared)
