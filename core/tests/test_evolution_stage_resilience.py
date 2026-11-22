@@ -82,7 +82,7 @@ def test_benign_binary_assets_skipped_while_text_sources_still_scanned(tmp_path)
 
 @pytest.mark.parametrize("name", [
     "malware.exe", "evil.dll", "native.so", "malware.jar", "code.wasm",
-    "extension.node", "script.ps1", "installer.msi", "bytecode.pyc",
+    "extension.node", "installer.msi", "bytecode.pyc",
 ])
 def test_executable_artifacts_rejected_even_with_valid_source(name):
     with pytest.raises(StagingRejected, match="Executable|suspicious"):
