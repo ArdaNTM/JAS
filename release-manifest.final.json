@@ -3,9 +3,9 @@
   "version": "1.0.0-final",
   "status": "production-locked",
   "generated_at": "2026-11-22T06:55:00.000Z",
-  "git_commit": "10e0f889c5ebe8883931f6c34dd908aea01f4da1",
+  "git_commit": "789c9c2161038451dd6f5e7bdd9df3285aa2ce28",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:d332ed8dcc3c7b1319d967a3ea972d9c5e79aee798820604781ac9a963d66920",
+  "release_digest": "sha256:ba7ae96ca6be9ec162a5f3e4a1caf65b8743c2fdda58d902ee765d38fc838baf",
   "file_count": 464,
   "files": [
     {
@@ -878,7 +878,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/attestor_worker.py",
-      "sha256": "62b589719090b2376e4945007ebbbd6df72b85a594847a1a748de92deeae341b"
+      "sha256": "e570983af2bdb6d3912700bb1068e51672479a08a0d2fdd987aadedd1d137581"
     },
     {
       "path": "core/src/aura_core/evolution/autonomous_analyzer.py",
@@ -978,7 +978,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/sandbox_preflight.py",
-      "sha256": "a27eec2a9d93cd96bf62144fe93a3971d18e5d9d1ea914d8aec36b29d46da583"
+      "sha256": "c4f0dadf3c8840dd5cdad902fb49b30d0dc21ec4d56dd50b267433ca7962c8e9"
     },
     {
       "path": "core/src/aura_core/evolution/sandbox_review.py",
@@ -1798,7 +1798,7 @@
     },
     {
       "path": "core/tests/test_evolution_python_mcp_multimodule.py",
-      "sha256": "ad96768a0241b2964b672ebf97ea713331510c285ab8fd216e9c8b29fdbb64c2"
+      "sha256": "ae1f81499b3955bbc0bfff3f11e0f117cea279d06e6b1f19791d6e6ba0c97ba4"
     },
     {
       "path": "core/tests/test_evolution_windows_job_optin.py",
@@ -1806,7 +1806,7 @@
     },
     {
       "path": "core/tests/test_evolution_windows_live_recovery.py",
-      "sha256": "da5fc9ccebdaf1bb5108144c7b83421c2fb848b3651d1c639488d0cea5effff9"
+      "sha256": "5c8e456a2fbb4c2a0298dea33e9aa113a1f71bb6e1782cdd47e387454a333248"
     },
     {
       "path": "core/tests/test_osworld_secure_live.py",
