@@ -117,9 +117,12 @@ _PASSIVE_ASSET_SUFFIXES = frozenset({
     ".woff", ".woff2", ".ttf", ".otf", ".eot", ".mp3", ".wav", ".ogg",
     ".mp4", ".webm",
 })
+# These files can be active when executed directly, but staging never does so.
+# Keep only Python/JS source; record textual helpers as skipped_non_source.
+_SKIP_SCRIPT_SUFFIXES = frozenset({".sh", ".bash", ".zsh", ".ps1", ".bat", ".cmd"})
 _EXECUTABLE_SUFFIXES = frozenset({
     ".exe", ".dll", ".so", ".dylib", ".pyd", ".node", ".jar", ".class",
-    ".wasm", ".msi", ".com", ".scr", ".bat", ".cmd", ".ps1", ".vbs",
+    ".wasm", ".msi", ".com", ".scr", ".vbs",
     ".pyc", ".pyo", ".app", ".deb", ".rpm", ".apk", ".bin",
     ".sys",
 })
@@ -412,7 +415,8 @@ def _validated_files(
                 # Never silently drop executable payloads, even under docs/.
                 raise StagingRejected("Executable or suspicious archive content rejected")
             passive = suffix in (_PASSIVE_ASSET_SUFFIXES | _PASSIVE_SUFFIXES)
-            ignored = (any(part.casefold() in _SKIP_DIRS for part in parts[:-1])
+            ignored = (suffix in _SKIP_SCRIPT_SUFFIXES
+                       or any(part.casefold() in _SKIP_DIRS for part in parts[:-1])
                        or rel.lower().endswith((".min.js", ".min.mjs", ".min.cjs")))
             if passive or ignored:
                 skipped_binaries += int(passive)
