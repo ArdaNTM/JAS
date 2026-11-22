@@ -468,7 +468,7 @@ class SelfDiscoveryEngine:
                 "'ZIP file budget exceeded',"
                 "'Binary content is not eligible for static staging',"
                 "'Static risk/paid API signature detected'"
-                "))) OR (package_status='STAGING_REJECTED' "
+                ")) OR (package_status='STAGING_REJECTED' "
                 "AND stage_retry_version<2 AND "
                 "package_error='Executable or suspicious archive content rejected')) "
                 "ORDER BY created_at LIMIT 50"
