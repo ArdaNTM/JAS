@@ -29,7 +29,7 @@ from aura_core.evolution.decision_engine import EvolutionDecisionEngine
 from aura_core.evolution.external_staging import (
     EvolutionWorkspace, _checked_path, _validated_files,
 )
-from aura_core.evolution.sandbox_preflight import IsolatedMCPPreflight
+from aura_core.evolution.sandbox_preflight import IsolatedMCPPreflight, choose_python_entrypoint
 from aura_core.evolution.sandbox_attestor import (
     IndependentAttestationVerifier, SignedSandboxAttestation,
 )
@@ -277,9 +277,9 @@ class DelegatedMCPActivationManager:
             raise PermissionError("Independent Owner approval scope invalid")
         repository, sha = decision.repository, decision.source_sha256
         details, _, _ = self.decisions._check_candidate(name)
-        entry = details.get("entrypoint_hint")
-        if not isinstance(entry, str) or not re.fullmatch(r"[A-Za-z0-9_./-]+\.py", entry):
-            raise PermissionError("Only isolated Python stdio MCP supported")
+        with (self.workspace.root / "verified" / name / "source.zip").open("rb") as stream:
+            retained, _, _ = _validated_files(stream)
+        entry = choose_python_entrypoint(retained, details.get("entrypoint_hint", ""))
         tree = runtime_fingerprint(self.workspace, name)
         package = self.workspace.root / "verified" / name
         bundle_file = package / "independent-attestations.json"
@@ -428,7 +428,7 @@ class DelegatedMCPActivationManager:
             await provider.close()
             raise
 
-    async def quarantine(self, name: str):
+    async def _remove(self, name: str, *, quarantine: bool) -> None:
         async with self._lock:
             active = self._active.pop(name, None)
             if active is None:
@@ -439,16 +439,23 @@ class DelegatedMCPActivationManager:
                 self.kernel.capability_registry.unregister(capability, active.provider_id)
             self.tools.unregister_provider(active.provider_id)
             self.kernel.provider_registry.unregister(active.provider_id)
-            self.kernel.service_registry.update_state(active.service_id, ServiceState.FAILED)
+            self.kernel.service_registry.update_state(
+                active.service_id, ServiceState.FAILED if quarantine else ServiceState.STOPPED,
+            )
             self.kernel.service_registry.unregister(active.service_id)
-            self._persist(name.replace("__", "/"), "QUARANTINED",
-                          reason_code="PROVIDER_FAILED_OR_REVOKED")
+            if quarantine:
+                self._persist(name.replace("__", "/"), "QUARANTINED",
+                              reason_code="PROVIDER_FAILED_OR_REVOKED")
             await active.provider.close()
 
-    async def revoke(self, repository: str):
-        name = repository.replace("/", "__")
-        await self.quarantine(name)
+    async def quarantine(self, name: str) -> None:
+        await self._remove(name, quarantine=True)
 
-    async def close(self):
+    async def revoke(self, repository: str) -> None:
+        await self.quarantine(repository.replace("/", "__"))
+
+    async def close(self) -> None:
+        # Graceful shutdown closes workers and policies; retains ACTIVE
+        # inventory, so restart may reload only after fresh proof validation.
         for name in tuple(self._active):
-            await self.quarantine(name)
+            await self._remove(name, quarantine=False)
