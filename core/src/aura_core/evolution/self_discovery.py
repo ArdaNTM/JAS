@@ -41,14 +41,14 @@ PERMITTED_LICENSES = frozenset({
 # Target small/local MCP implementations rather than repeating broad top-star
 # results. Each manual scan tries at most two queries to bound GitHub API use.
 QUERIES = (
-    '"fastmcp" tool archived:false stars:>5',
-    '"mcp-server" sqlite archived:false stars:>5',
-    '"mcp-server" filesystem archived:false stars:>5',
-    '"mcp-server" git archived:false stars:>5',
-    '"mcp-server" fetch archived:false stars:>5',
-    '"mcp-server" memory archived:false stars:>5',
-    '"mcp-server" browser archived:false stars:>5',
-    '"modelcontextprotocol" server python archived:false stars:>5',
+    '"fastmcp" server language:Python size:<25000 archived:false stars:>5',
+    '"mcp" server language:Python size:<25000 archived:false stars:>5',
+    '"modelcontextprotocol" server language:Python size:<25000 archived:false stars:>5',
+    '"@modelcontextprotocol/sdk" language:TypeScript size:<25000 archived:false stars:>5',
+    '"mcp-server" filesystem language:TypeScript size:<25000 archived:false stars:>5',
+    '"mcp-server" sqlite language:Python size:<25000 archived:false stars:>5',
+    '"mcp-server" git language:Python size:<25000 archived:false stars:>5',
+    '"mcp-server" memory language:TypeScript size:<25000 archived:false stars:>5',
 )
 MAX_QUERIES_PER_MANUAL_SCAN = 2
 _REPO = re.compile(r"^[A-Za-z0-9_.-]{1,80}/[A-Za-z0-9_.-]{1,100}$")
@@ -127,7 +127,16 @@ def _safe_text(value: object, limit: int = 180) -> str:
 
 def _github_token() -> str | None:
     """Optional local credential; never log or send to untrusted redirects."""
-    token = os.environ.get("GITHUB_TOKEN", "").strip()
+    # Environment variables are intentionally limited to these two explicit
+    # GitHub identities. No credential is ever placed in a codeload redirect.
+    def valid(value: str) -> bool:
+        return bool(value) and len(value) <= 255 and not any(c.isspace() for c in value)
+
+    for key in ("GITHUB_TOKEN", "GH_TOKEN"):
+        token = os.environ.get(key, "").strip()
+        if valid(token):
+            return token
+    token = ""
     if not token:
         executable = shutil.which("gh")
         if executable:
@@ -353,6 +362,13 @@ class SelfDiscoveryEngine:
                     "ALTER TABLE evolution_proposals ADD COLUMN stage_attempts INTEGER "
                     "NOT NULL DEFAULT 0"
                 )
+            if "stage_retry_version" not in columns:
+                # Version 1 grants one re-evaluation of legacy limit/false-
+                # positive failures regardless of old attempt count.
+                db.execute(
+                    "ALTER TABLE evolution_proposals ADD COLUMN stage_retry_version "
+                    "INTEGER NOT NULL DEFAULT 0"
+                )
             db.execute("""CREATE TABLE IF NOT EXISTS discovery_history (
                 cycle INTEGER PRIMARY KEY,
                 recorded_at INTEGER NOT NULL,
@@ -439,23 +455,22 @@ class SelfDiscoveryEngine:
                 "SELECT repository,description,stars,size_kb FROM evolution_proposals "
                 "WHERE status='pending_owner_review' "
                 "AND (package_status IS NULL OR package_status IN ('pending', 'Queued') "
-                "OR (package_status='STAGING_REJECTED' AND ("
-                "(stage_attempts < 4 AND package_error IN ("
+                "OR (package_status='STAGING_REJECTED' "
+                "AND stage_retry_version=0 AND package_error IN ("
                 "'GitHub download byte budget exceeded',"
                 "'Archive download exceeds maximum byte budget',"
                 "'Expanded repository budget exceeded',"
                 "'GitHub archive/metadata unavailable or rate limited',"
-                "'Archive has too many members')) "
-                "OR (stage_attempts = 1 AND package_error="
-                "'Binary content is not eligible for static staging')"
+                "'Archive has too many members',"
+                "'ZIP file budget exceeded',"
+                "'Binary content is not eligible for static staging',"
+                "'Static risk/paid API signature detected'"
                 "))) "
                 "ORDER BY created_at LIMIT 50"
             ).fetchall()
-        # Re-evaluate the durable queue on every invocation, even if public
-        # search returns zero. Only bounded transport/budget retries and one
-        # legacy binary-only re-evaluation are eligible, never generic
-        # static risk, executable, or authorization-policy rejections.
-        # Old 120-member archive rejections now qualify for bounded retries.
+        # Once-only migration recovery of bounded legacy failures. The new
+        # scanner still rejects actual malicious code; other policy/permission
+        # failures never enter this queue. No new repo required for retry.
         candidates = [
             (repository, description, stars or 0, size_kb)
             for repository, description, stars, size_kb in rows
@@ -500,8 +515,8 @@ class SelfDiscoveryEngine:
                 with self._connect() as db:
                     db.execute(
                         "UPDATE evolution_proposals SET package_status=?,source_sha256=?,"
-                        "package_error=NULL,stage_attempts=stage_attempts+1 "
-                        "WHERE repository=?",
+                        "package_error=NULL,stage_attempts=stage_attempts+1,"
+                        "stage_retry_version=1 WHERE repository=?",
                         ("READY_FOR_OWNER_REVIEW", digest, repository),
                     )
                 report["staged_count"] += 1
@@ -513,8 +528,8 @@ class SelfDiscoveryEngine:
                 with self._connect() as db:
                     db.execute(
                         "UPDATE evolution_proposals SET package_status='STAGING_REJECTED',"
-                        "package_error=?,stage_attempts=stage_attempts+1 "
-                        "WHERE repository=?", (reason, repository),
+                        "package_error=?,stage_attempts=stage_attempts+1,"
+                        "stage_retry_version=1 WHERE repository=?", (reason, repository),
                     )
                 report["rejected"].append({
                     "repository": repository, "reason": reason,
