@@ -30,6 +30,9 @@ from aura_core.evolution.external_staging import (
     EvolutionWorkspace, _checked_path, _validated_files,
 )
 from aura_core.evolution.sandbox_preflight import IsolatedMCPPreflight, choose_python_entrypoint
+from aura_core.evolution.windows_job_mcp import (
+    bridge_parameters, local_binding, verify_local,
+)
 from aura_core.evolution.sandbox_attestor import (
     IndependentAttestationVerifier, SignedSandboxAttestation,
 )
@@ -133,7 +136,7 @@ def tool_binding_digest(*, repository: str, source_sha256: str, tree_sha256: str
 
 
 class DockerMCPProvider(MCPProvider):
-    """Actual stdio MCP bridge, never a host Python/Node process."""
+    """Governed external MCP connection, checked on every tool invocation."""
 
     def __init__(self, connection: MCPConnection, *, runtime: Path,
                  archive_sha256: str, workspace: EvolutionWorkspace,
@@ -191,7 +194,7 @@ class _Live:
 
 
 class DelegatedMCPActivationManager:
-    """Fail-closed, offline Docker-only activation with independent signatures."""
+    """Fail-closed Docker activation plus explicitly signed Windows Job opt-in."""
 
     def __init__(self, *, workspace: EvolutionWorkspace, kernel,
                  provider_factory=None):
@@ -288,23 +291,31 @@ class DelegatedMCPActivationManager:
         except (OSError, ValueError, PermissionError, TypeError):
             return False
 
-    async def _connect(self, name: str, grant: dict, entry: str, expires_at: int):
+    async def _connect(self, name: str, grant: dict, entry: str, expires_at: int,
+                       execution_profile: str = "docker-stdio"):
         runtime = self.workspace.root / "runtime" / name
         if self._factory is not None:
             return await self._factory(name, grant, entry)
         import shutil
-        docker = shutil.which("docker")
-        if not docker:
-            raise PermissionError("Isolated Docker MCP runtime unavailable")
-        sandbox = IsolatedMCPPreflight(self.workspace, image=grant["oci_image"])
+        if execution_profile == "windows-job-stdio":
+            if (os.name != "nt" or
+                grant.get("allow_local_windows_process", False) is not True):
+                raise PermissionError("Owner did not permit local Windows MCP process")
+            parameters = bridge_parameters(runtime, entry)
+        elif execution_profile == "docker-stdio":
+            docker = shutil.which("docker")
+            if not docker or grant["oci_image"] is None:
+                raise PermissionError("Isolated Docker MCP runtime unavailable")
+            sandbox = IsolatedMCPPreflight(self.workspace, image=grant["oci_image"])
+            parameters = StdioServerParameters(
+                command=docker, args=sandbox._docker_arguments(runtime, entry),
+                env={},
+            )
+        else:
+            raise PermissionError("Unknown external MCP execution profile")
         connection = MCPConnection()
         try:
-            await asyncio.wait_for(connection.connect_stdio(
-                StdioServerParameters(
-                    command=docker, args=sandbox._docker_arguments(runtime, entry),
-                    env={},
-                )
-            ), timeout=20)
+            await asyncio.wait_for(connection.connect_stdio(parameters), timeout=20)
             return DockerMCPProvider(
                 connection, runtime=runtime, archive_sha256="",
                 workspace=self.workspace, package=name,
@@ -333,15 +344,35 @@ class DelegatedMCPActivationManager:
                 or bundle_file.stat().st_size > _TOOL_LIMIT_BYTES):
             raise PermissionError("Independently signed sandbox results missing")
         bundle = json.loads(bundle_file.read_text("utf-8"))
-        if (not isinstance(bundle, dict) or set(bundle) != {
-            "schema", "repository", "runtime_tree_sha256", "tools",
-        } or bundle["schema"] != _SCHEMA
+        if not isinstance(bundle, dict):
+            raise PermissionError("Untrusted sandbox bundle")
+        profile = bundle.get("execution_profile", "docker-stdio")
+        expected_fields = {"schema", "repository", "runtime_tree_sha256", "tools"}
+        if profile == "windows-job-stdio":
+            expected_fields.add("execution_profile")
+            if (os.name != "nt" or
+                grant.get("allow_local_windows_process", False) is not True):
+                raise PermissionError("Unsigned local Windows execution permission")
+        elif profile != "docker-stdio":
+            raise PermissionError("Unknown external attestation profile")
+        if (set(bundle) != expected_fields or bundle["schema"] != _SCHEMA
                 or bundle["repository"] != repository
                 or bundle["runtime_tree_sha256"] != tree
                 or not isinstance(bundle["tools"], list)
                 or not 1 <= len(bundle["tools"]) <= grant["max_tools"]):
             raise PermissionError("Untrusted sandbox bundle")
-        attestor = self._attestor(grant)
+        attestor = self._attestor(grant) if profile == "docker-stdio" else None
+        local_key = None
+        if profile == "windows-job-stdio":
+            pub = self.workspace.root / "trust" / "sandbox-attestor.pub.pem"
+            if pub.is_symlink() or not pub.is_file() or pub.stat().st_size > 512:
+                raise PermissionError("Pinned attestor key missing")
+            local_key = serialization.load_pem_public_key(pub.read_bytes())
+            if not isinstance(local_key, Ed25519PublicKey):
+                raise PermissionError("Invalid local attestor key type")
+            raw = local_key.public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw)
+            if hashlib.sha256(raw).hexdigest() != grant["attestor_key_sha256"]:
+                raise PermissionError("Local attestor pin mismatch")
         expected: dict[str, MCPTool] = {}
         proof_hashes: dict[str, str] = {}
         expiries: list[int] = []
@@ -351,23 +382,34 @@ class DelegatedMCPActivationManager:
             tool = MCPTool(name=row["name"], description="", input_schema=row["input_schema"])
             if tool.name in expected or not _TOOL.fullmatch(tool.name):
                 raise PermissionError("Duplicate or unsupported external tool")
-            identity = tool_binding_digest(
-                repository=repository, source_sha256=sha,
-                tree_sha256=tree, image=grant["oci_image"],
-                tool=tool, category=decision.category,
-            )
-            envelope = SignedSandboxAttestation.from_dict(row["attestation"])
-            if envelope.claims.expires_at <= int(time.time()):
-                raise PermissionError("Independent sandbox attestation expired")
-            if not attestor.verify(envelope, source_sha256=sha, binding_digest=identity):
-                raise PermissionError("Independent sandbox attestation rejected")
-            expiries.append(envelope.claims.expires_at)
+            if profile == "windows-job-stdio":
+                identity = local_binding(
+                    repository=repository, source_sha256=sha,
+                    tree_sha256=tree, tool=tool, category=decision.category,
+                )
+                expiry = verify_local(
+                    row["attestation"], key=local_key, grant=grant,
+                    source_sha256=sha, tree_sha256=tree, binding_digest=identity,
+                )
+                expiries.append(expiry)
+            else:
+                identity = tool_binding_digest(
+                    repository=repository, source_sha256=sha,
+                    tree_sha256=tree, image=grant["oci_image"],
+                    tool=tool, category=decision.category,
+                )
+                envelope = SignedSandboxAttestation.from_dict(row["attestation"])
+                if envelope.claims.expires_at <= int(time.time()):
+                    raise PermissionError("Independent sandbox attestation expired")
+                if not attestor.verify(envelope, source_sha256=sha, binding_digest=identity):
+                    raise PermissionError("Independent sandbox attestation rejected")
+                expiries.append(envelope.claims.expires_at)
             expected[tool.name] = tool
             proof_hashes[tool.name] = hashlib.sha256(
                 json.dumps(row["attestation"], sort_keys=True).encode()
             ).hexdigest()
         expiry = min(expiries)
-        provider = await self._connect(name, grant, entry, expiry)
+        provider = await self._connect(name, grant, entry, expiry, execution_profile=profile)
         try:
             tools = await asyncio.wait_for(provider.list_tools(), timeout=6)
             if (len(tools) != len(expected)
