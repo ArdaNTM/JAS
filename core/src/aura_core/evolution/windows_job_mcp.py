@@ -314,6 +314,20 @@ def _project_script_launch(runtime: Path, entry: str) -> tuple[str, str] | None:
     return None
 
 
+def _isolated_entry_args(runtime: Path, entry: str, python: Path) -> list[str]:
+    """Execute src packages as modules, preserving relative imports."""
+    if not re.fullmatch(r"[A-Za-z0-9_./-]{1,180}\\.py", entry) or ".." in Path(entry).parts:
+        raise SandboxUntrusted("Invalid isolated Python MCP entrypoint")
+    if entry.startswith("src/"):
+        relative = entry.removeprefix("src/")
+        parts = relative.removesuffix(".py").split("/")
+        if all(re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", segment) for segment in parts):
+            module = ".".join(parts[:-1] if parts[-1] == "__main__" else parts)
+            if module:
+                return [str(python), "-B", "-s", "-u", "-m", module]
+    return [str(python), "-B", "-s", "-u", str(runtime / entry)]
+
+
 def _safe_mcp_stderr_tail(data: bytes) -> str:
     """Keep only a recognized Python import/syntax diagnostic, never raw stderr."""
     lines = data[-2048:].decode("utf-8", "replace").splitlines()
@@ -494,7 +508,7 @@ def _bridge(runtime: Path, entry: str) -> int:
                     "import importlib; getattr(importlib.import_module(" +
                     repr(module) + "), " + repr(function) + ")()"]
         else:
-            args = [str(local_python), "-B", "-s", "-u", str(runtime / entry)]
+            args = _isolated_entry_args(runtime, entry, local_python)
         packed = chr(0).join(f"{k}={v}" for k, v in sorted(env.items(), key=lambda p: p[0].lower())) + chr(0) * 2
         packed_buffer = ctypes.create_unicode_buffer(packed)
         cmd = ctypes.create_unicode_buffer(subprocess.list2cmdline(args))
