@@ -179,7 +179,7 @@ def test_size_aware_local_first_priority_and_existing_budget_retries(tmp_path):
         ("local/tiny-fastmcp", "Local fastmcp sqlite filesystem git zero API keys", 120, None, None, 0),
         ("local/small-budget", "Local fastmcp sqlite filesystem git zero API keys", 140, "STAGING_REJECTED", "GitHub download byte budget exceeded", 1),
         ("cloud/adapter", "Generic cloud connector", 10, None, None, 0),
-        ("local/bad-source", "Local fastmcp sqlite filesystem git zero API keys", 90, "STAGING_REJECTED", "Static risk/paid API signature detected", 1),
+        ("local/bad-source", "Local fastmcp sqlite filesystem git zero API keys", 90, "STAGING_REJECTED", "Executable or suspicious archive content rejected", 1),
     ]
     with sqlite3.connect(engine._db_path) as db:
         for i, (repo, desc, size_kb, status, reason, attempts) in enumerate(records):
