@@ -67,7 +67,7 @@ def validated_claims(claims: object, *, now: int | None = None) -> dict:
             or type(claims["expires_at"]) is not int
             or claims["issued_at"] > current
             or claims["expires_at"] <= current
-            or not 60 <= claims["expires_at"] - claims["issued_at"] <= 7 * 86400):
+            or not 60 <= claims["expires_at"] - claims["issued_at"] <= 365 * 86400):
         raise PermissionError("Owner activation scope or lifetime invalid")
     categories = claims["categories"]
     if (not isinstance(categories, list) or not categories
