@@ -492,7 +492,7 @@ class DelegatedMCPActivationManager:
         async with self._lock:
             existing = frozenset(value.category for value in self._active.values())
             persistent = {
-                row["repository"]: row["status"]
+                row["repository"]: row
                 for row in self._load_inventory()["active"]
                 if isinstance(row, dict)
                 and isinstance(row.get("repository"), str)
@@ -505,9 +505,21 @@ class DelegatedMCPActivationManager:
                 if decision.status != "AUTO_APPROVED_BY_POLICY":
                     continue
                 name = decision.repository.replace("/", "__")
+                previous = persistent.get(decision.repository, {})
+                status = previous.get("status")
+                local_signed = (os.name == "nt" and
+                                grant.get("allow_local_windows_process", False) is True)
+                package = self.workspace.root / "verified" / name
+                # One-time upgrade recovery requires a newly signed attestor
+                # bundle; never revive Owner REVOKED or actively quarantined code.
+                recovery = (status == "QUARANTINED" and local_signed
+                            and previous.get("recovery_version", 0) == 0
+                            and not (package / "local-windows-quarantined.json").exists()
+                            and (package / "independent-attestations.json").is_file())
                 if (name in self._active or name in expired_this_scan
                         or decision.category in existing
-                        or persistent.get(decision.repository) in {"QUARANTINED", "REVOKED"}):
+                        or status == "REVOKED"
+                        or (status == "QUARANTINED" and not recovery)):
                     continue
                 attempted += 1
                 try:
@@ -529,6 +541,7 @@ class DelegatedMCPActivationManager:
                         decision.repository,
                         "WAITING_ATTESTATION" if waiting else "QUARANTINED",
                         reason_code=type(exc).__name__,
+                        recovery_version=1 if recovery else 0,
                     )
         return successes
 
