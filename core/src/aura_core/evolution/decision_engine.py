@@ -29,7 +29,8 @@ _SHA = re.compile(r"^[0-9a-f]{64}$")
 _KEY_B64 = re.compile(r"^[A-Za-z0-9_-]{86}$")
 _DEPLOYED_CATEGORIES = frozenset({
     "desktop_automation", "code_analysis", "local_memory",
-    "web_research", "developer_tools",
+    "web_research", "developer_tools", "windows_automation",
+    "filesystem", "research", "browser",
 })
 _SIGN_DOMAIN = b"AURA:OWNER-AUTONOMY-DELEGATION:v1\n"
 _MAX_REPORT = 16_000
@@ -41,6 +42,10 @@ _CATEGORY_MARKERS = {
     "local_memory": ("sqlite", "memory", "local database"),
     "web_research": ("httpx", "fetch", "requests", "browser", "web"),
     "developer_tools": ("fastmcp", "git", "developer", "mcp sdk", "python"),
+    "windows_automation": ("windows mcp", "cursor", "uia", "keyboard", "mouse", "window"),
+    "filesystem": ("filesystem", "directory", "file management", "file access"),
+    "research": ("research", "knowledge", "search engine", "information retrieval"),
+    "browser": ("browser", "chromium", "playwright", "selenium", "tab automation"),
 }
 
 
