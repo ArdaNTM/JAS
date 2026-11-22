@@ -491,7 +491,7 @@ def _validated_files(
                  "@modelcontextprotocol/sdk" in data.decode("utf-8"))
         )
     if not entrypoints:
-        raise StagingRejected("No recognizable MCP/local Python or JS entrypoint")
+        raise StagingRejected("No supported Python stdio MCP entrypoint")
 
     detected: set[str] = set()
     patterns = {
@@ -522,6 +522,22 @@ def _validated_files(
             for capability, expression in patterns.items():
                 if re.search(expression, readable):
                     detected.add(capability)
+    # A pyproject name, Django server.py, go.mod, or package.json alone is
+    # insufficient evidence of a Python stdio MCP implementation. Keep the
+    # snapshot inert and reject it before verified/owner approval promotion.
+    python_sources = [
+        data for path, data in result.items()
+        if PurePosixPath(path).suffix.lower() == ".py"
+    ]
+    sdk_markers = (
+        b"FastMCP", b"MCPServer", b"mcp.server",
+        b"from fastmcp import", b"import fastmcp",
+    )
+    if not python_sources or not any(
+        marker in data for data in python_sources for marker in sdk_markers
+    ):
+        raise StagingRejected("No supported Python stdio MCP entrypoint")
+
     if summary is not None:
         summary["detected_capabilities"] = sorted(detected)
         summary["skipped_non_source"] = skipped_non_source
