@@ -319,7 +319,7 @@ def test_pruning_never_follows_staging_symlink(tmp_path):
     sandbox = IsolatedMCPPreflight(
         workspace, image="example/mcp@sha256:" + "a" * 64,
     )
-    with pytest.raises(SandboxUntrusted, match="Unsafe staged evidence link"):
+    with pytest.raises(SandboxUntrusted, match="Unsafe evolution staging evidence"):
         sandbox.prepare(name)
     assert stage.exists()
     assert target.read_text(encoding="utf-8") == "retain"
