@@ -118,14 +118,16 @@ try {
         if ($sid -notin $valid -or $ace.IsInherited) { exit 13 }
         if ($sid -eq 'S-1-5-11') {
             if ($ace.AccessControlType -ne 'Allow') { exit 14 }
-            $forbidden = [Security.AccessControl.FileSystemRights]::WriteData -bor
-                         [Security.AccessControl.FileSystemRights]::AppendData -bor
-                         [Security.AccessControl.FileSystemRights]::WriteAttributes -bor
-                         [Security.AccessControl.FileSystemRights]::WriteExtendedAttributes -bor
-                         [Security.AccessControl.FileSystemRights]::Delete -bor
-                         [Security.AccessControl.FileSystemRights]::DeleteSubdirectoriesAndFiles -bor
-                         [Security.AccessControl.FileSystemRights]::ChangePermissions -bor
-                         [Security.AccessControl.FileSystemRights]::TakeOwnership
+            $forbidden = (
+                [Security.AccessControl.FileSystemRights]::WriteData -bor
+                [Security.AccessControl.FileSystemRights]::AppendData -bor
+                [Security.AccessControl.FileSystemRights]::WriteAttributes -bor
+                [Security.AccessControl.FileSystemRights]::WriteExtendedAttributes -bor
+                [Security.AccessControl.FileSystemRights]::Delete -bor
+                [Security.AccessControl.FileSystemRights]::DeleteSubdirectoriesAndFiles -bor
+                [Security.AccessControl.FileSystemRights]::ChangePermissions -bor
+                [Security.AccessControl.FileSystemRights]::TakeOwnership
+            )
             if (($ace.FileSystemRights -band $forbidden) -ne 0) { exit 15 }
             $authRead = $true
         }
