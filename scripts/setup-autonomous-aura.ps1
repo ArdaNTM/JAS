@@ -203,5 +203,24 @@ if ($LASTEXITCODE -ne 0) {
     [Environment]::SetEnvironmentVariable('AURA_EVOLUTION_AUTO_ACTIVATE', '0', 'User')
     throw 'Owner delegation signature/scope verification failed; activation disabled'
 }
+# An existing standing delegation is never silently replaced or broadened.
+# Require precisely the requested signed scope before declaring success.
+$ScopeCheck = @'
+import sys
+from pathlib import Path
+from aura_core.evolution.activation_delegation import ActivationDelegationVerifier
+from aura_core.evolution.external_staging import EvolutionWorkspace
+g = ActivationDelegationVerifier(EvolutionWorkspace(Path(sys.argv[1]))).verified_grant()
+required = {"windows_automation", "local_memory", "developer_tools", "filesystem", "research", "browser"}
+if (g is None or g.get("allow_local_windows_process") is not True
+    or not required.issubset(set(g["categories"]))
+    or g["attestor_key_sha256"] != sys.argv[2]):
+    raise SystemExit(4)
+'@
+& $Python -c $ScopeCheck $EvolutionRoot $AttestorPin
+if ($LASTEXITCODE -ne 0) {
+    [Environment]::SetEnvironmentVariable('AURA_EVOLUTION_AUTO_ACTIVATE', '0', 'User')
+    throw 'Standing Owner delegation does not explicitly permit requested local Windows scope; revoke and re-enroll'
+}
 Write-Host 'AURA Owner/attestor kurulumu tamamlandı; Owner ve imzalı politika doğrulandı.'
 Write-Warning 'Windows Job Object aynı kullanıcıdaki DPAPI, dosya ve ağ erişimini yalıtmaz; yerel MCP yalnızca açıkça Owner-onaylı daha zayıf moddur.'
