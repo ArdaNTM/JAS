@@ -91,6 +91,19 @@ def choose_python_entrypoint(files: dict[str, bytes], hint: str) -> str:
         if path not in candidates and path.rsplit("/", 1)[-1] == basename
         and (path.startswith("src/") or "/" not in path)
     )
+    # Explicit hints win over fallback candidates, but never over valid
+    # PEP-621 declarations. A hinted __main__.py may import FastMCP from
+    # a sibling. The separate package AST and MCP handshake still gate it.
+    if candidates and candidates[0] == hint:
+        hinted = files[hint]
+        if len(hinted) <= 512_000 and hint.count("/") <= 10:
+            try:
+                ast.parse(hinted.decode("utf-8-sig"), filename=hint)
+            except (UnicodeError, SyntaxError, ValueError):
+                pass
+            else:
+                return hint
+
     # An entry may only import its FastMCP sibling; allow AST-verifiable
     # module wrappers rather than requiring a FastMCP symbol in *that* file.
     # Runtime execution remains blocked until independent validation.
