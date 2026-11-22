@@ -99,6 +99,10 @@ class AutonomousDelegationVerifier:
                 return frozenset()
             # Never follow symlink/junction components when looking up identity.
             _checked_path(owner)
+            if os.name == "nt":
+                from aura_core.evolution.windows_owner_storage import require_private_acl
+                for protected in (owner, declaration, keyfile):
+                    require_private_acl(protected)
             key_bytes = keyfile.read_bytes()
             key = serialization.load_pem_public_key(key_bytes)
             if not isinstance(key, Ed25519PublicKey):
@@ -147,7 +151,7 @@ class AutonomousDelegationVerifier:
                 return frozenset()
             key.verify(signature, _canonical(claims))
             return frozenset(categories)
-        except (OSError, ValueError, TypeError, KeyError, UnicodeError, InvalidSignature):
+        except (OSError, ValueError, TypeError, KeyError, UnicodeError, InvalidSignature, RuntimeError):
             return frozenset()
 
 
