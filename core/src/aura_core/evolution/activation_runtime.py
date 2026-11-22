@@ -479,7 +479,11 @@ class DelegatedMCPActivationManager:
                     risk_level="low", required_permissions=frozenset({capability}),
                 ))
                 capability_ids.append(capability)
-                policy_id = "local-owner:external-mcp:" + short + ":" + tool.name
+                # Revoked PermissionPolicy records remain retained by the
+                # immutable PermissionEngine. A renewed independently signed
+                # attestation must therefore produce a new policy identity.
+                policy_id = ("local-owner:external-mcp:" + short + ":" +
+                             tool.name + ":" + proofs[tool.name][:10])
                 self.kernel.permission_engine.add_policy(PermissionPolicy(
                     policy_id=policy_id, policy_version="1.0.0",
                     principal_id="local_owner",
