@@ -136,31 +136,6 @@ class PermissionEngine:
                 raise ValueError(f"Policy already exists: {policy.policy_id}")
             self._policies[policy.policy_id] = policy
 
-    def explicit_execution_scope(
-        self, *, principal_id: str, capability_id: str, operation_id: str,
-    ) -> str | None:
-        """Read the unique active explicit ALLOW scope; never confer authority.
-
-        MCPGateway still performs full authorization, including enterprise
-        policy, risk, revocations and identity checks at invocation time.
-        Ambiguous, conditional, expired or revoked grants fail closed.
-        """
-        now = datetime.now(UTC)
-        with self._lock:
-            matches = {
-                policy.resource_scope
-                for policy in self._policies.values()
-                if not policy.revoked
-                and policy.decision is AuthorizationDecision.ALLOW
-                and policy.authorization_level >= AuthorizationLevel.EXECUTE
-                and policy.principal_id == principal_id
-                and policy.capability_id == capability_id
-                and policy.operation_id == operation_id
-                and not policy.conditions
-                and (policy.expires_at is None or policy.expires_at > now)
-            }
-        return next(iter(matches)) if len(matches) == 1 else None
-
     def revoke_policy(self, policy_id: str) -> None:
         with self._lock:
             try:
