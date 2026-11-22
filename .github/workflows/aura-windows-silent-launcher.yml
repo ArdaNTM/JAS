@@ -7,6 +7,10 @@ on:
       - "scripts/launch-aura-desktop.ps1"
       - "scripts/launch-aura-silent.vbs"
       - "scripts/test-aura-silent-launcher.ps1"
+      # Python MCP discovery/Job Object changes affect the desktop shortcut's
+      # autonomous local startup path; exercise both Windows PowerShell hosts.
+      - "core/src/aura_core/evolution/self_discovery.py"
+      - "core/src/aura_core/evolution/windows_job_mcp.py"
       - ".github/workflows/aura-windows-silent-launcher.yml"
   workflow_dispatch:
 
