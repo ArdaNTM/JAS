@@ -3,9 +3,9 @@
   "version": "1.0.0-final",
   "status": "production-locked",
   "generated_at": "2026-11-22T06:55:00.000Z",
-  "git_commit": "39a266e1e74dd3f64b03a9f0d5b499985fbec967",
+  "git_commit": "11237bd9cfc98e35c64f61b4e117a5edad279cc6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:98d78e382895660233ef8bb82ff1974758db1ea2641f3d450c4e90e21a940929",
+  "release_digest": "sha256:704436e3865283dff3d16d7f1befa099e396a4b86bfcd5f7a74e39127759c461",
   "file_count": 461,
   "files": [
     {
@@ -998,7 +998,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/windows_job_mcp.py",
-      "sha256": "232a82328efd8e4ea7e220cbda2aa63752fbee11fa09a1c4d8e9e9bb36b3a506"
+      "sha256": "288078001d7844c1b59a96e0e6dd2d227815eafd3cb98c4e1f3fd2379b629059"
     },
     {
       "path": "core/src/aura_core/evolution/windows_owner_storage.py",
@@ -1834,7 +1834,7 @@
     },
     {
       "path": "scripts/launch-aura-desktop.ps1",
-      "sha256": "db4a235150c45e3311dca7f023011f83d6ac3253f102d5231986426faed59ecb"
+      "sha256": "ab918ed1852d2acbe870ae0ff08ab50c019ae02c9af1228d28bad9840086dfe2"
     },
     {
       "path": "scripts/setup-autonomous-aura.ps1",
