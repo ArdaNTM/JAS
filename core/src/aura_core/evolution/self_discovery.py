@@ -17,6 +17,7 @@ import subprocess
 import sqlite3
 import time
 from pathlib import Path
+from urllib.parse import urlsplit
 from uuid import uuid4
 
 import httpx
@@ -34,6 +35,13 @@ SCOPE = "public-github"
 # Fixed decoded response budget per GitHub public JSON request (DoS bounded).
 GITHUB_RESPONSE_MAX_BYTES = 2 * 1024 * 1024
 SEARCH_PER_PAGE = 6
+MAX_SEARCH_PAGE = 5
+CATALOG_CAPABILITY = "public.mcp.catalog.search"
+CATALOG_TOOL = "search_catalog"
+CATALOG_SCOPE = "public-mcp-catalog"
+PYPI_SEEDS = ("mcp-server-memory", "mcp-server-time", "mcp-server-fetch",
+              "mcp-server-git", "mcp-server-sqlite", "fastmcp")
+REGISTRY_TERMS = ("memory", "filesystem", "sqlite", "git", "local", "python")
 PERMITTED_LICENSES = frozenset({
     "MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC",
 })
@@ -184,7 +192,9 @@ class PublicGitHubDiscoveryMCPProvider:
             description="Search bounded public open-source GitHub repositories",
             input_schema={
                 "type": "object",
-                "properties": {"query": {"type": "string", "enum": list(QUERIES)}},
+                "properties": {"query": {"type": "string", "enum": list(QUERIES)},
+                               "page": {"type": "integer", "minimum": 1,
+                                        "maximum": MAX_SEARCH_PAGE}},
                 "required": ["query"],
                 "additionalProperties": False,
             },
@@ -226,18 +236,23 @@ class PublicGitHubDiscoveryMCPProvider:
         if (grant is None or grant.capability_id != CAPABILITY_ID
                 or grant.tool_name != TOOL_NAME or grant.principal_id != "local_owner"):
             raise PermissionError("GitHub discovery requires an authorized MCPGateway dispatch")
-        if name != TOOL_NAME or not isinstance(arguments, dict) or set(arguments) != {"query"}:
+        if (name != TOOL_NAME or not isinstance(arguments, dict)
+                or set(arguments) not in ({"query"}, {"query", "page"})):
             raise ValueError("Invalid GitHub discovery operation")
         query = arguments["query"]
+        page = arguments.get("page", 1)
         if not isinstance(query, str) or query not in QUERIES:
             raise ValueError("Unapproved GitHub search query")
+        if type(page) is not int or not 1 <= page <= MAX_SEARCH_PAGE:
+            raise ValueError("Unapproved bounded GitHub search page")
 
         async with httpx.AsyncClient(
             transport=self._transport, timeout=httpx.Timeout(12.0, connect=5.0),
             follow_redirects=False, trust_env=False,
         ) as client:
             search = await self._get(client, "/search/repositories", {
-                "q": query, "per_page": SEARCH_PER_PAGE, "sort": "stars", "order": "desc",
+                "q": query, "per_page": SEARCH_PER_PAGE, "sort": "stars",
+                "order": "desc", "page": page,
             })
             rows = search.get("items")
             if not isinstance(rows, list):
@@ -328,6 +343,166 @@ class PublicGitHubDiscoveryMCPProvider:
             "source": "github.com/search/repositories",
             "verification": "metadata_and_readme_only_not_code_audit",
         }
+
+
+
+class PublicCatalogDiscoveryMCPProvider(PublicGitHubDiscoveryMCPProvider):
+    """Read-only MCP Registry / PyPI discovery behind one explicit Gateway tool.
+
+    Registry and PyPI metadata are *untrusted hints*. Before enqueueing, an
+    exact GitHub repository, permissive SPDX license, and a README showing
+    local/no-required-key operation must be corroborated via api.github.com.
+    No dynamic URL, redirect, package installation, code or Owner grant is used.
+    """
+
+    async def list_tools(self) -> tuple[MCPTool, ...]:
+        return (MCPTool(
+            name=CATALOG_TOOL, description="Search fixed free MCP registry and PyPI indexes",
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "source": {"type": "string", "enum": ["registry", "pypi"]},
+                    "slot": {"type": "integer", "minimum": 0, "maximum": 5},
+                },
+                "required": ["source"], "additionalProperties": False,
+            },
+        ),)
+
+    @staticmethod
+    def _github_repository(value: object) -> str | None:
+        if not isinstance(value, str) or len(value) > 256:
+            return None
+        parsed = urlsplit(value)
+        if (parsed.scheme != "https" or parsed.hostname != "github.com"
+                or parsed.port not in (None, 443) or parsed.username or parsed.password
+                or parsed.query or parsed.fragment):
+            return None
+        path = parsed.path.removesuffix(".git").strip("/")
+        return path if _valid_repository(path) else None
+
+    async def _index(self, client: httpx.AsyncClient, *, source: str, slot: int) -> dict:
+        if source == "registry":
+            url = "https://registry.modelcontextprotocol.io/v0.1/servers"
+            params = {"search": REGISTRY_TERMS[slot], "version": "latest", "limit": 8}
+        else:
+            url = "https://pypi.org/pypi/" + PYPI_SEEDS[slot] + "/json"
+            params = None
+        try:
+            async with client.stream("GET", url, params=params, headers={
+                "Accept": "application/json",
+                "User-Agent": "AURA-JAS-Local-Catalog/1.0",
+            }) as response:
+                if response.status_code in (403, 429):
+                    raise DiscoveryUnavailable(source + " rate limit reached (403/429)")
+                if response.status_code == 404:
+                    return {}
+                if response.status_code != 200:
+                    raise DiscoveryUnavailable(source + " public catalog unavailable")
+                data = bytearray()
+                async for chunk in response.aiter_bytes():
+                    if len(data) + len(chunk) > 262_144:
+                        raise DiscoveryUnavailable(source + " index exceeds 256 KiB")
+                    data.extend(chunk)
+            payload = json.loads(data)
+            if not isinstance(payload, dict):
+                raise DiscoveryUnavailable("Invalid public catalog JSON response")
+            return payload
+        except (httpx.RequestError, ValueError) as exc:
+            raise DiscoveryUnavailable(source + " public catalog connection failed") from exc
+
+    async def call_tool(self, name: str,
+                        arguments: dict | None = None) -> dict[str, object]:
+        grant = current_dispatch()
+        if (grant is None or grant.capability_id != CATALOG_CAPABILITY
+                or grant.tool_name != CATALOG_TOOL or grant.principal_id != "local_owner"):
+            raise PermissionError("Public catalog requires MCPGateway authorization")
+        if (name != CATALOG_TOOL or not isinstance(arguments, dict)
+                or set(arguments) not in ({"source"}, {"source", "slot"})):
+            raise ValueError("Unsupported public catalog operation")
+        source, slot = arguments.get("source"), arguments.get("slot", 0)
+        if source not in ("registry", "pypi") or type(slot) is not int or not 0 <= slot < 6:
+            raise ValueError("Unapproved catalog source or slot")
+
+        async with httpx.AsyncClient(
+            transport=self._transport, timeout=httpx.Timeout(15.0, connect=5.0),
+            follow_redirects=False, trust_env=False,
+        ) as client:
+            payload = await self._index(client, source=source, slot=slot)
+            hints: list[tuple[str, str]] = []
+            if source == "registry":
+                rows = payload.get("servers")
+                if not isinstance(rows, list):
+                    rows = []
+                for row in rows[:8]:
+                    if not isinstance(row, dict):
+                        continue
+                    server = row.get("server", row)
+                    if not isinstance(server, dict):
+                        continue
+                    repository = server.get("repository")
+                    url = repository.get("url") if isinstance(repository, dict) else None
+                    name = self._github_repository(url)
+                    if name is not None:
+                        hints.append((name, _safe_text(server.get("description"))))
+            else:
+                info = payload.get("info")
+                if isinstance(info, dict):
+                    values = " ".join(str(info.get(key) or "")[:500]
+                                      for key in ("name", "keywords", "summary")).casefold()
+                    if "mcp" in values or "fastmcp" in values:
+                        urls = info.get("project_urls")
+                        sources = list(urls.values())[:10] if isinstance(urls, dict) else []
+                        sources.append(info.get("home_page"))
+                        for url in sources:
+                            name = self._github_repository(url)
+                            if name is not None:
+                                hints.append((name, _safe_text(info.get("summary"))))
+                                break
+
+            candidates: list[dict[str, object]] = []
+            for name, hint in hints[:4]:
+                try:
+                    repo = await self._get(client, "/repos/" + name)
+                    if (repo.get("full_name") != name or repo.get("private") is True
+                            or repo.get("archived") is True or repo.get("fork") is True
+                            or (repo.get("language") or "").casefold()
+                            in {"go", "rust", "typescript", "javascript"}):
+                        continue
+                    license_info = repo.get("license")
+                    license_id = license_info.get("spdx_id") if isinstance(license_info, dict) else None
+                    if license_id not in PERMITTED_LICENSES:
+                        continue
+                    readme = await self._get(client, "/repos/" + name + "/readme")
+                    encoded = readme.get("content")
+                    if (readme.get("encoding") != "base64"
+                            or not isinstance(encoded, str) or len(encoded) > 90_000):
+                        continue
+                    text = base64.b64decode(encoded, validate=False)[:60_000].decode(
+                        "utf-8", "replace",
+                    )
+                    if (not _POSITIVE.search(text) or _NEGATIVE.search(text)
+                            or _SAAS.search(text + " " + name)
+                            or _UNSUPPORTED_HOST.search(text)):
+                        continue
+                    stars = repo.get("stargazers_count")
+                    if type(stars) is not int or not 0 <= stars <= 2_000_000_000:
+                        stars = 0
+                    size = repo.get("size")
+                    if type(size) is not int or not 0 <= size <= 2_000_000_000:
+                        size = None
+                    candidates.append({
+                        "repository": name, "url": "https://github.com/" + name,
+                        "description": _safe_text(repo.get("description")) or hint,
+                        "license": license_id, "stars": stars, "size_kb": size,
+                        "capability_hint": "Python FastMCP (" + source + ")",
+                        "evidence": source + " hint + GitHub SPDX and local README",
+                    })
+                except FileNotFoundError:
+                    continue
+            return {
+                "items": candidates[:3], "source": source,
+                "verification": "github_license_and_local_readme_only",
+            }
 
 
 class SelfDiscoveryEngine:
@@ -444,6 +619,15 @@ class SelfDiscoveryEngine:
     def count(self) -> int:
         with self._connect() as db:
             return int(db.execute("SELECT COUNT(*) FROM evolution_proposals").fetchone()[0])
+
+    def queued_count(self) -> int:
+        """Durable bounded staging/attestation backlog, including ready evidence."""
+        with self._connect() as db:
+            return int(db.execute(
+                "SELECT COUNT(*) FROM evolution_proposals "
+                "WHERE package_status IS NULL OR package_status "
+                "IN ('pending','Queued','READY_FOR_OWNER_REVIEW')"
+            ).fetchone()[0])
 
     def status(self) -> dict[str, object]:
         return {
@@ -595,7 +779,64 @@ class SelfDiscoveryEngine:
                 (self._cycle, int(time.time()), query_count, saved, staged, status),
             )
 
-    async def run_once(self, *, full_scan: bool = False) -> dict[str, object]:
+    def _store_public_candidates(
+        self, result: dict, seen: set[str],
+    ) -> int:
+        """Deduplicate bounded candidate metadata, never treat it as approval."""
+        saved = 0
+        with self._connect() as db:
+            known = {r[0] for r in db.execute(
+                "SELECT repository FROM evolution_proposals"
+            )}
+            eligible = []
+            for row in result.get("items", [])[:SEARCH_PER_PAGE]:
+                if not isinstance(row, dict):
+                    continue
+                name, license_id, stars = (
+                    row.get("repository"), row.get("license"), row.get("stars"),
+                )
+                size_kb = row.get("size_kb")
+                if type(size_kb) is not int or not 0 <= size_kb <= 2_000_000_000:
+                    size_kb = None
+                if (not _valid_repository(name)
+                        or license_id not in PERMITTED_LICENSES
+                        or row.get("url") != "https://github.com/" + name
+                        or type(stars) is not int or not 0 <= stars <= 2_000_000_000):
+                    continue
+                eligible.append((row, name, stars, size_kb))
+            eligible.sort(key=lambda item: (
+                item[1] in known,
+                _size_tier(item[3]),
+                -_local_rank(item[1], _safe_text(item[0].get("description")), item[2]),
+                item[1],
+            ))
+            for row, name, stars, size_kb in eligible[:3]:
+                seen.add(name)
+                proposal_id = hashlib.sha256(name.casefold().encode()).hexdigest()[:24]
+                try:
+                    cursor = db.execute(
+                        "INSERT OR IGNORE INTO evolution_proposals "
+                        "(proposal_id,repository,url,description,license,capability_hint,"
+                        "created_at,stars,size_kb) VALUES (?,?,?,?,?,?,?,?,?)",
+                        (proposal_id, name, row["url"],
+                         _safe_text(row.get("description")),
+                         row["license"], _safe_text(row.get("capability_hint"), 100),
+                         time.time(), stars, size_kb),
+                    )
+                    saved += cursor.rowcount
+                    if cursor.rowcount == 0:
+                        db.execute(
+                            "UPDATE evolution_proposals SET stars=?,"
+                            "size_kb=COALESCE(?,size_kb) "
+                            "WHERE proposal_id=? AND repository=?",
+                            (stars, size_kb, proposal_id, name),
+                        )
+                except (TypeError, ValueError, KeyError):
+                    continue
+        return saved
+
+    async def run_once(self, *, full_scan: bool = False,
+                       multi_source: bool = False) -> dict[str, object]:
         async with self._lock:
             # A manual scan covers two *rotating* query slots, not the
             # entire expanding allowlist (bounded public GitHub API use).
@@ -620,7 +861,11 @@ class SelfDiscoveryEngine:
                             request_id=str(uuid4()), principal_id=self.principal_id,
                             capability_id=CAPABILITY_ID, operation_id=CAPABILITY_ID,
                             resource_scope=SCOPE, risk_level=RiskLevel.LOW,
-                            tool_name=TOOL_NAME, arguments={"query": QUERIES[index]},
+                            tool_name=TOOL_NAME, arguments=(
+                                {"query": QUERIES[index],
+                                 "page": ((self._cycle // len(QUERIES)) % MAX_SEARCH_PAGE) + 1}
+                                if multi_source else {"query": QUERIES[index]}
+                            ),
                         ))
                         if response.decision is not AuthorizationDecision.ALLOW:
                             raise PermissionError("MCPGateway denied GitHub discovery")
@@ -642,61 +887,39 @@ class SelfDiscoveryEngine:
                         continue
                     successful_queries += 1
 
-                    with self._connect() as db:
-                        # Review at most six already README-screened items and
-                        # insert up to three; catalogued popular repos must
-                        # not starve novel local candidates from the same scan.
-                        known = {r[0] for r in db.execute(
-                            "SELECT repository FROM evolution_proposals"
-                        )}
-                        eligible = []
-                        for row in result["items"][:SEARCH_PER_PAGE]:
-                            if not isinstance(row, dict):
-                                continue
-                            name = row.get("repository")
-                            license_id = row.get("license")
-                            stars = row.get("stars")
-                            size_kb = row.get("size_kb")
-                            if type(size_kb) is not int or not 0 <= size_kb <= 2_000_000_000:
-                                size_kb = None
-                            if (not _valid_repository(name)
-                                    or license_id not in PERMITTED_LICENSES
-                                    or row.get("url") != "https://github.com/" + name
-                                    or type(stars) is not int
-                                    or not 0 <= stars <= 2_000_000_000):
-                                continue
-                            eligible.append((row, name, stars, size_kb))
-                        eligible.sort(key=lambda item: (
-                            item[1] in known,
-                            _size_tier(item[3]),
-                            -_local_rank(item[1], _safe_text(item[0].get("description")), item[2]),
-                            item[1],
-                        ))
-                        for row, name, stars, size_kb in eligible[:3]:
-                            seen.add(name)
-                            proposal_id = hashlib.sha256(name.casefold().encode()).hexdigest()[:24]
-                            try:
-                                cursor = db.execute(
-                                    "INSERT OR IGNORE INTO evolution_proposals "
-                                    "(proposal_id,repository,url,description,license,capability_hint,"
-                                    "created_at,stars,size_kb) VALUES (?,?,?,?,?,?,?,?,?)",
-                                    (proposal_id, name, row["url"],
-                                     _safe_text(row.get("description")),
-                                     license_id, _safe_text(row.get("capability_hint"), 100),
-                                     time.time(), stars, size_kb),
-                                )
-                                saved += cursor.rowcount
-                                # Refresh genuine GitHub star count for previously
-                                # queued repositories without changing review state.
-                                if cursor.rowcount == 0:
-                                    db.execute(
-                                        "UPDATE evolution_proposals SET stars=?,"
-                                        "size_kb=COALESCE(?,size_kb) "
-                                        "WHERE proposal_id=? AND repository=?",
-                                        (stars, size_kb, proposal_id, name),
-                                    )
-                            except (TypeError, ValueError, KeyError):
-                                continue
+                    saved += self._store_public_candidates(result, seen)
+
+                if multi_source:
+                    # Additional discovery is not a privilege escalation. Each
+                    # fixed-origin index is a separate authorized Gateway call;
+                    # the staging Gateway still independently verifies GitHub.
+                    slot = (self._cycle // len(QUERIES)) % len(PYPI_SEEDS)
+                    for source in ("registry", "pypi"):
+                        try:
+                            response = await asyncio.wait_for(
+                                self.gateway.invoke(MCPGatewayRequest(
+                                    request_id=str(uuid4()), principal_id=self.principal_id,
+                                    capability_id=CATALOG_CAPABILITY,
+                                    operation_id=CATALOG_CAPABILITY,
+                                    resource_scope=CATALOG_SCOPE, risk_level=RiskLevel.LOW,
+                                    tool_name=CATALOG_TOOL,
+                                    arguments={"source": source, "slot": slot},
+                                )), timeout=45,
+                            )
+                            if response.decision is not AuthorizationDecision.ALLOW:
+                                raise PermissionError("MCPGateway denied public catalog discovery")
+                            result = response.result
+                            if not isinstance(result, dict) or not isinstance(result.get("items"), list):
+                                raise DiscoveryUnavailable("Invalid catalog discovery evidence")
+                            successful_queries += 1
+                            saved += self._store_public_candidates(result, seen)
+                        except PermissionError:
+                            raise
+                        except (DiscoveryUnavailable, RuntimeError, OSError,
+                                asyncio.TimeoutError) as exc:
+                            failed_queries.append({
+                                "query": source, "reason": _safe_text(str(exc), 160),
+                            })
 
                 # Even with a rate-limited search, a previously validated
                 # catalog can supply up to three inert staging candidates.
@@ -744,7 +967,7 @@ class SelfDiscoveryEngine:
                            if record["repository"] in seen]
                 self._last_error = ""
                 self._history_record(
-                    query_count=len(indexes), saved=saved, staged=staged_count,
+                    query_count=len(indexes) + (2 if multi_source else 0), saved=saved, staged=staged_count,
                     status="PARTIAL" if failed_queries else "COMPLETE",
                 )
                 return {
@@ -752,6 +975,7 @@ class SelfDiscoveryEngine:
                     "new_count": saved, "mode": "review_only",
                     "partial": bool(failed_queries),
                     "successful_queries": successful_queries,
+                    "active_sources": (["github", "registry", "pypi"] if multi_source else ["github"]),
                     "failed_queries": failed_queries,
                     "staged_count": staged_count,
                     "staging_attempted": staging_report["attempted"],
@@ -766,7 +990,7 @@ class SelfDiscoveryEngine:
             except (DiscoveryUnavailable, PermissionError, OSError,
                     RuntimeError, asyncio.TimeoutError) as exc:
                 self._last_error = str(exc)[:180]
-                self._history_record(query_count=len(indexes), saved=saved,
+                self._history_record(query_count=len(indexes) + (2 if multi_source else 0), saved=saved,
                                      staged=0, status="FAILED")
                 raise
 

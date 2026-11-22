@@ -304,6 +304,84 @@ class EvolutionWorkspace:
                 "reason": safe_reason, "status": "STAGING_REJECTED",
             }, sort_keys=True) + "\n")
 
+    def prune_rejected_staging(self, *, max_directories: int = 12) -> int:
+        """Prune only aged quarantined or audit-rejected inert staging copies.
+
+        No runtime, verified source, Owner approval or independent evidence is
+        modified. Unsafe links, forged inventory or uncertain status fail closed.
+        """
+        if type(max_directories) is not int or not 1 <= max_directories <= 12:
+            raise StagingRejected("Invalid staging prune budget")
+        staging = self.root / "staging"
+        _checked_path(staging)
+        if (self.active.is_symlink() or not self.active.is_file()
+                or self.active.stat().st_size > 200_000):
+            raise StagingRejected("Untrusted active capability inventory")
+        inventory = json.loads(self.active.read_text("utf-8"))
+        if (not isinstance(inventory, dict)
+                or inventory.get("schema") != "aura.external-capabilities.v1"
+                or not isinstance(inventory.get("active"), list)
+                or len(inventory["active"]) > self.max_items):
+            raise StagingRejected("Invalid active capability inventory")
+        statuses: dict[str, str] = {}
+        for row in inventory["active"]:
+            if not isinstance(row, dict) or not _valid_repository(row.get("repository")):
+                raise StagingRejected("Invalid activation inventory entry")
+            repo = row["repository"]
+            # Conflicting duplicate statuses must never be treated as safe.
+            if repo in statuses:
+                raise StagingRejected("Duplicate activation inventory entry")
+            statuses[repo] = row.get("status", "")
+
+        rejected: dict[str, int] = {}
+        audit = self.root / "logs" / "staging-rejections.jsonl"
+        if audit.exists() or audit.is_symlink():
+            if audit.is_symlink() or not audit.is_file() or audit.stat().st_size > 200_000:
+                raise StagingRejected("Unsafe staging rejection audit")
+            for line in audit.read_text("utf-8").splitlines():
+                try:
+                    row = json.loads(line)
+                except (TypeError, ValueError):
+                    continue
+                if (isinstance(row, dict) and row.get("status") == "STAGING_REJECTED"
+                        and _valid_repository(row.get("repository"))
+                        and type(row.get("timestamp")) is int):
+                    repo = row["repository"]
+                    rejected[repo] = max(rejected.get(repo, 0), row["timestamp"])
+
+        removed = 0
+        cutoff = time.time() - 24 * 3600
+        for stage in sorted(staging.iterdir(), key=lambda p: p.lstat().st_mtime):
+            if removed >= max_directories:
+                break
+            if stage.is_symlink() or (hasattr(stage, "is_junction") and stage.is_junction()):
+                raise StagingRejected("Unsafe staging directory link")
+            if not stage.is_dir() or stage.stat().st_mtime >= cutoff:
+                continue
+            parts = stage.name.split("__")
+            if (len(parts) != 2
+                    or not _valid_repository("/".join(parts))):
+                continue
+            repository = "/".join(parts)
+            status = statuses.get(repository)
+            if status not in (None, "QUARANTINED"):
+                continue
+            verified = self.root / "verified" / stage.name
+            _checked_path(verified)
+            rejected_only = (status is None and not verified.exists()
+                             and rejected.get(repository, 0) >= stage.stat().st_mtime)
+            if status != "QUARANTINED" and not rejected_only:
+                continue
+            _checked_path(stage)
+            for directory, dirs, files in os.walk(stage, followlinks=False):
+                for name in dirs + files:
+                    item = Path(directory) / name
+                    if item.is_symlink() or (hasattr(item, "is_junction") and item.is_junction()):
+                        raise StagingRejected("Unsafe staged evidence link")
+            shutil.rmtree(stage)
+            removed += 1
+        return removed
+
     def _usage(self) -> int:
         total = 0
         for area in ("staging", "verified"):

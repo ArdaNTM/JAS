@@ -39,6 +39,7 @@ from aura_core.application.context_synthesizer import ContextSynthesizer
 from aura_core.application.context_aware_stt import build_stt_prompt
 from aura_core.application.background_thinking import IdleMemoryReflectionDaemon
 from aura_core.evolution.autonomous_analyzer import AutonomousAnalyzer
+from aura_core.evolution.self_discovery_api import continuous_router
 from aura_core.evolution.evolution_planner import EvolutionPlanner, ProactiveEvolutionCoordinator
 from aura_core.application.task_memory import TaskMemoryCoordinator
 from aura_core.application.ollama_completion import OllamaJSONCompletionProvider
@@ -87,6 +88,19 @@ from aura_core.memory.chat_memory import ChatMemory
 from aura_core.memory.embeddings import OllamaEmbeddingProvider
 from aura_core.memory.semantic_store import SemanticMemoryStore
 from aura_core.observability.pipeline_trace import PipelineTrace
+
+
+def _continuous_evolution_command(message: str) -> str | None:
+    """Exact authenticated user command; never infer controls from model text."""
+    normalized = " ".join(message.casefold().strip(" \t\r\n.!?,;").split())
+    if normalized in {
+        "kendini geliştir", "kendini geliştirme modunu aç",
+        "sürekli kendini geliştir",
+    }:
+        return "start"
+    if normalized == "kendini geliştirmeyi durdur":
+        return "stop"
+    return None
 
 
 def _external_mcp_execution_scope(permissions, principal_id: str, capability_id: str) -> str | None:
@@ -1485,6 +1499,28 @@ def create_api(
 
         return inference_request, memory_enabled, request_id
 
+    async def _continuous_control_reply(
+        request: AssistantRespondRequest, http_request: Request, principal_id: str,
+    ) -> str | None:
+        action = _continuous_evolution_command(request.message)
+        if action is None:
+            return None
+        require_local_client(http_request)
+        if principal_id != "local_owner":
+            raise HTTPException(status_code=403, detail="Local Owner identity required")
+        controller = getattr(app.state, "continuous_evolution", None)
+        if controller is None:
+            raise HTTPException(status_code=503, detail="Continuous Evolution unavailable")
+        state = controller.start() if action == "start" else await controller.stop()
+        return (
+            ("Sürekli kendini geliştirme modu çalışıyor." if action == "start"
+             else "Sürekli kendini geliştirme modu durduruldu.")
+            + " Taranan: " + str(state["scanned_candidates"])
+            + " · Kuyrukta: " + str(state["queued_packages"])
+            + " · Aktif yetenek: " + str(state["active_count"])
+            + ". Yeni yetenekler yalnızca bağımsız attestasyon ve Owner izniyle açılır."
+        )
+
     @app.post(
         "/api/assistant/respond",
         response_model=AssistantRespondResponse,
@@ -1494,6 +1530,11 @@ def create_api(
         http_request: Request,
         principal_id: str = Depends(authenticated_principal),
     ) -> AssistantRespondResponse:
+        control = await _continuous_control_reply(request, http_request, principal_id)
+        if control is not None:
+            return AssistantRespondResponse(
+                assistant_reply=control, model=config.model, degraded=False,
+            )
         inference_request, memory_enabled, request_id = (
             await _prepare_assistant_inference(request, http_request, principal_id)
         )
@@ -1939,6 +1980,17 @@ def create_api(
         principal_id: str = Depends(authenticated_principal),
     ) -> StreamingResponse:
         """Authenticated incremental NDJSON; never exposes thought traces or tools."""
+        control = await _continuous_control_reply(request, http_request, principal_id)
+        if control is not None:
+            async def control_stream():
+                yield json.dumps({"delta": control}, ensure_ascii=False) + "\n"
+                yield json.dumps({
+                    "done": True, "finish_reason": "stop", "model": config.model,
+                }) + "\n"
+            return StreamingResponse(
+                control_stream(), media_type="application/x-ndjson",
+                headers={"Cache-Control": "no-store", "X-Content-Type-Options": "nosniff"},
+            )
         prepared, _, request_id = await _prepare_assistant_inference(
             request, http_request, principal_id
         )
@@ -2766,6 +2818,7 @@ def create_api(
             raise HTTPException(status_code=422, detail=str(exc)) from exc
         return {"items": items, "count": len(items)}
 
+    app.include_router(continuous_router)
     app.include_router(jarvis_router)
 
     return app

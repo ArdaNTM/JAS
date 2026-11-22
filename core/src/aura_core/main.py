@@ -25,10 +25,12 @@ from aura_core.application.task_state_machine import TaskStateMachine
 from aura_core.application.autonomy_composition import compose_governed_autonomy
 from aura_core.evolution.evolution_gateway import EvolutionReviewGateway
 from aura_core.evolution.self_discovery import (
-    PublicGitHubDiscoveryMCPProvider, SelfDiscoveryEngine,
+    PublicGitHubDiscoveryMCPProvider, PublicCatalogDiscoveryMCPProvider,
+    SelfDiscoveryEngine, CATALOG_CAPABILITY, CATALOG_TOOL, CATALOG_SCOPE,
     CAPABILITY_ID as DISCOVERY_CAPABILITY, TOOL_NAME as DISCOVERY_TOOL,
     SCOPE as DISCOVERY_SCOPE,
 )
+from aura_core.evolution.continuous_evolution import ContinuousEvolutionController
 from aura_core.evolution.self_discovery_api import router as self_discovery_router
 from aura_core.evolution.external_staging import (
     EvolutionWorkspace, GitHubStagingMCPProvider,
@@ -556,6 +558,36 @@ def build_app() -> FastAPI:
             decision=AuthorizationDecision.ALLOW,
         ))
 
+        # Registry/PyPI public metadata is independently gated by MCPGateway.
+        catalog_provider = PublicCatalogDiscoveryMCPProvider()
+        catalog_service = ServiceDefinition(
+            name="public_catalog_discovery_mcp", version="1.0.0", provider="aura",
+            category=ServiceCategory.MCP,
+            capabilities=frozenset({CATALOG_CAPABILITY}),
+            tags={"public", "read-only", "review-only"},
+        )
+        kernel.service_registry.register(catalog_service, catalog_provider)
+        kernel.provider_registry.register(ProviderDefinition(
+            provider_id="aura.public-mcp-catalog", name="Public MCP Catalog",
+            version="1.0.0", service_id=catalog_service.service_id,
+        ), catalog_provider)
+        kernel.capability_registry.register(CapabilityDefinition(
+            capability_id=CATALOG_CAPABILITY, name="Public MCP Registry and PyPI Discovery",
+            version="1.0.0",
+            description="Fixed origin metadata corroborated by public GitHub source",
+            provider_id="aura.public-mcp-catalog",
+            provider_type=ProviderType.MCP, category=CapabilityCategory.RESEARCH,
+            tool_name=CATALOG_TOOL, risk_level="low",
+            required_permissions=frozenset({CATALOG_CAPABILITY}),
+        ))
+        kernel.permission_engine.add_policy(PermissionPolicy(
+            policy_id="local-owner:mcp-public-catalog:read-only",
+            policy_version="1.0.0", principal_id="local_owner",
+            capability_id=CATALOG_CAPABILITY, operation_id=CATALOG_CAPABILITY,
+            resource_scope=CATALOG_SCOPE, authorization_level=AuthorizationLevel.READ,
+            decision=AuthorizationDecision.ALLOW,
+        ))
+
     evolution_workspace = None
     if (storage_mode is StorageMode.LOCAL
             and (self_discovery_enabled and
@@ -679,6 +711,20 @@ def build_app() -> FastAPI:
         app.state.autonomous_activation = manager
         if app.state.self_discovery is not None:
             app.state.self_discovery.on_verified = manager.scan
+    # Explicitly opt-in at runtime via authenticated Owner REST/assistant/HUD.
+    app.state.continuous_evolution = None
+    if (app.state.self_discovery is not None and evolution_workspace is not None
+            and os.getenv("AURA_CONTINUOUS_EVOLUTION_ENABLED", "1").strip() == "1"):
+        review = getattr(app.state, "evolution_review", None)
+        analyzer = getattr(review, "analyzer", None)
+        if analyzer is None:
+            analyzer = getattr(getattr(review, "_delegate", None), "analyzer", None)
+        app.state.continuous_evolution = ContinuousEvolutionController(
+            discovery=app.state.self_discovery,
+            activation=app.state.autonomous_activation,
+            analyzer=analyzer,
+            interval_seconds=int(os.getenv("AURA_CONTINUOUS_EVOLUTION_SECONDS", "240")),
+        )
     app.state.feature_catalog = feature_catalog
     app.include_router(capability_center_router)
     app.state.http_bearer_token = http_bearer_token
@@ -1185,7 +1231,10 @@ def build_app() -> FastAPI:
             if delegated_activation is not None:
                 await delegated_activation.start()
             discovery_worker = getattr(_app.state, "self_discovery", None)
-            if discovery_worker is not None:
+            if (discovery_worker is not None
+                    and getattr(_app.state, "continuous_evolution", None) is None):
+                # Legacy review-only scheduler is superseded by explicit
+                # continuous start/stop when that controller is configured.
                 discovery_worker.start()
 
             # The outer composition replaces create_api lifespan. Start the
@@ -1245,6 +1294,12 @@ def build_app() -> FastAPI:
                 except Exception:
                     logger.exception("Event-driven orchestration unsubscribe failed")
 
+            continuous_worker = getattr(app.state, "continuous_evolution", None)
+            if continuous_worker is not None:
+                try:
+                    await continuous_worker.stop()
+                except Exception:
+                    logger.exception("Continuous Evolution shutdown failed")
             discovery_worker = getattr(app.state, "self_discovery", None)
             if discovery_worker is not None:
                 try:

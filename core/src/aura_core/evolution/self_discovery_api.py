@@ -102,3 +102,39 @@ async def run_discovery(request: Request, principal: str = Depends(authenticated
         raise HTTPException(status_code=status, detail=message) from exc
     except (OSError, PermissionError, RuntimeError) as exc:
         raise HTTPException(status_code=503, detail=str(exc)[:180]) from exc
+
+
+# Separate prefix: this controls a bounded discovery schedule, never Owner
+# approval, attestor private keys, or a privileged MCP execution path.
+continuous_router = APIRouter(
+    prefix="/api/evolution/continuous", tags=["continuous-evolution"],
+)
+
+
+def _controller(request: Request, principal: str):
+    _engine(request, principal)
+    controller = getattr(request.app.state, "continuous_evolution", None)
+    if controller is None:
+        raise HTTPException(status_code=503, detail="Continuous Evolution unavailable")
+    return controller
+
+
+@continuous_router.get("/status")
+async def continuous_status(
+    request: Request, principal: str = Depends(authenticated_principal),
+):
+    return _controller(request, principal).status()
+
+
+@continuous_router.post("/start")
+async def continuous_start(
+    request: Request, principal: str = Depends(authenticated_principal),
+):
+    return _controller(request, principal).start()
+
+
+@continuous_router.post("/stop")
+async def continuous_stop(
+    request: Request, principal: str = Depends(authenticated_principal),
+):
+    return await _controller(request, principal).stop()
