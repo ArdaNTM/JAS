@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-22T06:55:00.000Z",
-  "git_commit": "fdedf20799d5ba65169b66600a9bad6e24611391",
+  "generated_at": "2026-11-22T22:53:34.561Z",
+  "git_commit": "e11422958989e843604aaaedff897b90b6e78f31",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:ff89c2869543cec43d3b14f6a9b17a3b05160809a837bd8c741b49cee1883565",
+  "release_digest": "sha256:e2f0236709a0b094a42c5eaf95cb06a5635a8e4157cc46727d99ed5487720384",
   "file_count": 464,
   "files": [
     {
@@ -366,7 +366,7 @@
     },
     {
       "path": "core/src/aura_core/application/api.py",
-      "sha256": "0e3e06f62763d40a42a3fb6be63f5ab783c8516f82a591288513ba151a9fa021"
+      "sha256": "ad87d57d9f4e35773dbc8560708802cadef6f960b3039db118743f55b34b518c"
     },
     {
       "path": "core/src/aura_core/application/approval_api.py",
@@ -874,11 +874,11 @@
     },
     {
       "path": "core/src/aura_core/evolution/activation_runtime.py",
-      "sha256": "434ab037cab3f0f6f0c23b67e6c59c10508028e32c15944689e431d8423f2436"
+      "sha256": "cce9efae1d16017965ad6e4002897752be572e4b48eb57c569295d1e7ecb90d2"
     },
     {
       "path": "core/src/aura_core/evolution/attestor_worker.py",
-      "sha256": "7e2cd58b1cb3f1dc1f497b95f770ecb91067589f2be978eb6a5516d9233ece3f"
+      "sha256": "587ea44e6d1aef9a1b4e09199fefde7b44e03f797e6338c7598607b0d5e83db5"
     },
     {
       "path": "core/src/aura_core/evolution/autonomous_analyzer.py",
@@ -978,7 +978,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/sandbox_preflight.py",
-      "sha256": "ebc3466c82b2cb30c54c281ddac7151092da0f7530397604f4e86c76e9bd5c83"
+      "sha256": "4c1bdcc467275548d276e75226a0342503f378d2da184b8c94464a7b30e042b9"
     },
     {
       "path": "core/src/aura_core/evolution/sandbox_review.py",
@@ -1002,7 +1002,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/windows_job_mcp.py",
-      "sha256": "28d516cd46b1d5c3acf3dda212ecd3326236d3635397643d58f88fa6cc4bc20e"
+      "sha256": "62019aed91216f1d3cd6ab17d4498de89634d18e539e39232b000fd01cf2282c"
     },
     {
       "path": "core/src/aura_core/evolution/windows_owner_storage.py",
@@ -1210,7 +1210,7 @@
     },
     {
       "path": "core/src/aura_core/mcp/gateway.py",
-      "sha256": "86941b0947517858a42d87992e8409e209236cab80106350fead1fd2f7bba235"
+      "sha256": "18f5334ef11f057f08b53dfe5b4c853e494f4e7842f1d56c9a7c86c02268220c"
     },
     {
       "path": "core/src/aura_core/mcp/graph_memory_provider.py",
@@ -1806,7 +1806,7 @@
     },
     {
       "path": "core/tests/test_evolution_windows_live_recovery.py",
-      "sha256": "83bc7a76c96f4a08e59d86bac1fa50f52bab7c18fe9d0a40518f43647e740186"
+      "sha256": "559ec56827609737b3b87455971a93707b6b745168d28e23e76631ae6adcbf96"
     },
     {
       "path": "core/tests/test_osworld_secure_live.py",
