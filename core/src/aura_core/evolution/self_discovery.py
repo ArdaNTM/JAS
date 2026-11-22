@@ -37,13 +37,20 @@ SEARCH_PER_PAGE = 6
 PERMITTED_LICENSES = frozenset({
     "MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC",
 })
-# These are operator-owned static queries, never user/LLM supplied search URLs.
-# Two broad, operator-owned searches limit unauthenticated API use.
-# Readme-level validation still filters SaaS/mandatory API-key integrations.
+# Fixed, operator-owned allowlist; never accept LLM/user-supplied URLs.
+# Target small/local MCP implementations rather than repeating broad top-star
+# results. Each manual scan tries at most two queries to bound GitHub API use.
 QUERIES = (
-    '"mcp-server" archived:false stars:>5',
-    "fastmcp archived:false stars:>5",
+    '"fastmcp" tool archived:false stars:>5',
+    '"mcp-server" sqlite archived:false stars:>5',
+    '"mcp-server" filesystem archived:false stars:>5',
+    '"mcp-server" git archived:false stars:>5',
+    '"mcp-server" fetch archived:false stars:>5',
+    '"mcp-server" memory archived:false stars:>5',
+    '"mcp-server" browser archived:false stars:>5',
+    '"modelcontextprotocol" server python archived:false stars:>5',
 )
+MAX_QUERIES_PER_MANUAL_SCAN = 2
 _REPO = re.compile(r"^[A-Za-z0-9_.-]{1,80}/[A-Za-z0-9_.-]{1,100}$")
 
 
@@ -284,7 +291,7 @@ class PublicGitHubDiscoveryMCPProvider:
                 )
             )
         return {
-            "items": candidates[:3],
+            "items": candidates[:SEARCH_PER_PAGE],
             "source": "github.com/search/repositories",
             "verification": "metadata_and_readme_only_not_code_audit",
         }
