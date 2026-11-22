@@ -34,6 +34,41 @@ if ($BrowserBody.Contains("-WindowStyle Hidden")) {
     throw "Visible Edge/Chrome app window must not be hidden"
 }
 
+# The launcher's verifier requires the flag to be on during the probe,
+# but failed signatures must disable activation immediately.
+$VerifyCall = $LauncherSource.IndexOf('aura_core.evolution.activation_delegation --verify')
+$FlagOn = $LauncherSource.LastIndexOf('$env:AURA_EVOLUTION_AUTO_ACTIVATE = "1"', $VerifyCall)
+$FlagOff = $LauncherSource.IndexOf('if ($LASTEXITCODE -ne 0)', $VerifyCall)
+if ($VerifyCall -lt 0 -or $FlagOn -lt 0 -or $FlagOn -gt $VerifyCall -or $FlagOff -lt $VerifyCall) {
+    throw 'Signed Owner verifier must run after temporary opt-in and fail closed'
+}
+
+# Check the actual npm-generated Windows argv, not an idealized path.
+. (Join-Path $PSScriptRoot 'aura-processes.ps1')
+$NodePath = 'C:\Program Files\nodejs\node.exe'
+$UiDir = Join-Path $Root 'aura-ui'
+$Cmd = '"' + $NodePath + '" "' + $UiDir +
+    '\node_modules\.bin\..\vite\bin\vite.js" preview --host 127.0.0.1 --port 4173 --strictPort'
+$Proc = [pscustomobject]@{ ExecutablePath = $NodePath; CommandLine = $Cmd }
+if (-not (Test-AuraOwnedProcess -Process $Proc -Root $Root)) {
+    throw 'Real npm node Vite preview argv must be treated as repository-owned'
+}
+$Foreign = [pscustomobject]@{ ExecutablePath = $NodePath;
+    CommandLine = $Cmd.Replace($UiDir, 'C:\OtherRepository\aura-ui') }
+if (Test-AuraOwnedProcess -Process $Foreign -Root $Root) {
+    throw 'Foreign node Vite preview must never be marked as AURA-owned'
+}
+$NoPreview = [pscustomobject]@{ ExecutablePath = $NodePath;
+    CommandLine = $Cmd.Replace(' preview --host', ' build --host') }
+if (Test-AuraOwnedProcess -Process $NoPreview -Root $Root) {
+    throw 'Non-preview node process must not match the safe Vite fallback'
+}
+$FakeExe = [pscustomobject]@{ ExecutablePath = 'C:\Windows\System32\notepad.exe';
+    CommandLine = $Cmd }
+if (Test-AuraOwnedProcess -Process $FakeExe -Root $Root) {
+    throw 'Only node.exe may use the repository Vite preview fallback'
+}
+
 $TempDesktop = Join-Path $env:TEMP ("aura-shortcut-ci-" + [guid]::NewGuid().ToString("N"))
 New-Item -ItemType Directory -Path $TempDesktop -Force | Out-Null
 try {
