@@ -115,6 +115,26 @@ def test_bridge_refuses_non_windows_hosts(tmp_path):
         bridge_parameters(tmp_path, "server.py")
 
 
+def test_scrubbed_windows_environment_can_import_trusted_mcp_sdk(tmp_path):
+    import os
+    import subprocess
+    import sys
+    if os.name != "nt":
+        pytest.skip("Only Windows has a Job Object executable environment")
+    from aura_core.evolution.windows_job_mcp import _scrubbed_windows_mcp_environment
+    safe = _scrubbed_windows_mcp_environment(tmp_path)
+    assert not any(key.upper().startswith("AURA_") for key in safe)
+    assert "OPENAI_API_KEY" not in safe
+    assert Path(safe["USERPROFILE"]).resolve() == tmp_path.resolve()
+    check = subprocess.run(
+        [sys.executable, "-B", "-s", "-c",
+         "from mcp.server.fastmcp import FastMCP; print('mcp-sdk-ready')"],
+        cwd=tmp_path, env=safe, capture_output=True, text=True, timeout=25,
+    )
+    assert check.returncode == 0, check.stderr[-1200:]
+    assert "mcp-sdk-ready" in check.stdout
+
+
 def test_windows_job_object_real_mcp_initialize_and_tools_list(tmp_path):
     import asyncio
     import os
