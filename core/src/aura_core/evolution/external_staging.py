@@ -364,7 +364,7 @@ def _validated_files(
             raise StagingRejected("Archive has too many members")
         for info in infos:
             raw = info.filename
-            if ("\\" in raw or not _FILE.fullmatch(raw)
+            if ("\\" in raw or "//" in raw or not _FILE.fullmatch(raw)
                     or raw.startswith("/") or raw.startswith(".")):
                 raise StagingRejected("Unsafe ZIP entry name")
             segments = PurePosixPath(raw).parts
