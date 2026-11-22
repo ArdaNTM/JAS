@@ -374,8 +374,14 @@ def _bridge(runtime: Path, entry: str) -> int:
         t = threading.Thread(target=input_pump, daemon=True)
         t.start()
         try:
-            shutil.copyfileobj(reader, sys.stdout.buffer, length=65536)
-            sys.stdout.buffer.flush()
+            # JSON-RPC messages must be forwarded immediately, not buffered
+            # until child EOF; initialize needs a response while it stays alive.
+            while True:
+                chunk = reader.read(65536)
+                if not chunk:
+                    break
+                sys.stdout.buffer.write(chunk)
+                sys.stdout.buffer.flush()
         finally:
             reader.close()
         kernel.WaitForSingleObject(pi.hProcess, 2000)
