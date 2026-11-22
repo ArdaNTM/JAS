@@ -8,8 +8,11 @@ from __future__ import annotations
 
 import ipaddress
 import json
+import os
 import re
 import sqlite3
+import tempfile
+import time
 from pathlib import Path
 from typing import Literal
 from uuid import UUID
@@ -24,6 +27,11 @@ from aura_core.evolution.owner_passkey import WebAuthnOwnerAssertion
 from aura_core.evolution.owner_receipt import OwnerReceiptIssuer
 
 OWNER_ORIGIN = "http://localhost:8766"
+
+
+class QuarantineBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    repository: str = Field(min_length=3, max_length=181)
 
 
 class ChallengeBody(BaseModel):
@@ -266,6 +274,62 @@ def create_owner_control_plane(
                     "trusted_by_this_endpoint": False}
         except (OSError, ValueError, TypeError, UnicodeError):
             raise HTTPException(503, "Runtime inventory unavailable")
+
+    @app.post("/api/owner/activations/quarantine")
+    def quarantine_untrusted_external(body: QuarantineBody):
+        """Denial-only local override: never creates permissions or Owner receipts.
+
+        Explicit user gesture on the pinned localhost Origin. Only changes an
+        existing ACTIVE row to REVOKED; cannot add or approve a package.
+        The Core provider guard validates this inventory on every MCP call.
+        """
+        if catalog_db is None:
+            raise HTTPException(503, "External runtime inventory unavailable")
+        repository = body.repository
+        if (not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repository)
+                or ".." in repository.split("/")):
+            raise HTTPException(422, "Invalid package identity")
+        inventory = Path(catalog_db).parent.parent / "active_capabilities.json"
+        try:
+            if (inventory.is_symlink() or not inventory.is_file()
+                    or inventory.stat().st_size > 200_000):
+                raise HTTPException(503, "Runtime inventory path unsafe")
+            data = json.loads(inventory.read_text("utf-8"))
+            if (not isinstance(data, dict)
+                    or data.get("schema") != "aura.external-capabilities.v1"
+                    or not isinstance(data.get("active"), list)
+                    or len(data["active"]) > 250):
+                raise HTTPException(503, "Runtime inventory invalid")
+            records = data["active"]
+            targets = [
+                row for row in records if isinstance(row, dict)
+                and row.get("repository") == repository
+                and row.get("status") == "ACTIVE"
+            ]
+            if len(targets) != 1:
+                raise HTTPException(409, "Only an existing active package can be revoked")
+            # A quarantine button is a denial; no new grant, delegation or
+            # trusted Owner state is ever created by this unprivileged service.
+            targets[0]["status"] = "REVOKED"
+            targets[0]["time"] = int(time.time())
+            targets[0]["reason_code"] = "LOCAL_OWNER_QUARANTINE"
+            fd, temporary = tempfile.mkstemp(prefix=".owner-revoke-", dir=inventory.parent)
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8") as stream:
+                    json.dump(data, stream, sort_keys=True)
+                    stream.flush()
+                    os.fsync(stream.fileno())
+                os.replace(temporary, inventory)
+            finally:
+                if os.path.exists(temporary):
+                    os.unlink(temporary)
+            return {
+                "repository": repository, "status": "REVOKED",
+                "activation_performed": False, "authorization_granted": False,
+            }
+        except (OSError, ValueError, TypeError, UnicodeError):
+            raise HTTPException(503, "Runtime quarantine could not be recorded")
+
 
     @app.get("/api/owner/preflights")
     def sandbox_preflights():
