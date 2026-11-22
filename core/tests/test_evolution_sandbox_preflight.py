@@ -217,7 +217,7 @@ def test_reattest_capacity_credits_only_preexisting_runtime_bytes(tmp_path):
         0, reattesting_package=name, baseline_bytes=baseline,
     )
     # Only the original bytes are credited; new growth still consumes quota.
-    (existing / "new.dat").write_bytes(b"b" * 300_000)
+    (existing / "new.dat").write_bytes(b"b" * 1_050_000)
     with pytest.raises(SandboxUntrusted, match="quota"):
         sandbox._verify_runtime_capacity(
             0, reattesting_package=name, baseline_bytes=baseline,
@@ -235,7 +235,7 @@ def test_old_quarantined_staging_pruned_only_when_near_quota(tmp_path):
     name, _ = _candidate(workspace)
     stage = workspace.root / "staging" / name
     stage.mkdir()
-    (stage / "old-source.bin").write_bytes(b"x" * 995_000)
+    (stage / "old-source.bin").write_bytes(b"x" * 999_000)
     old = time.time() - 3 * 24 * 3600
     os.utime(stage, (old, old))
     workspace.active.write_text(json.dumps({
@@ -261,7 +261,7 @@ def test_active_or_recent_staging_is_never_pruned_for_capacity(tmp_path):
     name, _ = _candidate(workspace)
     stage = workspace.root / "staging" / name
     stage.mkdir()
-    (stage / "source.bin").write_bytes(b"x" * 995_000)
+    (stage / "source.bin").write_bytes(b"x" * 999_000)
     sandbox = IsolatedMCPPreflight(
         workspace, image="example/mcp@sha256:" + "a" * 64,
     )
