@@ -400,7 +400,24 @@ def test_windows_independent_core_reads_only_signed_owner_readonly_mirror(sample
     for private in original:
         private.unlink()
     verifier = ActivationDelegationVerifier(workspace)
-    assert verifier.verified_grant() is not None
+    if verifier.verified_grant() is None:
+        from aura_core.evolution.activation_delegation import (
+            _require_readonly_public_owner_mirror,
+        )
+        results = []
+        for mirror in mirrors:
+            acl = subprocess.run(
+                ["icacls.exe", str(mirror)], capture_output=True,
+                text=True, timeout=10,
+            )
+            try:
+                _require_readonly_public_owner_mirror(mirror)
+                verdict = "ACL_ACCEPTED"
+            except PermissionError as error:
+                verdict = type(error).__name__
+            results.append(f"{mirror.name}: {verdict}, {acl.stdout.strip()}")
+        pytest.fail("Signed public mirror unexpectedly rejected: " +
+                    " | ".join(results))
     require_private_acl(owner)
     # Granting WRITE to ordinary authenticated users must fail closed.
     subprocess.run(
