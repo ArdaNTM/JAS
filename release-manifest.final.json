@@ -3,9 +3,9 @@
   "version": "1.0.0-final",
   "status": "production-locked",
   "generated_at": "2026-11-22T06:55:00.000Z",
-  "git_commit": "5c42ad617021ba046651032fa18a335016eb11b6",
+  "git_commit": "4d52358737baa0c74131e0d85c824e22f778300a",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:777894f4fa98f0cf4d5fd12b69590643ff8fec8fe1c3ae9e875ff1ad0cc89ab0",
+  "release_digest": "sha256:e31c3a1ee386793591b6b0885aae0be6d6eafbc5f7705c64980389339cfff06c",
   "file_count": 464,
   "files": [
     {
@@ -902,7 +902,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/external_staging.py",
-      "sha256": "f59448f28b993f5d07ced2b3cff8c4baee81e9f54072467d560d146af956c98d"
+      "sha256": "842f83d94e593687c2a5c42bdeb3fae7b7b76db64dbff248d2e4f1a3f0a5fbbd"
     },
     {
       "path": "core/src/aura_core/evolution/goal_tree.py",
