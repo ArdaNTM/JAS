@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-22T06:15:00.000Z",
+  "generated_at": "2026-11-22T06:30:00.000Z",
   "git_commit": "c7cfe64a195517f0a14868bfd846ba392de83844",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:208615f59fe88a0d3a95f112d441b4e4819f95cf2153a049ab2297f1cc2cecd4",
+  "release_digest": "sha256:ce666d28376fec5304e9c14a007b67f7ce2e392666343ac197896f19f2623dcb",
   "file_count": 456,
   "files": [
     {
@@ -42,7 +42,7 @@
     },
     {
       "path": ".github/workflows/aura-windows-owner-security.yml",
-      "sha256": "0e440b5f86364020b5674de9da7ab120665bebf836039fd938548c37ba32eedc"
+      "sha256": "90f1a140dd78f43cb8d1da9e0f324440c67d7c1a12d6ed1318321b6a122f73a0"
     },
     {
       "path": "aura-ui/electron-main.cjs",
