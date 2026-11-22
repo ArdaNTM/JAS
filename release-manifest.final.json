@@ -3,9 +3,9 @@
   "version": "1.0.0-final",
   "status": "production-locked",
   "generated_at": "2026-11-22T06:55:00.000Z",
-  "git_commit": "a70f845c2a3aec97aac9526a15ffed534821bbb3",
+  "git_commit": "1024cebc29befbca1aed9dbb1cab96cb52166a45",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:2e6c7536177dc946bd9cedb866b2d7de0240d953a588b0fc62399d67d507c9ed",
+  "release_digest": "sha256:6f930c17468b94bfcef116c267e72bc5805316f61baadb1ad05ade207d74ee9f",
   "file_count": 463,
   "files": [
     {
@@ -902,7 +902,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/external_staging.py",
-      "sha256": "d57f869c77548768afdcb21b9500610e89c579bed609dd04fd2a5971ec1d1d35"
+      "sha256": "ade13189d0f32caf17f7636aa95a744aed41d32be40858ab12ad89f70fb83113"
     },
     {
       "path": "core/src/aura_core/evolution/goal_tree.py",
@@ -986,7 +986,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/self_discovery.py",
-      "sha256": "14ba29aa33635d19bf8773c92f44dbe76818e8716d7ad8af1301a16bfbd2fc63"
+      "sha256": "1f6954f254e06d195360f70dbb1fe43424d3a738fc932aa6b7d7154652034283"
     },
     {
       "path": "core/src/aura_core/evolution/self_discovery_api.py",
@@ -1002,7 +1002,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/windows_job_mcp.py",
-      "sha256": "aaf5878b4ec6788f942c9a915bbebbed121d6dd576843ee8140d18c9026449ef"
+      "sha256": "2ff7b62aa5252306bda00d6cfb1f37e6ab44e5e7a5b2216494646c4c1604ea6b"
     },
     {
       "path": "core/src/aura_core/evolution/windows_owner_storage.py",
@@ -1802,7 +1802,7 @@
     },
     {
       "path": "core/tests/test_evolution_windows_live_recovery.py",
-      "sha256": "1486b3c2c8374b67a3d2bdf2930663b6006eb29f25b8b74fa4e0c22155666ac5"
+      "sha256": "a66f8ab03ae5d5a14eb9096fcf65a566996fa9ec611ad32a71ac4460e7ff7d3b"
     },
     {
       "path": "core/tests/test_osworld_secure_live.py",
