@@ -128,3 +128,19 @@ class ActivationDelegationVerifier:
         except (OSError, ValueError, TypeError, RuntimeError, PermissionError,
                 InvalidSignature, UnicodeError, KeyError):
             return None
+
+
+def main() -> int:
+    import argparse
+    parser = argparse.ArgumentParser(description="Verify only: independent signed Owner activation")
+    parser.add_argument("--verify", action="store_true", required=True)
+    parser.add_argument("--evolution-root", type=Path, required=True)
+    args = parser.parse_args()
+    grant = ActivationDelegationVerifier(
+        EvolutionWorkspace(args.evolution_root),
+    ).verified_grant()
+    return 0 if grant is not None else 3
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
