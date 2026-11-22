@@ -70,9 +70,11 @@ def runtime_fingerprint(workspace: EvolutionWorkspace, name: str) -> str:
     """Reject altered, added, symlinked or missing source before every use."""
     verified = workspace.root / "verified" / name
     runtime = workspace.root / "runtime" / name
+    if not runtime.exists():
+        raise PermissionError("Sandbox runtime not prepared")
     if (not runtime.is_dir() or runtime.is_symlink()
             or not verified.is_dir() or verified.is_symlink()):
-        raise PermissionError("Missing or unsafe independently prepared runtime")
+        raise PermissionError("Unsafe independently prepared runtime")
     _checked_path(runtime)
     with (verified / "source.zip").open("rb") as stream:
         files, _entry, _skipped = _validated_files(stream)
@@ -346,6 +348,8 @@ class DelegatedMCPActivationManager:
                 tool=tool, category=decision.category,
             )
             envelope = SignedSandboxAttestation.from_dict(row["attestation"])
+            if envelope.claims.expires_at <= int(time.time()):
+                raise PermissionError("Independent sandbox attestation expired")
             if not attestor.verify(envelope, source_sha256=sha, binding_digest=identity):
                 raise PermissionError("Independent sandbox attestation rejected")
             expiries.append(envelope.claims.expires_at)
@@ -425,7 +429,9 @@ class DelegatedMCPActivationManager:
                     # later independently signed observation, never execute.
                     waiting = isinstance(exc, PermissionError) and (
                         "signed sandbox results missing" in str(exc)
-                        or "attestation rejected" in str(exc)
+                        or "Sandbox runtime not prepared" in str(exc)
+                        or "pinned attestor key missing" in str(exc)
+                        or "attestation expired" in str(exc)
                     )
                     self._persist(
                         decision.repository,
