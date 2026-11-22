@@ -715,9 +715,14 @@ def build_app() -> FastAPI:
     app.state.continuous_evolution = None
     if (app.state.self_discovery is not None and evolution_workspace is not None
             and os.getenv("AURA_CONTINUOUS_EVOLUTION_ENABLED", "1").strip() == "1"):
+        review = getattr(app.state, "evolution_review", None)
+        analyzer = getattr(review, "analyzer", None)
+        if analyzer is None:
+            analyzer = getattr(getattr(review, "_delegate", None), "analyzer", None)
         app.state.continuous_evolution = ContinuousEvolutionController(
             discovery=app.state.self_discovery,
             activation=app.state.autonomous_activation,
+            analyzer=analyzer,
             interval_seconds=int(os.getenv("AURA_CONTINUOUS_EVOLUTION_SECONDS", "240")),
         )
     app.state.feature_catalog = feature_catalog
