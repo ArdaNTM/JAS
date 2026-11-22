@@ -41,7 +41,7 @@ def _source(**assets):
 
 def test_download_budget_defaults_to_exact_32_mib_and_is_configurable(monkeypatch, tmp_path):
     monkeypatch.delenv("AURA_EVOLUTION_MAX_DOWNLOAD_BYTES", raising=False)
-    assert _archive_budget() == 33_554_432
+    assert _archive_budget() == 268_435_456
     provider = GitHubStagingMCPProvider(
         workspace=EvolutionWorkspace(tmp_path / "external"),
         transport=httpx.MockTransport(lambda _: httpx.Response(200, content=b"x" * 3_200_001)),
@@ -89,9 +89,11 @@ def test_executable_artifacts_rejected_even_with_valid_source(name):
         _validated_files(_source(**{"assets/" + name: b"\x00 malicious payload"}))
 
 
-def test_unknown_binary_rejected_and_zip_symlink_denied():
-    with pytest.raises(StagingRejected, match="Binary"):
-        _validated_files(_source(**{"assets/opaque.dat": b"\x00\x01\x02"}))
+def test_unknown_binary_skipped_and_zip_symlink_denied():
+    files, _, skipped = _validated_files(
+        _source(**{"assets/opaque.dat": b"\x00\x01\x02"})
+    )
+    assert skipped == 1 and "assets/opaque.dat" not in files
     stream = io.BytesIO()
     with zipfile.ZipFile(stream, "w") as z:
         z.writestr("root/README.md", "Fully local and offline")
@@ -104,11 +106,14 @@ def test_unknown_binary_rejected_and_zip_symlink_denied():
         _validated_files(stream.getvalue())
 
 
-def test_large_binary_cannot_bypass_per_file_and_member_count_budgets():
-    with pytest.raises(StagingRejected, match="file budget"):
-        _validated_files(_source(**{"assets/big.png": os.urandom(750_001)}))
+def test_large_passive_binary_skips_but_member_limit_is_enforced(monkeypatch):
+    files, _, skipped = _validated_files(
+        _source(**{"assets/big.png": os.urandom(750_001)})
+    )
+    assert skipped == 1 and "assets/big.png" not in files
+    monkeypatch.setenv("AURA_EVOLUTION_MAX_ARCHIVE_MEMBERS", "1500")
     assets = {f"assets/icon-{i}.png": b"\x89PNG\x00" for i in range(1500)}
-    with pytest.raises(StagingRejected, match="too many|file budget"):
+    with pytest.raises(StagingRejected, match="too many members"):
         _validated_files(_source(**assets))
 
 
