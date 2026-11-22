@@ -58,6 +58,10 @@ _CATEGORY = {
     "local_memory": CapabilityCategory.MEMORY,
     "web_research": CapabilityCategory.RESEARCH,
     "developer_tools": CapabilityCategory.CODING,
+    "windows_automation": CapabilityCategory.AUTOMATION,
+    "filesystem": CapabilityCategory.STORAGE,
+    "research": CapabilityCategory.RESEARCH,
+    "browser": CapabilityCategory.BROWSER,
 }
 
 
