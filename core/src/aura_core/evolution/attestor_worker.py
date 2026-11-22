@@ -191,8 +191,8 @@ class IndependentMCPAttestorWorker:
         import re
         text = "".join(c for c in str(value) if 32 <= ord(c) <= 126)[:300]
         text = re.sub(
-            r"(?i)(?:bearer\\s+|(?:token|secret|password|api[_-]?key)\\s*[=:]\\s*)"
-            r"[^\\s,;]+", "[REDACTED]", text,
+            r"(?i)(?:bearer\s+|(?:token|secret|password|api[_-]?key)\s*[=:]\s*)"
+            r"[^\s,;]+", "[REDACTED]", text,
         )
         text = re.sub(r"[a-fA-F0-9]{40,}", "[REDACTED-HEX]", text)
         return text[:240]
@@ -266,6 +266,8 @@ class IndependentMCPAttestorWorker:
                     continue
                 try:
                     previous = json.loads(quarantine.read_text("utf-8"))
+                    if not isinstance(previous, dict):
+                        continue
                     retries = previous.get("retry_count", 0)
                     if (not isinstance(previous, dict)
                             or previous.get("status") not in {"QUARANTINED", "RETRYING"}
