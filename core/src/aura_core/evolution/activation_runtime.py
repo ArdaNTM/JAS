@@ -340,6 +340,8 @@ class DelegatedMCPActivationManager:
         tree = runtime_fingerprint(self.workspace, name)
         package = self.workspace.root / "verified" / name
         bundle_file = package / "independent-attestations.json"
+        if (package / "local-windows-quarantined.json").exists():
+            raise PermissionError("Local Windows MCP candidate quarantined by independent attestor")
         if (bundle_file.is_symlink() or not bundle_file.is_file()
                 or bundle_file.stat().st_size > _TOOL_LIMIT_BYTES):
             raise PermissionError("Independently signed sandbox results missing")
