@@ -133,7 +133,7 @@ def _publish_readonly_delegation(root: Path, document: dict, public: bytes) -> N
             harden_private_acl(target)
             icacls = Path(os.getenv("SystemRoot", r"C:\Windows")) / "System32" / "icacls.exe"
             result = subprocess.run(
-                [str(icacls), str(target), "/grant", "*S-1-5-11:R"],
+                [str(icacls), str(target), "/grant", "*S-1-5-11:RX"],
                 capture_output=True, text=True, timeout=15, check=False,
             )
             if result.returncode != 0:
