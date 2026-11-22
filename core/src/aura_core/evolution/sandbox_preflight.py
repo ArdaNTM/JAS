@@ -138,10 +138,16 @@ class IsolatedMCPPreflight:
             if any(not re.fullmatch(r"[A-Za-z0-9_.-]{1,64}", tool.name)
                    or not isinstance(tool.input_schema, dict) for tool in tools):
                 raise SandboxUntrusted("Invalid MCP tool schema")
+            if (len({tool.name for tool in tools}) != len(tools)
+                    or sum(len(json.dumps(tool.input_schema)) for tool in tools) > 32_000):
+                raise SandboxUntrusted("Duplicate tools or oversized MCP schemas")
             result = {
                 "repository": repository, "status": "PREPARED_UNATTESTED",
                 "source_sha256": digest,
                 "detected_tools": [tool.name for tool in tools],
+                "tool_schemas": {
+                    tool.name: tool.input_schema for tool in tools
+                },
                 "tool_count": len(tools),
                 "sandbox_attested": False,
                 "activation_performed": False,
