@@ -162,21 +162,46 @@ def runtime_fingerprint(workspace: EvolutionWorkspace, name: str) -> str:
 
 
 def expired_attestation_evidence(
-    workspace: EvolutionWorkspace, name: str, *, now: int | None = None,
+    workspace: EvolutionWorkspace, name: str, *, grant: dict,
+    now: int | None = None,
 ) -> bool:
-    """Only classify an existing bounded proof as stale, never authorize it.
+    """Recognize *signed* expired Windows evidence solely for fresh re-attestation.
 
-    The independent attestor MUST perform a fresh signed MCP handshake before
-    any new capability can activate. Arbitrary quarantine markers are not
-    eligible for expiry recovery.
+    This never authorizes an expired tool. A valid, current Owner grant and
+    pinned Ed25519 attestor must corroborate the old exact-source observation.
     """
+    import base64
+    from cryptography.exceptions import InvalidSignature
+    from aura_core.evolution.activation_delegation import canonical
+    from aura_core.evolution.windows_job_mcp import (
+        LOCAL_DOMAIN, LOCAL_SCHEMA, LOCAL_POLICY_SHA256, LOCAL_TESTS_SHA256,
+    )
+
     path = workspace.root / "verified" / name / "independent-attestations.json"
+    keyfile = workspace.root / "trust" / "sandbox-attestor.pub.pem"
+    source = workspace.root / "verified" / name / "source.zip"
     try:
-        if path.is_symlink() or not path.is_file() or path.stat().st_size > _TOOL_LIMIT_BYTES:
+        if (not isinstance(grant, dict)
+                or grant.get("allow_local_windows_process") is not True
+                or path.is_symlink() or not path.is_file()
+                or path.stat().st_size > _TOOL_LIMIT_BYTES
+                or keyfile.is_symlink() or not keyfile.is_file()
+                or keyfile.stat().st_size > 512
+                or source.is_symlink() or not source.is_file()):
             return False
+        key = serialization.load_pem_public_key(keyfile.read_bytes())
+        if not isinstance(key, Ed25519PublicKey):
+            return False
+        raw = key.public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw)
+        if hashlib.sha256(raw).hexdigest() != grant.get("attestor_key_sha256"):
+            return False
+        owner_hash = hashlib.sha256(canonical(grant)).hexdigest()
+        source_hash = hashlib.sha256(source.read_bytes()).hexdigest()
         bundle = json.loads(path.read_text("utf-8"))
         if (not isinstance(bundle, dict) or bundle.get("schema") != _SCHEMA
                 or bundle.get("repository") != name.replace("__", "/")
+                or bundle.get("execution_profile") != "windows-job-stdio"
+                or not _SHA.fullmatch(str(bundle.get("runtime_tree_sha256", "")))
                 or not isinstance(bundle.get("tools"), list)
                 or not 1 <= len(bundle["tools"]) <= 64):
             return False
@@ -184,13 +209,32 @@ def expired_attestation_evidence(
         for row in bundle["tools"]:
             if not isinstance(row, dict) or not isinstance(row.get("attestation"), dict):
                 return False
-            claims = row["attestation"].get("claims")
-            if (not isinstance(claims, dict)
+            evidence = row["attestation"]
+            claims = evidence.get("claims")
+            if (evidence.get("schema") != LOCAL_SCHEMA
+                    or evidence.get("key_id") != "operator_attestor"
+                    or not isinstance(claims, dict)
+                    or claims.get("schema") != LOCAL_SCHEMA
+                    or claims.get("owner_grant_sha256") != owner_hash
+                    or claims.get("source_sha256") != source_hash
+                    or claims.get("runtime_tree_sha256") != bundle["runtime_tree_sha256"]
+                    or claims.get("policy_sha256") != LOCAL_POLICY_SHA256
+                    or claims.get("tests_sha256") != LOCAL_TESTS_SHA256
+                    or type(claims.get("issued_at")) is not int
                     or type(claims.get("expires_at")) is not int
+                    or not 0 < claims["expires_at"] - claims["issued_at"] <= 600
                     or claims["expires_at"] > current):
                 return False
+            signature = base64.b64decode(evidence["signature_b64"], validate=True)
+            if len(signature) != 64:
+                return False
+            payload = json.dumps(
+                claims, sort_keys=True, separators=(",", ":"), ensure_ascii=True,
+            ).encode("ascii")
+            key.verify(signature, LOCAL_DOMAIN + payload)
         return True
-    except (OSError, ValueError, TypeError, PermissionError):
+    except (OSError, ValueError, TypeError, PermissionError, KeyError,
+            InvalidSignature, UnicodeError):
         return False
 
 
@@ -578,7 +622,7 @@ class DelegatedMCPActivationManager:
                         or (
                             local_signed
                             and "Local Windows MCP candidate quarantined by independent attestor" in str(exc)
-                            and expired_attestation_evidence(self.workspace, name)
+                            and expired_attestation_evidence(self.workspace, name, grant=grant)
                         )
                     )
                     self._persist(
