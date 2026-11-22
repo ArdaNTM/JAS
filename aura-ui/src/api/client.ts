@@ -509,3 +509,32 @@ export function getVerifiedEvolutionPackages(): Promise<{
 }> {
   return request("/api/evolution/discovery/verified", { method: "GET", cache: "no-store" });
 }
+
+
+export interface ContinuousEvolutionStatus {
+  state: "RUNNING" | "IDLE";
+  active_sources: string[];
+  scanned_candidates: number;
+  queued_packages: number;
+  active_count: number;
+  recent_active: string[];
+  proposal_count: number;
+  static_ready_count: number;
+  cycles: number;
+  last_run: number;
+  last_error: string;
+  last_summary: { new_count?: number; staged_count?: number; failed_sources?: number };
+  owner_delegation_required: true;
+  independent_attestation_required: true;
+  gateway_required: true;
+}
+
+export function getContinuousEvolutionStatus(): Promise<ContinuousEvolutionStatus> {
+  return request("/api/evolution/continuous/status", { method: "GET", cache: "no-store" });
+}
+
+export function setContinuousEvolution(enabled: boolean): Promise<ContinuousEvolutionStatus> {
+  return request("/api/evolution/continuous/" + (enabled ? "start" : "stop"), {
+    method: "POST", body: "{}", credentials: "same-origin",
+  });
+}
