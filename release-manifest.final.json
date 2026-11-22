@@ -3,9 +3,9 @@
   "version": "1.0.0-final",
   "status": "production-locked",
   "generated_at": "2026-11-22T06:55:00.000Z",
-  "git_commit": "d6e3248f251011a5b00b6ca9708d0bcab4644020",
+  "git_commit": "fdedf20799d5ba65169b66600a9bad6e24611391",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:0ba8ed210ac541d90d947cbf83121f1e99ad9eac3091c68e5b53f293e4b3aa05",
+  "release_digest": "sha256:ff89c2869543cec43d3b14f6a9b17a3b05160809a837bd8c741b49cee1883565",
   "file_count": 464,
   "files": [
     {
@@ -366,7 +366,7 @@
     },
     {
       "path": "core/src/aura_core/application/api.py",
-      "sha256": "2b228a1b3532c6d1af6d9319b0d74d52f94056a5b418a56fc200b1aee5e75546"
+      "sha256": "0e3e06f62763d40a42a3fb6be63f5ab783c8516f82a591288513ba151a9fa021"
     },
     {
       "path": "core/src/aura_core/application/approval_api.py",
@@ -1054,7 +1054,7 @@
     },
     {
       "path": "core/src/aura_core/kernel/permissions.py",
-      "sha256": "73d0008e0fc775471632f1fc269a2f9e47ca988301e37c69a715b2caa76881d3"
+      "sha256": "33777ddb421a873753cdc1e63fc9c32cd01b3370fc165b24e3ae8b3fc40d8035"
     },
     {
       "path": "core/src/aura_core/kernel/runtime.py",
@@ -1806,7 +1806,7 @@
     },
     {
       "path": "core/tests/test_evolution_windows_live_recovery.py",
-      "sha256": "00f4e9e1accbcd6076573598a479ccbe884ceff2ac771814b695aad45a9f7446"
+      "sha256": "83bc7a76c96f4a08e59d86bac1fa50f52bab7c18fe9d0a40518f43647e740186"
     },
     {
       "path": "core/tests/test_osworld_secure_live.py",
