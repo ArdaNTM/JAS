@@ -52,6 +52,10 @@ def choose_python_entrypoint(files: dict[str, bytes], hint: str) -> str:
     )
     if len(projects) > 16:
         raise SandboxUntrusted("Too many Python project metadata files")
+    # Evaluate all safe PEP-621 script targets before choosing. The first
+    # command is often a generic CLI (e.g. projectmem.cli), not its stdio MCP
+    # server (projectmem.mcp_server). Preserve declaration order on ties.
+    script_targets: list[tuple[int, str]] = []
     for config in projects:
         if len(files[config]) > 128_000:
             raise SandboxUntrusted("Oversized pyproject metadata")
@@ -81,7 +85,20 @@ def choose_python_entrypoint(files: dict[str, bytes], hint: str) -> str:
                         f"{module}/__main__.py"):
                 path = prefix + rel
                 if path in files and path.count("/") <= 10:
-                    return path
+                    source = files[path]
+                    if len(source) > 512_000:
+                        continue
+                    markers = any(token in source for token in (
+                        b"FastMCP", b"MCPServer", b"mcp.server", b"Server(",
+                    ))
+                    mcp_named = ("mcp" in name.lower()
+                                 or "mcp" in target.group(1).lower())
+                    script_targets.append((
+                        2 * int(markers) + int(mcp_named), path,
+                    ))
+                    break
+    if script_targets:
+        return max(script_targets, key=lambda candidate: candidate[0])[1]
 
     priority = ("server.py", "main.py", "mcp_server.py", "__main__.py")
     candidates = ([hint] if isinstance(hint, str) and hint in files
