@@ -176,3 +176,26 @@ def test_owner_cli_invalid_delegation_denied(categories, days):
             Ed25519PrivateKey.generate(), categories=categories,
             duration_seconds=days, issued_at=100,
         )
+
+
+def test_runtime_preparation_respects_combined_evolution_quota(tmp_path):
+    workspace = EvolutionWorkspace(tmp_path / "outside", max_bytes=1_000_000)
+    name, _ = _candidate(workspace)
+    worker = IsolatedMCPPreflight(
+        workspace, image="example/mcp@sha256:" + "a" * 64,
+    )
+    (worker.runtime_root / "occupied.bin").write_bytes(b"x" * 999_000)
+    with pytest.raises(SandboxUntrusted, match="quota"):
+        worker.prepare(name)
+    assert not (worker.runtime_root / name).exists()
+
+
+def test_runtime_preparation_respects_package_count(tmp_path):
+    workspace = EvolutionWorkspace(tmp_path / "outside", max_items=1)
+    name, _ = _candidate(workspace)
+    worker = IsolatedMCPPreflight(
+        workspace, image="example/mcp@sha256:" + "a" * 64,
+    )
+    (worker.runtime_root / "other-package").mkdir()
+    with pytest.raises(SandboxUntrusted, match="package quota"):
+        worker.prepare(name)
