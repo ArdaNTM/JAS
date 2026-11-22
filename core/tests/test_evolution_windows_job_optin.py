@@ -123,11 +123,11 @@ def test_windows_job_object_real_mcp_initialize_and_tools_list(tmp_path):
     from aura_core.mcp.connection import MCPConnection
     server = tmp_path / "server.py"
     server.write_text(
-        "from mcp.server.fastmcp import FastMCP\\n"
-        "mcp = FastMCP('job-sandbox-test')\\n"
-        "@mcp.tool()\\n"
-        "def hello() -> str: return 'hello'\\n"
-        "if __name__ == '__main__': mcp.run(transport='stdio')\\n",
+        "from mcp.server.fastmcp import FastMCP\n"
+        "mcp = FastMCP('job-sandbox-test')\n"
+        "@mcp.tool()\n"
+        "def hello() -> str: return 'hello'\n"
+        "if __name__ == '__main__': mcp.run(transport='stdio')\n",
         encoding="utf-8",
     )
 
