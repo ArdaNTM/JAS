@@ -29,7 +29,7 @@ from aura_core.evolution.sandbox_preflight import IsolatedMCPPreflight, SandboxU
 from aura_core.mcp.connection import MCPConnection
 
 LOCAL_SCHEMA = "aura.local-windows-job-mcp-attestation.v1"
-LOCAL_DOMAIN = b"AURA:LOCAL-WINDOWS-JOB-MCP-ATTESTATION:v1\\n"
+LOCAL_DOMAIN = b"AURA:LOCAL-WINDOWS-JOB-MCP-ATTESTATION:v1" + bytes([10])
 LOCAL_POLICY_SHA256 = hashlib.sha256(
     b"WINDOWS-JOB-MCP:v1|explicit-owner-consent|clean-env|CREATE_SUSPENDED|"
     b"job-kill-on-close|process-memory-256MiB|static-ast|stdio|20s-handshake|"
@@ -57,6 +57,10 @@ def static_python_entry(files: dict[str, bytes], hint: str) -> str:
         if isinstance(node, (ast.Import, ast.ImportFrom))
         for alias in node.names
     }
+    modules = {
+        node.module for node in ast.walk(tree)
+        if isinstance(node, ast.ImportFrom) and isinstance(node.module, str)
+    }
     fastmcp = "FastMCP" in symbols
     declared_tools = any(
         isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
@@ -68,7 +72,10 @@ def static_python_entry(files: dict[str, bytes], hint: str) -> str:
         )
         for node in ast.walk(tree)
     )
-    if not fastmcp or not declared_tools or not ("mcp" in imports or "fastmcp" in imports):
+    if (not fastmcp or not declared_tools or
+        not any(name == "mcp" or name.startswith("mcp.") or
+                name == "fastmcp" or name.startswith("fastmcp.")
+                for name in imports | modules)):
         raise SandboxUntrusted("AST lacks a declared FastMCP server and tool decorators")
     return entry
 
@@ -221,7 +228,7 @@ def _bridge(runtime: Path, entry: str) -> int:
     import tempfile
 
     if (not runtime.is_absolute() or runtime.is_symlink() or
-        not re.fullmatch(r"[A-Za-z0-9_./-]{1,150}\\.py", entry) or
+        not re.fullmatch(r"[A-Za-z0-9_./-]{1,150}\.py", entry) or
         ".." in Path(entry).parts or not (runtime / entry).is_file()):
         return 2
 
@@ -325,12 +332,13 @@ def _bridge(runtime: Path, entry: str) -> int:
         scratch = Path(tempfile.gettempdir()) / "aura-local-mcp"
         scratch.mkdir(parents=True, exist_ok=True)
         env["TEMP"] = env["TMP"] = str(scratch)
-        packed = "\\x00".join(f"{k}={v}" for k, v in sorted(env.items(), key=lambda p: p[0].lower())) + "\\x00\\x00"
+        packed = chr(0).join(f"{k}={v}" for k, v in sorted(env.items(), key=lambda p: p[0].lower())) + chr(0) * 2
+        packed_buffer = ctypes.create_unicode_buffer(packed)
         cmd = ctypes.create_unicode_buffer(subprocess.list2cmdline(
             [sys.executable, "-B", "-s", "-u", str(runtime / entry)]))
         if not kernel.CreateProcessW(sys.executable, cmd, None, None, True,
                                     0x4 | 0x08000000 | 0x400,
-                                    ctypes.c_wchar_p(packed), str(runtime),
+                                    ctypes.cast(packed_buffer, ctypes.c_void_p), str(runtime),
                                     ctypes.byref(si), ctypes.byref(pi)):
             raise OSError("Suspended MCP process creation failed")
         owned.extend([pi.hProcess, pi.hThread])
