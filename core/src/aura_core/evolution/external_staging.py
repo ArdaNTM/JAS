@@ -88,7 +88,7 @@ _PAID = re.compile(
     r"BASECAMP_ACCESS_TOKEN|paid\s+(?:subscription|api\s+key)\s+required)",
 )
 _ENTRY = (
-    "pyproject.toml", "package.json", "server.py", "main.py",
+    "pyproject.toml", "package.json", "server.py", "main.py", "__main__.py",
     "mcp_server.py", "index.ts", "index.js", "index.mjs", "index.cjs",
 )
 _MIB = 1024 * 1024
@@ -471,6 +471,7 @@ def _validated_files(
             path for path, data in result.items()
             if PurePosixPath(path).suffix.lower() in _SOURCE_SUFFIXES
             and ("FastMCP" in data.decode("utf-8") or
+                 "MCPServer" in data.decode("utf-8") or
                  "@modelcontextprotocol/sdk" in data.decode("utf-8"))
         )
     if not entrypoints:
