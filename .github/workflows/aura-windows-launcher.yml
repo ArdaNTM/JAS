@@ -26,6 +26,8 @@ on:
       # Evolution static staging must keep the shipped Windows UI build/audit green.
       - "core/src/aura_core/evolution/external_staging.py"
       - "core/src/aura_core/evolution/self_discovery.py"
+      - "core/src/aura_core/evolution/decision_engine.py"
+      - "core/src/aura_core/evolution/self_discovery_api.py"
       - "core/src/aura_core/tts/**"
       - "aura-ui/tests/aura-proxy.test.mjs"
       - ".github/workflows/aura-windows-launcher.yml"
@@ -57,6 +59,8 @@ on:
       # Evolution static staging must keep the shipped Windows UI build/audit green.
       - "core/src/aura_core/evolution/external_staging.py"
       - "core/src/aura_core/evolution/self_discovery.py"
+      - "core/src/aura_core/evolution/decision_engine.py"
+      - "core/src/aura_core/evolution/self_discovery_api.py"
       - "core/src/aura_core/tts/**"
       - "aura-ui/tests/aura-proxy.test.mjs"
       - ".github/workflows/aura-windows-launcher.yml"
