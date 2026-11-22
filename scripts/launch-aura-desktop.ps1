@@ -654,9 +654,12 @@ $ownerPin = [Environment]::GetEnvironmentVariable("AURA_EVOLUTION_DELEGATION_KEY
 if ($ownerPin -match '^[0-9a-f]{64}$') {
     $env:AURA_EVOLUTION_DELEGATION_KEY_SHA256 = $ownerPin
     try {
+        # The verifier itself requires this flag, but only signed Owner
+        # claims can keep it enabled after the independent verification.
+        $env:AURA_EVOLUTION_AUTO_ACTIVATE = "1"
         & $Python -m aura_core.evolution.activation_delegation --verify --evolution-root $env:AURA_EVOLUTION_ROOT 2>$null | Out-Null
-        if ($LASTEXITCODE -eq 0) {
-            $env:AURA_EVOLUTION_AUTO_ACTIVATE = "1"
+        if ($LASTEXITCODE -ne 0) {
+            $env:AURA_EVOLUTION_AUTO_ACTIVATE = "0"
         }
     }
     catch {
