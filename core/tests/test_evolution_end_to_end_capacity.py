@@ -53,6 +53,7 @@ def _legitimate_archive():
         "tests/test_unsafe.py": b"eval(base64.b64decode('code'))",
         "docs/repeated.md": b"static API docs",
         ".github/workflows/build.yml": b"name: malicious-examples-ignored",
+        "dist/app.min.js": b"eval(base64.b64decode('malicious-doc-example'))",
     }
     for n in range(2100):
         files[f"docs/page-{n:04d}.md"] = f"documentation {n}".encode()
@@ -238,3 +239,44 @@ def test_gh_token_fallback(monkeypatch):
     monkeypatch.delenv("GITHUB_TOKEN", raising=False)
     monkeypatch.setenv("GH_TOKEN", "gh_example_token")
     assert _github_token() == "gh_example_token"
+
+
+def test_legacy_static_false_positive_is_retried_once_without_activation(tmp_path):
+    workspace = EvolutionWorkspace(tmp_path / "outside")
+    calls = []
+
+    class Gateway:
+        async def invoke(self, request):
+            if request.capability_id == CAPABILITY_ID:
+                return SimpleNamespace(decision=AuthorizationDecision.ALLOW, result={"items": []})
+            assert request.capability_id == STAGE_CAPABILITY
+            calls.append(request)
+            return SimpleNamespace(decision=AuthorizationDecision.ALLOW, result={
+                "repository": request.arguments["repository"],
+                "status": "READY_FOR_OWNER_REVIEW", "source_sha256": "a" * 64,
+                "sandbox_attested": False, "activation_performed": False,
+                "execution_allowed": False,
+            })
+
+    engine = SelfDiscoveryEngine(
+        gateway=Gateway(), db_path=workspace.root / "catalog" / "proposals.sqlite3",
+        workspace=workspace, auto_stage=True,
+    )
+    with sqlite3.connect(engine._db_path) as db:
+        db.execute(
+            "INSERT INTO evolution_proposals "
+            "(proposal_id,repository,url,description,license,capability_hint,created_at,stars,"
+            "package_status,package_error,stage_attempts) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+            ("legacy", "local/fastmcp", "https://github.com/local/fastmcp",
+             "Fully local offline", "MIT", "MCP", 1.0, 80,
+             "STAGING_REJECTED", "Static risk/paid API signature detected", 6),
+        )
+    report = asyncio.run(engine.run_once())
+    assert report["verified_count"] == 1
+    assert report["activation_performed"] is False
+    assert engine.proposals()[0]["package_status"] == "READY_FOR_OWNER_REVIEW"
+    assert engine.proposals()[0]["stage_attempts"] == 7
+    assert len(calls) == 1
+    assert asyncio.run(engine.run_once())["staging_attempted"] == 0
+    assert len(calls) == 1
+    assert json.loads(workspace.active.read_text())["active"] == []
