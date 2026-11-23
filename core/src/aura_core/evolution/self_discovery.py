@@ -665,9 +665,44 @@ class SelfDiscoveryEngine:
             return report
         from aura_core.evolution.external_staging import (
             CAPABILITY as STAGE_CAPABILITY, TOOL as STAGE_TOOL,
-            staging_scope,
+            staging_scope, _archive_budget,
         )
         with self._connect() as db:
+            # A READY database label is not static proof if its pinned ZIP was
+            # pruned or modified. Requeue metadata only; the normal Gateway
+            # staging path must download and validate the archive again.
+            ready = db.execute(
+                "SELECT repository,source_sha256 FROM evolution_proposals "
+                "WHERE status='pending_owner_review' "
+                "AND package_status='READY_FOR_OWNER_REVIEW'"
+            ).fetchall()
+            for repository, expected_sha in ready:
+                if not _valid_repository(repository):
+                    continue
+                archive = (self.workspace.root / "verified" /
+                           repository.replace("/", "__") / "source.zip")
+                stale = archive.is_symlink() or not archive.is_file()
+                if not stale:
+                    try:
+                        if (not isinstance(expected_sha, str)
+                                or not re.fullmatch(r"[0-9a-f]{64}", expected_sha)
+                                or archive.stat().st_size > _archive_budget()):
+                            stale = True
+                        else:
+                            digest = hashlib.sha256()
+                            with archive.open("rb") as stream:
+                                while chunk := stream.read(1024 * 1024):
+                                    digest.update(chunk)
+                            stale = digest.hexdigest() != expected_sha
+                    except OSError:
+                        stale = True
+                if stale:
+                    db.execute(
+                        "UPDATE evolution_proposals SET package_status=NULL,"
+                        "source_sha256=NULL,package_error=NULL "
+                        "WHERE repository=? AND package_status='READY_FOR_OWNER_REVIEW'",
+                        (repository,),
+                    )
             rows = db.execute(
                 "SELECT repository,description,stars,size_kb,package_error,package_status "
                 "FROM evolution_proposals "
