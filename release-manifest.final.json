@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-23T07:41:32.485Z",
-  "git_commit": "60fc4eeda28f7b9a18892752492fad1ad99c3357",
+  "generated_at": "2026-11-23T07:44:24.865Z",
+  "git_commit": "3c4e049946361b549c4eee0352a4f121e3c85fe4",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:06ef0d05a400cdd94d379a5916924b954e6c6cbb73f01a410582772ab3abb36c",
+  "release_digest": "sha256:e20d01d7ff83ca75cdbbe2926a5e9e432c49407ce34380bfa5deb0ba1d1360fb",
   "file_count": 465,
   "files": [
     {
@@ -366,7 +366,7 @@
     },
     {
       "path": "core/src/aura_core/application/api.py",
-      "sha256": "8290d5b789d13fc6e6739e61e865cb1d21f11feb1597e36d7a27f49c2b8422f8"
+      "sha256": "5560c21919ee94a7b07d975cbbca0f38df4c34ac97af4292659a5cf3075126c0"
     },
     {
       "path": "core/src/aura_core/application/approval_api.py",
