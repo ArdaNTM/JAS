@@ -304,6 +304,37 @@ class IndependentMCPAttestorWorker:
         grant = self._delegation.verified_grant()
         if grant is None:
             return []
+        # Permanent incompatibilities/revocations are the only reclaimable
+        # runtime owners. A quota-deferred package keeps all source/evidence
+        # until this independent operator can safely reobserve and sign it.
+        prune = getattr(self.workspace, "prune_permanent_evolution_artifacts", None)
+        if callable(prune):
+            try:
+                prune()
+            except (OSError, ValueError, PermissionError):
+                return []
+        inventory_path = self.workspace.root / "active_capabilities.json"
+        denied: set[str] = set()
+        try:
+            if inventory_path.exists():
+                if (inventory_path.is_symlink()
+                        or inventory_path.stat().st_size > 200_000):
+                    return []
+                inventory = json.loads(inventory_path.read_text("utf-8"))
+                if (not isinstance(inventory, dict)
+                        or inventory.get("schema") != "aura.external-capabilities.v1"
+                        or not isinstance(inventory.get("active"), list)):
+                    return []
+                for item in inventory["active"]:
+                    if not isinstance(item, dict):
+                        return []
+                    if (item.get("status") == "REVOKED"
+                            or item.get("reason_code") in {
+                                "PROVIDER_FAILED_OR_REVOKED", "OWNER_REVOKED",
+                            }):
+                        denied.add(item.get("repository"))
+        except (OSError, ValueError, TypeError):
+            return []
         records = []
         local_allowed = (os.name == "nt" and
                          grant.get("allow_local_windows_process", False) is True)
@@ -313,6 +344,8 @@ class IndependentMCPAttestorWorker:
             if decision.status != "AUTO_APPROVED_BY_POLICY":
                 continue
             package = decision.repository.replace("/", "__")
+            if decision.repository in denied:
+                continue
             quarantine = self.workspace.root / "verified" / package / "local-windows-quarantined.json"
             retries = 0
             if quarantine.exists() or quarantine.is_symlink():
@@ -342,25 +375,34 @@ class IndependentMCPAttestorWorker:
                         )
                         and expired_attestation_evidence(self.workspace, package, grant=grant)
                     )
-                    if not expiry_refresh and not _eligible_local_recovery(previous):
+                    quota_deferred = (
+                        previous.get("status") == "QUARANTINED"
+                        and previous.get("reason_code") == "SandboxUntrusted"
+                        and previous.get("detail") ==
+                        "Evolution combined storage quota reached"
+                    )
+                    if (not quota_deferred and not expiry_refresh
+                            and not _eligible_local_recovery(previous)):
                         continue
-                    # Retain a fail-closed marker until fresh independent
-                    # initialize/tools-list and signatures are fully written.
-                    self._quarantine_record(package, {
-                        "status": "RETRYING", "reason_code": (
-                            "ATTESTATION_REFRESH" if expiry_refresh else "DEPENDENCY_RECOVERY"
-                        ),
-                        "detail": (
-                            "Expired evidence requires a fresh signed MCP observation"
-                            if expiry_refresh else
-                            "One-time post-upgrade isolated environment retry"
-                        ),
-                        "stderr_tail": "",
-                        "retry_count": retries if expiry_refresh else retries + 1,
-                        "recovery_epoch": recovery_epoch,
-                    })
-                    if not expiry_refresh:
-                        retries += 1
+                    if not quota_deferred:
+                        # A quota shortage is NOT a permanent SDK retry.
+                        # Keep its quarantine intact until fully signed
+                        # evidence is atomically replaced by the attestor.
+                        self._quarantine_record(package, {
+                            "status": "RETRYING", "reason_code": (
+                                "ATTESTATION_REFRESH" if expiry_refresh else "DEPENDENCY_RECOVERY"
+                            ),
+                            "detail": (
+                                "Expired evidence requires a fresh signed MCP observation"
+                                if expiry_refresh else
+                                "One-time post-upgrade isolated environment retry"
+                            ),
+                            "stderr_tail": "",
+                            "retry_count": retries if expiry_refresh else retries + 1,
+                            "recovery_epoch": recovery_epoch,
+                        })
+                        if not expiry_refresh:
+                            retries += 1
                 except (OSError, ValueError, TypeError, PermissionError):
                     continue
             try:

@@ -239,6 +239,13 @@ class IsolatedMCPPreflight:
         if (type(additional_bytes) is not int or additional_bytes < 0
                 or type(baseline_bytes) is not int or baseline_bytes < 0):
             raise SandboxUntrusted("Invalid evolution storage reservation")
+        # Before counting local Windows venv trees, reclaim only definitively
+        # terminal packages. Owner-revoked / incompatible evidence stays
+        # quarantined and auditable; no live or recoverable runtime is touched.
+        try:
+            self.workspace.prune_permanent_evolution_artifacts()
+        except (OSError, ValueError, StagingRejected) as exc:
+            raise SandboxUntrusted("Unsafe evolution quota cleanup evidence") from exc
         existing = self.runtime_root / reattesting_package if reattesting_package else None
         if reattesting_package is not None:
             if baseline_bytes <= 0:

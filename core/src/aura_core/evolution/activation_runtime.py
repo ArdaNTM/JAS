@@ -323,6 +323,8 @@ class DelegatedMCPActivationManager:
         self.decisions = EvolutionDecisionEngine(workspace)
         self.tools = MCPToolRegistry(event_bus=kernel.event_bus)
         self._active: dict[str, _Live] = {}
+        # Only live during a validated recovery scan, never a persisted grant.
+        self._recovering: set[str] = set()
         self._lock = asyncio.Lock()
         self._factory = provider_factory
         self._inventory = workspace.active
@@ -430,8 +432,37 @@ class DelegatedMCPActivationManager:
         except (OSError, ValueError, PermissionError, TypeError):
             return False
 
+    def _recovery_authorized(self, name: str, grant: dict) -> bool:
+        """Allow the initial signed tools/list handshake, not normal tool calls.
+
+        The previous recoverable QUARANTINED inventory row remains in place
+        until _register has installed Gateway policy and persisted ACTIVE.
+        This exception exists only inside scan's in-memory recovery window;
+        it never turns an Owner revoke or attestor quarantine into permission.
+        """
+        if (name not in self._recovering
+                or self.delegation.verified_grant() != grant):
+            return False
+        marker = self.workspace.root / "verified" / name / "local-windows-quarantined.json"
+        if marker.exists() or marker.is_symlink():
+            return False
+        try:
+            rows = [row for row in self._load_inventory()["active"]
+                    if isinstance(row, dict)
+                    and row.get("repository") == name.replace("__", "/")]
+            return (
+                len(rows) == 1
+                and rows[0].get("status") == "QUARANTINED"
+                and rows[0].get("reason_code") not in {
+                    "PROVIDER_FAILED_OR_REVOKED", "OWNER_REVOKED",
+                }
+            )
+        except (OSError, ValueError, TypeError, PermissionError):
+            return False
+
     async def _connect(self, name: str, grant: dict, entry: str, expires_at: int,
-                       execution_profile: str = "docker-stdio"):
+                       execution_profile: str = "docker-stdio",
+                       recovery: bool = False):
         runtime = self.workspace.root / "runtime" / name
         if self._factory is not None:
             return await self._factory(name, grant, entry)
@@ -459,14 +490,18 @@ class DelegatedMCPActivationManager:
                 connection, runtime=runtime, archive_sha256="",
                 workspace=self.workspace, package=name,
                 on_failure=lambda key: asyncio.create_task(self.quarantine(key)),
-                owner_authorized=lambda: self._still_authorized(name),
+                owner_authorized=lambda: (
+                    self._still_authorized(name)
+                    or (recovery and self._recovery_authorized(name, grant))
+                ),
                 attestation_expires_at=expires_at,
             )
         except BaseException:
             await connection.close()
             raise
 
-    async def _verify_and_connect(self, name: str, grant: dict):
+    async def _verify_and_connect(self, name: str, grant: dict, *,
+                                  recovery: bool = False):
         # Independent attestor quarantine must take precedence over a missing
         # prepared runtime. Evidence presence/shape is checked before invoking
         # the static candidate / runtime-tree checks, which may themselves fail
@@ -559,7 +594,10 @@ class DelegatedMCPActivationManager:
                               for name, tool in expected.items()}) > _MAX_SCHEMA_JSON_BYTES:
             raise PermissionError("Signed MCP schemas exceed delegated size budget")
         expiry = min(expiries)
-        provider = await self._connect(name, grant, entry, expiry, execution_profile=profile)
+        provider = await self._connect(
+            name, grant, entry, expiry,
+            execution_profile=profile, recovery=recovery,
+        )
         try:
             tools = await asyncio.wait_for(provider.list_tools(), timeout=6)
             if (len(tools) != len(expected)
@@ -708,8 +746,12 @@ class DelegatedMCPActivationManager:
                 if attempted >= max(1, min(3, limit)):
                     continue
                 attempted += 1
+                if recovery:
+                    self._recovering.add(name)
                 try:
-                    details, provider, tools, proofs, expiry = await self._verify_and_connect(name, grant)
+                    details, provider, tools, proofs, expiry = await self._verify_and_connect(
+                        name, grant, recovery=recovery,
+                    )
                     await self._register(name, details, provider, tools, proofs, expiry)
                     successes.append(decision.repository)
                     existing = existing | {decision.category}
@@ -735,6 +777,10 @@ class DelegatedMCPActivationManager:
                         reason_detail=self._reason_detail(exc),
                         recovery_version=1 if recovery else 0,
                     )
+                finally:
+                    # Once registered, _still_authorized is the ONLY provider
+                    # authorization predicate. Re-quarantine remains fail-closed.
+                    self._recovering.discard(name)
         return successes
 
     async def _register(self, name, decision, provider, tools, proofs, expiry):

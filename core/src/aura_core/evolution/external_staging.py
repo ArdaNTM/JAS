@@ -193,7 +193,7 @@ class EvolutionWorkspace:
         if max_items is None:
             max_items = _budget("AURA_EVOLUTION_MAX_ITEMS", 100, 1, 250)
         if max_bytes is None:
-            max_bytes = _budget("AURA_EVOLUTION_MAX_BYTES", 5 * _GIB,
+            max_bytes = _budget("AURA_EVOLUTION_MAX_BYTES", 8 * _GIB,
                                 1_000_000, 10 * _GIB)
         if not 1 <= max_items <= 250 or not 1_000_000 <= max_bytes <= 10 * _GIB:
             raise ValueError("Invalid evolution capacity budget")
@@ -382,6 +382,111 @@ class EvolutionWorkspace:
             removed += 1
         return removed
 
+    def prune_permanent_evolution_artifacts(self, *, max_packages: int = 12) -> int:
+        """Bounded removal of terminal runtimes and needless source archives.
+
+        Never remove ACTIVE, unclassified or recoverable quarantines, signed
+        receipts, manifests, Owner data, or a package with ambiguous inventory
+        state. Only exact terminal reasons recorded in trusted local metadata
+        permit deletion; links/junctions fail closed before any removal.
+        """
+        if type(max_packages) is not int or not 1 <= max_packages <= 12:
+            raise StagingRejected("Invalid permanent-artifact prune budget")
+        verified = self.root / "verified"
+        runtime = self.root / "runtime"
+        _checked_path(verified)
+        if runtime.exists() or runtime.is_symlink():
+            _checked_path(runtime)
+            if not runtime.is_dir():
+                raise StagingRejected("Unsafe evolution runtime root")
+        if (self.active.is_symlink() or not self.active.is_file()
+                or self.active.stat().st_size > 200_000):
+            raise StagingRejected("Unsafe active inventory for quota cleanup")
+        inventory = json.loads(self.active.read_text("utf-8"))
+        if (not isinstance(inventory, dict)
+                or inventory.get("schema") != "aura.external-capabilities.v1"
+                or not isinstance(inventory.get("active"), list)
+                or len(inventory["active"]) > self.max_items):
+            raise StagingRejected("Untrusted activation inventory for quota cleanup")
+        statuses = {}
+        for row in inventory["active"]:
+            if (not isinstance(row, dict)
+                    or not _valid_repository(row.get("repository"))):
+                raise StagingRejected("Invalid quota cleanup inventory row")
+            repository = row["repository"]
+            if repository in statuses:
+                raise StagingRejected("Duplicate quota cleanup inventory row")
+            statuses[repository] = row
+        terminal_reasons = {
+            "PythonVersionIncompatible", "StagingRejected",
+            "PROVIDER_FAILED_OR_REVOKED", "OWNER_REVOKED",
+        }
+        removed = 0
+        for package in sorted(verified.iterdir()):
+            if removed >= max_packages:
+                break
+            if package.is_symlink() or (hasattr(package, "is_junction") and package.is_junction()):
+                raise StagingRejected("Unsafe verified package link")
+            if not package.is_dir() or package.name.count("__") != 1:
+                continue
+            repository = package.name.replace("__", "/")
+            if not _valid_repository(repository):
+                continue
+            row = statuses.get(repository, {})
+            if row.get("status") == "ACTIVE":
+                continue
+            terminal = (
+                row.get("status") == "REVOKED"
+                or (row.get("status") == "QUARANTINED"
+                    and row.get("reason_code") in terminal_reasons)
+            )
+            marker = package / "local-windows-quarantined.json"
+            if marker.exists() or marker.is_symlink():
+                _checked_path(marker)
+                if not marker.is_file() or marker.stat().st_size > 2048:
+                    raise StagingRejected("Unsafe local quarantine record for cleanup")
+                reason = json.loads(marker.read_text("utf-8"))
+                if not isinstance(reason, dict):
+                    raise StagingRejected("Invalid local quarantine record for cleanup")
+                if (reason.get("status") == "QUARANTINED"
+                        and reason.get("reason_code") in terminal_reasons):
+                    terminal = True
+            if not terminal:
+                continue
+
+            current = runtime / package.name
+            archive = package / "source.zip"
+            # Validate BOTH candidates before deleting EITHER. Unknown links
+            # cannot be used to redirect cleanup beyond evolution storage.
+            if current.exists() or current.is_symlink():
+                _checked_path(current)
+                if not current.is_dir():
+                    raise StagingRejected("Invalid terminal runtime directory")
+                for folder, dirs, files in os.walk(current, followlinks=False):
+                    for name in dirs + files:
+                        child = Path(folder) / name
+                        if child.is_symlink() or (
+                            hasattr(child, "is_junction") and child.is_junction()
+                        ):
+                            raise StagingRejected("Unsafe terminal runtime link")
+            if archive.exists() or archive.is_symlink():
+                _checked_path(archive)
+                if not archive.is_file():
+                    raise StagingRejected("Unsafe terminal source archive")
+            changed = False
+            if current.is_dir():
+                shutil.rmtree(current)
+                changed = True
+            # Keep small source archives for postmortem review. Larger unused
+            # ZIPs are safely reclaimable only after a terminal classification.
+            if archive.is_file() and archive.stat().st_size >= _MIB:
+                archive.unlink()
+                changed = True
+            if changed:
+                removed += 1
+                self.audit(action="quota_prune", repository=repository, result="RECLAIMED")
+        return removed
+
     def _usage(self) -> int:
         total = 0
         for area in ("staging", "verified"):
@@ -407,6 +512,9 @@ class EvolutionWorkspace:
         if not verified.exists():
             if len(list((self.root / "verified").iterdir())) >= self.max_items:
                 raise StagingRejected("Evolution package count quota reached")
+        # Reclaim only terminal external artifacts before the combined quota
+        # check. Active or temporarily quota-deferred packages remain intact.
+        self.prune_permanent_evolution_artifacts()
         if self._usage() + additional_bytes > self.max_bytes:
             raise StagingRejected("Evolution storage size quota reached")
         return stage, verified
