@@ -700,8 +700,10 @@ class SelfDiscoveryEngine:
         ]
         candidates.sort(
             key=lambda row: (
-                # Existing active/budget queue takes precedence; legacy script
-                # false-positive retry is one-time and lower priority.
+                # Truly pending/NULL legacy items must outrank recoverable
+                # rejection retries, even when README/local ranks differ.
+                0 if row[4] is None else 1,
+                # Script false-positive retry remains lowest priority.
                 1 if row[4] == "Executable or suspicious archive content rejected" else 0,
                 _python_mcp_priority(row[0], row[1]),
                 0 if _local_rank(row[0], row[1], row[2]) >= 10 else 1,
