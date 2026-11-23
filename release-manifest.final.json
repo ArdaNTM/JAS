@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-23T07:44:24.865Z",
-  "git_commit": "3c4e049946361b549c4eee0352a4f121e3c85fe4",
+  "generated_at": "2026-11-23T08:34:21.017Z",
+  "git_commit": "9562ea33335c2f5c3b4f2e38f19dcd8ffe3c1d2c",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:e20d01d7ff83ca75cdbbe2926a5e9e432c49407ce34380bfa5deb0ba1d1360fb",
+  "release_digest": "sha256:119306e114a24e283c7ccc4643482214e87ca9b7affd88d2e9f8865d4a94dda3",
   "file_count": 465,
   "files": [
     {
@@ -366,7 +366,7 @@
     },
     {
       "path": "core/src/aura_core/application/api.py",
-      "sha256": "5560c21919ee94a7b07d975cbbca0f38df4c34ac97af4292659a5cf3075126c0"
+      "sha256": "00f961157348f6d346124c7acf64967d46992e63ebba908e86ad9c35ae62c515"
     },
     {
       "path": "core/src/aura_core/application/approval_api.py",
@@ -874,7 +874,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/activation_runtime.py",
-      "sha256": "4de055c8f5f010f64b385f7fe3b9a7df912c2eb45fd6fcd732b8e0049bc7eded"
+      "sha256": "0490e7f67ef4ea32871e6cb3e3e762f8954f5177899694d5a206f28702830992"
     },
     {
       "path": "core/src/aura_core/evolution/attestor_worker.py",
@@ -906,7 +906,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/external_staging.py",
-      "sha256": "ac236a263743fb14cc0acfd3802062e928fbd53739e5e92a742104bd901b0567"
+      "sha256": "32c76025a1f87f343ba1fe0f496b14c11f5d83f828e5447ae47e29f8588b3365"
     },
     {
       "path": "core/src/aura_core/evolution/goal_tree.py",
@@ -990,7 +990,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/self_discovery.py",
-      "sha256": "386d2bd4e100209971d73e4b0f4356f8893203e07bf46a5033347b77ad534ed2"
+      "sha256": "5b643bea2f1c0a8b379f3d26467c82b242da52203077c37d7855136d28ccad4e"
     },
     {
       "path": "core/src/aura_core/evolution/self_discovery_api.py",
