@@ -6,6 +6,7 @@ Ed25519 attestation, runtime fingerprint and MCPGateway policy are still real.
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import shutil
 from types import SimpleNamespace
@@ -115,25 +116,31 @@ def test_attestor_quarantine_takes_precedence_over_missing_runtime_and_bundle(
 
 
 class BoundedGateway:
-    def __init__(self):
+    def __init__(self, workspace):
         self.calls = []
+        self.workspace = workspace
     async def invoke(self, request):
         self.calls.append(request)
         if request.capability_id in (CAPABILITY_ID, CATALOG_CAPABILITY):
             return SimpleNamespace(decision=AuthorizationDecision.ALLOW, result={"items": []})
         assert request.capability_id == STAGE_CAPABILITY
         repo = request.arguments["repository"]
+        archive = (self.workspace.root / "verified" /
+                   repo.replace("/", "__") / "source.zip")
+        archive.parent.mkdir(parents=True, exist_ok=True)
+        archive.write_bytes(b"inert gateway fixture")
         return SimpleNamespace(decision=AuthorizationDecision.ALLOW, result={
             "repository": repo,
             "status": "READY_FOR_OWNER_REVIEW",
-            "source_sha256": "a" * 64, "sandbox_attested": False,
+            "source_sha256": hashlib.sha256(archive.read_bytes()).hexdigest(),
+            "sandbox_attested": False,
             "activation_performed": False, "execution_allowed": False,
         })
 
 
 def test_continuous_full_multisource_drains_six_legacy_nulls_per_cycle(tmp_path):
     workspace = EvolutionWorkspace(tmp_path / "evolution")
-    gateway = BoundedGateway()
+    gateway = BoundedGateway(workspace)
     engine = SelfDiscoveryEngine(
         gateway=gateway, db_path=workspace.root / "catalog" / "proposals.sqlite3",
         workspace=workspace, auto_stage=True,
