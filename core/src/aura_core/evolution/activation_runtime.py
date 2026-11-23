@@ -34,7 +34,7 @@ from aura_core.evolution.sandbox_preflight import (
     _MAX_TOOLS, _MAX_SCHEMA_JSON_BYTES, _schema_json_size,
 )
 from aura_core.evolution.windows_job_mcp import (
-    bridge_parameters, local_binding, verify_local,
+    bridge_parameters, local_binding, verify_local, local_mcp_state_root,
 )
 from aura_core.evolution.sandbox_attestor import (
     IndependentAttestationVerifier, SignedSandboxAttestation,
@@ -294,7 +294,11 @@ class DockerMCPProvider(MCPProvider):
         try:
             # Prevent host-side file mutation after signed sandbox evidence.
             runtime_fingerprint(self.workspace, self.package)
-            return await super().call_tool(name, arguments)
+            result = await super().call_tool(name, arguments)
+            # A stateful MCP may write into its isolated state folder, but
+            # never into independently signed runtime source or wheels.
+            runtime_fingerprint(self.workspace, self.package)
+            return result
         except Exception:
             self._healthy = False
             self._on_failure(self.package)
@@ -471,6 +475,10 @@ class DelegatedMCPActivationManager:
             if (os.name != "nt" or
                 grant.get("allow_local_windows_process", False) is not True):
                 raise PermissionError("Owner did not permit local Windows MCP process")
+            # Before launching a signed local process, validate its durable
+            # state destination is external to the immutable runtime tree.
+            # The bridge uses this directory as cwd; no Owner tokens enter it.
+            local_mcp_state_root(self.workspace, name)
             parameters = bridge_parameters(runtime, entry)
         elif execution_profile == "docker-stdio":
             docker = shutil.which("docker")
