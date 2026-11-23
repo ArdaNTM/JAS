@@ -288,19 +288,60 @@ class LocalWindowsMCPPreflight(IsolatedMCPPreflight):
             await connection.close()
 
 
-def _scrubbed_windows_mcp_environment(scratch: Path) -> dict[str, str]:
-    """Explicit allowlist: never copy Owner credentials or host user profile.
+def local_mcp_state_root(workspace: EvolutionWorkspace, package_name: str) -> Path:
+    """Persist MCP-local SQLite/state beside, NEVER inside, signed runtime.
 
-    The MCP/Python SDK expects a writable home/cache directory on Windows;
-    redirect those paths to this bounded, disposable job-local scratch root.
+    This selects an external writable location; Windows Job Objects are not
+    a filesystem sandbox. Reject links/junctions before using any path.
+    """
+    if (not re.fullmatch(r"[A-Za-z0-9_.-]+__[A-Za-z0-9_.-]+", package_name)
+            or ".." in package_name):
+        raise SandboxUntrusted("Invalid local MCP state identity")
+    root = workspace.root / "state"
+    if root.exists() or root.is_symlink():
+        _checked_path(root)
+        if not root.is_dir():
+            raise SandboxUntrusted("Unsafe local MCP state root")
+    else:
+        root.mkdir(parents=True)
+    _checked_path(root)
+    state = root / package_name
+    if state.exists() or state.is_symlink():
+        _checked_path(state)
+        if not state.is_dir():
+            raise SandboxUntrusted("Unsafe local MCP state directory")
+    else:
+        state.mkdir()
+    _checked_path(state)
+    if not state.resolve().is_relative_to(workspace.root.resolve()):
+        raise SandboxUntrusted("Local MCP state escapes Evolution root")
+    return state
+
+
+def _scrubbed_windows_mcp_environment(
+    scratch: Path, *, state: Path | None = None,
+) -> dict[str, str]:
+    """Allowlisted environment with durable package state and disposable TEMP.
+
+    Never pass Owner secrets or the caller's home. MCP data and XDG directories
+    reside in state/<pkg>, but temporary diagnostics remain in runtime-work.
     A Job Object is NOT a user-token/filesystem/network sandbox.
     """
     root = Path(os.environ.get("SystemRoot") or r"C:\Windows")
     scratch = Path(scratch).resolve()
-    roaming = scratch / "AppData" / "Roaming"
-    local = scratch / "AppData" / "Local"
-    roaming.mkdir(parents=True, exist_ok=True)
-    local.mkdir(parents=True, exist_ok=True)
+    home = Path(state).resolve() if state is not None else scratch
+    roaming = home / "AppData" / "Roaming"
+    local = home / "AppData" / "Local"
+    xdg_data = home / "xdg-data"
+    xdg_config = home / "xdg-config"
+    xdg_cache = home / "xdg-cache"
+    for path in (roaming, local, xdg_data, xdg_config, xdg_cache):
+        if path.exists() or path.is_symlink():
+            _checked_path(path)
+            if not path.is_dir():
+                raise SandboxUntrusted("Unsafe MCP state environment directory")
+        else:
+            path.mkdir(parents=True)
     return {
         "SystemRoot": str(root),
         "WINDIR": str(root),
@@ -309,11 +350,15 @@ def _scrubbed_windows_mcp_environment(scratch: Path) -> dict[str, str]:
             str(Path(sys.base_prefix)),
             str(root / "System32"),
         )),
-        "USERPROFILE": str(scratch),
-        "HOMEDRIVE": scratch.drive,
-        "HOMEPATH": str(scratch)[len(scratch.drive):],
+        "HOME": str(home),
+        "USERPROFILE": str(home),
+        "HOMEDRIVE": home.drive,
+        "HOMEPATH": str(home)[len(home.drive):],
         "APPDATA": str(roaming),
         "LOCALAPPDATA": str(local),
+        "XDG_DATA_HOME": str(xdg_data),
+        "XDG_CONFIG_HOME": str(xdg_config),
+        "XDG_CACHE_HOME": str(xdg_cache),
         "TEMP": str(scratch),
         "TMP": str(scratch),
         "PYTHONDONTWRITEBYTECODE": "1",
@@ -561,6 +606,7 @@ def _bridge(runtime: Path, entry: str) -> int:
         scratch = Path(tempfile.mkdtemp(
             prefix="aura-local-mcp-", dir=scratch_parent,
         ))
+        state = local_mcp_state_root(workspace, runtime.name)
         stderr_file = scratch / "child.stderr"
         child_err = kernel.CreateFileW(
             str(stderr_file), 0x40000000, 1, ctypes.byref(sa), 2, 0x80, None,
@@ -572,7 +618,7 @@ def _bridge(runtime: Path, entry: str) -> int:
         si.cb = ctypes.sizeof(si)
         si.dwFlags = 0x100
         si.hStdInput, si.hStdOutput, si.hStdError = child_in, child_out, child_err
-        env = _scrubbed_windows_mcp_environment(scratch)
+        env = _scrubbed_windows_mcp_environment(scratch, state=state)
         env["PYTHONPATH"] = _package_pythonpath(runtime, entry)
         local_python = isolated_python(runtime) or Path(sys.executable)
         if (runtime / ".venv").exists() and not (runtime / ".aura-isolated-env.json").is_file():
@@ -591,7 +637,7 @@ def _bridge(runtime: Path, entry: str) -> int:
         cmd = ctypes.create_unicode_buffer(subprocess.list2cmdline(args))
         if not kernel.CreateProcessW(str(local_python), cmd, None, None, True,
                                     0x4 | 0x08000000 | 0x400,
-                                    ctypes.cast(packed_buffer, ctypes.c_void_p), str(scratch),
+                                    ctypes.cast(packed_buffer, ctypes.c_void_p), str(state),
                                     ctypes.byref(si), ctypes.byref(pi)):
             raise OSError("Suspended MCP process creation failed")
         owned.extend([pi.hProcess, pi.hThread])

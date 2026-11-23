@@ -2404,8 +2404,13 @@ def create_api(
                     try:
                         generated = await _model_select_governed_tool(request.directive, principal_id)
                     except (ValueError, TypeError) as invalid:
+                        # Preserve the legacy 'detail' string for UI clients.
+                        # The global FastAPI exception handler independently
+                        # wraps 422 into a structured validation_error envelope.
                         raise HTTPException(status_code=422, detail=str(invalid)) from invalid
                 else:
+                    # Planner validation is a client error, never an HTTP 500
+                    # or permission to schedule an ungoverned tool.
                     raise HTTPException(status_code=422, detail=str(exc)) from exc
 
         return DirectivePlanResponse(

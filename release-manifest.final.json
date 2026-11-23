@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-23T07:20:01.237Z",
-  "git_commit": "e5802b4196c87642c946c66171fd9c20649013c6",
+  "generated_at": "2026-11-23T07:44:24.865Z",
+  "git_commit": "3c4e049946361b549c4eee0352a4f121e3c85fe4",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:f0c1f1ee99203b672edd40aa0660438bf8949875d8444a34498f5b8d532b1c5a",
+  "release_digest": "sha256:e20d01d7ff83ca75cdbbe2926a5e9e432c49407ce34380bfa5deb0ba1d1360fb",
   "file_count": 465,
   "files": [
     {
@@ -366,7 +366,7 @@
     },
     {
       "path": "core/src/aura_core/application/api.py",
-      "sha256": "fbe8f7476571338ccdf208aee462535391e4d9792ae2e4053a3a7a908477c3ba"
+      "sha256": "5560c21919ee94a7b07d975cbbca0f38df4c34ac97af4292659a5cf3075126c0"
     },
     {
       "path": "core/src/aura_core/application/approval_api.py",
@@ -874,7 +874,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/activation_runtime.py",
-      "sha256": "b70b91a57b43ba9773011fb7c819bfab065a8564cfe84215f02a54763d057635"
+      "sha256": "4de055c8f5f010f64b385f7fe3b9a7df912c2eb45fd6fcd732b8e0049bc7eded"
     },
     {
       "path": "core/src/aura_core/evolution/attestor_worker.py",
@@ -1006,7 +1006,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/windows_job_mcp.py",
-      "sha256": "60384443c510953f4e761b36d2c63600f54c1ed913edc45dbd20ef9e52a4229f"
+      "sha256": "d79cb12f1a8d3d19b14046a97485cf4285a95949ab29743f452eb54c55cec3fb"
     },
     {
       "path": "core/src/aura_core/evolution/windows_owner_storage.py",
@@ -1198,7 +1198,7 @@
     },
     {
       "path": "core/src/aura_core/mcp/connection.py",
-      "sha256": "b38f66c169ed06625cb21e58807fbfbd14e141a4c65f1eea78965e587b30f109"
+      "sha256": "09f9e2f6718b2d8583f01cdbfb73f7156429caccdcbe8dd98ccddfe9b15f80cf"
     },
     {
       "path": "core/src/aura_core/mcp/dispatch_context.py",
@@ -1806,7 +1806,7 @@
     },
     {
       "path": "core/tests/test_evolution_windows_job_optin.py",
-      "sha256": "0a8d46cb5cd2c5d2d64df71d610e42b81a6bdd66d9288d3a98e56da2c43a4b40"
+      "sha256": "edbe879da655539c690c0d9134a38f3f9e4a02cc7169647071440fe4f0c4c62e"
     },
     {
       "path": "core/tests/test_evolution_windows_live_recovery.py",
