@@ -53,7 +53,7 @@ class ContinuousEvolutionController:
                 queued = int(counter())
             else:
                 queued = sum(
-                    row.get("package_status") in (None, "pending", "Queued", "READY_FOR_OWNER_REVIEW")
+                    row.get("package_status") in (None, "pending", "Queued")
                     for row in proposals(50)
                 )
         elif callable(getattr(self.discovery, "queued_count", None)):
