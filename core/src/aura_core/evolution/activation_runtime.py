@@ -467,6 +467,22 @@ class DelegatedMCPActivationManager:
             raise
 
     async def _verify_and_connect(self, name: str, grant: dict):
+        # Independent attestor quarantine must take precedence over a missing
+        # prepared runtime. Evidence presence/shape is checked before invoking
+        # the static candidate / runtime-tree checks, which may themselves fail
+        # for a package whose attestation never completed. Cryptographic claims
+        # are STILL verified below against independently checked source + tree.
+        package = self.workspace.root / "verified" / name
+        marker = package / "local-windows-quarantined.json"
+        if marker.exists() or marker.is_symlink():
+            raise PermissionError("Local Windows MCP candidate quarantined by independent attestor")
+        bundle_file = package / "independent-attestations.json"
+        if (bundle_file.is_symlink() or not bundle_file.is_file()
+                or bundle_file.stat().st_size > _TOOL_LIMIT_BYTES):
+            raise PermissionError("Independently signed sandbox results missing")
+        bundle = json.loads(bundle_file.read_text("utf-8"))
+        if not isinstance(bundle, dict):
+            raise PermissionError("Untrusted sandbox bundle")
         decision = self.decisions.evaluate(name)
         if (decision.status != "AUTO_APPROVED_BY_POLICY"
                 or decision.category not in grant["categories"]):
@@ -477,17 +493,6 @@ class DelegatedMCPActivationManager:
             retained, _, _ = _validated_files(stream)
         entry = choose_python_entrypoint(retained, details.get("entrypoint_hint", ""))
         tree = runtime_fingerprint(self.workspace, name)
-        package = self.workspace.root / "verified" / name
-        bundle_file = package / "independent-attestations.json"
-        marker = package / "local-windows-quarantined.json"
-        if marker.exists() or marker.is_symlink():
-            raise PermissionError("Local Windows MCP candidate quarantined by independent attestor")
-        if (bundle_file.is_symlink() or not bundle_file.is_file()
-                or bundle_file.stat().st_size > _TOOL_LIMIT_BYTES):
-            raise PermissionError("Independently signed sandbox results missing")
-        bundle = json.loads(bundle_file.read_text("utf-8"))
-        if not isinstance(bundle, dict):
-            raise PermissionError("Untrusted sandbox bundle")
         profile = bundle.get("execution_profile", "docker-stdio")
         expected_fields = {"schema", "repository", "runtime_tree_sha256", "tools"}
         if profile == "windows-job-stdio":
@@ -604,9 +609,23 @@ class DelegatedMCPActivationManager:
                 and row.get("status") in {"ACTIVE", "QUARANTINED", "REVOKED",
                                            "WAITING_ATTESTATION"}
             }
-            for decision in self.decisions.evaluate_pending(limit=100):
-                if attempted >= max(1, min(3, limit)):
-                    break
+            # Existing signed observations plus a prepared runtime go first,
+            # even when their repository names sort after unsatisfied packages.
+            # Presence is only a scheduling hint, NEVER proof authorization.
+            pending = self.decisions.evaluate_pending(limit=100)
+            def is_prepared(decision) -> bool:
+                if decision.status != "AUTO_APPROVED_BY_POLICY":
+                    return False
+                name = decision.repository.replace("/", "__")
+                package = self.workspace.root / "verified" / name
+                evidence = package / "independent-attestations.json"
+                runtime = self.workspace.root / "runtime" / name
+                marker = package / "local-windows-quarantined.json"
+                return (not marker.exists() and not marker.is_symlink()
+                        and evidence.is_file() and not evidence.is_symlink()
+                        and runtime.is_dir() and not runtime.is_symlink())
+            pending.sort(key=lambda decision: 0 if is_prepared(decision) else 1)
+            for decision in pending:
                 if decision.status != "AUTO_APPROVED_BY_POLICY":
                     continue
                 name = decision.repository.replace("/", "__")
@@ -635,6 +654,54 @@ class DelegatedMCPActivationManager:
                         or decision.category in existing
                         or status == "REVOKED"
                         or (status == "QUARANTINED" and not recovery)):
+                    continue
+
+                # Checking the independent operator marker is metadata-only:
+                # do not invoke untrusted MCP nor charge the live connection
+                # budget. Preserve signed-expiry refresh only when verifiable.
+                if marker.exists() or marker.is_symlink():
+                    if status != "QUARANTINED":
+                        renewal = (local_signed and not marker.is_symlink()
+                                   and expired_attestation_evidence(
+                                       self.workspace, name, grant=grant))
+                        self._persist(
+                            decision.repository,
+                            "WAITING_ATTESTATION" if renewal else "QUARANTINED",
+                            reason_code=("EXPIRED_ATTESTATION" if renewal
+                                         else "INDEPENDENT_ATTESTOR_QUARANTINE"),
+                            reason_detail=("Signed evidence expired; awaiting independent renewal"
+                                           if renewal else
+                                           "Independent attestor quarantined this candidate"),
+                        )
+                    continue
+
+                runtime = self.workspace.root / "runtime" / name
+                if evidence.is_symlink() or runtime.is_symlink() or (
+                        hasattr(runtime, "is_junction") and runtime.is_junction()):
+                    if status != "QUARANTINED":
+                        self._persist(
+                            decision.repository, "QUARANTINED",
+                            reason_code="UNSAFE_RUNTIME_OR_EVIDENCE_PATH",
+                            reason_detail="Symlink or junction in evidence/runtime path",
+                        )
+                    continue
+                if not evidence.is_file() or not runtime.is_dir():
+                    reason = ("INDEPENDENT_ATTESTATION_MISSING"
+                              if not evidence.is_file() else "RUNTIME_NOT_PREPARED")
+                    if status != "WAITING_ATTESTATION" or previous.get("reason_code") != reason:
+                        self._persist(
+                            decision.repository, "WAITING_ATTESTATION",
+                            reason_code=reason,
+                            reason_detail=("Signed independent attestation missing"
+                                           if reason == "INDEPENDENT_ATTESTATION_MISSING"
+                                           else "Sandbox runtime not prepared"),
+                        )
+                    continue
+
+                # Only candidates with BOTH evidence and a runtime consume
+                # live MCP connection slots. Full signatures and tree hashes
+                # remain mandatory inside _verify_and_connect().
+                if attempted >= max(1, min(3, limit)):
                     continue
                 attempted += 1
                 try:
