@@ -47,7 +47,9 @@ def test_three_gateway_calls_write_sqlite_without_quarantining_signed_runtime(
                 conn.execute("INSERT INTO sessions DEFAULT VALUES")
                 conn.commit()
                 calls = conn.execute("SELECT COUNT(*) FROM sessions").fetchone()[0]
-            return SimpleNamespace(structured_content={"calls": calls})
+            # MCPConnection normally unwraps structured_content before
+            # MCPProvider/Gateway sees the transport result.
+            return {"calls": calls}
 
         async def close(self):
             return None
