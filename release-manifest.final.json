@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-23T07:02:37.414Z",
-  "git_commit": "9ef6047b1a9fe5c0be3a6dae610af1e1b18affc5",
+  "generated_at": "2026-11-23T07:20:01.237Z",
+  "git_commit": "e5802b4196c87642c946c66171fd9c20649013c6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:9a657cbaf420dd9757e81ab6cf1984b3de63bebb26e51d455ca6477ac8a77010",
+  "release_digest": "sha256:f0c1f1ee99203b672edd40aa0660438bf8949875d8444a34498f5b8d532b1c5a",
   "file_count": 465,
   "files": [
     {
@@ -1850,7 +1850,7 @@
     },
     {
       "path": "scripts/launch-aura-desktop.ps1",
-      "sha256": "497b3dec1c9f9fc2371487e530ead4af66b1ed803bf0b358096c54533f1aabfc"
+      "sha256": "d1dd6db501465bd55bdf6ad7e3afdbb30494f50bd4144d07d418c33914852529"
     },
     {
       "path": "scripts/setup-autonomous-aura.ps1",
