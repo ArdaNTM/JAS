@@ -151,6 +151,32 @@ def choose_python_entrypoint(files: dict[str, bytes], hint: str) -> str:
     raise SandboxUntrusted("No supported Python MCP entrypoint")
 
 
+def local_job_scratch_root(workspace: EvolutionWorkspace, package_name: str) -> Path:
+    """Isolated Windows MCP working directory OUTSIDE signed source/runtime.
+
+    Legitimate MCP servers may create SQLite databases, caches, temp files or
+    bytecode in their process cwd. Those bytes must never appear within the
+    independently hashed runtime tree. Reject links and spoofed package names
+    rather than excluding runtime files from attestation.
+    """
+    if (not re.fullmatch(r"[A-Za-z0-9_.-]+__[A-Za-z0-9_.-]+", package_name)
+            or ".." in package_name):
+        raise SandboxUntrusted("Invalid local MCP scratch identity")
+    root = workspace.root / "runtime-work"
+    if root.is_symlink() or (hasattr(root, "is_junction") and root.is_junction()):
+        raise SandboxUntrusted("Unsafe local MCP scratch root")
+    root.mkdir(parents=True, exist_ok=True)
+    _checked_path(root)
+    candidate = root / package_name
+    if candidate.is_symlink() or (hasattr(candidate, "is_junction") and candidate.is_junction()):
+        raise SandboxUntrusted("Unsafe local MCP scratch directory")
+    candidate.mkdir(exist_ok=True)
+    _checked_path(candidate)
+    if not candidate.resolve().is_relative_to(workspace.root.resolve()):
+        raise SandboxUntrusted("Local MCP scratch escapes evolution storage")
+    return candidate
+
+
 class IsolatedMCPPreflight:
     """Explicit operator-run preflight using an immutable OCI image and stdio.
 
