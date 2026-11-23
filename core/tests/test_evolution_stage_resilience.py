@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import io
 import json
 import os
@@ -161,10 +162,14 @@ def test_size_aware_local_first_priority_and_existing_budget_retries(tmp_path):
             if request.capability_id == CAPABILITY_ID:
                 return SimpleNamespace(decision=AuthorizationDecision.ALLOW, result={"items": []})
             assert request.capability_id == STAGE_CAPABILITY
+            archive = (workspace.root / "verified" /
+                       request.arguments["repository"].replace("/", "__") / "source.zip")
+            archive.parent.mkdir(parents=True, exist_ok=True)
+            archive.write_bytes(b"inert gateway fixture")
             return SimpleNamespace(decision=AuthorizationDecision.ALLOW, result={
                 "repository": request.arguments["repository"],
                 "status": "READY_FOR_OWNER_REVIEW",
-                "source_sha256": "b" * 64,
+                "source_sha256": hashlib.sha256(archive.read_bytes()).hexdigest(),
                 "sandbox_attested": False, "activation_performed": False,
                 "execution_allowed": False,
             })
@@ -200,7 +205,7 @@ def test_size_aware_local_first_priority_and_existing_budget_retries(tmp_path):
     assert result["verified_count"] == 3
     assert engine.static_ready_count() == 3
     assert engine.proposals(20)[2]["package_status"] == "READY_FOR_OWNER_REVIEW"
-    assert workspace.verified_packages() == []  # Gateway proof here is simulated; no files
+    assert workspace.verified_packages() == []  # Mock has no static manifests
     assert json.loads(workspace.active.read_text())["active"] == []
     # Ready records are never restaged. One legacy script false-positive is
     # now eligible for its single authorized Gateway recheck alongside the
