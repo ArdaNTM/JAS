@@ -341,8 +341,23 @@ class DelegatedMCPActivationManager:
             raise PermissionError("Invalid active capability inventory")
         return data
 
+    @staticmethod
+    def _reason_detail(value: object) -> str:
+        """Small privacy-safe diagnostic; never store raw untrusted stderr.
+
+        Windows errors may embed absolute Owner paths; credentials and control
+        sequences are redacted before the bounded audit / inventory write.
+        """
+        text = "".join(char if char.isprintable() else " " for char in str(value))
+        text = re.sub(r"(?i)\b(?:[a-z]:\\\\|[a-z]:\\|\\\\\\\\)[^\s;,]+", "[path]", text)
+        text = re.sub(r"(?i)\b(token|secret|password|api[_-]?key)\s*[:=]\s*[^\s;,]+",
+                      r"\1=[redacted]", text)
+        return " ".join(text.split())[:160]
+
     def _persist(self, repository: str, status: str, **fields):
         original = self._load_inventory()
+        if "reason_detail" in fields:
+            fields["reason_detail"] = self._reason_detail(fields["reason_detail"])
         record = {"repository": repository, "status": status,
                   "time": int(time.time()), **fields}
         if not re.fullmatch(r"[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+", repository):
@@ -363,9 +378,9 @@ class DelegatedMCPActivationManager:
         finally:
             if os.path.exists(temporary):
                 os.unlink(temporary)
-        self._audit(repository, status)
+        self._audit(repository, status, record)
 
-    def _audit(self, repository: str, status: str):
+    def _audit(self, repository: str, status: str, record: dict):
         destination = self.workspace.root / "logs" / "autonomous-activations.jsonl"
         if destination.is_symlink():
             raise PermissionError("Unsafe activation audit log")
@@ -375,8 +390,13 @@ class DelegatedMCPActivationManager:
                 raise PermissionError("Unsafe activation audit rotation")
             destination.replace(rotation)
         with destination.open("a", encoding="utf-8") as stream:
-            stream.write(json.dumps({"time": int(time.time()), "repository": repository,
-                                     "status": status}, sort_keys=True) + "\n")
+            evidence = {"time": record["time"], "repository": repository,
+                        "status": status}
+            if status in {"QUARANTINED", "WAITING_ATTESTATION"}:
+                for key in ("reason_code", "reason_detail"):
+                    if key in record:
+                        evidence[key] = record[key]
+            stream.write(json.dumps(evidence, sort_keys=True) + "\n")
 
     def _attestor(self, grant: dict) -> IndependentAttestationVerifier:
         pub = self.workspace.root / "trust" / "sandbox-attestor.pub.pem"
@@ -572,7 +592,8 @@ class DelegatedMCPActivationManager:
                 expired_this_scan.add(name)
                 await self._remove(name, quarantine=False)
                 self._persist(name.replace("__", "/"), "WAITING_ATTESTATION",
-                              reason_code="EXPIRED_ATTESTATION")
+                              reason_code="EXPIRED_ATTESTATION",
+                              reason_detail="Independent attestation expired; renewal required")
         async with self._lock:
             existing = frozenset(value.category for value in self._active.values())
             persistent = {
@@ -640,6 +661,7 @@ class DelegatedMCPActivationManager:
                         decision.repository,
                         "WAITING_ATTESTATION" if waiting else "QUARANTINED",
                         reason_code=type(exc).__name__,
+                        reason_detail=self._reason_detail(exc),
                         recovery_version=1 if recovery else 0,
                     )
         return successes
@@ -751,7 +773,8 @@ class DelegatedMCPActivationManager:
             self.kernel.service_registry.unregister(active.service_id)
             if quarantine:
                 self._persist(name.replace("__", "/"), "QUARANTINED",
-                              reason_code="PROVIDER_FAILED_OR_REVOKED")
+                              reason_code="PROVIDER_FAILED_OR_REVOKED",
+                              reason_detail="External provider failed or was explicitly revoked")
             await active.provider.close()
 
     async def quarantine(self, name: str) -> None:
