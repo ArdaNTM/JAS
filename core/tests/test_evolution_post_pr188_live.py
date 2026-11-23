@@ -251,6 +251,89 @@ def test_multisource_partial_failure_stages_previous_null_queue_and_reports_heal
         ).fetchone()[0] == "READY_FOR_OWNER_REVIEW"
     controller = ContinuousEvolutionController(discovery=engine)
     assert controller.status()["source_health"] == result["source_health"]
-    assert all(request.capability_id in {CAPABILITY_ID, CATALOG_CAPABILITY,
-                                         "github.repository.static_stage"}
+    from aura_core.evolution.external_staging import CAPABILITY as STAGE_CAPABILITY
+    assert all(request.capability_id in {CAPABILITY_ID, CATALOG_CAPABILITY, STAGE_CAPABILITY}
                for request in gateway.calls)
+
+
+
+def test_local_scratch_keeps_runtime_fingerprint_immutable_and_fails_closed(
+    tmp_path, monkeypatch,
+):
+    from test_evolution_autonomous_activation import _signed_fixture
+    from aura_core.evolution.activation_runtime import runtime_fingerprint
+    from aura_core.evolution.sandbox_preflight import (
+        local_job_scratch_root, SandboxUntrusted,
+    )
+
+    workspace, name, _ = _signed_fixture(tmp_path, monkeypatch)
+    before = runtime_fingerprint(workspace, name)
+    scratch = local_job_scratch_root(workspace, name)
+    assert scratch.is_relative_to(workspace.root)
+    assert not scratch.is_relative_to(workspace.root / "runtime")
+    (scratch / "projectmem.sqlite3").write_bytes(b"local non-executable state")
+    (scratch / "__pycache__").mkdir()
+    (scratch / "__pycache__" / "server.pyc").write_bytes(b"cached bytecode")
+    assert runtime_fingerprint(workspace, name) == before
+
+    # No runtime files are ignored: source or foreign-cache injection remains
+    # an immediate PermissionError even after an independent signature.
+    (workspace.root / "runtime" / name / "runtime.sqlite3").write_bytes(b"unexpected")
+    with pytest.raises(PermissionError, match="Unexpected runtime"):
+        runtime_fingerprint(workspace, name)
+
+
+def test_local_scratch_rejects_symlink_escape(tmp_path):
+    from aura_core.evolution.external_staging import EvolutionWorkspace
+    from aura_core.evolution.sandbox_preflight import (
+        local_job_scratch_root, SandboxUntrusted,
+    )
+
+    workspace = EvolutionWorkspace(tmp_path / "evolution")
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    container = workspace.root / "runtime-work"
+    container.mkdir()
+    link = container / "riponcm__projectmem"
+    try:
+        link.symlink_to(outside, target_is_directory=True)
+    except OSError:
+        pytest.skip("Symlink creation is not supported")
+    with pytest.raises(SandboxUntrusted, match="Unsafe local MCP scratch"):
+        local_job_scratch_root(workspace, "riponcm__projectmem")
+    assert not list(outside.iterdir())
+
+
+def test_legacy_queue_null_items_are_not_starved_by_retryable_rejections(tmp_path):
+    from aura_core.evolution.external_staging import EvolutionWorkspace
+    workspace = EvolutionWorkspace(tmp_path / "evolution")
+    gateway = PartialGateway()
+    engine = SelfDiscoveryEngine(
+        gateway=gateway, workspace=workspace, auto_stage=True,
+        db_path=workspace.root / "catalog" / "proposals.sqlite3",
+    )
+    with engine._connect() as db:
+        for idx in range(52):
+            db.execute(
+                "INSERT INTO evolution_proposals "
+                "(proposal_id,repository,url,description,license,capability_hint,"
+                "created_at,package_status,package_error,stage_retry_version) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?)",
+                (f"failed{idx}", f"archive/reject{idx}",
+                 f"https://github.com/archive/reject{idx}", "local FastMCP",
+                 "MIT", "FastMCP", idx, "STAGING_REJECTED",
+                 "GitHub download byte budget exceeded", 0),
+            )
+        db.execute(
+            "INSERT INTO evolution_proposals "
+            "(proposal_id,repository,url,description,license,capability_hint,created_at)"
+            "VALUES (?,?,?,?,?,?,?)",
+            ("queued", "riponcm/projectmem", "https://github.com/riponcm/projectmem",
+             "local FastMCP", "MIT", "FastMCP", 999),
+        )
+    result = run(engine.run_once(multi_source=True))
+    assert result["staged_count"] >= 1
+    with engine._connect() as db:
+        assert db.execute(
+            "SELECT package_status FROM evolution_proposals WHERE proposal_id='queued'"
+        ).fetchone()[0] == "READY_FOR_OWNER_REVIEW"
