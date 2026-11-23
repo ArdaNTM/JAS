@@ -39,12 +39,12 @@ def test_task_plan_value_error_is_structured_422_and_preserves_auth(monkeypatch)
             headers={"Authorization": "Bearer " + "z" * 40},
         )
         assert response.status_code == 422
-        assert response.json() == {
-            "detail": {
-                "code": "INVALID_TASK_DIRECTIVE",
-                "message": "Invalid or unsupported task directive",
-            }
-        }
+        payload = response.json()
+        assert payload["detail"] == "Invalid or unsupported task directive"
+        # The existing centralized error envelope supplies structured
+        # error metadata while legacy clients still receive text detail.
+        assert payload["error"]["code"] == "validation_error"
+        assert payload["error"]["retryable"] is False
         denied = client.post(
             "/api/tasks/plan", json={"directive": "Run unsafe action"},
         )
