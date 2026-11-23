@@ -72,7 +72,7 @@ def test_high_capacity_defaults_and_invalid_overrides(monkeypatch, tmp_path):
     assert _file_budget() == 33554432
     assert _archive_member_budget() == 25000
     workspace = EvolutionWorkspace(tmp_path / "outside")
-    assert workspace.max_bytes == 5368709120
+    assert workspace.max_bytes == 8589934592  # 8GiB Windows venv headroom; max still 10GiB
     assert workspace.max_items == 100
     monkeypatch.setenv("AURA_EVOLUTION_MAX_BYTES", "1073741824")
     monkeypatch.setenv("AURA_EVOLUTION_MAX_ITEMS", "60")
