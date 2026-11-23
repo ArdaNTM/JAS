@@ -2303,8 +2303,8 @@ def create_api(
                     )),
                 )
             except (KeyError, LookupError, RuntimeError, TypeError, ValueError,
-                    AttributeError, asyncio.TimeoutError):
-                # An unreachable provider cannot be selected. No fallback
+                    AttributeError, PermissionError, asyncio.TimeoutError):
+                # An unreachable or expired provider cannot be selected. No fallback
                 # tool instance or permission policy is synthesized.
                 continue
             if len(catalog) >= 64:

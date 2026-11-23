@@ -261,7 +261,8 @@ class DockerMCPProvider(MCPProvider):
                  archive_sha256: str, workspace: EvolutionWorkspace,
                  package: str, on_failure: Callable[[str], None],
                  owner_authorized: Callable[[], bool],
-                 attestation_expires_at: int):
+                 attestation_expires_at: int,
+                 on_expired: Callable[[str], None] | None = None):
         super().__init__(connection)
         self.runtime = runtime
         self.archive_sha256 = archive_sha256
@@ -271,26 +272,47 @@ class DockerMCPProvider(MCPProvider):
         self._owner_authorized = owner_authorized
         self._expires = attestation_expires_at
         self._healthy = True
+        self._expired = False
+        self._on_expired = on_expired
+
+    def _reject_expired(self) -> None:
+        # Expiry is a renewable dependency, not a provider failure. Retire
+        # once even if list_tools/call_tool are invoked concurrently before scan.
+        if self._expired or time.time() >= self._expires:
+            if not self._expired:
+                self._expired = True
+                self._healthy = False
+                if self._on_expired is not None:
+                    # Scheduled cleanup cannot deadlock scan's manager lock.
+                    self._on_expired(self.package)
+            raise PermissionError("External provider attestation expired; awaiting independent renewal")
 
     async def list_tools(self):
-        if (not self._healthy or not self._owner_authorized()
-                or time.time() >= self._expires):
+        if self._expired:
+            self._reject_expired()
+        if not self._healthy or not self._owner_authorized():
             self._healthy = False
             self._on_failure(self.package)
-            raise PermissionError("Quarantined, expired or revoked external provider")
+            raise PermissionError("Quarantined or revoked external provider")
+        self._reject_expired()
         try:
-            return await super().list_tools()
+            tools = await super().list_tools()
         except Exception:
             self._healthy = False
             self._on_failure(self.package)
             raise
+        # A slow handshake cannot publish tools whose proof expired mid-call.
+        self._reject_expired()
+        return tools
 
     async def call_tool(self, name, arguments=None):
-        if (not self._healthy or not self._owner_authorized()
-                or time.time() >= self._expires):
+        if self._expired:
+            self._reject_expired()
+        if not self._healthy or not self._owner_authorized():
             self._healthy = False
             self._on_failure(self.package)
-            raise PermissionError("Quarantined, expired or revoked external provider")
+            raise PermissionError("Quarantined or revoked external provider")
+        self._reject_expired()
         try:
             # Prevent host-side file mutation after signed sandbox evidence.
             runtime_fingerprint(self.workspace, self.package)
@@ -298,11 +320,12 @@ class DockerMCPProvider(MCPProvider):
             # A stateful MCP may write into its isolated state folder, but
             # never into independently signed runtime source or wheels.
             runtime_fingerprint(self.workspace, self.package)
-            return result
         except Exception:
             self._healthy = False
             self._on_failure(self.package)
             raise
+        self._reject_expired()
+        return result
 
 
 @dataclass
@@ -498,6 +521,7 @@ class DelegatedMCPActivationManager:
                 connection, runtime=runtime, archive_sha256="",
                 workspace=self.workspace, package=name,
                 on_failure=lambda key: asyncio.create_task(self.quarantine(key)),
+                on_expired=lambda key: asyncio.create_task(self._expire(key)),
                 owner_authorized=lambda: (
                     self._still_authorized(name)
                     or (recovery and self._recovery_authorized(name, grant))
@@ -641,10 +665,7 @@ class DelegatedMCPActivationManager:
                 # Expiry is a dependency. Disconnect now; only a subsequent
                 # scan with independently renewed evidence can reactivate.
                 expired_this_scan.add(name)
-                await self._remove(name, quarantine=False)
-                self._persist(name.replace("__", "/"), "WAITING_ATTESTATION",
-                              reason_code="EXPIRED_ATTESTATION",
-                              reason_detail="Independent attestation expired; renewal required")
+                await self._remove(name, quarantine=False, expired=True)
         async with self._lock:
             existing = frozenset(value.category for value in self._active.values())
             persistent = {
@@ -778,11 +799,14 @@ class DelegatedMCPActivationManager:
                             and expired_attestation_evidence(self.workspace, name, grant=grant)
                         )
                     )
+                    expired_proof = waiting and "attestation expired" in str(exc)
                     self._persist(
                         decision.repository,
                         "WAITING_ATTESTATION" if waiting else "QUARANTINED",
-                        reason_code=type(exc).__name__,
-                        reason_detail=self._reason_detail(exc),
+                        reason_code=("EXPIRED_ATTESTATION" if expired_proof
+                                     else type(exc).__name__),
+                        reason_detail=("Signed evidence expired; awaiting independent renewal"
+                                       if expired_proof else self._reason_detail(exc)),
                         recovery_version=1 if recovery else 0,
                     )
                 finally:
@@ -881,7 +905,8 @@ class DelegatedMCPActivationManager:
             await provider.close()
             raise
 
-    async def _remove(self, name: str, *, quarantine: bool) -> None:
+    async def _remove(self, name: str, *, quarantine: bool,
+                      expired: bool = False) -> None:
         async with self._lock:
             active = self._active.pop(name, None)
             if active is None:
@@ -900,7 +925,14 @@ class DelegatedMCPActivationManager:
                 self._persist(name.replace("__", "/"), "QUARANTINED",
                               reason_code="PROVIDER_FAILED_OR_REVOKED",
                               reason_detail="External provider failed or was explicitly revoked")
+            elif expired:
+                self._persist(name.replace("__", "/"), "WAITING_ATTESTATION",
+                              reason_code="EXPIRED_ATTESTATION",
+                              reason_detail="Signed evidence expired; awaiting independent renewal")
             await active.provider.close()
+
+    async def _expire(self, name: str) -> None:
+        await self._remove(name, quarantine=False, expired=True)
 
     async def quarantine(self, name: str) -> None:
         await self._remove(name, quarantine=True)
