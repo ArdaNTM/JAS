@@ -700,9 +700,7 @@ class SelfDiscoveryEngine:
         ]
         candidates.sort(
             key=lambda row: (
-                # Truly pending/NULL legacy items must outrank recoverable
-                # rejection retries, even when README/local ranks differ.
-                0 if row[4] is None else 1,
+                # Keep the established size-aware/local-first ordering.
                 # Script false-positive retry remains lowest priority.
                 1 if row[4] == "Executable or suspicious archive content rejected" else 0,
                 _python_mcp_priority(row[0], row[1]),
@@ -712,7 +710,15 @@ class SelfDiscoveryEngine:
                 row[0],
             )
         )
-        for repository, _, _, _, _ in candidates[:3]:
+        chosen = list(candidates[:3])
+        if len(candidates) > 50 and not any(item[4] is None for item in chosen):
+            # Large old rejected catalogues previously monopolized all three
+            # slots. Reserve ONE slot for a still-unattempted NULL/pending
+            # record; preserve small-queue size and local priority semantics.
+            fresh = next((item for item in candidates[3:] if item[4] is None), None)
+            if fresh is not None:
+                chosen[-1] = fresh
+        for repository, _, _, _, _ in chosen:
             report["attempted"] += 1
             try:
                 response = await asyncio.wait_for(self.gateway.invoke(MCPGatewayRequest(
