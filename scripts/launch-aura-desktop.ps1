@@ -800,7 +800,7 @@ try {
     $Splash.Status.Text = "WAITING FOR CORE..."
     $Splash.Form.Refresh()
 
-    if (-not (Wait-ForHttp -Url "http://127.0.0.1:$CorePort/health" -TimeoutSeconds 40)) {
+    if (-not (Wait-ForHttp -Url "http://127.0.0.1:$CorePort/health" -TimeoutSeconds 75)) {
         $stderr = Read-LogSafe -Path $CoreLogErr
         $stdout = Read-LogSafe -Path $CoreLogOut
 
