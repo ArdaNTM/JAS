@@ -626,12 +626,11 @@ class SelfDiscoveryEngine:
             return int(db.execute("SELECT COUNT(*) FROM evolution_proposals").fetchone()[0])
 
     def queued_count(self) -> int:
-        """Durable bounded staging/attestation backlog, including ready evidence."""
+        """Outstanding static-staging queue; ready packages have a separate count."""
         with self._connect() as db:
             return int(db.execute(
                 "SELECT COUNT(*) FROM evolution_proposals "
-                "WHERE package_status IS NULL OR package_status "
-                "IN ('pending','Queued','READY_FOR_OWNER_REVIEW')"
+                "WHERE package_status IS NULL OR package_status IN ('pending','Queued')"
             ).fetchone()[0])
 
     def status(self) -> dict[str, object]:
@@ -670,7 +669,8 @@ class SelfDiscoveryEngine:
         )
         with self._connect() as db:
             rows = db.execute(
-                "SELECT repository,description,stars,size_kb,package_error FROM evolution_proposals "
+                "SELECT repository,description,stars,size_kb,package_error,package_status "
+                "FROM evolution_proposals "
                 "WHERE status='pending_owner_review' "
                 "AND (package_status IS NULL OR package_status IN ('pending', 'Queued') "
                 "OR (package_status='STAGING_REJECTED' "
@@ -694,8 +694,8 @@ class SelfDiscoveryEngine:
         # scanner still rejects actual malicious code; other policy/permission
         # failures never enter this queue. No new repo required for retry.
         candidates = [
-            (repository, description, stars or 0, size_kb, reason)
-            for repository, description, stars, size_kb, reason in rows
+            (repository, description, stars or 0, size_kb, reason, package_status)
+            for repository, description, stars, size_kb, reason, package_status in rows
             if _valid_repository(repository)
             and not _SAAS.search(repository + " " + description)
         ]
@@ -715,9 +715,10 @@ class SelfDiscoveryEngine:
             # A full multi-source scan must drain SIX historic NULL proposals
             # per pass when available. Keep the per-cycle HTTP/staging budget
             # finite; every one still enters the existing MCPGateway boundary.
-            fresh = [item for item in candidates if item[4] is None][:6]
+            fresh = [item for item in candidates if item[5] is None][:6]
+            fresh_names = {item[0] for item in fresh}
             chosen = fresh + [
-                item for item in candidates if item[0] not in {row[0] for row in fresh}
+                item for item in candidates if item[0] not in fresh_names
             ][:max(0, 6 - len(fresh))]
         else:
             chosen = list(candidates[:3])
@@ -726,7 +727,7 @@ class SelfDiscoveryEngine:
                 fresh = next((item for item in candidates[3:] if item[4] is None), None)
                 if fresh is not None:
                     chosen[-1] = fresh
-        for repository, _, _, _, _ in chosen:
+        for repository, _, _, _, _, _ in chosen:
             report["attempted"] += 1
             try:
                 response = await asyncio.wait_for(self.gateway.invoke(MCPGatewayRequest(
