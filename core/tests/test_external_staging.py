@@ -359,3 +359,35 @@ def test_staging_rejections_are_audited_without_activation(tmp_path):
     assert obj["repository"] == "owner/mcp-repo"
     assert "API key required" in obj["reason"]
     assert json.loads(ws.active.read_text())["active"] == []
+
+
+def test_cached_static_archive_recovers_pruned_or_corrupted_zip_without_new_authority(tmp_path):
+    import hashlib
+
+    workspace = EvolutionWorkspace(tmp_path / "evolution")
+    provider = GitHubStagingMCPProvider(workspace=workspace, transport=_transport())
+    first = _authorized(provider)
+    package = workspace.root / "verified" / "sample__worker"
+    archive = package / "source.zip"
+    manifest = package / "aura-capability-manifest.json"
+    previous = manifest.read_bytes()
+
+    archive.unlink()
+    restored = _authorized(provider)
+    assert restored == first
+    assert hashlib.sha256(archive.read_bytes()).hexdigest() == first["source_sha256"]
+    assert manifest.read_bytes() == previous
+    assert json.loads(workspace.active.read_text())["active"] == []
+
+    archive.write_bytes(b"tampered cached ZIP")
+    assert _authorized(provider) == first
+    assert hashlib.sha256(archive.read_bytes()).hexdigest() == first["source_sha256"]
+
+    # A newly downloaded different archive may not overwrite the old pinned
+    # manifest or source without independent review.
+    wrong = _valid_archive() + b"modified upstream archive"
+    changed = GitHubStagingMCPProvider(workspace=workspace, transport=_transport(wrong))
+    with pytest.raises(StagingRejected, match="independent review"):
+        _authorized(changed)
+    assert manifest.read_bytes() == previous
+    assert hashlib.sha256(archive.read_bytes()).hexdigest() == first["source_sha256"]
