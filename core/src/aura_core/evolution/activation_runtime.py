@@ -788,25 +788,25 @@ class DelegatedMCPActivationManager:
         if self._task is not None and not self._task.done():
             return
         self._stop.clear()
-        try:
-            await self.scan(limit=3)
-        except (OSError, ValueError, PermissionError, RuntimeError):
-            # External code must never break Core startup.
-            pass
+        # The initial scan may include a 20s Windows MCP handshake. Never
+        # hold the ASGI lifespan or /health behind an external process.
         self._task = asyncio.create_task(self._run(), name="aura-delegated-mcp")
 
     async def _run(self) -> None:
         while not self._stop.is_set():
             try:
-                await asyncio.wait_for(self._stop.wait(), timeout=30)
-                break
-            except asyncio.TimeoutError:
+                # First scan happens after start() returns to the event loop.
+                await self.scan(limit=3)
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                # External MCP/transport exceptions cannot crash the daemon.
+                # Each candidate failure is quarantined with bounded details.
                 pass
             try:
-                await self.scan(limit=3)
-            except (OSError, ValueError, PermissionError, RuntimeError):
-                # Failures are quarantined and audited per-package.
-                continue
+                await asyncio.wait_for(self._stop.wait(), timeout=30)
+            except asyncio.TimeoutError:
+                pass
 
     def active_summary(self) -> list[dict]:
         """Expose only metadata, never protected credentials or source code."""
