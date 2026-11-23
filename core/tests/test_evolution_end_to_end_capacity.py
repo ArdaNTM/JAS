@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import io
 import json
 import sqlite3
@@ -251,9 +252,14 @@ def test_legacy_static_false_positive_is_retried_once_without_activation(tmp_pat
                 return SimpleNamespace(decision=AuthorizationDecision.ALLOW, result={"items": []})
             assert request.capability_id == STAGE_CAPABILITY
             calls.append(request)
+            archive = (workspace.root / "verified" /
+                       request.arguments["repository"].replace("/", "__") / "source.zip")
+            archive.parent.mkdir(parents=True, exist_ok=True)
+            archive.write_bytes(b"inert gateway fixture")
             return SimpleNamespace(decision=AuthorizationDecision.ALLOW, result={
                 "repository": request.arguments["repository"],
-                "status": "READY_FOR_OWNER_REVIEW", "source_sha256": "a" * 64,
+                "status": "READY_FOR_OWNER_REVIEW",
+                "source_sha256": hashlib.sha256(archive.read_bytes()).hexdigest(),
                 "sandbox_attested": False, "activation_performed": False,
                 "execution_allowed": False,
             })
