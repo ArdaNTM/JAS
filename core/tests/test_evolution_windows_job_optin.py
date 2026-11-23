@@ -146,7 +146,16 @@ def test_windows_job_object_real_mcp_initialize_and_tools_list(tmp_path):
     if os.name != "nt":
         pytest.skip("Only a real Windows runner can inspect Job Object behavior")
     from aura_core.mcp.connection import MCPConnection
-    server = tmp_path / "server.py"
+    from aura_core.evolution.external_staging import EvolutionWorkspace
+
+    # The Windows Job bridge intentionally rejects arbitrary directories:
+    # production only launches <AURA_EVOLUTION_ROOT>/runtime/<owner>__<repo>.
+    # Exercise the real Job Object handshake in that exact external layout,
+    # not from pytest's bare tmp_path (which would be denied before CreateProcess).
+    workspace = EvolutionWorkspace(tmp_path / "external-evolution")
+    runtime = workspace.root / "runtime" / "test__job-handshake"
+    runtime.mkdir(parents=True)
+    server = runtime / "server.py"
     server.write_text(
         "from mcp.server.mcpserver import MCPServer\n"
         "mcp = MCPServer('job-sandbox-test')\n"
@@ -160,7 +169,7 @@ def test_windows_job_object_real_mcp_initialize_and_tools_list(tmp_path):
         connection = MCPConnection()
         try:
             await asyncio.wait_for(
-                connection.connect_stdio(bridge_parameters(tmp_path, "server.py")), timeout=20
+                connection.connect_stdio(bridge_parameters(runtime, "server.py")), timeout=20
             )
             response = await asyncio.wait_for(connection.list_tools(), timeout=5)
             tools = response.tools if hasattr(response, "tools") else response
@@ -169,6 +178,10 @@ def test_windows_job_object_real_mcp_initialize_and_tools_list(tmp_path):
             await connection.close()
 
     asyncio.run(check())
+    assert server.is_file()  # Job never overwrites the reviewed source tree.
+    scratch_parent = workspace.root / "runtime-work" / "test__job-handshake"
+    assert scratch_parent.is_dir()
+    assert not list(scratch_parent.iterdir())  # Disposable child state cleaned up.
 
 
 def test_setup_keeps_real_passkey_and_does_not_bypass_owner_security():

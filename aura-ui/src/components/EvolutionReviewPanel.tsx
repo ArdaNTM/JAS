@@ -150,7 +150,9 @@ export default function EvolutionReviewPanel() {
             <span className={continuous?.state === "RUNNING" ? "inline-block animate-pulse" : ""}>
               {continuous?.state === "RUNNING" ? "● " : "○ "}
             </span>
-            {continuous?.state === "RUNNING" ? "KENDİNİ GELİŞTİRME · AÇIK" : "KENDİNİ GELİŞTİRME · KAPALI"}
+            {continuous?.state === "RUNNING"
+              ? "SÜREKLİ MCP YETENEK GELİŞTİRME · AÇIK"
+              : "SÜREKLİ MCP YETENEK GELİŞTİRME · KAPALI"}
           </button>
           {continuous && <span role="status" className="text-[10px] text-cyan-300">
             Taranan: {continuous.scanned_candidates} · Kuyrukta: {continuous.queued_packages}
@@ -250,6 +252,15 @@ export default function EvolutionReviewPanel() {
               ))}
             </div>
           )}
+          <div className="border-t border-amber-950 pt-3">
+            <h3 className="text-[11px] font-semibold text-amber-300">
+              Çekirdek Kaynak Kodu Mutasyonu (Güvenlik Kilidi)
+            </h3>
+            <p className="mt-1 text-[10px] text-slate-400">
+              F2.7 mühürlü Owner güvenlik sınırları ayrıdır. Sürekli MCP Yetenek Geliştirme
+              düğmesi çekirdek kaynak kodunu değiştirmez, imza üretmez veya güvenlik kilidini açmaz.
+            </p>
+          </div>
           <div className="border-t border-cyan-950 pt-3">
             <p className="mb-2 text-[11px] text-slate-400">
               Gerçek passkey doğrulaması ayrı, yerel owner-control-plane origin'inde yapılır.

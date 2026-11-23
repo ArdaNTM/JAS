@@ -445,6 +445,7 @@ def _bridge(runtime: Path, entry: str) -> int:
     import threading
     import tempfile
     from aura_core.evolution.isolated_venv import isolated_python
+    from aura_core.evolution.sandbox_preflight import local_job_scratch_root
 
     if (not runtime.is_absolute() or runtime.is_symlink() or
         not re.fullmatch(r"[A-Za-z0-9_./-]{1,150}\.py", entry) or
@@ -550,7 +551,16 @@ def _bridge(runtime: Path, entry: str) -> int:
             raise OSError("Cannot establish mandatory Job Object limits")
         # Keep untrusted diagnostics away from the JSON-RPC stream and logs.
         # Only recognized Python import/syntax errors are released after exit.
-        scratch = Path(tempfile.mkdtemp(prefix="aura-local-mcp-"))
+        # Do not let projectmem (or other MCP servers) write mutable
+        # caches/SQLite state into the independently signed runtime. Keep
+        # disposable job data under AURA_EVOLUTION_ROOT, not JAS or host TEMP.
+        if runtime.parent.name != "runtime":
+            raise PermissionError("Invalid external MCP runtime parent")
+        workspace = EvolutionWorkspace(runtime.parents[1])
+        scratch_parent = local_job_scratch_root(workspace, runtime.name)
+        scratch = Path(tempfile.mkdtemp(
+            prefix="aura-local-mcp-", dir=scratch_parent,
+        ))
         stderr_file = scratch / "child.stderr"
         child_err = kernel.CreateFileW(
             str(stderr_file), 0x40000000, 1, ctypes.byref(sa), 2, 0x80, None,
@@ -581,7 +591,7 @@ def _bridge(runtime: Path, entry: str) -> int:
         cmd = ctypes.create_unicode_buffer(subprocess.list2cmdline(args))
         if not kernel.CreateProcessW(str(local_python), cmd, None, None, True,
                                     0x4 | 0x08000000 | 0x400,
-                                    ctypes.cast(packed_buffer, ctypes.c_void_p), str(runtime),
+                                    ctypes.cast(packed_buffer, ctypes.c_void_p), str(scratch),
                                     ctypes.byref(si), ctypes.byref(pi)):
             raise OSError("Suspended MCP process creation failed")
         owned.extend([pi.hProcess, pi.hThread])

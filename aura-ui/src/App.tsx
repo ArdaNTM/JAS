@@ -15,6 +15,8 @@ import {
   getHealth,
   getUIContract,
   runSelfDiscovery,
+  getContinuousEvolutionStatus, setContinuousEvolution,
+  type ContinuousEvolutionStatus,
   type HealthResponse,
   type TaskStep,
 } from "./api/client";
@@ -129,6 +131,57 @@ type VisualizationModelId =
   | "gear-v1"
   | "sphere-v1"
   | "motor-v1";
+function ContinuousEvolutionQuickControl() {
+  const [status, setStatus] = useState<ContinuousEvolutionStatus | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    let mounted = true;
+    const refresh = () => {
+      void getContinuousEvolutionStatus().then(result => {
+        if (mounted) setStatus(result);
+      }).catch(() => { if (mounted) setStatus(null); });
+    };
+    refresh();
+    const timer = window.setInterval(refresh, 5000);
+    return () => { mounted = false; window.clearInterval(timer); };
+  }, []);
+  const toggle = async () => {
+    if (!status || busy) return;
+    setBusy(true);
+    try {
+      setStatus(await setContinuousEvolution(status.state !== "RUNNING"));
+      setError("");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Sürekli mod kullanılamıyor");
+    } finally {
+      setBusy(false);
+    }
+  };
+  return <div className="flex items-center gap-2">
+    <button type="button"
+      aria-label="Kendini Geliştirme: sürekli MCP yetenek keşfini aç veya kapat"
+      aria-pressed={status?.state === "RUNNING"}
+      disabled={busy || !status}
+      title={error || "Sürekli MCP keşfi; yeni yetenekler Owner izni ve bağımsız attestasyon gerektirir"}
+      onClick={() => void toggle()}
+      className={"rounded border px-3 py-2 text-[9px] disabled:opacity-50 " +
+        (status?.state === "RUNNING" ? "border-cyan-400 text-cyan-200" :
+         "border-cyan-950 text-slate-400")}>
+      <span className={status?.state === "RUNNING" ? "animate-pulse" : ""}>
+        {status?.state === "RUNNING" ? "● " : "○ "}
+      </span>
+      KENDİNİ GELİŞTİRME
+    </button>
+    {status && <span role="status" className="text-[9px] tracking-normal text-cyan-400">
+      {status.scanned_candidates} taranan · {status.queued_packages} kuyrukta · {status.active_count} aktif
+    </span>}
+    {error && <span role="alert" className="max-w-36 truncate text-amber-300" title={error}>
+      İŞLEM BAŞARISIZ
+    </span>}
+  </div>;
+}
+
 export default function App() {
   const [mainView, setMainView] = useState<"capabilities" | "hud">("hud");
   const [chatHistory, setChatHistory] = useState<ChatTurn[]>([]);
@@ -685,6 +738,7 @@ export default function App() {
               className={mainView === "hud" ? "rounded border border-cyan-600 px-3 py-2 text-cyan-200" : "rounded border border-cyan-950 px-3 py-2 text-slate-500"}>
               HUD
             </button>
+            <ContinuousEvolutionQuickControl />
             <span
               className={[
                 "h-1.5 w-1.5 rounded-full",

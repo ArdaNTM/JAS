@@ -527,6 +527,11 @@ class SelfDiscoveryEngine:
         self._task: asyncio.Task | None = None
         self._cycle = 0
         self._last_error = ""
+        self._source_health: dict[str, dict[str, object]] = {
+            name: {"state": "IDLE", "successful_queries": 0,
+                   "failed_queries": 0, "reason": ""}
+            for name in ("github", "registry", "pypi")
+        }
         path = Path(db_path).expanduser()
         if not path.is_absolute() or path.is_symlink():
             raise ValueError("Discovery database must use an absolute non-symlink path")
@@ -636,6 +641,7 @@ class SelfDiscoveryEngine:
             "proposal_count": self.count(),
             "cycles": self._cycle,
             "last_error": self._last_error,
+            "source_health": {name: dict(item) for name, item in self._source_health.items()},
             "tool_execution": False,
             "code_modified": False,
             "requires_owner_webauthn": True,
@@ -679,7 +685,9 @@ class SelfDiscoveryEngine:
                 ")) OR (package_status='STAGING_REJECTED' "
                 "AND stage_retry_version<2 AND "
                 "package_error='Executable or suspicious archive content rejected')) "
-                "ORDER BY created_at LIMIT 50"
+                "ORDER BY CASE WHEN package_status IS NULL THEN 0 "
+                "WHEN package_status IN ('pending','Queued') THEN 1 ELSE 2 END, "
+                "stage_attempts, created_at LIMIT 150"
             ).fetchall()
         # Once-only migration recovery of bounded legacy failures. The new
         # scanner still rejects actual malicious code; other policy/permission
@@ -692,8 +700,8 @@ class SelfDiscoveryEngine:
         ]
         candidates.sort(
             key=lambda row: (
-                # Existing active/budget queue takes precedence; legacy script
-                # false-positive retry is one-time and lower priority.
+                # Keep the established size-aware/local-first ordering.
+                # Script false-positive retry remains lowest priority.
                 1 if row[4] == "Executable or suspicious archive content rejected" else 0,
                 _python_mcp_priority(row[0], row[1]),
                 0 if _local_rank(row[0], row[1], row[2]) >= 10 else 1,
@@ -702,7 +710,15 @@ class SelfDiscoveryEngine:
                 row[0],
             )
         )
-        for repository, _, _, _, _ in candidates[:3]:
+        chosen = list(candidates[:3])
+        if len(candidates) > 50 and not any(item[4] is None for item in chosen):
+            # Large old rejected catalogues previously monopolized all three
+            # slots. Reserve ONE slot for a still-unattempted NULL/pending
+            # record; preserve small-queue size and local priority semantics.
+            fresh = next((item for item in candidates[3:] if item[4] is None), None)
+            if fresh is not None:
+                chosen[-1] = fresh
+        for repository, _, _, _, _ in chosen:
             report["attempted"] += 1
             try:
                 response = await asyncio.wait_for(self.gateway.invoke(MCPGatewayRequest(
@@ -851,6 +867,23 @@ class SelfDiscoveryEngine:
             saved = 0
             successful_queries = 0
             failed_queries: list[dict[str, str]] = []
+            health: dict[str, dict[str, object]] = {
+                name: {"state": "IDLE", "successful_queries": 0,
+                       "failed_queries": 0, "reason": ""}
+                for name in ("github", "registry", "pypi")
+            }
+
+            def observe(source: str, failure: str = "") -> None:
+                item = health[source]
+                key = "failed_queries" if failure else "successful_queries"
+                item[key] = int(item[key]) + 1
+                if failure:
+                    # Public API errors are data, never authority or raw tracebacks.
+                    item["reason"] = _safe_text(failure, 120)
+                successes, errors = item["successful_queries"], item["failed_queries"]
+                item["state"] = ("DEGRADED" if successes and errors
+                                 else "OK" if successes else "UNAVAILABLE")
+
             try:
                 for index in indexes:
                     # Network, rate-limit, and provider errors affect only this
@@ -879,13 +912,14 @@ class SelfDiscoveryEngine:
                         raise
                     except (DiscoveryUnavailable, RuntimeError,
                             asyncio.TimeoutError, OSError) as exc:
+                        reason = _safe_text(str(exc), 160) or "GitHub query unavailable"
                         failed_queries.append({
-                            "query": QUERIES[index],
-                            "reason": _safe_text(str(exc), 160) or
-                                      "GitHub query unavailable",
+                            "query": QUERIES[index], "reason": reason,
                         })
+                        observe("github", reason)
                         continue
                     successful_queries += 1
+                    observe("github")
 
                     saved += self._store_public_candidates(result, seen)
 
@@ -912,14 +946,15 @@ class SelfDiscoveryEngine:
                             if not isinstance(result, dict) or not isinstance(result.get("items"), list):
                                 raise DiscoveryUnavailable("Invalid catalog discovery evidence")
                             successful_queries += 1
+                            observe(source)
                             saved += self._store_public_candidates(result, seen)
                         except PermissionError:
                             raise
                         except (DiscoveryUnavailable, RuntimeError, OSError,
                                 asyncio.TimeoutError) as exc:
-                            failed_queries.append({
-                                "query": source, "reason": _safe_text(str(exc), 160),
-                            })
+                            reason = _safe_text(str(exc), 160) or source + " unavailable"
+                            failed_queries.append({"query": source, "reason": reason})
+                            observe(source, reason)
 
                 # Even with a rate-limited search, a previously validated
                 # catalog can supply up to three inert staging candidates.
@@ -956,11 +991,16 @@ class SelfDiscoveryEngine:
                         newly_activated = []
                 # Preserve fail-closed 429 behavior for an empty catalog;
                 # an existing queue is a useful partial offline outcome.
-                if not successful_queries and failed_queries and not staging_report["attempted"]:
+                if (not multi_source and not successful_queries
+                        and failed_queries and not staging_report["attempted"]):
                     raise DiscoveryUnavailable(
                         "GitHub discovery failed for all queries: " +
                         failed_queries[0]["reason"]
                     )
+                # Continuous scans persist partial-source health even if all
+                # remote services are temporarily unavailable. Existing NULL
+                # queue records must remain eligible for Gateway staging.
+                self._source_health = health
                 # Only show repositories actually returned by this live scan.
                 # Historical queued entries are available via the list endpoint.
                 current = [record for record in self.proposals(50)
@@ -977,6 +1017,7 @@ class SelfDiscoveryEngine:
                     "successful_queries": successful_queries,
                     "active_sources": (["github", "registry", "pypi"] if multi_source else ["github"]),
                     "failed_queries": failed_queries,
+                    "source_health": {name: dict(item) for name, item in health.items()},
                     "staged_count": staged_count,
                     "staging_attempted": staging_report["attempted"],
                     "verified_count": staging_report["verified_count"],
@@ -989,7 +1030,8 @@ class SelfDiscoveryEngine:
                 }
             except (DiscoveryUnavailable, PermissionError, OSError,
                     RuntimeError, asyncio.TimeoutError) as exc:
-                self._last_error = str(exc)[:180]
+                self._last_error = _safe_text(str(exc), 180)
+                self._source_health = health
                 self._history_record(query_count=len(indexes) + (2 if multi_source else 0), saved=saved,
                                      staged=0, status="FAILED")
                 raise
