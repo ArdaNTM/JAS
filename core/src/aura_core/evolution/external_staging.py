@@ -865,9 +865,39 @@ class GitHubStagingMCPProvider:
             # points to pinned bytes, not a runnable command or trusted receipt.
             if verified.exists():
                 old_manifest = verified / "aura-capability-manifest.json"
-                if old_manifest.is_file():
+                if old_manifest.is_symlink():
+                    raise StagingRejected("Unsafe cached static manifest path")
+                if old_manifest.is_file() and old_manifest.stat().st_size <= 16_000:
                     old = json.loads(old_manifest.read_text("utf-8"))
                     if old.get("source_sha256") == archive_sha and old.get("repository") == repository:
+                        # A cached manifest alone cannot restore a pruned ZIP.
+                        # Only the freshly downloaded, validated, SHA-matching
+                        # original may be restored; never rewrite signed proof.
+                        cached_zip = verified / "source.zip"
+                        if (cached_zip.is_symlink()
+                                or (cached_zip.exists() and not cached_zip.is_file())):
+                            raise StagingRejected("Unsafe cached source archive path")
+                        repair = not cached_zip.is_file()
+                        if not repair:
+                            current_hash = hashlib.sha256()
+                            with cached_zip.open("rb") as stream:
+                                while chunk := stream.read(1024 * 1024):
+                                    current_hash.update(chunk)
+                            repair = current_hash.hexdigest() != archive_sha
+                        if repair:
+                            handle, temporary = tempfile.mkstemp(
+                                prefix=".archive-repair-", dir=verified,
+                            )
+                            try:
+                                archive_sink.seek(0)
+                                with os.fdopen(handle, "wb") as target:
+                                    shutil.copyfileobj(archive_sink, target, 1024 * 1024)
+                                    target.flush()
+                                    os.fsync(target.fileno())
+                                os.replace(temporary, cached_zip)
+                            finally:
+                                if os.path.exists(temporary):
+                                    os.unlink(temporary)
                         self.workspace.audit(action="stage_cached", repository=repository,
                                              result="STATIC_REVIEW_ONLY")
                         return old
