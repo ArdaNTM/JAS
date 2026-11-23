@@ -112,8 +112,19 @@ class ContinuousEvolutionController:
                     local_report = await asyncio.to_thread(self.analyzer.scan)
                     self._local_gaps = len(local_report.proposals)
                     self._analyzed_files = local_report.scanned_files
+                cycle_progress = 0
+
+                def on_progress(scanned: int) -> None:
+                    nonlocal cycle_progress
+                    if type(scanned) is int and 0 < scanned <= 250:
+                        # The authenticated status endpoint reads this counter
+                        # while the same scan coroutine is still in progress.
+                        cycle_progress += scanned
+                        self._scanned += scanned
+
                 result = await self.discovery.run_once(
                     full_scan=True, multi_source=True,
+                    on_progress=on_progress,
                 )
                 if isinstance(result.get("source_health"), dict):
                     self._source_health = result["source_health"]
@@ -126,9 +137,12 @@ class ContinuousEvolutionController:
                         self._last_active = newly_active
                 self._cycles += 1
                 self._last_run = int(time.time())
-                self._scanned += max(
-                    len(result.get("items", [])), int(result.get("new_count", 0)),
-                )
+                if cycle_progress == 0:
+                    # Compatibility for existing scheduler implementations that
+                    # do not yet emit source-group progress callbacks.
+                    self._scanned += max(
+                        len(result.get("items", [])), int(result.get("new_count", 0)),
+                    )
                 self._last_summary = {
                     "new_count": int(result.get("new_count", 0)),
                     "staged_count": int(result.get("staged_count", 0)),
