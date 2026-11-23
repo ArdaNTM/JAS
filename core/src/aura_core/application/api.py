@@ -2404,9 +2404,17 @@ def create_api(
                     try:
                         generated = await _model_select_governed_tool(request.directive, principal_id)
                     except (ValueError, TypeError) as invalid:
-                        raise HTTPException(status_code=422, detail=str(invalid)) from invalid
+                        raise HTTPException(
+                            status_code=422,
+                            detail={"code": "INVALID_TASK_DIRECTIVE", "message": str(invalid)},
+                        ) from invalid
                 else:
-                    raise HTTPException(status_code=422, detail=str(exc)) from exc
+                    # Invalid or unsupported planning input is not a Core
+                    # failure. Keep it outside the task executor and Gateway.
+                    raise HTTPException(
+                        status_code=422,
+                        detail={"code": "INVALID_TASK_DIRECTIVE", "message": str(exc)},
+                    ) from exc
 
         return DirectivePlanResponse(
             resource_scope=generated.resource_scope,
