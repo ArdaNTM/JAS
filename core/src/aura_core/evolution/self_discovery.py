@@ -657,7 +657,8 @@ class SelfDiscoveryEngine:
                 "WHERE package_status='READY_FOR_OWNER_REVIEW'"
             ).fetchone()[0])
 
-    async def _stage_pending(self) -> dict[str, object]:
+    async def _stage_pending(self, *, continuous: bool = False,
+                             on_progress=None) -> dict[str, object]:
         report: dict[str, object] = {
             "attempted": 0, "staged_count": 0, "verified_count": 0, "rejected": [],
         }
@@ -710,14 +711,21 @@ class SelfDiscoveryEngine:
                 row[0],
             )
         )
-        chosen = list(candidates[:3])
-        if len(candidates) > 50 and not any(item[4] is None for item in chosen):
-            # Large old rejected catalogues previously monopolized all three
-            # slots. Reserve ONE slot for a still-unattempted NULL/pending
-            # record; preserve small-queue size and local priority semantics.
-            fresh = next((item for item in candidates[3:] if item[4] is None), None)
-            if fresh is not None:
-                chosen[-1] = fresh
+        if continuous:
+            # A full multi-source scan must drain SIX historic NULL proposals
+            # per pass when available. Keep the per-cycle HTTP/staging budget
+            # finite; every one still enters the existing MCPGateway boundary.
+            fresh = [item for item in candidates if item[4] is None][:6]
+            chosen = fresh + [
+                item for item in candidates if item[0] not in {row[0] for row in fresh}
+            ][:max(0, 6 - len(fresh))]
+        else:
+            chosen = list(candidates[:3])
+            if len(candidates) > 50 and not any(item[4] is None for item in chosen):
+                # Preserve the historic size-aware local-first manual scan.
+                fresh = next((item for item in candidates[3:] if item[4] is None), None)
+                if fresh is not None:
+                    chosen[-1] = fresh
         for repository, _, _, _, _ in chosen:
             report["attempted"] += 1
             try:
@@ -771,6 +779,14 @@ class SelfDiscoveryEngine:
                     "repository": repository, "reason": reason,
                 })
                 self.workspace.audit_rejection(repository, reason)
+            finally:
+                if on_progress is not None:
+                    # Core-owned synchronous display callback; a HUD failure
+                    # must never change Gateway staging authorization/results.
+                    try:
+                        on_progress(1)
+                    except Exception:
+                        logger.warning("Staging progress observer failed")
         return report
 
     def history(self, limit: int = 25) -> list[dict[str, object]]:
@@ -852,7 +868,8 @@ class SelfDiscoveryEngine:
         return saved
 
     async def run_once(self, *, full_scan: bool = False,
-                       multi_source: bool = False) -> dict[str, object]:
+                       multi_source: bool = False,
+                       on_progress=None) -> dict[str, object]:
         async with self._lock:
             # A manual scan covers two *rotating* query slots, not the
             # entire expanding allowlist (bounded public GitHub API use).
@@ -863,6 +880,14 @@ class SelfDiscoveryEngine:
                 for offset in range(query_count)
             )
             self._cycle += len(indexes)
+            def publish_progress(scanned: int) -> None:
+                if on_progress is not None and scanned > 0:
+                    try:
+                        on_progress(scanned)
+                    except Exception:
+                        # Observability never modifies security or scan outcome.
+                        logger.warning("Discovery progress observer failed")
+
             seen: set[str] = set()
             saved = 0
             successful_queries = 0
@@ -922,6 +947,7 @@ class SelfDiscoveryEngine:
                     observe("github")
 
                     saved += self._store_public_candidates(result, seen)
+                    publish_progress(len(result["items"]))
 
                 if multi_source:
                     # Additional discovery is not a privilege escalation. Each
@@ -948,6 +974,7 @@ class SelfDiscoveryEngine:
                             successful_queries += 1
                             observe(source)
                             saved += self._store_public_candidates(result, seen)
+                            publish_progress(len(result["items"]))
                         except PermissionError:
                             raise
                         except (DiscoveryUnavailable, RuntimeError, OSError,
@@ -980,7 +1007,10 @@ class SelfDiscoveryEngine:
                             )
                         except Exception:
                             research_crosscheck = "unavailable"
-                staging_report = await self._stage_pending()
+                staging_report = await self._stage_pending(
+                    continuous=bool(full_scan and multi_source),
+                    on_progress=publish_progress,
+                )
                 staged_count = staging_report["staged_count"]
                 newly_activated: list[str] = []
                 if staging_report["verified_count"] and self.on_verified is not None:
