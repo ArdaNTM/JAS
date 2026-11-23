@@ -651,7 +651,6 @@ class DelegatedMCPActivationManager:
                     and evidence.is_file() and not evidence.is_symlink()
                 )
                 if (name in self._active or name in expired_this_scan
-                        or decision.category in existing
                         or status == "REVOKED"
                         or (status == "QUARANTINED" and not recovery)):
                     continue
@@ -698,6 +697,11 @@ class DelegatedMCPActivationManager:
                         )
                     continue
 
+                # Category dedupe applies to ACTUAL activation only. Missing
+                # evidence and independent quarantine were reported above and
+                # must not get hidden by a previously activated sibling.
+                if decision.category in existing:
+                    continue
                 # Only candidates with BOTH evidence and a runtime consume
                 # live MCP connection slots. Full signatures and tree hashes
                 # remain mandatory inside _verify_and_connect().
