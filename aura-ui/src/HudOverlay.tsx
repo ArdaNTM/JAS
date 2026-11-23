@@ -273,6 +273,19 @@ export default function HudOverlay() {
       <b>A.U.R.A.</b>
       <small>{connected || scene ? "SPATIAL MESH / CORE" : "AWAITING CORE"}
         {scene?.displayId !== undefined ? " · DISPLAY " + scene.displayId : ""}</small>
+      {isPrimary && scene?.interactive && (
+        <button type="button" className="hud-evolution-top"
+          aria-pressed={continuous?.state === "RUNNING"}
+          disabled={continuousBusy || !continuous}
+          onClick={() => void toggleContinuous()}>
+          <span className={continuous?.state === "RUNNING" ? "hud-evolution-pulse" : ""}>
+            {continuous?.state === "RUNNING" ? "●" : "○"}
+          </span>{" "}KENDİNİ GELİŞTİRME
+          {continuous && <small>
+            {continuous.scanned_candidates} TARANAN · {continuous.queued_packages} KUYRUKTA · {continuous.active_count} AKTİF
+          </small>}
+        </button>
+      )}
     </div>
     {isPrimary && <div className="hud-orbit" aria-hidden="true"><i /><i /><i /></div>}
     {scanning && isPrimary && <div className="hud-sweep" aria-label="Görsel analiz sürüyor" />}
@@ -327,18 +340,7 @@ export default function HudOverlay() {
         {activeSession ? "TRUSTED SESSION İPTAL · " + activeSession.remaining + " KALDI" :
           "TRUSTED SESSION AÇ · 90S / 3 OKUMA"}
       </button>
-      <button aria-pressed={continuous?.state === "RUNNING"}
-        disabled={continuousBusy || !continuous}
-        onClick={() => void toggleContinuous()}>
-        <span className={continuous?.state === "RUNNING" ? "hud-evolution-pulse" : ""}>
-          {continuous?.state === "RUNNING" ? "●" : "○"}
-        </span>{" "}
-        KENDİNİ GELİŞTİRME {continuous?.state === "RUNNING" ? "AÇIK" : "KAPALI"}
-      </button>
-      {continuous && <small role="status">
-        TARANAN {continuous.scanned_candidates} · KUYRUKTA {continuous.queued_packages}
-        {" · "}AKTİF {continuous.active_count} · OWNER / ATTESTOR KORUMALI
-      </small>}
+      <small>Yetenek gelişimi yalnızca Owner imzası ve bağımsız attestasyonla etkinleşir.</small>
       <button onClick={() => voice.state === "recording" ? voice.stop() : voice.start()}>
         {voice.state === "recording" ? "KAYDI DURDUR" : "BAS-KONUŞ"}</button>
       <button aria-pressed={wake.active} onClick={() => wake.active ? wake.stop() : void wake.start()}>
