@@ -3,11 +3,11 @@
   "source_pr": "https://github.com/ArdaNTM/JAS/pull/158",
   "unified_snapshot": "19baa60b1139b519947270654d0c0fd59fb2516c",
   "baseline_main": "b1ffe6f534ced0d329dae273a4b949a634cb8bfa",
-  "statement": "Canonical Git blobs and source-specific regression evidence verified for five selected PR differences; PR #66/#68 missing modules merged exactly as their respective source branch blobs. PR #135/#146/#147 endpoints, providers and tests already existed under cumulative PR #152. This is NOT a semantic sign-off for every open PR. Post-F2.7 integration: canonical main.py was merged from PR #158 and main; source pin rebased to exact blob dc3a92e3 (no automatic feature completion). PR #187 adds a candidate canonical Gateway blob under isolated review; this lineage pin is not production Owner approval or automatic feature completion. PR #188 changes canonical composition main.py with an explicit pending-review lineage pin; it does not imply production Owner approval or feature-level completion.",
+  "statement": "Canonical Git blobs and source-specific regression evidence verified for five selected PR differences; PR #66/#68 missing modules merged exactly as their respective source branch blobs. PR #135/#146/#147 endpoints, providers and tests already existed under cumulative PR #152. This is NOT a semantic sign-off for every open PR. Post-F2.7 integration: canonical main.py was merged from PR #158 and main; source pin rebased to exact blob dc3a92e3 (no automatic feature completion). PR #187 adds a candidate canonical Gateway blob under isolated review; this lineage pin is not production Owner approval or automatic feature completion. PR #188 changes canonical composition main.py with an explicit pending-review lineage pin; it does not imply production Owner approval or feature-level completion. PR #189 updates Core lifespan activation scheduling; the source pin is pending CI and Owner review, not a COMPLETED or production-accepted designation.",
   "files": [
     {
       "path": "core/src/aura_core/main.py",
-      "unified_blob_sha": "7dce6ca8eaf86e9f7465badbf4b3e4994f8bd88d",
+      "unified_blob_sha": "f0f8fe755c194d7964c4e4bc13aee1b32556ddff",
       "canonical": "PR #172 local Owner external staging: narrow resource path PermissionEngine policy, Gateway-only static staging, no Owner passkey or sandbox boundary changes. CI and independent Owner live acceptance pending.",
       "variants": [
         {
@@ -114,6 +114,13 @@
           "blob": "7dce6ca8eaf86e9f7465badbf4b3e4994f8bd88d",
           "ancestry": "Isolated PR based on approved main; exact Core composition diff under review.",
           "assessment": "DIFF_REVIEW_REQUIRED: fixed-origin catalog MCP registration, Owner-gated continuous controller startup/shutdown, no Owner/attestor bypass. CI and independent Owner review still required."
+        },
+        {
+          "pr": 189,
+          "ref": "52c80cbb38699c641f6cd0fb0b785839f1b32988",
+          "blob": "f0f8fe755c194d7964c4e4bc13aee1b32556ddff",
+          "ancestry": "Isolated PR #189 based on merged #187/#188 main; nonblocking delegated activation lifecycle only.",
+          "assessment": "SOURCE_REVIEW_AND_EXACT_HEAD_CI_REQUIRED; ASGI startup schedules instead of awaiting external MCP scan; no PermissionEngine or signed Owner policy boundary change."
         }
       ]
     },
