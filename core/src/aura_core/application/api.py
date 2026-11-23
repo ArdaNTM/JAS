@@ -2404,17 +2404,14 @@ def create_api(
                     try:
                         generated = await _model_select_governed_tool(request.directive, principal_id)
                     except (ValueError, TypeError) as invalid:
-                        raise HTTPException(
-                            status_code=422,
-                            detail={"code": "INVALID_TASK_DIRECTIVE", "message": str(invalid)},
-                        ) from invalid
+                        # Preserve the legacy 'detail' string for UI clients.
+                        # The global FastAPI exception handler independently
+                        # wraps 422 into a structured validation_error envelope.
+                        raise HTTPException(status_code=422, detail=str(invalid)) from invalid
                 else:
-                    # Invalid or unsupported planning input is not a Core
-                    # failure. Keep it outside the task executor and Gateway.
-                    raise HTTPException(
-                        status_code=422,
-                        detail={"code": "INVALID_TASK_DIRECTIVE", "message": str(exc)},
-                    ) from exc
+                    # Planner validation is a client error, never an HTTP 500
+                    # or permission to schedule an ungoverned tool.
+                    raise HTTPException(status_code=422, detail=str(exc)) from exc
 
         return DirectivePlanResponse(
             resource_scope=generated.resource_scope,
