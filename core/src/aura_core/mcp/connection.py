@@ -121,7 +121,14 @@ class MCPConnection:
                                 failure or RuntimeError("MCP connection closed"),
                             )
                 if self._close_result is not None and not self._close_result.done():
-                    if failure is None or isinstance(failure, asyncio.CancelledError):
+                    initialized = (self._ready is not None and self._ready.done()
+                                   and not self._ready.cancelled()
+                                   and self._ready.exception() is None)
+                    if (failure is None or not initialized
+                            or isinstance(failure, asyncio.CancelledError)):
+                        # Initialize already reported its own exception to the
+                        # caller. Closing its partially opened transport is
+                        # still a successful, idempotent cleanup operation.
                         self._close_result.set_result(None)
                     else:
                         self._close_result.set_exception(failure)
