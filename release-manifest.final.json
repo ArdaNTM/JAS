@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-22T23:44:09.098Z",
-  "git_commit": "1b7556868e6709e95f9b3cd005830bb3506c4c2f",
+  "generated_at": "2026-11-23T03:26:33.905Z",
+  "git_commit": "e0ed5d9cf8d09bf21bf467d7ac350b2bff081e7e",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:7434a0a35139f3f764474d0c6d1cf310f9821d745a8f43b25f00b49ff49fd11e",
+  "release_digest": "sha256:9d28c2c47ba6679c49380835134117452e47dcca4f3193659463b3d0fda6dca7",
   "file_count": 465,
   "files": [
     {
@@ -78,7 +78,7 @@
     },
     {
       "path": "aura-ui/src/App.tsx",
-      "sha256": "8e1b869b71651b362658bdca3ce96831bd6ed802f815d20410b15940330e7f37"
+      "sha256": "f271f3563d9fd429ca22d7dc9d1dbd5210b99064e1157a1165d0d005f7bda3fc"
     },
     {
       "path": "aura-ui/src/assets/hero.png",
@@ -122,7 +122,7 @@
     },
     {
       "path": "aura-ui/src/components/EvolutionReviewPanel.tsx",
-      "sha256": "9a0e105e2f788137469d911eb3f77fc07ecb03d8e95f34aa36b66c964e495720"
+      "sha256": "d7fee13a83e627967e6157e190a4cc51da78cd81cb38875cf77dc52e91dbf183"
     },
     {
       "path": "aura-ui/src/components/HudGameStudio.tsx",
@@ -150,11 +150,11 @@
     },
     {
       "path": "aura-ui/src/hud.css",
-      "sha256": "081117fffe81e9fd4290b3a02d90d4c203957d4bfb84afe013fef45b0c46c0a1"
+      "sha256": "08e17f0709825472b16986e426570277ed963d026d2da9701a85ed8a61c9718c"
     },
     {
       "path": "aura-ui/src/HudOverlay.tsx",
-      "sha256": "28f8b998d2a8d049b4efa70b881c0ad139a80afdf0e553464854144e265ac470"
+      "sha256": "98255ce4cfa51860c8bfada126e29a1e8d5afed67b229038816fc57de03cbe51"
     },
     {
       "path": "aura-ui/src/index.css",
@@ -874,7 +874,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/activation_runtime.py",
-      "sha256": "cce9efae1d16017965ad6e4002897752be572e4b48eb57c569295d1e7ecb90d2"
+      "sha256": "794bbd0687543dfd0a13b1e65620a4f4575802530be0faa43918e23400aac2e3"
     },
     {
       "path": "core/src/aura_core/evolution/attestor_worker.py",
@@ -886,7 +886,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/continuous_evolution.py",
-      "sha256": "8a58af218b3ee14817e706c974b07c69c07cf4317e6fcb0b7b94ec90ccfbb44d"
+      "sha256": "baefecaf27fa06b59bd32c844cd4bced0024b1d147e854378f65551f5de1f016"
     },
     {
       "path": "core/src/aura_core/evolution/decision_engine.py",
@@ -982,7 +982,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/sandbox_preflight.py",
-      "sha256": "51d618d4da1143faea341cc7e7b94e8b05a148aa1f5dd1b894f1c0e5003b28a5"
+      "sha256": "698bf1359071c675e8a7321ceb809220185ecce6b7ff045cecafcd020572aaba"
     },
     {
       "path": "core/src/aura_core/evolution/sandbox_review.py",
@@ -990,7 +990,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/self_discovery.py",
-      "sha256": "37a5e5b2f2cec34a86a399cf37594130094f51d3990fdb4c79bdb05438c34fe3"
+      "sha256": "a6dbd933264b0aa6f006feb06abffc1732166cdb4250da5e7e256fd8c1103c1c"
     },
     {
       "path": "core/src/aura_core/evolution/self_discovery_api.py",
@@ -1006,7 +1006,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/windows_job_mcp.py",
-      "sha256": "62019aed91216f1d3cd6ab17d4498de89634d18e539e39232b000fd01cf2282c"
+      "sha256": "60384443c510953f4e761b36d2c63600f54c1ed913edc45dbd20ef9e52a4229f"
     },
     {
       "path": "core/src/aura_core/evolution/windows_owner_storage.py",
@@ -1186,7 +1186,7 @@
     },
     {
       "path": "core/src/aura_core/main.py",
-      "sha256": "3a43b7feb2af320f03c98ad29d7c71be4887d5edf530f73d80cfd7db94f2af62"
+      "sha256": "0e300e9b3136b4cf67c65f3b4bb75c535a109cb40d334d9b970fca6c6401ad07"
     },
     {
       "path": "core/src/aura_core/mcp/__init__.py",
@@ -1850,7 +1850,7 @@
     },
     {
       "path": "scripts/launch-aura-desktop.ps1",
-      "sha256": "70e08fd9f08ce1e70c6c8f318f5fdfe3015642cbcc012d86a4cf56cf671d2754"
+      "sha256": "497b3dec1c9f9fc2371487e530ead4af66b1ed803bf0b358096c54533f1aabfc"
     },
     {
       "path": "scripts/setup-autonomous-aura.ps1",
