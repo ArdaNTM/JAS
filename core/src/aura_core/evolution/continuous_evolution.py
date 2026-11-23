@@ -35,6 +35,11 @@ class ContinuousEvolutionController:
         self._last_active: list[str] = []
         self._retry_failures = 0
         self._last_run = 0
+        self._source_health: dict[str, dict[str, object]] = {
+            key: {"state": "IDLE", "successful_queries": 0,
+                  "failed_queries": 0, "reason": ""}
+            for key in ("github", "registry", "pypi")
+        }
 
     def status(self) -> dict[str, Any]:
         running = self._task is not None and not self._task.done()
@@ -59,6 +64,7 @@ class ContinuousEvolutionController:
         return {
             "state": "RUNNING" if running else "IDLE",
             "active_sources": ["github", "registry", "pypi"] if running else [],
+            "source_health": discovery.get("source_health", self._source_health),
             "scanned_candidates": self._scanned,
             "queued_packages": queued,
             "active_count": sum(len(row.get("capabilities", [])) for row in active),
@@ -109,6 +115,8 @@ class ContinuousEvolutionController:
                 result = await self.discovery.run_once(
                     full_scan=True, multi_source=True,
                 )
+                if isinstance(result.get("source_health"), dict):
+                    self._source_health = result["source_health"]
                 if self.activation is not None:
                     # Rechecks strictly require independently signed, fresh
                     # attestations and current Owner delegation.
@@ -140,6 +148,12 @@ class ContinuousEvolutionController:
                 logger.warning("Continuous Evolution cycle failed", exc_info=True)
                 self._cycles += 1
                 self._last_error = type(exc).__name__
+                # Some failures occur after individual queries have committed.
+                # Expose the last trustworthy source statuses without claiming
+                # every remote source was healthy.
+                status = self.discovery.status()
+                if isinstance(status.get("source_health"), dict):
+                    self._source_health = status["source_health"]
                 self._last_run = int(time.time())
                 self._retry_failures = min(5, self._retry_failures + 1)
                 delay = max(delay, min(1800, 60 * (2 ** self._retry_failures)))
