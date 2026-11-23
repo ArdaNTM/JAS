@@ -1,6 +1,7 @@
 """Public GitHub discovery: gateway proof, licensing and persistent review queue."""
 import asyncio
 import base64
+import hashlib
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -282,10 +283,16 @@ def test_auto_staging_calls_second_gateway_tool_but_no_execution(tmp_path):
         async def invoke(self, request):
             if request.capability_id == CAPABILITY:
                 self.calls.append(request)
+                # A successful real stage retains source.zip; the fake must
+                # emulate that invariant to avoid intentional requeue on scan.
+                archive = (workspace.root / "verified" /
+                           request.arguments["repository"].replace("/", "__") / "source.zip")
+                archive.parent.mkdir(parents=True, exist_ok=True)
+                archive.write_bytes(b"inert gateway fixture")
                 return SimpleNamespace(decision=AuthorizationDecision.ALLOW, result={
                     "repository": request.arguments["repository"],
                     "status": "READY_FOR_OWNER_REVIEW",
-                    "source_sha256": "a" * 64,
+                    "source_sha256": hashlib.sha256(archive.read_bytes()).hexdigest(),
                     "sandbox_attested": False,
                     "activation_performed": False,
                     "execution_allowed": False,
@@ -482,12 +489,16 @@ def test_three_candidates_per_cycle_and_rejected_reason_is_persistent(tmp_path):
             if request.capability_id == CAPABILITY:
                 if request.arguments["repository"] == repositories[0]:
                     raise ValueError("No recognizable MCP/local Python or JS entrypoint")
+                archive = (workspace.root / "verified" /
+                           request.arguments["repository"].replace("/", "__") / "source.zip")
+                archive.parent.mkdir(parents=True, exist_ok=True)
+                archive.write_bytes(b"inert gateway fixture")
                 return SimpleNamespace(
                     decision=AuthorizationDecision.ALLOW,
                     result={
                         "repository": request.arguments["repository"],
                         "status": "READY_FOR_OWNER_REVIEW",
-                        "source_sha256": "a" * 64,
+                        "source_sha256": hashlib.sha256(archive.read_bytes()).hexdigest(),
                         "sandbox_attested": False,
                         "activation_performed": False,
                         "execution_allowed": False,
