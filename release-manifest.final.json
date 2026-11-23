@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-23T03:29:15.830Z",
-  "git_commit": "f0938bf2776b4769904773365166c2fc7859baf9",
+  "generated_at": "2026-11-23T05:56:22.655Z",
+  "git_commit": "531f009884a8a011e1f54e49f75e75c75be054e2",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:28fd36d88bc3a00632f276e89666c92689a34343b254211a20af390f2e0f987b",
+  "release_digest": "sha256:c320c229685d851ee9b66dcd517455e3fa97d1e49b252619c3dcc6f4e9ccd1cc",
   "file_count": 465,
   "files": [
     {
@@ -1806,7 +1806,7 @@
     },
     {
       "path": "core/tests/test_evolution_windows_job_optin.py",
-      "sha256": "a80494c397683aeb45e0df67f31ff75de2a0330e32b99ccb6579800656509423"
+      "sha256": "0a8d46cb5cd2c5d2d64df71d610e42b81a6bdd66d9288d3a98e56da2c43a4b40"
     },
     {
       "path": "core/tests/test_evolution_windows_live_recovery.py",
