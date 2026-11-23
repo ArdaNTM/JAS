@@ -960,6 +960,7 @@ def build_app() -> FastAPI:
         kokoro_provider = None
         filesystem_provider = None
         event_coordinator = None
+        activation_start_task = None
         initialized_stores = []
 
         async def close_store(store):
@@ -1229,7 +1230,11 @@ def build_app() -> FastAPI:
             event_runtime.start()
             delegated_activation = getattr(_app.state, "autonomous_activation", None)
             if delegated_activation is not None:
-                await delegated_activation.start()
+                # No independent MCP handshake is allowed to block /health.
+                # start() schedules the signed-evidence scan inside its daemon.
+                activation_start_task = asyncio.create_task(
+                    delegated_activation.start(), name="aura-activation-startup",
+                )
             discovery_worker = getattr(_app.state, "self_discovery", None)
             if (discovery_worker is not None
                     and getattr(_app.state, "continuous_evolution", None) is None):
@@ -1307,6 +1312,16 @@ def build_app() -> FastAPI:
                 except Exception:
                     logger.exception("Self-discovery shutdown failed")
 
+            if activation_start_task is not None:
+                # Prevent late task startup after shutdown has begun.
+                if not activation_start_task.done():
+                    activation_start_task.cancel()
+                try:
+                    await activation_start_task
+                except asyncio.CancelledError:
+                    pass
+                except Exception:
+                    logger.exception("Asynchronous delegated activation startup failed")
             delegated_activation = getattr(app.state, "autonomous_activation", None)
             if delegated_activation is not None:
                 try:
