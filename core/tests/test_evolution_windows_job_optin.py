@@ -158,9 +158,20 @@ def test_windows_job_object_real_mcp_initialize_and_tools_list(tmp_path):
     server = runtime / "server.py"
     server.write_text(
         "from mcp.server.mcpserver import MCPServer\n"
+        "from pathlib import Path\n"
+        "import sqlite3, os\n"
         "mcp = MCPServer('job-sandbox-test')\n"
         "@mcp.tool()\n"
         "def hello() -> str: return 'hello'\n"
+        "@mcp.tool()\n"
+        "def remember() -> int:\n"
+        "    assert Path(os.environ['HOME']).resolve() == Path.cwd().resolve()\n"
+        "    assert Path(os.environ['XDG_DATA_HOME']).is_relative_to(Path.cwd())\n"
+        "    with sqlite3.connect('projectmem.sqlite3') as db:\n"
+        "        db.execute('CREATE TABLE IF NOT EXISTS calls (id INTEGER PRIMARY KEY)')\n"
+        "        db.execute('INSERT INTO calls DEFAULT VALUES')\n"
+        "        db.commit()\n"
+        "        return db.execute('SELECT COUNT(*) FROM calls').fetchone()[0]\n"
         "if __name__ == '__main__': mcp.run(transport='stdio')\n",
         encoding="utf-8",
     )
@@ -174,14 +185,26 @@ def test_windows_job_object_real_mcp_initialize_and_tools_list(tmp_path):
             response = await asyncio.wait_for(connection.list_tools(), timeout=5)
             tools = response.tools if hasattr(response, "tools") else response
             assert any(tool.name == "hello" for tool in tools)
+            assert any(tool.name == "remember" for tool in tools)
+            # Three real Windows Job Object tool calls write durable SQLite
+            # only into state/<pkg>; the runtime source stays untouched.
+            for _ in range(3):
+                await asyncio.wait_for(connection.call_tool("remember", {}), timeout=5)
         finally:
             await connection.close()
 
+    original_source = server.read_bytes()
     asyncio.run(check())
-    assert server.is_file()  # Job never overwrites the reviewed source tree.
+    assert server.read_bytes() == original_source  # Signed code never mutates.
+    assert not (runtime / "projectmem.sqlite3").exists()
+    state = workspace.root / "state" / "test__job-handshake"
+    assert (state / "projectmem.sqlite3").is_file()
+    import sqlite3
+    with sqlite3.connect(state / "projectmem.sqlite3") as db:
+        assert db.execute("SELECT COUNT(*) FROM calls").fetchone()[0] == 3
     scratch_parent = workspace.root / "runtime-work" / "test__job-handshake"
     assert scratch_parent.is_dir()
-    assert not list(scratch_parent.iterdir())  # Disposable child state cleaned up.
+    assert not list(scratch_parent.iterdir())  # Disposable diagnostics removed.
 
 
 def test_setup_keeps_real_passkey_and_does_not_bypass_owner_security():
@@ -192,3 +215,46 @@ def test_setup_keeps_real_passkey_and_does_not_bypass_owner_security():
     assert "--allow-local-windows-process" in setup
     assert "activation_delegation --verify" in setup
     assert "owner-passkey.json" in setup
+
+
+def test_windows_state_directory_is_external_and_rejects_links(tmp_path):
+    from aura_core.evolution.external_staging import EvolutionWorkspace
+    from aura_core.evolution.windows_job_mcp import local_mcp_state_root
+
+    workspace = EvolutionWorkspace(tmp_path / "evolution")
+    state = local_mcp_state_root(workspace, "riponcm__projectmem")
+    assert state == workspace.root / "state" / "riponcm__projectmem"
+    assert not state.is_relative_to(workspace.root / "runtime")
+    assert local_mcp_state_root(workspace, "riponcm__projectmem") == state
+    with pytest.raises(SandboxUntrusted):
+        local_mcp_state_root(workspace, "../outside")
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    link = workspace.root / "state" / "unsafe__linked"
+    try:
+        link.symlink_to(outside, target_is_directory=True)
+    except (OSError, NotImplementedError):
+        pytest.skip("Symlink creation unavailable")
+    with pytest.raises(Exception, match="link|junction|Symlink"):
+        local_mcp_state_root(workspace, "unsafe__linked")
+    assert outside.is_dir()
+
+
+def test_scrubbed_windows_environment_maps_home_and_xdg_to_persistent_state(tmp_path):
+    from aura_core.evolution.external_staging import EvolutionWorkspace
+    from aura_core.evolution.windows_job_mcp import (
+        _scrubbed_windows_mcp_environment, local_mcp_state_root,
+    )
+    workspace = EvolutionWorkspace(tmp_path / "evolution")
+    state = local_mcp_state_root(workspace, "riponcm__projectmem")
+    scratch = workspace.root / "runtime-work" / "riponcm__projectmem"
+    scratch.mkdir(parents=True)
+    env = _scrubbed_windows_mcp_environment(scratch, state=state)
+    for key in ("HOME", "USERPROFILE", "APPDATA", "LOCALAPPDATA",
+                "XDG_DATA_HOME", "XDG_CONFIG_HOME", "XDG_CACHE_HOME"):
+        assert Path(env[key]).is_relative_to(state)
+    assert Path(env["TEMP"]).resolve() == scratch.resolve()
+    assert Path(env["TMP"]).resolve() == scratch.resolve()
+    assert not any(key.startswith("AURA_") for key in env)
+    assert "OPENAI_API_KEY" not in env
+    assert env["PYTHONDONTWRITEBYTECODE"] == "1"
