@@ -544,9 +544,13 @@ class DelegatedMCPActivationManager:
         if marker.exists() or marker.is_symlink():
             raise PermissionError("Local Windows MCP candidate quarantined by independent attestor")
         bundle_file = package / "independent-attestations.json"
-        if (bundle_file.is_symlink() or not bundle_file.is_file()
-                or bundle_file.stat().st_size > _TOOL_LIMIT_BYTES):
+        if bundle_file.is_symlink() or (
+                hasattr(bundle_file, "is_junction") and bundle_file.is_junction()):
+            raise PermissionError("Unsafe independent attestation bundle path")
+        if not bundle_file.is_file():
             raise PermissionError("Independently signed sandbox results missing")
+        if bundle_file.stat().st_size > _TOOL_LIMIT_BYTES:
+            raise PermissionError("Independent attestation bundle exceeds size budget")
         bundle = json.loads(bundle_file.read_text("utf-8"))
         if not isinstance(bundle, dict):
             raise PermissionError("Untrusted sandbox bundle")
@@ -652,6 +656,22 @@ class DelegatedMCPActivationManager:
             # Revoke every live capability when standing consent expires.
             for name in tuple(self._active):
                 await self.quarantine(name)
+            # A present attestation never substitutes for a verified Owner
+            # grant. Record this dependency for existing waiting candidates.
+            async with self._lock:
+                for row in self._load_inventory()["active"]:
+                    repository = row.get("repository")
+                    if (row.get("status") != "WAITING_ATTESTATION"
+                            or not isinstance(repository, str)
+                            or not re.fullmatch(r"[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+", repository)):
+                        continue
+                    evidence = (self.workspace.root / "verified" /
+                                repository.replace("/", "__") / "independent-attestations.json")
+                    if (evidence.is_file() and not evidence.is_symlink()
+                            and row.get("reason_code") != "OWNER_DELEGATION_UNAVAILABLE"):
+                        self._persist(repository, "WAITING_ATTESTATION",
+                                      reason_code="OWNER_DELEGATION_UNAVAILABLE",
+                                      reason_detail="Valid signed Owner activation delegation unavailable")
             return []
         successes: list[str] = []
         attempted = 0
@@ -679,7 +699,9 @@ class DelegatedMCPActivationManager:
             # Existing signed observations plus a prepared runtime go first,
             # even when their repository names sort after unsatisfied packages.
             # Presence is only a scheduling hint, NEVER proof authorization.
-            pending = self.decisions.evaluate_pending(limit=100)
+            # The workspace supports up to 250 candidates. Do not truncate
+            # the decision list at 100 before prioritizing ready evidence.
+            pending = self.decisions.evaluate_pending(limit=self.workspace.max_items)
             def is_prepared(decision) -> bool:
                 if decision.status != "AUTO_APPROVED_BY_POLICY":
                     return False
@@ -693,11 +715,32 @@ class DelegatedMCPActivationManager:
                         and runtime.is_dir() and not runtime.is_symlink())
             pending.sort(key=lambda decision: 0 if is_prepared(decision) else 1)
             for decision in pending:
-                if decision.status != "AUTO_APPROVED_BY_POLICY":
+                # REJECTED_EVIDENCE returns the directory identity rather
+                # than owner/repo. Normalize only valid repository names.
+                repository = decision.repository.replace("__", "/")
+                if not re.fullmatch(r"[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+", repository):
                     continue
-                name = decision.repository.replace("/", "__")
-                previous = persistent.get(decision.repository, {})
+                name = repository.replace("/", "__")
+                previous = persistent.get(repository, {})
                 status = previous.get("status")
+                package = self.workspace.root / "verified" / name
+                evidence = package / "independent-attestations.json"
+
+                def defer(reason_code: str, detail: str) -> None:
+                    # Never downgrade an existing quarantine or explicit revoke.
+                    if status in {"QUARANTINED", "REVOKED"}:
+                        return
+                    if (status != "WAITING_ATTESTATION"
+                            or previous.get("reason_code") != reason_code
+                            or previous.get("reason_detail") != self._reason_detail(detail)):
+                        self._persist(repository, "WAITING_ATTESTATION",
+                                      reason_code=reason_code, reason_detail=detail)
+
+                if decision.status != "AUTO_APPROVED_BY_POLICY":
+                    if (name not in self._active and name not in expired_this_scan
+                            and (evidence.exists() or evidence.is_symlink())):
+                        defer(decision.status, decision.decision_reason)
+                    continue
                 local_signed = (os.name == "nt" and
                                 grant.get("allow_local_windows_process", False) is True)
                 package = self.workspace.root / "verified" / name
@@ -768,11 +811,15 @@ class DelegatedMCPActivationManager:
                 # evidence and independent quarantine were reported above and
                 # must not get hidden by a previously activated sibling.
                 if decision.category in existing:
+                    defer("CATEGORY_ALREADY_ACTIVE",
+                          "Another provider is active in the same delegated category")
                     continue
                 # Only candidates with BOTH evidence and a runtime consume
                 # live MCP connection slots. Full signatures and tree hashes
                 # remain mandatory inside _verify_and_connect().
                 if attempted >= max(1, min(3, limit)):
+                    defer("ACTIVATION_BUDGET_DEFERRED",
+                          "Prepared candidate deferred by per-scan activation budget")
                     continue
                 attempted += 1
                 if recovery:
@@ -806,7 +853,8 @@ class DelegatedMCPActivationManager:
                         reason_code=("EXPIRED_ATTESTATION" if expired_proof
                                      else type(exc).__name__),
                         reason_detail=("Signed evidence expired; awaiting independent renewal"
-                                       if expired_proof else self._reason_detail(exc)),
+                                       if expired_proof else
+                                       (self._reason_detail(exc) or type(exc).__name__)),
                         recovery_version=1 if recovery else 0,
                     )
                 finally:
