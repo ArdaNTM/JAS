@@ -254,8 +254,9 @@ class EvolutionDecisionEngine:
         base = self.workspace.root / "verified"
         result: list[Decision] = []
         for path in sorted(base.iterdir()):
-            if len(result) >= min(100, max(1, limit)):
+            if len(result) >= min(self.workspace.max_items, max(1, limit)):
                 break
-            if path.is_dir() and not path.is_symlink():
+            if (path.is_dir() and not path.is_symlink()
+                    and not (hasattr(path, "is_junction") and path.is_junction())):
                 result.append(self.evaluate(path.name))
         return result

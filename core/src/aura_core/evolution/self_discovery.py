@@ -720,14 +720,17 @@ class SelfDiscoveryEngine:
                 "'Static risk/paid API signature detected'"
                 ")) OR (package_status='STAGING_REJECTED' "
                 "AND stage_retry_version<2 AND "
-                "package_error='Executable or suspicious archive content rejected')) "
+                "package_error='Executable or suspicious archive content rejected') "
+                "OR (package_status='STAGING_REJECTED' "
+                "AND stage_retry_version<4 AND package_error IN ("
+                "'TimeoutError','GitHub archive network request failed'))) "
                 "ORDER BY CASE WHEN package_status IS NULL THEN 0 "
                 "WHEN package_status IN ('pending','Queued') THEN 1 ELSE 2 END, "
                 "stage_attempts, created_at LIMIT 150"
             ).fetchall()
-        # Once-only migration recovery of bounded legacy failures. The new
-        # scanner still rejects actual malicious code; other policy/permission
-        # failures never enter this queue. No new repo required for retry.
+        # Bounded legacy migration plus at most two further attempts for
+        # transient transport failures (versions 2 -> 3 -> 4).
+        # Policy, permission and malicious archive errors are not retried.
         candidates = [
             (repository, description, stars or 0, size_kb, reason, package_status)
             for repository, description, stars, size_kb, reason, package_status in rows
@@ -800,16 +803,25 @@ class SelfDiscoveryEngine:
                 report["verified_count"] += 1
             except (PermissionError, ValueError, RuntimeError,
                     OSError, asyncio.TimeoutError) as exc:
-                reason = _safe_text(str(exc), 160) or type(exc).__name__
+                # Canonicalize timeouts, including ones carrying an OS
+                # message. Retry only known transport errors, not permission
+                # errors or arbitrary exceptions with similar text.
+                reason = ("TimeoutError" if isinstance(exc, asyncio.TimeoutError)
+                          else _safe_text(str(exc), 160) or type(exc).__name__)
+                transient = (
+                    isinstance(exc, asyncio.TimeoutError)
+                    or (isinstance(exc, ValueError)
+                        and reason == "GitHub archive network request failed")
+                )
                 logger.warning("Static staging rejected %s: %s", repository, reason)
                 unsupported = "No supported Python stdio MCP entrypoint" in reason
                 with self._connect() as db:
                     db.execute(
                         "UPDATE evolution_proposals SET package_status=?,"
                         "package_error=?,stage_attempts=stage_attempts+1,"
-                        "stage_retry_version=2 WHERE repository=?",
+                        "stage_retry_version=MAX(2,stage_retry_version+?) WHERE repository=?",
                         ("UNSUPPORTED_RUNTIME" if unsupported else "STAGING_REJECTED",
-                         reason, repository),
+                         reason, 1 if transient else 0, repository),
                     )
                 report["rejected"].append({
                     "repository": repository, "reason": reason,
