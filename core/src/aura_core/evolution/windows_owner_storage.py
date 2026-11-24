@@ -31,11 +31,14 @@ def _powershell(script: str, *, path: Path) -> None:
     if not module_root.is_dir():
         raise PermissionError("Trusted Windows PowerShell security modules unavailable")
     env["PSModulePath"] = str(module_root)
-    process = subprocess.run(
-        [str(executable), "-NoProfile", "-NonInteractive", "-Command", script],
-        env=env, capture_output=True, text=True, timeout=15, check=False,
-        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
-    )
+    try:
+        process = subprocess.run(
+            [str(executable), "-NoProfile", "-NonInteractive", "-Command", script],
+            env=env, capture_output=True, text=True, timeout=45, check=False,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise PermissionError("Windows owner ACL verification timed out") from exc
     if process.returncode != 0:
         raise PermissionError(f"Owner state NTFS ACL is not private or could not be validated (status={process.returncode})")
 
