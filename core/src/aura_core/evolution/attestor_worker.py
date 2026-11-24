@@ -13,6 +13,7 @@ import json
 import os
 from pathlib import Path
 import secrets
+import sys
 import time
 
 from cryptography.hazmat.primitives import serialization
@@ -497,12 +498,30 @@ def main() -> int:
         return 0
     if args.private_key is None:
         parser.error("--private-key required after independent provisioning")
-    worker = IndependentMCPAttestorWorker(
-        workspace=workspace, key=_load_signer(args.private_key),
-    )
+    worker = None
     while True:
-        result = asyncio.run(worker.scan())
-        print(json.dumps({"attested_packages": len(result)}, sort_keys=True), flush=True)
+        try:
+            if worker is None:
+                # A transient ACL failure while loading the key is also
+                # retryable in watch mode; never use an unverified signer.
+                worker = IndependentMCPAttestorWorker(
+                    workspace=workspace, key=_load_signer(args.private_key),
+                )
+            result = asyncio.run(worker.scan())
+            print(json.dumps({"attested_packages": len(result)}, sort_keys=True), flush=True)
+        except Exception as exc:
+            if not args.watch:
+                raise
+            # Do not emit raw subprocess commands, key paths or exception
+            # payloads from untrusted MCPs to an operator service log.
+            detail = ("Windows owner ACL verification timed out"
+                      if isinstance(exc, PermissionError)
+                      and str(exc) == "Windows owner ACL verification timed out"
+                      else "Attestor iteration failed; retrying at next poll")
+            print(json.dumps({
+                "event": "attestor_scan_failed", "error": type(exc).__name__,
+                "detail": detail,
+            }, sort_keys=True), file=sys.stderr, flush=True)
         if not args.watch:
             return 0
         time.sleep(args.poll_seconds)
