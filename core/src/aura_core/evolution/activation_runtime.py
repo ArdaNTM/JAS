@@ -660,6 +660,8 @@ class DelegatedMCPActivationManager:
             # grant. Record this dependency for existing waiting candidates.
             async with self._lock:
                 for row in self._load_inventory()["active"]:
+                    if not isinstance(row, dict):
+                        continue
                     repository = row.get("repository")
                     if (row.get("status") != "WAITING_ATTESTATION"
                             or not isinstance(repository, str)
@@ -713,11 +715,23 @@ class DelegatedMCPActivationManager:
                 return (not marker.exists() and not marker.is_symlink()
                         and evidence.is_file() and not evidence.is_symlink()
                         and runtime.is_dir() and not runtime.is_symlink())
-            pending.sort(key=lambda decision: 0 if is_prepared(decision) else 1)
+            def priority(decision) -> tuple[int, int]:
+                if not is_prepared(decision):
+                    return (2, 0)
+                previous = persistent.get(decision.repository, {})
+                # Fresh ready candidates, including those deferred last
+                # cycle, outrank repeated recovery of quarantined providers.
+                if previous.get("status") in {"QUARANTINED", "REVOKED"}:
+                    return (1, 0)
+                return (0, 0 if previous.get("reason_code") ==
+                        "ACTIVATION_BUDGET_DEFERRED" else 1)
+
+            pending.sort(key=priority)
             for decision in pending:
                 # REJECTED_EVIDENCE returns the directory identity rather
                 # than owner/repo. Normalize only valid repository names.
-                repository = decision.repository.replace("__", "/")
+                repository = (decision.repository if "/" in decision.repository
+                              else decision.repository.replace("__", "/"))
                 if not re.fullmatch(r"[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+", repository):
                     continue
                 name = repository.replace("/", "__")
