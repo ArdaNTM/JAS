@@ -457,8 +457,9 @@ class DelegatedMCPActivationManager:
             trusted_runner_id=grant["attestor_runner_id"],
         )
 
-    def _still_authorized(self, name: str) -> bool:
-        if self.delegation.verified_grant() is None:
+    def _still_authorized(self, name: str, *, expected_grant: dict | None = None) -> bool:
+        current = self.delegation.verified_grant()
+        if current is None or (expected_grant is not None and current != expected_grant):
             return False
         repository = name.replace("__", "/")
         try:
@@ -537,7 +538,7 @@ class DelegatedMCPActivationManager:
                 on_failure=lambda key: asyncio.create_task(self.quarantine(key)),
                 on_expired=lambda key: asyncio.create_task(self._expire(key)),
                 owner_authorized=lambda: (
-                    (self.delegation.verified_grant() == grant and self._still_authorized(name))
+                    self._still_authorized(name, expected_grant=grant)
                     or (recovery and self._recovery_authorized(name, grant))
                 ),
                 attestation_expires_at=expires_at, signed_tree=signed_tree,
@@ -856,7 +857,8 @@ class DelegatedMCPActivationManager:
                     details, provider, tools, proofs, expiry = await self._verify_and_connect(
                         name, grant, recovery=recovery,
                     )
-                    await self._register(name, details, provider, tools, proofs, expiry)
+                    await self._register(name, details, provider, tools, proofs, expiry,
+                                         expected_grant=grant)
                     successes.append(decision.repository)
                 except Exception as exc:
                     # Missing/expired attestor observation is a dependency,
@@ -890,7 +892,7 @@ class DelegatedMCPActivationManager:
                     self._recovering.discard(name)
         return successes
 
-    async def _register(self, name, decision, provider, tools, proofs, expiry):
+    async def _register(self, name, decision, provider, tools, proofs, expiry, *, expected_grant):
         short = hashlib.sha256(name.encode()).hexdigest()[:16]
         provider_id = "aura.external." + short
         service = ServiceDefinition(
@@ -911,8 +913,8 @@ class DelegatedMCPActivationManager:
             ), provider)
             registered_provider = True
             grant = self.delegation.verified_grant()
-            if grant is None:
-                raise PermissionError("Owner delegation revoked")
+            if grant is None or grant != expected_grant:
+                raise PermissionError("Owner delegation revoked or changed before registration")
             if (decision.category not in grant["categories"]
                     or len(tools) > grant["max_tools"]):
                 raise PermissionError("Owner delegation scope changed before registration")
