@@ -68,6 +68,7 @@ def files_to_hash() -> list[Path]:
         ROOT / "core" / "tests" / "test_evolution_multi_provider_stability.py",
         ROOT / "core" / "tests" / "test_self_patch_review.py",
         ROOT / "core" / "scripts" / "stage_self_patch.py",
+        ROOT / "docs" / "22_IMPLEMENTATION" / "AURA_GOVERNED_SELF_CODE_IMPROVEMENT.md",
         ROOT / "scripts" / "launch-aura-desktop.ps1",
         ROOT / "scripts" / "aura-processes.ps1",
         ROOT / "core" / "tests" / "test_evolution_windows_job_optin.py",
