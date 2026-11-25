@@ -64,6 +64,8 @@ def files_to_hash() -> list[Path]:
         ROOT / "core" / "scripts" / "provision_windows_owner.ps1",
         # Scope-controlled Windows Owner autonomy bootstrap and lifecycle.
         ROOT / "scripts" / "setup-autonomous-aura.ps1",
+        ROOT / "scripts" / "Register-AuraIndependentAttestor.ps1",
+        ROOT / "core" / "tests" / "test_evolution_multi_provider_stability.py",
         ROOT / "scripts" / "launch-aura-desktop.ps1",
         ROOT / "scripts" / "aura-processes.ps1",
         ROOT / "core" / "tests" / "test_evolution_windows_job_optin.py",
