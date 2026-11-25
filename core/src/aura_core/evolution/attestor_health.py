@@ -30,7 +30,7 @@ def attestor_lock(root: Path):
     locked = False
     try:
         _checked_path(path)
-        if not os.path.samestat(os.fstat(fd), path.stat()):
+        if os.fstat(fd).st_nlink != 1 or not os.path.samestat(os.fstat(fd), path.stat()):
             raise PermissionError("Independent attestor lock identity changed")
         try:
             if os.name == "nt":
@@ -87,7 +87,7 @@ class AttestorHealth:
                     stream.flush()
                     os.fsync(stream.fileno())
                 os.replace(temp, self.path)
-            except (OSError, ValueError):
+            except (OSError, ValueError, RuntimeError):
                 # Telemetry failure must not publish authorization or stop renewal.
                 print("Independent attestor health write failed", file=sys.stderr, flush=True)
             finally:
@@ -145,5 +145,5 @@ def read_attestor_health(root: Path) -> dict:
                  "DEGRADED" if phase == "SCANNING" and now - data["last_scan_started"] > 600
                  else phase)
         return {**{key: data[key] for key in keys}, "state": state, "last_error": error}
-    except (OSError, ValueError, TypeError):
+    except (OSError, ValueError, TypeError, RuntimeError):
         return unknown
