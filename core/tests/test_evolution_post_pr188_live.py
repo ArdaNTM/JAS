@@ -165,6 +165,8 @@ def test_local_windows_attestor_signed_projectmem_activates_without_bypass(
         assert package == name
         return {
             "status": "PREPARED_UNATTESTED",
+            "source_sha256": metadata["source_sha256"],
+            "runtime_tree_sha256": activation_runtime.runtime_fingerprint(workspace, name),
             "tool_schemas": {
                 "lookup_local": {"type": "object", "additionalProperties": False},
             },
