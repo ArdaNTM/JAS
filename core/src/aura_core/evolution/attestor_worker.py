@@ -19,6 +19,7 @@ import time
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from aura_core.evolution.activation_delegation import ActivationDelegationVerifier
+from aura_core.evolution.attestor_health import AttestorHealth, attestor_lock
 from aura_core.evolution.activation_runtime import (
     _SCHEMA, runtime_fingerprint, tool_binding_digest,
 )
@@ -302,8 +303,10 @@ class IndependentMCPAttestorWorker:
             }, sort_keys=True) + "\n")
 
     async def scan(self) -> list[dict]:
+        self.last_scan_error = ""
         grant = self._delegation.verified_grant()
         if grant is None:
+            self.last_scan_error = "OwnerDelegationUnavailable"
             return []
         # Permanent incompatibilities/revocations are the only reclaimable
         # runtime owners. A quota-deferred package keeps all source/evidence
@@ -313,6 +316,7 @@ class IndependentMCPAttestorWorker:
             try:
                 prune()
             except (OSError, ValueError, PermissionError):
+                self.last_scan_error = "WorkspacePruneFailed"
                 return []
         inventory_path = self.workspace.root / "active_capabilities.json"
         denied: set[str] = set()
@@ -341,7 +345,8 @@ class IndependentMCPAttestorWorker:
                          grant.get("allow_local_windows_process", False) is True)
         # Re-evaluate only previous SDK/install failures once under the new epoch.
         recovery_epoch = RECOVERY_EPOCH
-        for decision in self._decisions.evaluate_pending(limit=100):
+        for decision in self._decisions.evaluate_pending(
+                limit=getattr(self.workspace, "max_items", 100)):
             if decision.status != "AUTO_APPROVED_BY_POLICY":
                 continue
             package = decision.repository.replace("/", "__")
@@ -365,8 +370,10 @@ class IndependentMCPAttestorWorker:
                         and (
                             (
                                 previous.get("reason_code") == "PermissionError"
-                                and previous.get("detail") ==
-                                "Local Windows MCP candidate quarantined by independent attestor"
+                                and previous.get("detail") in {
+                                    "Local Windows MCP candidate quarantined by independent attestor",
+                                    "Local evidence fails Owner and job observation binding",
+                                }
                             )
                             or (
                                 previous.get("reason_code") == "SandboxUntrusted"
@@ -411,10 +418,14 @@ class IndependentMCPAttestorWorker:
                 if quarantine.exists():
                     quarantine.unlink()
                 records.append(record)
+                health = getattr(self, "_health", None)
+                if health is not None:
+                    health.update(last_renewal=int(time.time()))
             # MCP transport libraries raise various Exception subclasses
             # (including protocol and task-group failures). CancelledError,
             # KeyboardInterrupt and SystemExit remain non-quarantinable.
             except Exception as exc:
+                self.last_scan_error = type(exc).__name__
                 if local_allowed:
                     result = {
                         "status": "QUARANTINED",
@@ -498,33 +509,42 @@ def main() -> int:
         return 0
     if args.private_key is None:
         parser.error("--private-key required after independent provisioning")
-    worker = None
-    while True:
-        try:
-            if worker is None:
-                # A transient ACL failure while loading the key is also
-                # retryable in watch mode; never use an unverified signer.
-                worker = IndependentMCPAttestorWorker(
-                    workspace=workspace, key=_load_signer(args.private_key),
-                )
-            result = asyncio.run(worker.scan())
-            print(json.dumps({"attested_packages": len(result)}, sort_keys=True), flush=True)
-        except Exception as exc:
+    with attestor_lock(workspace.root), AttestorHealth(workspace.root) as health:
+        worker = None
+        while True:
+            health.update(phase="SCANNING", last_scan_started=int(time.time()))
+            try:
+                if worker is None:
+                    # A transient ACL failure while loading the key is also
+                    # retryable in watch mode; never use an unverified signer.
+                    worker = IndependentMCPAttestorWorker(
+                        workspace=workspace, key=_load_signer(args.private_key),
+                    )
+                    worker._health = health
+                result = asyncio.run(worker.scan())
+                error = getattr(worker, "last_scan_error", "")
+                if error:
+                    health.update(phase="ERROR", last_error=error)
+                else:
+                    health.update(phase="IDLE", last_success=int(time.time()), last_error="")
+                print(json.dumps({"attested_packages": len(result)}, sort_keys=True), flush=True)
+            except Exception as exc:
+                health.update(phase="ERROR", last_error=type(exc).__name__)
+                if not args.watch:
+                    raise
+                # Do not emit raw subprocess commands, key paths or exception
+                # payloads from untrusted MCPs to an operator service log.
+                detail = ("Windows owner ACL verification timed out"
+                          if isinstance(exc, PermissionError)
+                          and str(exc) == "Windows owner ACL verification timed out"
+                          else "Attestor iteration failed; retrying at next poll")
+                print(json.dumps({
+                    "event": "attestor_scan_failed", "error": type(exc).__name__,
+                    "detail": detail,
+                }, sort_keys=True), file=sys.stderr, flush=True)
             if not args.watch:
-                raise
-            # Do not emit raw subprocess commands, key paths or exception
-            # payloads from untrusted MCPs to an operator service log.
-            detail = ("Windows owner ACL verification timed out"
-                      if isinstance(exc, PermissionError)
-                      and str(exc) == "Windows owner ACL verification timed out"
-                      else "Attestor iteration failed; retrying at next poll")
-            print(json.dumps({
-                "event": "attestor_scan_failed", "error": type(exc).__name__,
-                "detail": detail,
-            }, sort_keys=True), file=sys.stderr, flush=True)
-        if not args.watch:
-            return 0
-        time.sleep(args.poll_seconds)
+                return 0
+            time.sleep(args.poll_seconds)
 
 
 if __name__ == "__main__":
