@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-25T00:48:25.556Z",
-  "git_commit": "f8decb225874e31a2506551b073eefe343eb2b1f",
+  "generated_at": "2026-11-25T02:11:43.243Z",
+  "git_commit": "f1b1e85198b01f625eef7086f617b91c533ab248",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:9947ec4c60e24649c34ee85de674c50a3790b247e03f14775bb79a797260c44d",
+  "release_digest": "sha256:af0e60e71c636dcd0e41615db87c01aaf8c38617c7fba9fe9291abac51736f2f",
   "file_count": 468,
   "files": [
     {
@@ -42,7 +42,7 @@
     },
     {
       "path": ".github/workflows/aura-windows-owner-security.yml",
-      "sha256": "aade2458b6f3420b2649030798ed3c7157e707305b8360f42e40361085e48aa7"
+      "sha256": "f612af951717ad04be136135d989b1185b5b7377b957d9ca6e97b00d320664e2"
     },
     {
       "path": "aura-ui/electron-main.cjs",
@@ -1806,7 +1806,7 @@
     },
     {
       "path": "core/tests/test_evolution_multi_provider_stability.py",
-      "sha256": "1262ec0d69ac7739107b4e16fbb735fa93071a51c9e55db4267e07efbf678f73"
+      "sha256": "d0622dd0081acb72331ee9a5b44790fe77ae9c2de41c6a68410830716e50b872"
     },
     {
       "path": "core/tests/test_evolution_python_mcp_multimodule.py",
@@ -1862,7 +1862,7 @@
     },
     {
       "path": "scripts/Register-AuraIndependentAttestor.ps1",
-      "sha256": "c60489ebbfedca579fffe076501ab83ea6671735605948469990ef57ffc573f6"
+      "sha256": "50c48d5db1af0f3d30497dca5a60200ee154b803ed58c71f31889afcbbbd4eee"
     },
     {
       "path": "scripts/setup-autonomous-aura.ps1",
