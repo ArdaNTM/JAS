@@ -376,6 +376,8 @@ class IsolatedMCPPreflight:
             docker = shutil.which("docker")
             if not docker:
                 raise SandboxUntrusted("Docker sandbox runtime unavailable")
+            from aura_core.evolution.activation_runtime import runtime_fingerprint
+            observed_tree = runtime_fingerprint(self.workspace, package_name)
             arguments = self._docker_arguments(runtime, entry)
             await asyncio.wait_for(connection.connect_stdio(
                 StdioServerParameters(command=docker, args=arguments, env={}),
@@ -390,9 +392,11 @@ class IsolatedMCPPreflight:
                     or _schema_json_size({tool.name: tool.input_schema
                                           for tool in tools}) > _MAX_SCHEMA_JSON_BYTES):
                 raise SandboxUntrusted("Duplicate tools or oversized MCP schemas")
+            if runtime_fingerprint(self.workspace, package_name) != observed_tree:
+                raise PermissionError("Runtime tree differs from signed independent observation")
             result = {
                 "repository": repository, "status": "PREPARED_UNATTESTED",
-                "source_sha256": digest,
+                "source_sha256": digest, "runtime_tree_sha256": observed_tree,
                 "detected_tools": [tool.name for tool in tools],
                 "tool_schemas": {
                     tool.name: tool.input_schema for tool in tools
