@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-25T02:11:43.243Z",
-  "git_commit": "f1b1e85198b01f625eef7086f617b91c533ab248",
+  "generated_at": "2026-11-25T02:29:39.414Z",
+  "git_commit": "bde6e99623c5f55795f5145732b8179ab6de8774",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:af0e60e71c636dcd0e41615db87c01aaf8c38617c7fba9fe9291abac51736f2f",
-  "file_count": 468,
+  "release_digest": "sha256:05421141c33813188dc2e09cb94dd5f19e6013d03c96a79a10d8ab1b6e7ccf53",
+  "file_count": 472,
   "files": [
     {
       "path": ".gitattributes",
@@ -238,7 +238,7 @@
     },
     {
       "path": "core/scripts/generate_final_lock.py",
-      "sha256": "8968e5a16fe8525fdd2c8a893919f078bb74434f447fbce6620efb44cfc4e5cc"
+      "sha256": "65b0b3557d8d7c2985d7f95824b914793ab13bf29580c5f1201252d9b99a4a4e"
     },
     {
       "path": "core/scripts/hardware_stage_c_acceptance.py",
@@ -287,6 +287,10 @@
     {
       "path": "core/scripts/run_osworld_v2_live.py",
       "sha256": "cf86008ff93f6adcf8a09e09ddd8c9abaa8d76dd35c524bae7872ea0817f18dc"
+    },
+    {
+      "path": "core/scripts/stage_self_patch.py",
+      "sha256": "a8a92cecbf1ce0aaf386386e1107148814f670c5813a2a9266862140c017b188"
     },
     {
       "path": "core/scripts/start_owner_control_plane.py",
@@ -366,7 +370,7 @@
     },
     {
       "path": "core/src/aura_core/application/api.py",
-      "sha256": "00f961157348f6d346124c7acf64967d46992e63ebba908e86ad9c35ae62c515"
+      "sha256": "f9033760b53c0662052f42e699aa3e915c3ec9663c6a44cb5106f23ee0a78967"
     },
     {
       "path": "core/src/aura_core/application/approval_api.py",
@@ -906,7 +910,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/evolution_planner.py",
-      "sha256": "a6644a73be279ce7127d91e7ae24235e0c889dadb91173b72d05d7c5cc0d1189"
+      "sha256": "c2fca2770334f928b471f39876b387d0e55c97bea1a20ecc9dbf59e8b37b07bf"
     },
     {
       "path": "core/src/aura_core/evolution/external_staging.py",
@@ -999,6 +1003,10 @@
     {
       "path": "core/src/aura_core/evolution/self_discovery_api.py",
       "sha256": "cff18115a3569eb9cf5a9756b19ce6f662b8030f849be0c3ad28fec38bb8f2f6"
+    },
+    {
+      "path": "core/src/aura_core/evolution/self_patch_review.py",
+      "sha256": "b59a0a146dfd70e72daa288a721df8279feb0a472043cae6f9c932f48e70e3f9"
     },
     {
       "path": "core/src/aura_core/evolution/skill_registry.py",
@@ -1833,8 +1841,16 @@
       "sha256": "16f6afdd5a9c1dc063e61a65916fea56ed73e88afd9e583101f35037e366e179"
     },
     {
+      "path": "core/tests/test_self_patch_review.py",
+      "sha256": "3f912e3b8a0216fff4332d9f4be5237b29087c9003cca1c0ee614a435d3f72d3"
+    },
+    {
       "path": "core/uv.lock",
       "sha256": "fdf4f2b50a539388370ebfa27fb07aa6ed6106097074bfa1f23fc7c4f0d288ab"
+    },
+    {
+      "path": "docs/22_IMPLEMENTATION/AURA_GOVERNED_SELF_CODE_IMPROVEMENT.md",
+      "sha256": "12fe0de78e0713586abe2c1e1e3fce3c6373bb647126514c839678c42760ca26"
     },
     {
       "path": "docs/aura-f27-operator-acceptance.md",
