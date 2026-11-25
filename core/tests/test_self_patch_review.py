@@ -39,7 +39,6 @@ def review(tmp_path, monkeypatch):
     directory.mkdir(mode=0o700)
     import os
     if os.name == "nt":
-        from test_evolution_decision_engine import _private_windows_test_owner_state
         # Native ACL acceptance belongs to the independently provisioned
         # Windows release operator. These portable tests emulate only ACL IO.
         from aura_core.evolution import windows_owner_storage
@@ -103,13 +102,64 @@ def test_reject_protected_paths_and_stale_or_tampered_review(review):
         export_review_patch(checkout, draft, expected_id=item["draft_id"])
 
 
-@pytest.mark.asyncio
-async def test_provider_neutral_model_stages_data_without_execution(review):
+def test_provider_neutral_model_stages_data_without_execution(review):
+    import asyncio
     queue, checkout, directory = review
     model = SimpleNamespace(complete_json=AsyncMock(return_value=RESPONSE))
-    result = await queue.propose_once(model, timeout=5)
+    result = asyncio.run(queue.propose_once(model, timeout=5))
     assert result["state"] == "NEEDS_OWNER_REVIEW"
     model.complete_json.assert_awaited_once()
     assert "untrusted_source" in model.complete_json.call_args.kwargs["user_prompt"]
     assert (checkout / REL).read_text() == SOURCE
     assert len(list(directory.glob("*.patch-review.json"))) == 1
+
+
+def test_stage_operator_applies_only_to_separate_clean_branch(review, tmp_path):
+    import importlib.util
+    import shutil
+    import subprocess
+    import sys
+
+    if not shutil.which("git"):
+        pytest.skip("Git not installed")
+    queue, checkout, directory = review
+    item = queue.stage(queue.read_target(REL), RESPONSE)
+    draft = directory / (item["draft_id"] + ".patch-review.json")
+    isolated = tmp_path / "disposable"
+    shutil.copytree(checkout, isolated)
+
+    def git(*args):
+        return subprocess.run(["git", "-C", str(isolated), *args],
+                              capture_output=True, check=True, text=True).stdout.strip()
+
+    git("init", "-b", "main")
+    git("config", "user.name", "AURA Test")
+    git("config", "user.email", "test@example.invalid")
+    git("config", "core.autocrlf", "false")
+    git("remote", "add", "origin", "https://github.com/ArdaNTM/JAS.git")
+    git("add", ".")
+    git("commit", "-m", "fixture")
+    sha = git("rev-parse", "HEAD")
+
+    script = Path(__file__).resolve().parents[1] / "scripts" / "stage_self_patch.py"
+    spec = importlib.util.spec_from_file_location("test_stage_self_patch", script)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    kwargs = dict(expected_base=sha, expected_id=item["draft_id"], live_checkout=checkout)
+    with pytest.raises(PatchRejected, match="never main"):
+        module.stage_patch(isolated, draft, **kwargs)
+    git("switch", "-c", "self-patch/test")
+    with pytest.raises(PatchRejected, match="separate"):
+        module.stage_patch(checkout, draft, **kwargs)
+    with pytest.raises(PatchRejected, match="base changed"):
+        module.stage_patch(isolated, draft, **{**kwargs, "expected_base": "0" * 40})
+    dirty = isolated / "dirty.txt"
+    dirty.write_text("dirty")
+    with pytest.raises(PatchRejected, match="clean"):
+        module.stage_patch(isolated, draft, **kwargs)
+    dirty.unlink()
+    assert module.stage_patch(isolated, draft, **kwargs) == REL
+    assert git("diff", "--cached", "--name-only") == REL
+    assert (isolated / REL).read_text() == SOURCE.replace(RESPONSE["old"], RESPONSE["new"])
+    assert (checkout / REL).read_text() == SOURCE
+    assert git("rev-parse", "HEAD") == sha
