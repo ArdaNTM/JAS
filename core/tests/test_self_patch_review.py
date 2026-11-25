@@ -163,3 +163,45 @@ def test_stage_operator_applies_only_to_separate_clean_branch(review, tmp_path):
     assert (isolated / REL).read_text() == SOURCE.replace(RESPONSE["old"], RESPONSE["new"])
     assert (checkout / REL).read_text() == SOURCE
     assert git("rev-parse", "HEAD") == sha
+
+
+def test_idle_coordinator_runs_review_only_when_opted_in(review):
+    import asyncio
+    import time
+    from aura_core.evolution.autonomous_analyzer import AutonomousAnalyzer
+    from aura_core.evolution.evolution_planner import EvolutionPlanner, ProactiveEvolutionCoordinator
+
+    queue, checkout, _ = review
+    activity = [time.monotonic()]
+    delegate = EvolutionPlanner(AutonomousAnalyzer(checkout), idle_seconds=60,
+                                interval_seconds=60, max_cycles=2,
+                                last_activity=lambda: activity[0])
+    model = SimpleNamespace(complete_json=AsyncMock(return_value=RESPONSE))
+    worker = ProactiveEvolutionCoordinator(
+        delegate, model=model, memory=SimpleNamespace(), checkout_root=checkout,
+        self_patch_review=queue,
+    )
+    assert asyncio.run(worker.run_once()) == ()
+    model.complete_json.assert_not_awaited()
+    assert worker.self_patch_proposals() == []
+    activity[0] -= 61
+    assert asyncio.run(worker.run_once()) == ()
+    assert len(worker.self_patch_proposals()) == 1
+    assert worker.status()["self_patch_can_apply"] is False
+    assert worker.status()["self_patch_review_enabled"] is True
+    assert (checkout / REL).read_text() == SOURCE
+    plain = ProactiveEvolutionCoordinator(
+        delegate, model=model, memory=SimpleNamespace(), checkout_root=checkout,
+    )
+    assert plain.self_patch_proposals() == []
+    assert plain.status()["self_patch_review_enabled"] is False
+
+
+def test_invalid_model_response_never_creates_artifact(review):
+    import asyncio
+    queue, checkout, directory = review
+    model = SimpleNamespace(complete_json=AsyncMock(return_value={"command": "git push"}))
+    with pytest.raises(PatchRejected):
+        asyncio.run(queue.propose_once(model, timeout=5))
+    assert not list(directory.iterdir())
+    assert (checkout / REL).read_text() == SOURCE
