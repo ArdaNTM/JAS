@@ -207,6 +207,58 @@ def bridge_parameters(runtime: Path, entry: str) -> StdioServerParameters:
     )
 
 
+def _require_observed_environment(workspace: EvolutionWorkspace, package_name: str,
+                                  *, grant: dict, repository: str, source: str,
+                                  tree: str, category: str) -> None:
+    """Reuse a venv only if its entire tree matches an authentic prior observation.
+
+    Expired evidence may establish provenance for a *new* independent probe;
+    it never authorizes a live provider. A changed grant or modified wheel
+    requires a separately prepared clean environment, not silent re-signing.
+    """
+    from aura_core.evolution.activation_runtime import _SCHEMA, _TOOL_LIMIT_BYTES
+    from cryptography.hazmat.primitives import serialization
+
+    bundle_path = workspace.root / "verified" / package_name / "independent-attestations.json"
+    pub = workspace.root / "trust" / "sandbox-attestor.pub.pem"
+    for path, bound in ((bundle_path, _TOOL_LIMIT_BYTES), (pub, 512)):
+        _checked_path(path)
+        if not path.is_file() or path.stat().st_size > bound:
+            raise PermissionError("Existing isolated environment lacks signed provenance")
+    key = serialization.load_pem_public_key(pub.read_bytes())
+    if not isinstance(key, Ed25519PublicKey):
+        raise PermissionError("Invalid local attestor key type")
+    raw = key.public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw)
+    if hashlib.sha256(raw).hexdigest() != grant["attestor_key_sha256"]:
+        raise PermissionError("Local attestor pin mismatch")
+    bundle = json.loads(bundle_path.read_text("utf-8"))
+    if (not isinstance(bundle, dict)
+            or set(bundle) != {"schema", "repository", "runtime_tree_sha256", "tools", "execution_profile"}
+            or bundle["schema"] != _SCHEMA or bundle["repository"] != repository
+            or bundle["execution_profile"] != "windows-job-stdio"
+            or bundle["runtime_tree_sha256"] != tree
+            or not isinstance(bundle["tools"], list)
+            or not 1 <= len(bundle["tools"]) <= min(_MAX_TOOLS, grant["max_tools"])):
+        raise PermissionError("Existing isolated environment differs from signed provenance")
+    names = set()
+    for row in bundle["tools"]:
+        if (not isinstance(row, dict) or set(row) != {"name", "input_schema", "attestation"}
+                or not isinstance(row["name"], str)
+                or not re.fullmatch(r"[A-Za-z0-9_.-]{1,64}", row["name"])
+                or row["name"] in names or not isinstance(row["input_schema"], dict)):
+            raise PermissionError("Invalid prior local tool evidence")
+        names.add(row["name"])
+        tool = MCPTool(name=row["name"], description="", input_schema=row["input_schema"])
+        binding = local_binding(repository=repository, source_sha256=source,
+                                tree_sha256=tree, tool=tool, category=category)
+        try:
+            verify_local(row["attestation"], key=key, grant=grant, source_sha256=source,
+                         tree_sha256=tree, binding_digest=binding)
+        except PermissionError as exc:
+            if str(exc) != "Independent Windows attestation expired":
+                raise
+
+
 class LocalWindowsMCPPreflight(IsolatedMCPPreflight):
     """Reuse the hardened ZIP extraction and quotas; never fabricate OCI pins."""
 
@@ -241,7 +293,17 @@ class LocalWindowsMCPPreflight(IsolatedMCPPreflight):
         reattesting = existing.exists()
         if reattesting:
             from aura_core.evolution.activation_runtime import runtime_fingerprint
-            runtime_fingerprint(self.workspace, package_name)
+            tree = runtime_fingerprint(self.workspace, package_name)
+            if (existing / ".venv").exists():
+                decision = self.decisions.evaluate(package_name)
+                if (decision.status != "AUTO_APPROVED_BY_POLICY"
+                        or decision.category not in signed["categories"]):
+                    raise PermissionError("Owner scope invalid for environment renewal")
+                _require_observed_environment(
+                    self.workspace, package_name, grant=signed,
+                    repository=repository, source=digest, tree=tree,
+                    category=decision.category,
+                )
             runtime = existing
         else:
             runtime, prepared_entry, _ = self.prepare(package_name)
@@ -262,6 +324,8 @@ class LocalWindowsMCPPreflight(IsolatedMCPPreflight):
             install=self.install, entry=entry,
         )
         self._verify_runtime_capacity(0, **capacity_args)
+        from aura_core.evolution.activation_runtime import runtime_fingerprint
+        observed_tree = runtime_fingerprint(self.workspace, package_name)
         connection = MCPConnection()
         try:
             await asyncio.wait_for(connection.connect_stdio(
@@ -283,8 +347,9 @@ class LocalWindowsMCPPreflight(IsolatedMCPPreflight):
                 schemas[name] = schema
             if _schema_json_size(schemas) > _MAX_SCHEMA_JSON_BYTES:
                 raise SandboxUntrusted("Oversized MCP tool declarations")
-            from aura_core.evolution.activation_runtime import runtime_fingerprint
             tree = runtime_fingerprint(self.workspace, package_name)
+            if tree != observed_tree:
+                raise PermissionError("Runtime tree differs from signed independent observation")
             return {"repository": repository, "source_sha256": digest,
                     "runtime_tree_sha256": tree, "status": "PREPARED_UNATTESTED",
                     "tool_schemas": schemas, "execution_profile": "windows-job-stdio"}
