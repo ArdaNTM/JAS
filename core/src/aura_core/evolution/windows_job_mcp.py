@@ -176,7 +176,7 @@ def verify_local(envelope: object, *, key: Ed25519PublicKey, grant: dict,
         c["job_object_kill_on_close"] is not True or
         c["outcome"] != "passed" or
         type(c["issued_at"]) is not int or type(c["expires_at"]) is not int or
-        not c["issued_at"] - 30 <= now < c["expires_at"] or
+        c["issued_at"] - 30 > now or
         not 0 < c["expires_at"] - c["issued_at"] <= 600):
         raise PermissionError("Local evidence fails Owner and job observation binding")
     try:
@@ -187,6 +187,10 @@ def verify_local(envelope: object, *, key: Ed25519PublicKey, grant: dict,
         key.verify(signature, LOCAL_DOMAIN + payload)
     except (ValueError, TypeError, InvalidSignature) as exc:
         raise PermissionError("Unsigned or forged Windows local evidence") from exc
+    # Only authentic, fully bound evidence is eligible for renewal rather
+    # than quarantine. All mismatched/forged observations still fail closed.
+    if now >= c["expires_at"]:
+        raise PermissionError("Independent Windows attestation expired")
     return c["expires_at"]
 
 
@@ -361,6 +365,9 @@ def _scrubbed_windows_mcp_environment(
         "XDG_CACHE_HOME": str(xdg_cache),
         "TEMP": str(scratch),
         "TMP": str(scratch),
+        # Even if a nested Python process ignores -B, its bytecode cache
+        # must never be written into the signed source or wheel tree.
+        "PYTHONPYCACHEPREFIX": str(scratch / "pycache"),
         "PYTHONDONTWRITEBYTECODE": "1",
         "PYTHONNOUSERSITE": "1",
         "PYTHONUTF8": "1",
