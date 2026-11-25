@@ -513,6 +513,13 @@ export function getVerifiedEvolutionPackages(): Promise<{
 
 export interface ContinuousEvolutionStatus {
   state: "RUNNING" | "IDLE";
+  attestor_health?: {
+    state: "UNKNOWN" | "STARTING" | "SCANNING" | "IDLE" | "ERROR" | "STOPPED" | "STALE" | "DEGRADED";
+    heartbeat: number;
+    last_success: number;
+    last_renewal: number;
+    last_error: string;
+  };
   active_sources: string[];
   scanned_candidates: number;
   queued_packages: number;
