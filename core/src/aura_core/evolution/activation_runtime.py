@@ -86,6 +86,7 @@ def runtime_fingerprint(workspace: EvolutionWorkspace, name: str) -> str:
             or not verified.is_dir() or verified.is_symlink()):
         raise PermissionError("Unsafe independently prepared runtime")
     _checked_path(runtime)
+    _checked_path(verified / "source.zip")
     with (verified / "source.zip").open("rb") as stream:
         files, _entry, _skipped = _validated_files(stream)
     # Docker-only packages retain the original exact-source contract.
@@ -123,6 +124,10 @@ def runtime_fingerprint(workspace: EvolutionWorkspace, name: str) -> str:
                 environment_files.append((rel, digest.hexdigest()))
                 continue
             if rel not in allowed:
+                # Bytecode is executable; never allow unsigned caches simply
+                # because their names look like ordinary Python artifacts.
+                if "__pycache__" in path.parts or path.suffix.lower() == ".pyc":
+                    raise PermissionError("Unexpected runtime executable or data: unsigned bytecode")
                 raise PermissionError("Unexpected runtime executable or data")
             seen.add(rel)
         if len(seen) > len(allowed) + 1:
@@ -262,7 +267,8 @@ class DockerMCPProvider(MCPProvider):
                  package: str, on_failure: Callable[[str], None],
                  owner_authorized: Callable[[], bool],
                  attestation_expires_at: int,
-                 on_expired: Callable[[str], None] | None = None):
+                 on_expired: Callable[[str], None] | None = None,
+                 signed_tree: str | None = None):
         super().__init__(connection)
         self.runtime = runtime
         self.archive_sha256 = archive_sha256
@@ -274,6 +280,12 @@ class DockerMCPProvider(MCPProvider):
         self._healthy = True
         self._expired = False
         self._on_expired = on_expired
+        self._signed_tree = signed_tree
+
+    def _require_signed_tree(self) -> None:
+        current = runtime_fingerprint(self.workspace, self.package)
+        if self._signed_tree is None or current != self._signed_tree:
+            raise PermissionError("Runtime tree differs from signed independent observation")
 
     def _reject_expired(self) -> None:
         # Expiry is a renewable dependency, not a provider failure. Retire
@@ -296,7 +308,9 @@ class DockerMCPProvider(MCPProvider):
             raise PermissionError("Quarantined or revoked external provider")
         self._reject_expired()
         try:
+            self._require_signed_tree()
             tools = await super().list_tools()
+            self._require_signed_tree()
         except Exception:
             self._healthy = False
             self._on_failure(self.package)
@@ -315,11 +329,11 @@ class DockerMCPProvider(MCPProvider):
         self._reject_expired()
         try:
             # Prevent host-side file mutation after signed sandbox evidence.
-            runtime_fingerprint(self.workspace, self.package)
+            self._require_signed_tree()
             result = await super().call_tool(name, arguments)
             # A stateful MCP may write into its isolated state folder, but
             # never into independently signed runtime source or wheels.
-            runtime_fingerprint(self.workspace, self.package)
+            self._require_signed_tree()
         except Exception:
             self._healthy = False
             self._on_failure(self.package)
@@ -337,6 +351,7 @@ class _Live:
     policies: tuple[str, ...]
     category: str
     attestation_expires_at: int
+    owner_grant: dict | None = None
 
 
 class DelegatedMCPActivationManager:
@@ -445,8 +460,9 @@ class DelegatedMCPActivationManager:
             trusted_runner_id=grant["attestor_runner_id"],
         )
 
-    def _still_authorized(self, name: str) -> bool:
-        if self.delegation.verified_grant() is None:
+    def _still_authorized(self, name: str, *, expected_grant: dict | None = None) -> bool:
+        current = self.delegation.verified_grant()
+        if current is None or (expected_grant is not None and current != expected_grant):
             return False
         repository = name.replace("__", "/")
         try:
@@ -489,7 +505,7 @@ class DelegatedMCPActivationManager:
 
     async def _connect(self, name: str, grant: dict, entry: str, expires_at: int,
                        execution_profile: str = "docker-stdio",
-                       recovery: bool = False):
+                       recovery: bool = False, signed_tree: str | None = None):
         runtime = self.workspace.root / "runtime" / name
         if self._factory is not None:
             return await self._factory(name, grant, entry)
@@ -514,20 +530,23 @@ class DelegatedMCPActivationManager:
             )
         else:
             raise PermissionError("Unknown external MCP execution profile")
+        if signed_tree is None or runtime_fingerprint(self.workspace, name) != signed_tree:
+            raise PermissionError("Runtime tree differs from signed independent observation")
         connection = MCPConnection()
         try:
             await asyncio.wait_for(connection.connect_stdio(parameters), timeout=20)
-            return DockerMCPProvider(
+            provider = DockerMCPProvider(
                 connection, runtime=runtime, archive_sha256="",
                 workspace=self.workspace, package=name,
-                on_failure=lambda key: asyncio.create_task(self.quarantine(key)),
-                on_expired=lambda key: asyncio.create_task(self._expire(key)),
+                on_failure=lambda key: asyncio.create_task(self.quarantine(key, expected_provider=provider)),
+                on_expired=lambda key: asyncio.create_task(self._expire(key, expected_provider=provider)),
                 owner_authorized=lambda: (
-                    self._still_authorized(name)
+                    self._still_authorized(name, expected_grant=grant)
                     or (recovery and self._recovery_authorized(name, grant))
                 ),
-                attestation_expires_at=expires_at,
+                attestation_expires_at=expires_at, signed_tree=signed_tree,
             )
+            return provider
         except BaseException:
             await connection.close()
             raise
@@ -632,7 +651,7 @@ class DelegatedMCPActivationManager:
         expiry = min(expiries)
         provider = await self._connect(
             name, grant, entry, expiry,
-            execution_profile=profile, recovery=recovery,
+            execution_profile=profile, recovery=recovery, signed_tree=tree,
         )
         try:
             tools = await asyncio.wait_for(provider.list_tools(), timeout=6)
@@ -682,14 +701,24 @@ class DelegatedMCPActivationManager:
         expired_this_scan: set[str] = set()
         for name, active in tuple(self._active.items()):
             if not self._still_authorized(name):
-                await self.quarantine(name)
+                await self.quarantine(name, expected_provider=active.provider)
+            elif active.owner_grant is not None and active.owner_grant != grant:
+                # Old runtime authorization cannot survive a changed signed
+                # standing grant, even if a category happens to remain allowed.
+                expired_this_scan.add(name)
+                if active.category in grant["categories"]:
+                    await self._remove(name, quarantine=False, expired=True,
+                                       expected_provider=active.provider,
+                                       renewal_reason="OWNER_GRANT_CHANGED")
+                else:
+                    await self.quarantine(name, expected_provider=active.provider)
             elif time.time() >= active.attestation_expires_at:
                 # Expiry is a dependency. Disconnect now; only a subsequent
                 # scan with independently renewed evidence can reactivate.
                 expired_this_scan.add(name)
-                await self._remove(name, quarantine=False, expired=True)
+                await self._remove(name, quarantine=False, expired=True,
+                                   expected_provider=active.provider)
         async with self._lock:
-            existing = frozenset(value.category for value in self._active.values())
             persistent = {
                 row["repository"]: row
                 for row in self._load_inventory()["active"]
@@ -821,12 +850,13 @@ class DelegatedMCPActivationManager:
                         )
                     continue
 
-                # Category dedupe applies to ACTUAL activation only. Missing
-                # evidence and independent quarantine were reported above and
-                # must not get hidden by a previously activated sibling.
-                if decision.category in existing:
-                    defer("CATEGORY_ALREADY_ACTIVE",
-                          "Another provider is active in the same delegated category")
+                # Categories describe capabilities, not provider identities.
+                # Preserve the previous absolute upper bound (one per supported
+                # category) and the per-scan connection limit, while permitting
+                # distinct independently signed repositories in one category.
+                if len(self._active) >= min(len(_CATEGORY), self.workspace.max_items):
+                    defer("ACTIVE_PROVIDER_BUDGET_DEFERRED",
+                          "Concurrent external provider resource budget reached")
                     continue
                 # Only candidates with BOTH evidence and a runtime consume
                 # live MCP connection slots. Full signatures and tree hashes
@@ -842,9 +872,9 @@ class DelegatedMCPActivationManager:
                     details, provider, tools, proofs, expiry = await self._verify_and_connect(
                         name, grant, recovery=recovery,
                     )
-                    await self._register(name, details, provider, tools, proofs, expiry)
+                    await self._register(name, details, provider, tools, proofs, expiry,
+                                         expected_grant=grant)
                     successes.append(decision.repository)
-                    existing = existing | {decision.category}
                 except Exception as exc:
                     # Missing/expired attestor observation is a dependency,
                     # not an executed provider failure. Keep eligible for a
@@ -877,7 +907,7 @@ class DelegatedMCPActivationManager:
                     self._recovering.discard(name)
         return successes
 
-    async def _register(self, name, decision, provider, tools, proofs, expiry):
+    async def _register(self, name, decision, provider, tools, proofs, expiry, *, expected_grant):
         short = hashlib.sha256(name.encode()).hexdigest()[:16]
         provider_id = "aura.external." + short
         service = ServiceDefinition(
@@ -898,8 +928,11 @@ class DelegatedMCPActivationManager:
             ), provider)
             registered_provider = True
             grant = self.delegation.verified_grant()
-            if grant is None:
-                raise PermissionError("Owner delegation revoked")
+            if grant is None or grant != expected_grant:
+                raise PermissionError("Owner delegation revoked or changed before registration")
+            if (decision.category not in grant["categories"]
+                    or len(tools) > grant["max_tools"]):
+                raise PermissionError("Owner delegation scope changed before registration")
             for tool in tools:
                 capability = "external.mcp." + short + "." + tool.name
                 scope = "evolution:isolated:" + decision.source_sha256 + ":" + tool.name
@@ -933,7 +966,7 @@ class DelegatedMCPActivationManager:
                           attestation_expires_at=expiry)
             self._active[name] = _Live(provider, provider_id, service.service_id,
                                        tuple(capability_ids), tuple(policy_ids),
-                                       decision.category, expiry)
+                                       decision.category, expiry, expected_grant)
             if self.kernel.event_bus:
                 self.kernel.event_bus.publish(KernelEvent(
                     event_type="AutonomousCapabilityActivated",
@@ -968,11 +1001,15 @@ class DelegatedMCPActivationManager:
             raise
 
     async def _remove(self, name: str, *, quarantine: bool,
-                      expired: bool = False) -> None:
+                      expired: bool = False, expected_provider=None,
+                      renewal_reason: str = "EXPIRED_ATTESTATION") -> None:
         async with self._lock:
-            active = self._active.pop(name, None)
-            if active is None:
+            active = self._active.get(name)
+            # Late callbacks from retired connections must not revoke a newer
+            # independently observed provider of the same repository.
+            if active is None or (expected_provider is not None and active.provider is not expected_provider):
                 return
+            self._active.pop(name)
             for policy in active.policies:
                 self.kernel.permission_engine.revoke_policy(policy)
             for capability in active.capabilities:
@@ -989,15 +1026,17 @@ class DelegatedMCPActivationManager:
                               reason_detail="External provider failed or was explicitly revoked")
             elif expired:
                 self._persist(name.replace("__", "/"), "WAITING_ATTESTATION",
-                              reason_code="EXPIRED_ATTESTATION",
-                              reason_detail="Signed evidence expired; awaiting independent renewal")
+                              reason_code=renewal_reason,
+                              reason_detail=("Signed Owner grant changed; awaiting independent renewal"
+                                             if renewal_reason == "OWNER_GRANT_CHANGED" else
+                                             "Signed evidence expired; awaiting independent renewal"))
             await active.provider.close()
 
-    async def _expire(self, name: str) -> None:
-        await self._remove(name, quarantine=False, expired=True)
+    async def _expire(self, name: str, *, expected_provider=None) -> None:
+        await self._remove(name, quarantine=False, expired=True, expected_provider=expected_provider)
 
-    async def quarantine(self, name: str) -> None:
-        await self._remove(name, quarantine=True)
+    async def quarantine(self, name: str, *, expected_provider=None) -> None:
+        await self._remove(name, quarantine=True, expected_provider=expected_provider)
 
     async def revoke(self, repository: str) -> None:
         await self.quarantine(repository.replace("/", "__"))

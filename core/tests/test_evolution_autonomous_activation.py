@@ -609,6 +609,8 @@ def test_independent_attestor_observes_mcp_and_signs_exact_gateway_binding(
         return {
             "repository": repo,
             "status": "PREPARED_UNATTESTED",
+            "source_sha256": hashlib.sha256((workspace.root / "verified" / name / "source.zip").read_bytes()).hexdigest(),
+            "runtime_tree_sha256": runtime_fingerprint(workspace, name),
             "tool_schemas": {tool.name: tool.input_schema},
             "tool_count": 1, "sandbox_attested": False,
             "activation_performed": False,

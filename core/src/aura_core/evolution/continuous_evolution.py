@@ -61,7 +61,14 @@ class ContinuousEvolutionController:
         live = (self.activation.active_summary()
                 if self.activation is not None else [])
         active = [row for row in live if row.get("status") == "ACTIVE"]
+        from aura_core.evolution.attestor_health import read_attestor_health
+        workspace = (getattr(self.activation, "workspace", None)
+                     or getattr(self.discovery, "workspace", None))
+        attestor = (read_attestor_health(workspace.root) if workspace is not None
+                    else {"state": "UNKNOWN", "heartbeat": 0, "last_success": 0,
+                          "last_renewal": 0, "last_error": ""})
         return {
+            "attestor_health": attestor,
             "state": "RUNNING" if running else "IDLE",
             "active_sources": ["github", "registry", "pypi"] if running else [],
             "source_health": discovery.get("source_health", self._source_health),

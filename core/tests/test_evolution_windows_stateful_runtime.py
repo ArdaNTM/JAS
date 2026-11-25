@@ -64,7 +64,7 @@ def test_three_gateway_calls_write_sqlite_without_quarantining_signed_runtime(
             archive_sha256="", workspace=workspace, package=name,
             on_failure=lambda key: asyncio.create_task(manager.quarantine(key)),
             owner_authorized=lambda: manager._still_authorized(name),
-            attestation_expires_at=int(time.time()) + 600,
+            attestation_expires_at=int(time.time()) + 600, signed_tree=fingerprint,
         )
 
     manager = DelegatedMCPActivationManager(

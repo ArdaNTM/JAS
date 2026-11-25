@@ -283,6 +283,9 @@ export default function HudOverlay() {
           </span>{" "}KENDİNİ GELİŞTİRME
           {continuous && <small>
             {continuous.scanned_candidates} TARANAN · {continuous.queued_packages} KUYRUKTA · {continuous.active_count} AKTİF
+            <span title={continuous.attestor_health?.last_error || "Bağımsız doğrulayıcı telemetrisi; yetkilendirme kanıtı değildir"}>
+              {" · ATTESTOR: "}{continuous.attestor_health?.state ?? "UNKNOWN"}
+            </span>
           </small>}
         </button>
       )}

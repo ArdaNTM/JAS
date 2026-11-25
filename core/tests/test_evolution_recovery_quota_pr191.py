@@ -84,7 +84,10 @@ def test_signed_recoverable_quarantine_can_list_tools_and_activate_via_gateway(
 
     async def local_probe(self, package):
         assert package == name
-        return {"status": "PREPARED_UNATTESTED", "tool_schemas": {
+        return {"status": "PREPARED_UNATTESTED",
+                "source_sha256": hashlib.sha256((workspace.root / "verified" / name / "source.zip").read_bytes()).hexdigest(),
+                "runtime_tree_sha256": activation_runtime.runtime_fingerprint(workspace, name),
+                "tool_schemas": {
             "lookup_local": {"type": "object", "additionalProperties": False},
         }}
     monkeypatch.setattr(windows_job_mcp.LocalWindowsMCPPreflight, "probe", local_probe)
@@ -155,7 +158,10 @@ def test_signed_quota_deferred_candidate_is_reattested_and_signed_after_cleanup(
     seen = []
     async def local_probe(self, package):
         seen.append(package)
-        return {"status": "PREPARED_UNATTESTED", "tool_schemas": {
+        return {"status": "PREPARED_UNATTESTED",
+                "source_sha256": hashlib.sha256((workspace.root / "verified" / name / "source.zip").read_bytes()).hexdigest(),
+                "runtime_tree_sha256": activation_runtime.runtime_fingerprint(workspace, name),
+                "tool_schemas": {
             "lookup_local": {"type": "object", "additionalProperties": False},
         }}
     monkeypatch.setattr(windows_job_mcp.LocalWindowsMCPPreflight, "probe", local_probe)
@@ -167,9 +173,12 @@ def test_signed_quota_deferred_candidate_is_reattested_and_signed_after_cleanup(
     }), encoding="utf-8")
     worker = attestor_worker.IndependentMCPAttestorWorker(workspace=workspace, key=signer)
     result = run(worker.scan())
-    assert result == [{
+    assert len(result) == 1
+    assert result[0]["attestation_expires_at"] > 0
+    assert {key: value for key, value in result[0].items()
+            if key != "attestation_expires_at"} == {
         "repository": repo, "attested_tools": 1, "independent_runner": "operator_runner",
-    }]
+    }
     assert seen == [name]
     assert not marker.exists()
     payload = json.loads((workspace.root / "verified" / name /
