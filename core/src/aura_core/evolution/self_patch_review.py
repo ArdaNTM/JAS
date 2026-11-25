@@ -17,7 +17,6 @@ import os
 from pathlib import Path
 import re
 import stat
-import sys
 import threading
 from typing import Mapping
 
@@ -71,7 +70,7 @@ def _read(path: Path, limit: int) -> bytes:
 
 def _private(path: Path, *, directory: bool) -> None:
     _checked(path)
-    if (not path.is_dir()) if directory else (not path.is_file()):
+    if not (path.is_dir() if directory else path.is_file()):
         raise PatchRejected("Invalid private review storage")
     if os.name == "nt":
         from aura_core.evolution.windows_owner_storage import require_private_acl
@@ -111,7 +110,7 @@ class SourceSnapshot:
 
 
 def _snapshot(checkout: Path, relative: str) -> SourceSnapshot:
-    if relative not in TARGETS:
+    if not isinstance(relative, str) or relative not in TARGETS:
         raise PatchRejected("Source path is outside the exact patch allowlist")
     manifest = json.loads(_read(checkout / "release-manifest.final.json", 512_000))
     if (not isinstance(manifest, dict) or manifest.get("algorithm") != "SHA-256"
@@ -225,6 +224,11 @@ def _parse_document(path: Path) -> dict:
     body = {key: value for key, value in doc.items() if key != "draft_id"}
     if _hash(_canonical(body)) != doc["draft_id"]:
         raise PatchRejected("Patch review digest mismatch")
+    if (not isinstance(doc["path"], str) or doc["path"] not in TARGETS
+            or not isinstance(doc["change"], dict)
+            or set(doc["change"]) != {"summary", "old", "new", "test_plan"}
+            or any(type(doc["change"][key]) is not str for key in doc["change"])):
+        raise PatchRejected("Invalid source review fields")
     if path.name != doc["draft_id"] + ".patch-review.json":
         raise PatchRejected("Review file identity mismatch")
     return doc
