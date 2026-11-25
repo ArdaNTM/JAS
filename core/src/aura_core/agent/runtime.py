@@ -280,9 +280,27 @@ class AgentExecutor:
                     if isinstance(outcome, asyncio.CancelledError):
                         raise outcome
                     if isinstance(outcome, BaseException):
+                        # Only fixed, non-secret security diagnostics may
+                        # reach the UI. Never expose arbitrary provider stderr,
+                        # paths, subprocess commands, or credential text.
+                        safe_permission_details = {
+                            "Unexpected runtime executable or data",
+                            "Unexpected runtime executable or data: unsigned bytecode",
+                            "Runtime tree differs from signed independent observation",
+                            "Prepared runtime source changed",
+                            "Prepared runtime missing source files",
+                            "Unsafe runtime symlink/junction",
+                            "Quarantined or revoked external provider",
+                            "External provider attestation expired; awaiting independent renewal",
+                            "Independent Windows attestation expired",
+                            "Local evidence fails Owner and job observation binding",
+                            "Windows owner ACL verification timed out",
+                        }
+                        reason = f"Step execution failed: {type(outcome).__name__}"
+                        if isinstance(outcome, PermissionError) and str(outcome) in safe_permission_details:
+                            reason += ": " + str(outcome)
                         completed[step.step_id] = StepResult(
-                            step.step_id, StepState.FAILED, 0,
-                            reason=f"Step execution failed: {type(outcome).__name__}",
+                            step.step_id, StepState.FAILED, 0, reason=reason,
                         )
                     else:
                         completed[step.step_id] = outcome
