@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import base64
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -161,6 +162,11 @@ class IndependentMCPAttestorWorker:
                 or _schema_json_size(tools) > _MAX_SCHEMA_JSON_BYTES):
             raise PermissionError("External MCP exceeded delegated tool budget")
         tree = runtime_fingerprint(self.workspace, package)
+        if (report.get("runtime_tree_sha256") != tree
+                or report.get("source_sha256") != decision.source_sha256):
+            raise PermissionError("Runtime tree differs from signed independent observation")
+        if self._delegation.verified_grant() != grant:
+            raise PermissionError("Owner delegation changed during independent observation")
         issue = int(time.time())
         records = []
         for name in sorted(tools):
@@ -239,7 +245,8 @@ class IndependentMCPAttestorWorker:
             if operating_system.path.exists(temp):
                 operating_system.unlink(temp)
         return {"repository": decision.repository, "attested_tools": len(records),
-                "independent_runner": grant["attestor_runner_id"]}
+                "independent_runner": grant["attestor_runner_id"],
+                "attestation_expires_at": issue + 600}
 
     @staticmethod
     def _safe_detail(value: object) -> str:
@@ -320,39 +327,78 @@ class IndependentMCPAttestorWorker:
                 return []
         inventory_path = self.workspace.root / "active_capabilities.json"
         denied: set[str] = set()
+        live_expiry: dict[str, int] = {}
         try:
             if inventory_path.exists():
                 if (inventory_path.is_symlink()
                         or inventory_path.stat().st_size > 200_000):
+                    self.last_scan_error = "UnsafeInventory"
                     return []
                 inventory = json.loads(inventory_path.read_text("utf-8"))
                 if (not isinstance(inventory, dict)
                         or inventory.get("schema") != "aura.external-capabilities.v1"
                         or not isinstance(inventory.get("active"), list)):
+                    self.last_scan_error = "InvalidInventory"
                     return []
                 for item in inventory["active"]:
                     if not isinstance(item, dict):
+                        self.last_scan_error = "InvalidInventory"
                         return []
+                    if (item.get("status") == "ACTIVE"
+                            and isinstance(item.get("repository"), str)
+                            and type(item.get("attestation_expires_at")) is int):
+                        live_expiry[item["repository"]] = item["attestation_expires_at"]
                     if (item.get("status") == "REVOKED"
                             or item.get("reason_code") in {
                                 "PROVIDER_FAILED_OR_REVOKED", "OWNER_REVOKED",
                             }):
                         denied.add(item.get("repository"))
         except (OSError, ValueError, TypeError):
+            self.last_scan_error = "InventoryReadFailed"
             return []
         records = []
         local_allowed = (os.name == "nt" and
                          grant.get("allow_local_windows_process", False) is True)
         # Re-evaluate only previous SDK/install failures once under the new epoch.
         recovery_epoch = RECOVERY_EPOCH
-        for decision in self._decisions.evaluate_pending(
-                limit=getattr(self.workspace, "max_items", 100)):
+        pending = self._decisions.evaluate_pending(
+            limit=getattr(self.workspace, "max_items", 100))
+        # Renewable live observations get scheduling priority, not authority.
+        # Rotate other candidates by last attempt rather than repeatedly
+        # consuming the entire poll interval on the same alphabetical prefix.
+        last_attempt = getattr(self, "_last_attempt", {})
+        self._last_attempt = last_attempt
+        recent = getattr(self, "_recent_observations", {})
+        if getattr(self, "_observation_grant", None) != grant:
+            recent = {}
+        self._recent_observations = recent
+        self._observation_grant = grant
+        now = int(time.time())
+        pending.sort(key=lambda d: (0 if live_expiry.get(d.repository, now + 601) <= now + 300 else 1,
+                                    last_attempt.get(d.repository, 0)))
+        attempts = 0
+        for decision in pending:
             if decision.status != "AUTO_APPROVED_BY_POLICY":
                 continue
             package = decision.repository.replace("/", "__")
             if decision.repository in denied:
                 continue
             quarantine = self.workspace.root / "verified" / package / "local-windows-quarantined.json"
+            if attempts >= 3:
+                break
+            evidence = quarantine.with_name("independent-attestations.json")
+            # Only skip an unchanged observation produced by this very worker
+            # under the same grant, with substantial TTL remaining.
+            cached = recent.get(decision.repository)
+            if (cached and cached[0] > int(time.time()) + 300
+                    and not quarantine.exists() and not quarantine.is_symlink()):
+                try:
+                    if (evidence.is_file() and not evidence.is_symlink()
+                            and evidence.stat().st_size <= 262_144
+                            and hashlib.sha256(evidence.read_bytes()).hexdigest() == cached[1]):
+                        continue
+                except OSError:
+                    pass
             retries = 0
             if quarantine.exists() or quarantine.is_symlink():
                 if not local_allowed or quarantine.is_symlink() or quarantine.stat().st_size > 2048:
@@ -413,11 +459,17 @@ class IndependentMCPAttestorWorker:
                             retries += 1
                 except (OSError, ValueError, TypeError, PermissionError):
                     continue
+            attempts += 1
+            last_attempt[decision.repository] = time.monotonic()
             try:
                 record = await self.attest(package)
                 if quarantine.exists():
                     quarantine.unlink()
                 records.append(record)
+                expiry = record.get("attestation_expires_at")
+                if (type(expiry) is int and evidence.is_file()
+                        and not evidence.is_symlink() and evidence.stat().st_size <= 262_144):
+                    recent[decision.repository] = (expiry, hashlib.sha256(evidence.read_bytes()).hexdigest())
                 health = getattr(self, "_health", None)
                 if health is not None:
                     health.update(last_renewal=int(time.time()))
