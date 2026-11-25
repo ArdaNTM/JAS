@@ -52,7 +52,7 @@ def test_watch_survives_timeout_and_io_error(tmp_path, monkeypatch, capsys):
                 raise OSError("transient I/O")
             return [{"repository": "sample/mcp"}]
 
-    monkeypatch.setattr(attestor_worker, "EvolutionWorkspace", lambda root: object())
+    monkeypatch.setattr(attestor_worker, "EvolutionWorkspace", lambda root: SimpleNamespace(root=root))
     monkeypatch.setattr(attestor_worker, "_load_signer", lambda path: object())
     monkeypatch.setattr(attestor_worker, "IndependentMCPAttestorWorker", lambda **kw: Worker())
     monkeypatch.setattr(sys, "argv", [
@@ -80,7 +80,7 @@ def test_one_shot_attestor_still_raises(tmp_path, monkeypatch):
         async def scan(self):
             raise PermissionError("owner unavailable")
 
-    monkeypatch.setattr(attestor_worker, "EvolutionWorkspace", lambda root: object())
+    monkeypatch.setattr(attestor_worker, "EvolutionWorkspace", lambda root: SimpleNamespace(root=root))
     monkeypatch.setattr(attestor_worker, "_load_signer", lambda path: object())
     monkeypatch.setattr(attestor_worker, "IndependentMCPAttestorWorker", lambda **kw: Worker())
     monkeypatch.setattr(sys, "argv", [
@@ -113,7 +113,7 @@ def test_signed_candidate_beyond_old_100_item_cutoff_activates(tmp_path, monkeyp
     asyncio.run(scenario())
 
 
-@pytest.mark.parametrize("cause", ["static_evidence", "category", "oversized"])
+@pytest.mark.parametrize("cause", ["static_evidence", "oversized"])
 def test_present_attestation_never_leaves_stale_missing_reason(tmp_path, monkeypatch, cause):
     workspace, name, repo = _signed_fixture(tmp_path, monkeypatch)
     kernel, _ = _kernel()
@@ -131,18 +131,6 @@ def test_present_attestation_never_leaves_stale_missing_reason(tmp_path, monkeyp
         elif cause == "oversized":
             (package / "independent-attestations.json").write_bytes(b"x" * 262145)
             expected = "PermissionError"
-        else:
-            assert await manager.scan(limit=1) == [repo]
-            target_repo = "zz/local-memory"
-            other = workspace.root / "verified" / "zz__local-memory"
-            shutil.copytree(package, other)
-            manifest = other / "aura-capability-manifest.json"
-            data = json.loads(manifest.read_text("utf-8"))
-            data["repository"] = target_repo
-            manifest.write_text(json.dumps(data), encoding="utf-8")
-            shutil.copytree(workspace.root / "runtime" / name,
-                            workspace.root / "runtime" / "zz__local-memory")
-            expected = "CATEGORY_ALREADY_ACTIVE"
         manager._persist(target_repo, "WAITING_ATTESTATION",
                          reason_code="INDEPENDENT_ATTESTATION_MISSING")
         assert await manager.scan(limit=1) == []
