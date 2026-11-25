@@ -18,6 +18,7 @@ from typing import Protocol
 from aura_core.application.self_tool_synthesis import CandidateToolValidator, ToolCandidate
 from aura_core.evolution.autonomous_analyzer import AutonomousAnalyzer, GoalProposal
 from aura_core.evolution.goal_tree import GoalTreeBuilder
+from aura_core.evolution.self_patch_review import SelfPatchReview
 
 logger = logging.getLogger(__name__)
 
@@ -240,6 +241,7 @@ class ProactiveEvolutionCoordinator:
         self, delegate: EvolutionPlanner, *, model: IntrospectionModel,
         memory: _TaskMemoryCoordinator, checkout_root: str | _Path,
         max_tasks: int = 4, timeout_seconds: float = 20.0,
+        self_patch_review: SelfPatchReview | None = None,
     ) -> None:
         if not 1 <= max_tasks <= 8 or not 1 <= timeout_seconds <= 60:
             raise ValueError("Invalid introspection budgets")
@@ -256,6 +258,8 @@ class ProactiveEvolutionCoordinator:
         self._errors = 0
         self._seen: set[str] = set()
         self._tasks: dict[str, EvolutionTask] = {}
+        self._self_patch_review = self_patch_review
+        self._patch_errors = 0
 
     def _excerpt(self, evidence_path: str, line: int) -> str:
         """Read at most 14 short sanitized lines from an allowlisted module."""
@@ -283,7 +287,18 @@ class ProactiveEvolutionCoordinator:
         """Produce at most four metadata-only, review-required tasks per cycle."""
         if time.monotonic() - self._delegate.last_activity() < self._delegate.idle_seconds:
             return ()
+        if self._delegate._cycles >= self._delegate.max_cycles:
+            return ()
         proposals = await self._delegate.run_once()
+        if (self._self_patch_review is not None and
+                time.monotonic() - self._delegate.last_activity() >= self._delegate.idle_seconds):
+            try:
+                await self._self_patch_review.propose_once(self._model, timeout=self._timeout)
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                self._patch_errors += 1
+                logger.warning("Self-code patch proposal rejected or unavailable")
         discovered: list[EvolutionTask] = []
         for item in proposals[:self._max_tasks]:
             if item.proposal_id in self._seen:
@@ -393,6 +408,9 @@ class ProactiveEvolutionCoordinator:
             "mode": "quarantined_introspection_only",
             "enabled": self._task is not None and not self._task.done(),
             "stored_evolution_tasks": len(self._tasks),
+            "self_patch_review_enabled": self._self_patch_review is not None,
+            "self_patch_review_errors": self._patch_errors,
+            "self_patch_can_apply": False,
             "introspection_errors": self._errors,
             "can_execute": False,
             "can_activate": False,
@@ -404,6 +422,9 @@ class ProactiveEvolutionCoordinator:
 
     def goal_tree(self) -> dict:
         return self._delegate.goal_tree()
+
+    def self_patch_proposals(self) -> list[dict]:
+        return self._self_patch_review.pending() if self._self_patch_review is not None else []
 
     def tasks(self) -> tuple[EvolutionTask, ...]:
         return tuple(self._tasks.values())
