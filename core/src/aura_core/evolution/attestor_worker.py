@@ -467,9 +467,13 @@ class IndependentMCPAttestorWorker:
                     quarantine.unlink()
                 records.append(record)
                 expiry = record.get("attestation_expires_at")
-                if (type(expiry) is int and evidence.is_file()
-                        and not evidence.is_symlink() and evidence.stat().st_size <= 262_144):
-                    recent[decision.repository] = (expiry, hashlib.sha256(evidence.read_bytes()).hexdigest())
+                try:
+                    if (type(expiry) is int and evidence.is_file()
+                            and not evidence.is_symlink() and evidence.stat().st_size <= 262_144):
+                        recent[decision.repository] = (expiry, hashlib.sha256(evidence.read_bytes()).hexdigest())
+                except OSError:
+                    # A scheduling cache failure is not an attestation failure.
+                    recent.pop(decision.repository, None)
                 health = getattr(self, "_health", None)
                 if health is not None:
                     health.update(last_renewal=int(time.time()))
