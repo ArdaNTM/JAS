@@ -245,3 +245,129 @@ def test_authentic_expired_local_evidence_is_renewable_not_invalid_binding(tmp_p
     wheel.write_bytes(b"unauthorized dependency change")
     with pytest.raises(PermissionError, match="differs from signed provenance"):
         _require_observed_environment(workspace, name, tree=runtime_fingerprint(workspace, name), **checks)
+
+
+def _registration_script():
+    from pathlib import Path
+    return Path(__file__).resolve().parents[2] / "scripts" / "Register-AuraIndependentAttestor.ps1"
+
+
+def _registration_precheck():
+    """Extract the actual production preflight, not a duplicate command."""
+    source = _registration_script().read_text(encoding="utf-8")
+    start = source.index("$check = @'\n")
+    end = source.index("\n$sha = ", start)
+    return source[start:end]
+
+
+def test_registration_precheck_uses_stdin_not_native_code_argument():
+    import ast
+    source = _registration_precheck()
+    payload = source.split("@'\n", 1)[1].split("\n'@", 1)[0]
+    ast.parse(payload)
+    assert '$check | & $TrustedPython -I -B - $EvolutionRoot $PrivateKey' in source
+    assert '-c $check' not in source
+    assert 'if ($LASTEXITCODE -ne 0)' in source
+    assert '_load_signer(Path(sys.argv[2]))' in payload
+    assert 'grant["attestor_key_sha256"]' in payload
+
+
+@pytest.mark.skipif(__import__("os").name != "nt", reason="Native Windows PowerShell 5.1 and NTFS ACL")
+def test_registration_native_powershell_precheck_and_private_key_acl(tmp_path, monkeypatch):
+    import os
+    from pathlib import Path
+    import subprocess
+    import sys
+    from cryptography.hazmat.primitives import serialization
+    from aura_core.evolution.windows_owner_storage import harden_private_acl, require_private_acl
+    from test_windows_owner_acl import _add_untrusted_ace
+
+    workspace, _, _ = _signed_fixture(tmp_path, monkeypatch)
+    # The private attestor key is outside both the checkout and Owner storage.
+    keys = workspace.root / "Independent Attestor Keys"
+    keys.mkdir()
+    harden_private_acl(keys)
+    key_path = keys / "sandbox-attestor.pem"
+    key_path.write_bytes(workspace._testing_attestor_signer.private_bytes(
+        serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8,
+        serialization.NoEncryption(),
+    ))
+    harden_private_acl(key_path)
+    require_private_acl(keys)
+    require_private_acl(key_path)
+
+    powershell = Path(os.environ["SystemRoot"]) / "System32/WindowsPowerShell/v1.0/powershell.exe"
+    # Run exactly the production preflight with a real native interpreter.
+    # No task is registered or user environment mutated on the shared runner.
+    wrapper = tmp_path / "registration-preflight.ps1"
+    wrapper.write_text(
+        "param([string]$TrustedPython,[string]$TrustedWorkingDirectory,"
+        "[string]$EvolutionRoot,[string]$PrivateKey)\n"
+        "$ErrorActionPreference = 'Stop'\n"
+        "if ($PSVersionTable.PSVersion.Major -ne 5) { throw 'Expected Windows PowerShell 5.1' }\n"
+        + _registration_precheck() + "\nWrite-Output 'ATTESTOR_PREFLIGHT_PASS'\n",
+        encoding="ascii",
+    )
+
+    def run():
+        return subprocess.run(
+            [str(powershell), "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
+             "-File", str(wrapper), sys.executable, str(tmp_path),
+             str(workspace.root), str(key_path)],
+            capture_output=True, text=True, timeout=180, check=False,
+        )
+
+    valid = run()
+    assert valid.returncode == 0, valid.stderr[-1500:]
+    assert "ATTESTOR_PREFLIGHT_PASS" in valid.stdout
+
+    # A different real Ed25519 key must fail even with correct private ACLs.
+    key_path.write_bytes(Ed25519PrivateKey.generate().private_bytes(
+        serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8,
+        serialization.NoEncryption(),
+    ))
+    mismatch = run()
+    assert mismatch.returncode != 0
+    assert "Independent signer validation failed" in mismatch.stderr
+    assert "Independent attestor identity or Owner grant invalid" in mismatch.stderr
+    assert "ATTESTOR_PREFLIGHT_PASS" not in mismatch.stdout
+
+    # Correct key with an unexpected ACE must also fail, not reach registration.
+    key_path.write_bytes(workspace._testing_attestor_signer.private_bytes(
+        serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8,
+        serialization.NoEncryption(),
+    ))
+    try:
+        _add_untrusted_ace(key_path)
+        rejected = run()
+        assert rejected.returncode != 0
+        assert "NTFS ACL" in rejected.stderr
+        assert "ATTESTOR_PREFLIGHT_PASS" not in rejected.stdout
+    finally:
+        harden_private_acl(key_path)
+
+
+@pytest.mark.skipif(__import__("os").name != "nt", reason="Real Windows identity check")
+def test_registration_rejects_core_identity_before_task_creation():
+    import csv
+    import os
+    from pathlib import Path
+    import subprocess
+    import sys
+
+    current = subprocess.run(
+        ["whoami.exe", "/user", "/fo", "csv", "/nh"],
+        capture_output=True, text=True, timeout=15, check=True,
+    )
+    sid = next(csv.reader(current.stdout.splitlines()))[-1].strip()
+    powershell = Path(os.environ["SystemRoot"]) / "System32/WindowsPowerShell/v1.0/powershell.exe"
+    result = subprocess.run(
+        [str(powershell), "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
+         "-File", str(_registration_script()), "-CoreIdentity", sid,
+         "-TrustedPython", sys.executable,
+         "-TrustedWorkingDirectory", str(_registration_script().parent)],
+        capture_output=True, text=True, timeout=30, check=False,
+    )
+    assert result.returncode != 0
+    assert "Attestor must be a separate non-SYSTEM Windows account" in result.stderr
+    assert "Registered independent task:" not in result.stdout
