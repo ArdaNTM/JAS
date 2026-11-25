@@ -86,6 +86,7 @@ def runtime_fingerprint(workspace: EvolutionWorkspace, name: str) -> str:
             or not verified.is_dir() or verified.is_symlink()):
         raise PermissionError("Unsafe independently prepared runtime")
     _checked_path(runtime)
+    _checked_path(verified / "source.zip")
     with (verified / "source.zip").open("rb") as stream:
         files, _entry, _skipped = _validated_files(stream)
     # Docker-only packages retain the original exact-source contract.
@@ -123,6 +124,10 @@ def runtime_fingerprint(workspace: EvolutionWorkspace, name: str) -> str:
                 environment_files.append((rel, digest.hexdigest()))
                 continue
             if rel not in allowed:
+                # Bytecode is executable; never allow unsigned caches simply
+                # because their names look like ordinary Python artifacts.
+                if "__pycache__" in path.parts or path.suffix.lower() == ".pyc":
+                    raise PermissionError("Unexpected runtime executable or data: unsigned bytecode")
                 raise PermissionError("Unexpected runtime executable or data")
             seen.add(rel)
         if len(seen) > len(allowed) + 1:
@@ -262,7 +267,8 @@ class DockerMCPProvider(MCPProvider):
                  package: str, on_failure: Callable[[str], None],
                  owner_authorized: Callable[[], bool],
                  attestation_expires_at: int,
-                 on_expired: Callable[[str], None] | None = None):
+                 on_expired: Callable[[str], None] | None = None,
+                 signed_tree: str | None = None):
         super().__init__(connection)
         self.runtime = runtime
         self.archive_sha256 = archive_sha256
@@ -274,6 +280,12 @@ class DockerMCPProvider(MCPProvider):
         self._healthy = True
         self._expired = False
         self._on_expired = on_expired
+        self._signed_tree = signed_tree
+
+    def _require_signed_tree(self) -> None:
+        current = runtime_fingerprint(self.workspace, self.package)
+        if self._signed_tree is None or current != self._signed_tree:
+            raise PermissionError("Runtime tree differs from signed independent observation")
 
     def _reject_expired(self) -> None:
         # Expiry is a renewable dependency, not a provider failure. Retire
@@ -315,11 +327,11 @@ class DockerMCPProvider(MCPProvider):
         self._reject_expired()
         try:
             # Prevent host-side file mutation after signed sandbox evidence.
-            runtime_fingerprint(self.workspace, self.package)
+            self._require_signed_tree()
             result = await super().call_tool(name, arguments)
             # A stateful MCP may write into its isolated state folder, but
             # never into independently signed runtime source or wheels.
-            runtime_fingerprint(self.workspace, self.package)
+            self._require_signed_tree()
         except Exception:
             self._healthy = False
             self._on_failure(self.package)
@@ -489,7 +501,7 @@ class DelegatedMCPActivationManager:
 
     async def _connect(self, name: str, grant: dict, entry: str, expires_at: int,
                        execution_profile: str = "docker-stdio",
-                       recovery: bool = False):
+                       recovery: bool = False, signed_tree: str | None = None):
         runtime = self.workspace.root / "runtime" / name
         if self._factory is not None:
             return await self._factory(name, grant, entry)
@@ -514,6 +526,8 @@ class DelegatedMCPActivationManager:
             )
         else:
             raise PermissionError("Unknown external MCP execution profile")
+        if signed_tree is None or runtime_fingerprint(self.workspace, name) != signed_tree:
+            raise PermissionError("Runtime tree differs from signed independent observation")
         connection = MCPConnection()
         try:
             await asyncio.wait_for(connection.connect_stdio(parameters), timeout=20)
@@ -523,10 +537,10 @@ class DelegatedMCPActivationManager:
                 on_failure=lambda key: asyncio.create_task(self.quarantine(key)),
                 on_expired=lambda key: asyncio.create_task(self._expire(key)),
                 owner_authorized=lambda: (
-                    self._still_authorized(name)
+                    (self.delegation.verified_grant() == grant and self._still_authorized(name))
                     or (recovery and self._recovery_authorized(name, grant))
                 ),
-                attestation_expires_at=expires_at,
+                attestation_expires_at=expires_at, signed_tree=signed_tree,
             )
         except BaseException:
             await connection.close()
@@ -632,7 +646,7 @@ class DelegatedMCPActivationManager:
         expiry = min(expiries)
         provider = await self._connect(
             name, grant, entry, expiry,
-            execution_profile=profile, recovery=recovery,
+            execution_profile=profile, recovery=recovery, signed_tree=tree,
         )
         try:
             tools = await asyncio.wait_for(provider.list_tools(), timeout=6)
@@ -689,7 +703,6 @@ class DelegatedMCPActivationManager:
                 expired_this_scan.add(name)
                 await self._remove(name, quarantine=False, expired=True)
         async with self._lock:
-            existing = frozenset(value.category for value in self._active.values())
             persistent = {
                 row["repository"]: row
                 for row in self._load_inventory()["active"]
@@ -821,12 +834,13 @@ class DelegatedMCPActivationManager:
                         )
                     continue
 
-                # Category dedupe applies to ACTUAL activation only. Missing
-                # evidence and independent quarantine were reported above and
-                # must not get hidden by a previously activated sibling.
-                if decision.category in existing:
-                    defer("CATEGORY_ALREADY_ACTIVE",
-                          "Another provider is active in the same delegated category")
+                # Categories describe capabilities, not provider identities.
+                # Preserve the previous absolute upper bound (one per supported
+                # category) and the per-scan connection limit, while permitting
+                # distinct independently signed repositories in one category.
+                if len(self._active) >= min(len(_CATEGORY), self.workspace.max_items):
+                    defer("ACTIVE_PROVIDER_BUDGET_DEFERRED",
+                          "Concurrent external provider resource budget reached")
                     continue
                 # Only candidates with BOTH evidence and a runtime consume
                 # live MCP connection slots. Full signatures and tree hashes
@@ -844,7 +858,6 @@ class DelegatedMCPActivationManager:
                     )
                     await self._register(name, details, provider, tools, proofs, expiry)
                     successes.append(decision.repository)
-                    existing = existing | {decision.category}
                 except Exception as exc:
                     # Missing/expired attestor observation is a dependency,
                     # not an executed provider failure. Keep eligible for a
@@ -900,6 +913,9 @@ class DelegatedMCPActivationManager:
             grant = self.delegation.verified_grant()
             if grant is None:
                 raise PermissionError("Owner delegation revoked")
+            if (decision.category not in grant["categories"]
+                    or len(tools) > grant["max_tools"]):
+                raise PermissionError("Owner delegation scope changed before registration")
             for tool in tools:
                 capability = "external.mcp." + short + "." + tool.name
                 scope = "evolution:isolated:" + decision.source_sha256 + ":" + tool.name
