@@ -350,7 +350,7 @@ class IsolatedMCPPreflight:
             "--user", "65534:65534", "--tmpfs", "/tmp:rw,nosuid,noexec,size=16m",
             "--mount", f"type=bind,source={runtime},target=/src,readonly",
             "--workdir", "/src", "--entrypoint", "python",
-            self.image, "-u", entrypoint,
+            self.image, "-B", "-u", entrypoint,
         ]
 
     async def probe(self, package_name: str) -> dict[str, Any]:
