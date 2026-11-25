@@ -68,7 +68,9 @@ if grant is None or hashlib.sha256(raw).hexdigest() != grant["attestor_key_sha25
 '@
 Push-Location -LiteralPath $TrustedWorkingDirectory
 try {
-    & $TrustedPython -I -B -c $check $EvolutionRoot $PrivateKey
+    # Windows PowerShell 5.1 rewrites embedded quotes in native argv.
+    # Send ASCII Python source on stdin; only filesystem paths are argv.
+    $check | & $TrustedPython -I -B - $EvolutionRoot $PrivateKey
     if ($LASTEXITCODE -ne 0) { throw 'Independent signer validation failed' }
 } finally { Pop-Location }
 $sha = [Security.Cryptography.SHA256]::Create()
