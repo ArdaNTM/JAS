@@ -264,13 +264,13 @@ def prepare_isolated_venv(
                 commands = [
                     [uv, "venv", str(venv), "--python", sys.executable, "--no-project"],
                     [uv, "pip", "install", "--python", str(interpreter),
-                     "--only-binary", ":all:", *deps],
+                     "--only-binary", ":all:", "--link-mode", "copy", *deps],
                 ]
             else:
                 commands = [
-                    [sys.executable, "-I", "-m", "venv", str(venv)],
-                    [str(interpreter), "-I", "-m", "pip", "--isolated",
-                     "install", "--no-input", "--only-binary=:all:", *deps],
+                    [sys.executable, "-I", "-B", "-m", "venv", str(venv)],
+                    [str(interpreter), "-I", "-B", "-m", "pip", "--isolated",
+                     "install", "--no-input", "--no-compile", "--only-binary=:all:", *deps],
                 ]
             for command in commands:
                 result = subprocess.run(
