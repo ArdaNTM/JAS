@@ -30,6 +30,7 @@ from aura_core.evolution.sandbox_preflight import (
     _MAX_TOOLS, _MAX_SCHEMA_JSON_BYTES, _schema_json_size,
 )
 from aura_core.mcp.connection import MCPConnection
+from aura_core.mcp.mcp_provider import MCPTool
 
 LOCAL_SCHEMA = "aura.local-windows-job-mcp-attestation.v1"
 LOCAL_DOMAIN = b"AURA:LOCAL-WINDOWS-JOB-MCP-ATTESTATION:v1" + bytes([10])
