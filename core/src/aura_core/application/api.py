@@ -41,6 +41,7 @@ from aura_core.application.background_thinking import IdleMemoryReflectionDaemon
 from aura_core.evolution.autonomous_analyzer import AutonomousAnalyzer
 from aura_core.evolution.self_discovery_api import continuous_router
 from aura_core.evolution.evolution_planner import EvolutionPlanner, ProactiveEvolutionCoordinator
+from aura_core.evolution.self_patch_review import SelfPatchReview
 from aura_core.application.task_memory import TaskMemoryCoordinator
 from aura_core.application.ollama_completion import OllamaJSONCompletionProvider
 from aura_core.application.self_tool_synthesis import ToolCandidate
@@ -812,6 +813,15 @@ def create_api(
                 or parsed_endpoint.path not in {"", "/"}
                 or parsed_endpoint.query or parsed_endpoint.fragment):
             raise RuntimeError("Evolution source inspection requires an exact loopback Ollama endpoint")
+    self_patch_enabled = os.getenv("AURA_EVOLUTION_SELF_PATCH_ENABLED", "0").strip() == "1"
+    self_patch_review = None
+    if self_patch_enabled:
+        if not introspect_enabled:
+            raise RuntimeError("Self-code patch review requires explicit local idle introspection")
+        directory = os.getenv("AURA_EVOLUTION_SELF_PATCH_REVIEW_DIR", "")
+        if not directory:
+            raise RuntimeError("Preprovisioned private self-patch review directory required")
+        self_patch_review = SelfPatchReview(evolution_root, directory)
     app.state.evolution_review = (
         ProactiveEvolutionCoordinator(
             base_evolution,
@@ -825,6 +835,7 @@ def create_api(
                 os.getenv("AURA_EVOLUTION_MEMORY_DB", "./data/evolution-introspection.sqlite3")
             )),
             checkout_root=evolution_root,
+            self_patch_review=self_patch_review,
         ) if introspect_enabled else base_evolution
     )
     # The governed gateway is attached by the Core composition root AFTER the
@@ -1885,6 +1896,22 @@ def create_api(
         worker = app.state.evolution_review
         return {"mode": "review_only",
                 "items": worker.list_proposals(limit=limit) if worker else []}
+
+    @app.get("/api/evolution/self-patches")
+    def evolution_self_patches(
+        http_request: Request,
+        principal_id: str = Depends(authenticated_principal),
+    ) -> dict[str, object]:
+        require_local_client(http_request)
+        if principal_id != "local_owner":
+            raise HTTPException(status_code=403, detail="Local Owner review required")
+        worker = app.state.evolution_review
+        try:
+            items = worker.self_patch_proposals() if isinstance(worker, ProactiveEvolutionCoordinator) else []
+        except (OSError, ValueError, TypeError) as exc:
+            raise HTTPException(status_code=503, detail="Self-patch review unavailable") from exc
+        return {"items": items, "mode": "untrusted_source_patch_review",
+                "authorization_granted": False, "execution_performed": False}
 
     @app.get("/api/evolution/drafts")
     def evolution_drafts(
