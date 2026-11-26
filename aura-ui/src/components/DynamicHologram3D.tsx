@@ -101,9 +101,16 @@ function makeMotor() {
   block.add(new THREE.Mesh(blockGeo, shell), new THREE.Mesh(blockGeo, material(true)));
   group.add(block);
   const shaft = new THREE.Group(); shaft.name = "Krank mili";
+  shaft.userData.spin = true;
   const shaftMesh = new THREE.Mesh(new THREE.CylinderGeometry(.12, .12, 2.6, 24), material());
   shaftMesh.rotation.x = Math.PI / 2;
   shaft.add(shaftMesh);
+  for (const z of [-.68, 0, .68]) {
+    const web = new THREE.Mesh(new THREE.CylinderGeometry(.28,.28,.13,24), material());
+    web.rotation.x = Math.PI / 2; web.position.z = z; shaft.add(web);
+    const pin = new THREE.Mesh(new THREE.CylinderGeometry(.075,.075,.22,16), material());
+    pin.rotation.x = Math.PI / 2; pin.position.set(.16,0,z); shaft.add(pin);
+  }
   const pulley = new THREE.Mesh(new THREE.CylinderGeometry(.42, .42, .15, 24), material());
   pulley.rotation.x = Math.PI / 2; pulley.position.z = 1.35; shaft.add(pulley); group.add(shaft);
   for (const side of [-1, 1]) {
@@ -116,14 +123,39 @@ function makeMotor() {
       head.rotation.z = Math.PI / 2; head.position.z = z; head.position.x = side * -.12;
       head.userData.piston = true; head.userData.baseX = head.position.x; head.userData.phase = z * 4;
       bank.add(head);
+      const rod = new THREE.Mesh(new THREE.CylinderGeometry(.045,.065,.66,12), material());
+      rod.rotation.z = Math.PI / 2; rod.position.set(-side*.48,0,z);
+      rod.userData.piston = true; rod.userData.baseX = rod.position.x; rod.userData.phase = z * 4;
+      bank.add(rod);
+      for (let fin = 0; fin < 4; fin++) {
+        const cooling = new THREE.Mesh(new THREE.TorusGeometry(.29,.012,6,24), material());
+        cooling.rotation.y = Math.PI / 2; cooling.position.set((fin-1.5)*.15,0,z); bank.add(cooling);
+      }
     }
     group.add(bank);
     const turbo = new THREE.Group(); turbo.name = side < 0 ? "Sol turbo" : "Sağ turbo";
     const turbine = new THREE.Mesh(new THREE.TorusGeometry(.28, .12, 12, 36), material());
     turbine.userData.hot = true; turbo.add(turbine);
+    const rotor = new THREE.Group(); rotor.userData.spin = true;
+    for (let blade=0; blade<9; blade++) {
+      const vane = new THREE.Mesh(new THREE.BoxGeometry(.045,.18,.035), material());
+      const a=blade*Math.PI*2/9; vane.position.set(Math.cos(a)*.11,Math.sin(a)*.11,.02); vane.rotation.z=a-Math.PI/2; rotor.add(vane);
+    }
+    turbo.add(rotor);
     const housing = new THREE.Mesh(new THREE.BoxGeometry(.42, .34, .48), material(true));
     housing.position.z = .33; turbo.add(housing);
     turbo.position.set(side * 1.38, -.42, -.9); group.add(turbo);
+  }
+  // Stylized flow paths, not a physical airflow simulation.
+  for (const side of [-1,1]) {
+    const curve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(side*1.38,-.42,-.9),new THREE.Vector3(side*1.7,.3,-.6),
+      new THREE.Vector3(side*1.35,.72,.15),new THREE.Vector3(side*.4,.65,.6)
+    ]);
+    const pipe = new THREE.Mesh(new THREE.TubeGeometry(curve,24,.065,8,false),material());
+    pipe.name = side < 0 ? "Sol akış hattı" : "Sağ akış hattı"; group.add(pipe);
+    const tracer = new THREE.Mesh(new THREE.SphereGeometry(.055,12,8),new THREE.MeshBasicMaterial({color:0xffcb72}));
+    tracer.userData.flowCurve=curve; tracer.userData.flowOffset=side<0?0:.5; tracer.visible=false; group.add(tracer);
   }
   return group;
 }
@@ -169,6 +201,7 @@ export default function DynamicHologram3D({
   const [thermal, setThermal] = useState(false);
   const [wireframe, setWireframe] = useState(false);
   const [unavailable, setUnavailable] = useState(false);
+  const hotspotRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const modes = useRef({ exploded, thermal, wireframe });
   modes.current = { exploded, thermal, wireframe };
 
@@ -192,7 +225,7 @@ export default function DynamicHologram3D({
     try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); }
     catch { setUnavailable(true); return; }
     setUnavailable(false);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.domElement.style.cssText =
       "display:block;width:100%;height:100%;cursor:grab;touch-action:none";
@@ -212,11 +245,20 @@ export default function DynamicHologram3D({
 
     const model = makeModel(modelId);
     scene.add(model);
-    const parts = model.children.map((part, index) => ({ part, base: part.position.clone(), direction: part.position.lengthSq() > .01 ? part.position.clone().normalize() : new THREE.Vector3(0, 0, index % 2 ? 1 : -1) }));
+    model.rotation.set(.16,-.45,0);
+    const anchors = modelId === "motor-v1" ? [["Krank mili","Krank mili"],["Karşılıklı silindirler","Sol silindir grubu"],["Turbo grubu","Sağ turbo"]] : [];
+    const projected = new THREE.Vector3();
+    const offset = new THREE.Vector3();
+    const targetColor = new THREE.Color();
+    const parts = model.children.filter(part => !part.userData.flowCurve).map((part, index) => ({ part, base: part.position.clone(), direction: part.position.lengthSq() > .01 ? part.position.clone().normalize() : new THREE.Vector3(0, 0, index % 2 ? 1 : -1) }));
     model.traverse(object => {
       if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial) {
         object.userData.originalColor = object.material.color.clone();
         object.userData.originalWire = object.material.wireframe;
+        if (!object.material.wireframe && !object.userData.flowCurve) {
+          const edges = new THREE.LineSegments(new THREE.EdgesGeometry(object.geometry,35), new THREE.LineBasicMaterial({color:0x8bf8ff, transparent:true, opacity:.30}));
+          object.add(edges);
+        }
       }
     });
 
@@ -276,21 +318,42 @@ export default function DynamicHologram3D({
     canvas.addEventListener("wheel", wheel, { passive: false });
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let last = performance.now();
+    let motion = 0;
     const animate = () => {
       if (disposed) return;
       frame = requestAnimationFrame(animate);
-      if (!dragging && !reduced.matches) model.rotation.y += active ? 0.005 : 0.001;
-      for (const {part, base, direction} of parts) part.position.lerp(base.clone().addScaledVector(direction, modes.current.exploded ? .75 : 0), .09);
+      const now = performance.now();
+      const dt = Math.min(.05,(now-last)/1000); last=now;
+      if (document.hidden) return;
+      if (!reduced.matches) motion += dt;
+      if (!dragging && !reduced.matches) model.rotation.y += dt * (active ? .24 : .06);
+      const blend = reduced.matches ? 1 : 1-Math.exp(-dt*7);
+      for (const {part, base, direction} of parts) part.position.lerp(offset.copy(base).addScaledVector(direction, modes.current.exploded ? .85 : 0), blend);
       model.traverse(object => {
+        if (object.userData.spin) object.rotation.z = motion * 2.8;
+        if (object.userData.flowCurve) {
+          object.visible = modes.current.thermal && !modes.current.exploded;
+          object.userData.flowCurve.getPointAt((motion*.35+object.userData.flowOffset)%1,object.position);
+        }
         if (!(object instanceof THREE.Mesh) || !(object.material instanceof THREE.MeshStandardMaterial)) return;
         const mat = object.material;
         mat.wireframe = modes.current.wireframe || Boolean(object.userData.originalWire);
-        if (modes.current.thermal && modelId === "motor-v1") mat.color.setHex(object.userData.hot ? 0xff4f2b : 0xe9ad39);
-        else if (object.userData.originalColor) mat.color.copy(object.userData.originalColor);
-        if (object.userData.piston && !reduced.matches) object.position.x = object.userData.baseX + Math.sin(performance.now() / 180 + object.userData.phase) * .1;
+        if (modes.current.thermal && modelId === "motor-v1") targetColor.setHex(object.userData.hot ? 0xff4f2b : 0xe9ad39);
+        else targetColor.copy(object.userData.originalColor);
+        mat.color.lerp(targetColor,blend);
+        if (object.userData.piston) object.position.x = object.userData.baseX + Math.sin(motion*2.8 + object.userData.phase) * .14;
       });
-      halo.rotation.z += 0.001;
+      halo.rotation.z = motion*.06;
       renderer.render(scene, camera);
+      for (const [label,name] of anchors) {
+        const button=hotspotRefs.current[label]; const part=model.getObjectByName(name);
+        if (!button || !part) continue;
+        part.getWorldPosition(projected).project(camera);
+        button.style.left = ((projected.x+1)*50) + "%";
+        button.style.top = ((1-projected.y)*50) + "%";
+        button.style.visibility = Math.abs(projected.x)<.88 && Math.abs(projected.y)<.86 && projected.z<1 ? "visible" : "hidden";
+      }
     };
     animate();
 
@@ -319,24 +382,23 @@ export default function DynamicHologram3D({
   }, [modelId, active]);
 
   return (
-    <div className="w-full max-w-[520px]">
-      <div className="mb-2 flex items-center justify-between text-[9px] tracking-[.2em] text-cyan-500">
+    <div className="astral-hologram">
+      <div className="astral-hologram-header">
         <span>HOLOGRAM / {labels[modelId]}</span>
         <span>DRAG · SCROLL TO ZOOM</span>
       </div>
-      <div
-        ref={hostRef}
-        className="h-[360px] w-full overflow-hidden rounded-xl border border-cyan-950/80 bg-[#02060b]"
-        aria-label={`Interactive 3D visualization: ${labels[modelId]}`}
-      />
+      <div className="astral-hologram-viewport">
+        <div ref={hostRef} className="astral-hologram-host" aria-label={`Interactive 3D visualization: ${labels[modelId]}`} />
+        {!unavailable && modelId === "motor-v1" && ["Krank mili","Karşılıklı silindirler","Turbo grubu"].map(part => <button key={part} ref={node => { hotspotRefs.current[part]=node; }} type="button" className="astral-pill astral-hotspot" disabled={!onInspect} onClick={() => onInspect?.(part)}>{part}</button>)}
+      </div>
       {unavailable && <p role="alert">WebGL kullanılamıyor; araştırma sonucu sohbet geçmişinde kullanılabilir.</p>}
       <div className="astral-chips">
         <button type="button" className="astral-pill" aria-pressed={exploded} disabled={unavailable} onClick={() => setExploded(v => !v)}>Parçaları Ayır</button>
-        <button type="button" className="astral-pill" aria-pressed={thermal} disabled={unavailable || modelId !== "motor-v1"} onClick={() => setThermal(v => !v)}>Termal renkler (temsili)</button>
+        <button type="button" className="astral-pill" aria-pressed={thermal} disabled={unavailable || modelId !== "motor-v1"} onClick={() => setThermal(v => !v)}>Termal &amp; Akış (temsili)</button>
         <button type="button" className="astral-pill" aria-pressed={wireframe} disabled={unavailable} onClick={() => setWireframe(v => !v)}>X-Ray Tel Kafes</button>
       </div>
       {modelId === "motor-v1" && <div className="astral-chips">{["Krank mili", "Karşılıklı silindirler", "Turbo grubu"].map(part => <button type="button" className="astral-pill" key={part} disabled={!onInspect} onClick={() => onInspect?.(part)}>{part} · incele</button>)}</div>}
-      <div className="mt-3 border-l border-cyan-800 pl-3">
+      <div className="astral-hologram-note">
         <div className="text-[8px] tracking-[.2em] text-slate-600">
           REQUESTED OBJECT
         </div>
@@ -344,7 +406,7 @@ export default function DynamicHologram3D({
           {target}
         </div>
         <div className="mt-1 text-[9px] leading-4 text-slate-500">
-          Temsili yordamlı model; doğrulanmış CAD, ölçüm veya termal/akış simülasyonu değildir.
+          Temsili yordamlı model; renkler ve akış parçacıkları açıklayıcıdır, doğrulanmış Porsche CAD, ölçüm veya fiziksel simülasyon değildir.
         </div>
       </div>
     </div>

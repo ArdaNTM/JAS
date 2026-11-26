@@ -1,4 +1,5 @@
 import AstralCore from "./components/AstralCore";
+import AstralAtmosphere from "./components/AstralAtmosphere";
 import SystemDrawer from "./components/SystemDrawer";
 import "./astral-hud.css";
 import DynamicHologram3D from "./components/DynamicHologram3D";
@@ -713,6 +714,7 @@ export default function App() {
   }
   return <>
     <div className="astral-dashboard">
+      <AstralAtmosphere />
       <header className="astral-top">
         <div className="astral-brand" data-online={isHealthyStatus(coreStatus)}><i /><b>AURA <span style={{color:"#00e7f1"}}>//</span> CORE</b><small>Core: {durumMetni(coreStatus)} · Gateway: {durumMetni(gatewayStatus)}</small></div>
         <div className="astral-actions">
@@ -726,9 +728,11 @@ export default function App() {
         </div>
       </header>
       {mainView === "capabilities" ? <CapabilityAndToolCenter onInsertDirective={value => { setCommand(value); setMainView("hud"); }} /> :
-        <main className="astral-stage">
-          <AstralCore state={visibleSessionState} amplitude={Math.max(audioEnergy, micEnergy, voice.amplitude)} docked={!!hologramTarget} />
+        <main className={"astral-stage" + (hologramTarget ? " astral-stage-projection" : "")}>
+          <div className="astral-stage-caption" aria-hidden="true"><span>PERSONAL INTELLIGENCE</span><strong>ASTRAL INTERFACE</strong><span>CORE / {sessionStateLabel(visibleSessionState)}</span></div>
+          <AstralCore state={visibleSessionState} amplitude={visibleSessionState === "speaking" ? audioEnergy : Math.max(micEnergy, voice.amplitude)} docked={!!hologramTarget} />
           {hologramTarget && <div className="astral-projection">
+            <div className="astral-projection-beam" aria-hidden="true" />
             <DynamicHologram3D target={hologramTarget} modelId={hologramModelId} active={true} onInspect={blocked ? undefined : inspectPart} />
             <button type="button" className="astral-pill" onClick={() => setHologramTarget("")}>Projeksiyonu kapat</button>
           </div>}
@@ -742,7 +746,7 @@ export default function App() {
           <button type="button" className="astral-pill" disabled={!voice.available || blocked || fullDuplex.active || continuousVoice.active} onClick={voice.state === "recording" || voice.state === "listening" ? voice.stop : voice.start}>{voice.state === "recording" || voice.state === "listening" ? "Durdur" : "Mikrofon"}</button>
           <input aria-label="AURA komutu" value={command} onChange={event => setCommand(event.target.value)} placeholder="AURA'ya seslenin veya komut yazın…" disabled={blocked} />
           <button type="button" className="astral-pill" aria-pressed={continuousVoice.active} disabled={blocked || fullDuplex.active || voice.state === "recording"} onClick={() => continuousVoice.active ? continuousVoice.stop() : void continuousVoice.start()}>{continuousVoice.active ? "Dinlemeyi kapat" : "Sürekli dinle"}</button>
-          <button type="submit" className="astral-pill" disabled={blocked || !command.trim()}>İlet</button>
+          <button type="submit" className="astral-pill astral-send" disabled={blocked || !command.trim()}>İlet</button>
         </form>
         <div className="astral-status">{sessionStateLabel(visibleSessionState)} · {eventsConnected ? "GÜVENLİ OLAY BAĞLANTISI" : taskState}{continuousVoice.active ? " · " + continuousVoice.message : ""}</div>
       </footer>

@@ -7,6 +7,7 @@ $vite = Join-Path $root "aura-ui\node_modules\vite\bin\vite.js"
 $viteCli = Join-Path $root "aura-ui\node_modules\vite\dist\node\cli.js"
 $fake = @(
     @{ CommandLine = ('"' + $py + '" -m aura_core'); ExecutablePath=$py; ProcessId=101; Expected=$true },
+    @{ CommandLine = ('"' + $py + '" -I -B -m aura_core.evolution.attestor_worker --watch'); ExecutablePath=$py; ProcessId=110; Expected=$false },
     @{ CommandLine = ('"C:\Program Files\nodejs\node.exe" "' + $vite + '" preview --port 4173'); ExecutablePath="C:\Program Files\nodejs\node.exe"; ProcessId=102; Expected=$true },
     @{ CommandLine = ('"C:\Program Files\nodejs\node.exe" "' + $viteCli + '" --port 5173'); ExecutablePath="C:\Program Files\nodejs\node.exe"; ProcessId=106; Expected=$true },
     @{ CommandLine = ('"' + $py + '" -m aura_core.evolution.owner_control_plane_http'); ExecutablePath=$py; ProcessId=107; Expected=$true },
@@ -127,3 +128,6 @@ try {
     Remove-Item -LiteralPath $portFile -Force -ErrorAction SilentlyContinue
 }
 Write-Host "PASS: real loopback health, proxy bypass, 503 retry, redirect rejection, exit diagnostics"
+
+if ($launcher -match '(?i)\bStart-Attestor\b|\battestor_worker\b') { throw "Desktop launcher must not start an independent signer" }
+Write-Host "PASS: independent attestor is not desktop-owned or started by desktop"

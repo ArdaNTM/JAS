@@ -1,3 +1,4 @@
+import { createSpectrumPublisher } from "./audioSpectrum";
 /** Cancellable, ordered Web Audio playback for generated local speech chunks. */
 export class OrderedAudioPlayback {
   private context: AudioContext | null = null;
@@ -27,10 +28,12 @@ export class OrderedAudioPlayback {
         source.connect(analyser);
         analyser.connect(context.destination);
         const samples = new Float32Array(analyser.fftSize);
+        const publishSpectrum = createSpectrumPublisher(analyser, "playback");
         let frame = 0;
         const level = () => {
           if (this.current !== source) return;
           analyser.getFloatTimeDomainData(samples);
+          publishSpectrum();
           const rms = Math.sqrt(samples.reduce((sum, v) => sum + v * v, 0) / samples.length);
           window.dispatchEvent(new CustomEvent("aura:audio-energy", { detail: Math.min(1, rms * 5) }));
           frame = requestAnimationFrame(level);

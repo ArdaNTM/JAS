@@ -693,7 +693,10 @@ def test_launcher_restores_only_missing_user_environment():
         assert f'"{name}"' in text
     assert 'GetEnvironmentVariable($name, "User")' in text
     assert 'GetEnvironmentVariable($name, "Process")' in text
-    assert "Start-Attestor" in text
+    # Independent Task Scheduler exclusively owns the signer lifecycle.
+    assert "Start-Attestor" not in text
+    assert "aura_core.evolution.attestor_worker" not in text
+    assert "Independent attestor lifecycle belongs to Task Scheduler" in text
     assert "autonomous_delegation.json" not in text
 
 

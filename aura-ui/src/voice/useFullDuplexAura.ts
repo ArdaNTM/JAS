@@ -1,3 +1,4 @@
+import { createSpectrumPublisher } from "./audioSpectrum";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { respondAsAssistant } from "../api/client";
 import { normalizeSpeechText } from "../AuraJarvisBridge";
@@ -289,9 +290,11 @@ export function useFullDuplexAura(
       onSpeechStateRef.current?.("listening");
 
       const samples = new Float32Array(analyser.fftSize);
+      const publishSpectrum = createSpectrumPublisher(analyser, "microphone");
       const tick = () => {
         if (!analyserRef.current || !sessionIdRef.current) return;
         analyserRef.current.getFloatTimeDomainData(samples);
+        publishSpectrum();
         let energy = 0;
         for (const sample of samples) energy += sample * sample;
         const rms = Math.sqrt(energy / samples.length);

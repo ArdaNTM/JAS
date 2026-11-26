@@ -136,6 +136,7 @@ def files_to_hash() -> list[Path]:
         ROOT / "core" / "pyproject.toml",
         ROOT / "core" / "uv.lock",
         ROOT / "aura-ui" / "src",
+        ROOT / "aura-ui" / "tests" / "aura-hud-shell.test.mjs",
         ROOT / "aura-ui" / "package.json",
         ROOT / "aura-ui" / "package-lock.json",
         ROOT / "aura-ui" / "vite.config.ts",
