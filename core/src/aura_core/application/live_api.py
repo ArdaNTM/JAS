@@ -19,13 +19,13 @@ _TASK_EVENTS = frozenset({"PlanStepStarted", "PlanStepCompleted", "TaskSucceeded
 def project_task_event(event: dict, task_id: str) -> dict | None:
     """Only bounded execution state; never raw arguments, results or metadata."""
     data = event.get("data")
-    if (event.get("event") not in _TASK_EVENTS or event.get("source") != "agent_executor"
+    if (not isinstance(event.get("event"), str) or event["event"] not in _TASK_EVENTS or event.get("source") != "agent_executor"
             or not isinstance(data, dict) or data.get("task_id") != task_id):
         return None
     projected = {"task_id": task_id}
     if isinstance(data.get("step_id"), str):
         projected["step_id"] = data["step_id"][:128]
-    if data.get("state") in {"succeeded", "failed", "cancelled", "skipped", "running", "pending"}:
+    if isinstance(data.get("state"), str) and data["state"] in {"succeeded", "failed", "cancelled", "skipped", "running", "pending"}:
         projected["state"] = data["state"]
     if type(data.get("attempts")) is int and 0 <= data["attempts"] <= 100:
         projected["attempts"] = data["attempts"]
