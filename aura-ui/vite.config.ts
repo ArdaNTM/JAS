@@ -46,6 +46,8 @@ export default defineConfig(({ mode }) => {
     // still applies its own allowlist.
     "/api/events/stream": governedProxy(true),
     "/api": governedProxy(),
+    // WebSocket uses its short-lived Core ticket, never a browser bearer.
+    "/ws/tasks": { target: proxyTarget, ws: true, changeOrigin: true },
     "/v1": governedProxy(),
     "/health": governedProxy(),
     "/live": governedProxy(),
