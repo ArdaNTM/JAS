@@ -1,3 +1,4 @@
+import { createSpectrumPublisher } from "./audioSpectrum";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { transcribeLocalAudio } from "../api/client";
 
@@ -168,19 +169,37 @@ export function useAuraVoice(onDirective: (value: string) => void) {
   }, [onDirective, startBrowserFallback]);
 
   useEffect(() => {
-    if (state !== "recording") {
+    if (state !== "recording" || !streamRef.current) {
       setAmplitude(0);
       return;
     }
+    let context: AudioContext;
+    try { context = new AudioContext(); } catch { setAmplitude(0); return; }
+    const source = context.createMediaStreamSource(streamRef.current);
+    const analyser = context.createAnalyser();
+    analyser.fftSize = 1024;
+    source.connect(analyser);
+    const samples = new Float32Array(analyser.fftSize);
+    const publishSpectrum = createSpectrumPublisher(analyser, "microphone");
     let frame = 0;
-    let phase = 0;
-    const animate = () => {
-      phase += 0.13;
-      setAmplitude(0.45 + Math.abs(Math.sin(phase)) * 0.55);
+    let last = 0;
+    const animate = (now: number) => {
+      if (now - last >= 50) {
+        last = now;
+        analyser.getFloatTimeDomainData(samples);
+        const rms = Math.sqrt(samples.reduce((sum, v) => sum + v * v, 0) / samples.length);
+        setAmplitude(Math.min(1, rms * 5));
+        publishSpectrum(now);
+      }
       frame = requestAnimationFrame(animate);
     };
+    void context.resume().catch(() => undefined);
     frame = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(frame);
+    return () => {
+      cancelAnimationFrame(frame);
+      source.disconnect(); analyser.disconnect();
+      void context.close().catch(() => undefined);
+    };
   }, [state]);
 
   useEffect(() => () => {
