@@ -323,7 +323,9 @@ class DockerMCPProvider(MCPProvider):
         # standing consent and expiry before touching the transport.
         await self._require_owner()
         try:
-            tools = await super().list_tools()
+            # Bound the transport handshake, not the independently checked
+            # ACL/hash IO which was previously synchronous and uninterruptible.
+            tools = await asyncio.wait_for(super().list_tools(), timeout=6)
         except Exception:
             self._healthy = False
             self._on_failure(self.package)
@@ -669,7 +671,8 @@ class DelegatedMCPActivationManager:
             execution_profile=profile, recovery=recovery, signed_tree=tree,
         )
         try:
-            tools = await asyncio.wait_for(provider.list_tools(), timeout=6)
+            tools = (await provider.list_tools() if isinstance(provider, DockerMCPProvider)
+                     else await asyncio.wait_for(provider.list_tools(), timeout=6))
             if (len(tools) != len(expected)
                     or set(tool.name for tool in tools) != set(expected)):
                 raise PermissionError("Healthy MCP tool identity changed")
