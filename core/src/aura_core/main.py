@@ -1032,9 +1032,18 @@ def build_app() -> FastAPI:
         # external stdio processes. Production keeps providers enabled unless
         # this explicit test/deployment switch is set.
         if os.getenv("AURA_DISABLE_EXTERNAL_PROVIDERS", "0") == "1":
+            local_evolution = getattr(_app.state, "evolution_review", None)
             try:
+                # Review is independently opted-in and does not start MCP.
+                if local_evolution is not None:
+                    local_evolution.start()
                 yield
             finally:
+                if local_evolution is not None:
+                    try:
+                        await local_evolution.stop()
+                    except Exception:
+                        logger.exception("Local evolution review shutdown failed")
                 reflection_service.close()
                 app.state.reflection_plan_unsubscribe()
                 for store in reversed(startup_stores):
@@ -1248,6 +1257,12 @@ def build_app() -> FastAPI:
             if local_reflection is not None:
                 local_reflection.start()
 
+            # This composition replaces create_api's lifespan. Preserve the
+            # explicitly opted-in, review-only evolution worker as well.
+            local_evolution = getattr(_app.state, "evolution_review", None)
+            if local_evolution is not None:
+                local_evolution.start()
+
             # Reflection integration is conditional: it is activated only if
             # the composition root explicitly provides the existing daemon.
             reflection_daemon = getattr(
@@ -1328,6 +1343,13 @@ def build_app() -> FastAPI:
                     await delegated_activation.close()
                 except Exception:
                     logger.exception("Delegated MCP shutdown failed")
+
+            local_evolution = getattr(app.state, "evolution_review", None)
+            if local_evolution is not None:
+                try:
+                    await local_evolution.stop()
+                except Exception:
+                    logger.exception("Local evolution review shutdown failed")
 
             local_reflection = getattr(app.state, "background_thinking", None)
             if local_reflection is not None:
