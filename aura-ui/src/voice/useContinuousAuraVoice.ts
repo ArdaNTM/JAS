@@ -5,6 +5,7 @@ type TimedChunk = { at: number; blob: Blob };
 
 export function useContinuousAuraVoice(onDirective: (value: string) => void) {
   const [active, setActive] = useState(false);
+  const amplitudeRef = useRef(0);
   const [message, setMessage] = useState("SÜREKLİ DİNLEME KAPALI");
   const [processing, setProcessing] = useState(false);
   const onDirectiveRef = useRef(onDirective);
@@ -26,6 +27,7 @@ export function useContinuousAuraVoice(onDirective: (value: string) => void) {
 
   const stop = useCallback(() => {
     activeRef.current = false;
+    amplitudeRef.current = 0;
     setActive(false);
     if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
     frameRef.current = null;
@@ -96,6 +98,7 @@ export function useContinuousAuraVoice(onDirective: (value: string) => void) {
         let energy = 0;
         for (const sample of samples) energy += sample * sample;
         const rms = Math.sqrt(energy / samples.length);
+        amplitudeRef.current = Math.min(1, rms * 5);
         const now = performance.now();
         // Browser echo cancellation + adaptive noise floor reduce false VAD.
         // The transcript is still produced by the configured local STT
@@ -171,5 +174,5 @@ export function useContinuousAuraVoice(onDirective: (value: string) => void) {
     void audioContextRef.current?.close().catch(() => undefined);
   }, []);
 
-  return { active, processing, message, start, stop };
+  return { active, processing, message, start, stop, amplitudeRef };
 }
