@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { respondAsAssistant } from "../api/client";
+import { normalizeSpeechText } from "../AuraJarvisBridge";
 import { OrderedAudioPlayback } from "./orderedAudioPlayback";
 
 type UIEvent = {
@@ -496,7 +497,7 @@ export function useFullDuplexAura(
       setAutonomyResult(boundedSummary);
       setMessage(`GOVERNOR SONUCU: ${finalRecord.state}`);
       if (sessionIdRef.current && boundedSummary) {
-        await respondAsAssistant("Görev sonucunu Türkçe, kısa ve doğal biçimde özetle; ham bağlantıları okuma.", boundedSummary).then(reply => { if (reply.degraded) throw new Error("LLM OFFLINE / DEGRADED"); return speak(reply.assistant_reply); }).catch((error: unknown) => {
+        await respondAsAssistant("Görev sonucunu Türkçe, kısa ve doğal biçimde özetle; ham bağlantıları okuma.", boundedSummary).then(reply => { if (reply.degraded) throw new Error("LLM OFFLINE / DEGRADED"); return speak(normalizeSpeechText(reply.assistant_reply)); }).catch((error: unknown) => {
           setMessage(error instanceof Error ? `SONUÇ SESLENDİRİLEMEDİ: ${error.message}` : "SONUÇ SESLENDİRİLEMEDİ");
         });
       }
@@ -526,7 +527,7 @@ export function useFullDuplexAura(
     try {
       const reply = await respondAsAssistant("Bu bildirimi Türkçe doğal bir cümleyle aktar; ham bağlantıları okuma.", text);
       if (reply.degraded) throw new Error("LLM OFFLINE / DEGRADED");
-      const ok = await speak(reply.assistant_reply);
+      const ok = await speak(normalizeSpeechText(reply.assistant_reply));
       if (!ok) setMessage("BİLDİRİMİ SESLENDİRMEK İÇİN ÖNCE FULL-DUPLEX OTURUMUNU BAŞLATIN");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "BİLDİRİM SESLENDİRİLEMEDİ");
