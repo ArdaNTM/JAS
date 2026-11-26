@@ -116,7 +116,7 @@ export function useTaskEvents(
               ) as TaskEvent;
 
             setEvents(
-              (current) => [
+              (current) => event.id && current.some(item => item.id === event.id) ? current : [
                 ...current.slice(-199),
                 event,
               ],
