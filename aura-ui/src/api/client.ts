@@ -222,6 +222,8 @@ export interface AssistantRespondResponse {
 export function respondAsAssistant(
   message: string,
   researchOutput?: unknown,
+  history: Array<{ role: "user" | "assistant"; content: string }> = [],
+  signal?: AbortSignal,
 ): Promise<AssistantRespondResponse> {
   return request<AssistantRespondResponse>(
     "/api/assistant/respond",
@@ -230,7 +232,9 @@ export function respondAsAssistant(
       body: JSON.stringify({
         message,
         research_output: researchOutput ?? null,
+        history,
       }),
+      signal,
     },
   );
 }
@@ -544,4 +548,14 @@ export function setContinuousEvolution(enabled: boolean): Promise<ContinuousEvol
   return request("/api/evolution/continuous/" + (enabled ? "start" : "stop"), {
     method: "POST", body: "{}", credentials: "same-origin",
   });
+}
+
+export interface SelfPatchReview {
+  draft_id: string; path: string; summary: string; state: string; test_plan: string;
+  authorization_granted: false; execution_performed: false; tests_passed: false;
+}
+export async function getSelfPatches(): Promise<{ items: SelfPatchReview[] }> {
+  const value = await request<{ items: SelfPatchReview[]; authorization_granted: boolean; execution_performed: boolean }>("/api/evolution/self-patches", { cache: "no-store" });
+  if (value.authorization_granted !== false || value.execution_performed !== false || !Array.isArray(value.items)) throw new Error("Invalid review-only response");
+  return { items: value.items.filter(p => p.authorization_granted === false && p.execution_performed === false && p.tests_passed === false) };
 }
