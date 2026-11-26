@@ -299,51 +299,51 @@ class DockerMCPProvider(MCPProvider):
                     self._on_expired(self.package)
             raise PermissionError("External provider attestation expired; awaiting independent renewal")
 
-    async def list_tools(self):
-        if self._expired:
-            self._reject_expired()
-        if not self._healthy or not await asyncio.to_thread(self._owner_authorized):
+    async def _require_owner(self) -> None:
+        self._reject_expired()
+        allowed = self._healthy and await asyncio.to_thread(self._owner_authorized)
+        self._reject_expired()
+        if not allowed or not self._healthy:
             self._healthy = False
             self._on_failure(self.package)
             raise PermissionError("Quarantined or revoked external provider")
-        self._reject_expired()
+
+    async def _check_tree(self) -> None:
         try:
-            await asyncio.to_thread(self._require_signed_tree)
-            if not self._healthy or not await asyncio.to_thread(self._owner_authorized):
-                raise PermissionError("Quarantined or revoked external provider")
-            self._reject_expired()
-            tools = await super().list_tools()
             await asyncio.to_thread(self._require_signed_tree)
         except Exception:
             self._healthy = False
             self._on_failure(self.package)
             raise
-        # A slow handshake cannot publish tools whose proof expired mid-call.
+
+    async def list_tools(self):
+        await self._require_owner()
+        await self._check_tree()
+        # The worker-thread boundary is a scheduling point. Revalidate
+        # standing consent and expiry before touching the transport.
+        await self._require_owner()
+        try:
+            tools = await super().list_tools()
+        except Exception:
+            self._healthy = False
+            self._on_failure(self.package)
+            raise
+        await self._check_tree()
         self._reject_expired()
         return tools
 
     async def call_tool(self, name, arguments=None):
-        if self._expired:
-            self._reject_expired()
-        if not self._healthy or not await asyncio.to_thread(self._owner_authorized):
-            self._healthy = False
-            self._on_failure(self.package)
-            raise PermissionError("Quarantined or revoked external provider")
-        self._reject_expired()
+        await self._require_owner()
+        await self._check_tree()
+        await self._require_owner()
         try:
-            # Prevent host-side file mutation after signed sandbox evidence.
-            await asyncio.to_thread(self._require_signed_tree)
-            if not self._healthy or not await asyncio.to_thread(self._owner_authorized):
-                raise PermissionError("Quarantined or revoked external provider")
-            self._reject_expired()
             result = await super().call_tool(name, arguments)
-            # A stateful MCP may write into its isolated state folder, but
-            # never into independently signed runtime source or wheels.
-            await asyncio.to_thread(self._require_signed_tree)
         except Exception:
             self._healthy = False
             self._on_failure(self.package)
             raise
+        # A stateful provider can write outside its signed runtime only.
+        await self._check_tree()
         self._reject_expired()
         return result
 
