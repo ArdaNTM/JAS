@@ -529,6 +529,7 @@ export interface ContinuousEvolutionStatus {
   queued_packages: number;
   active_count: number;
   recent_active: string[];
+  active_providers?: Array<{ repository: string; tool_count: number }>;
   proposal_count: number;
   static_ready_count: number;
   cycles: number;
@@ -558,4 +559,12 @@ export async function getSelfPatches(): Promise<{ items: SelfPatchReview[] }> {
   const value = await request<{ items: SelfPatchReview[]; authorization_granted: boolean; execution_performed: boolean }>("/api/evolution/self-patches", { cache: "no-store" });
   if (value.authorization_granted !== false || value.execution_performed !== false || !Array.isArray(value.items)) throw new Error("Invalid review-only response");
   return { items: value.items.filter(p => p.authorization_granted === false && p.execution_performed === false && p.tests_passed === false) };
+}
+
+export interface PendingApproval {
+  approval_id: string; principal_id: string; capability_id: string; operation_id: string;
+  resource_scope: string; status: string; version: number;
+}
+export function getPendingApprovals(): Promise<PendingApproval[]> {
+  return request("/api/approvals", { cache: "no-store" });
 }
