@@ -1,3 +1,4 @@
+import { createSpectrumPublisher } from "./audioSpectrum";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { transcribeLocalAudio } from "../api/client";
 
@@ -89,12 +90,14 @@ export function useContinuousAuraVoice(onDirective: (value: string) => void) {
       recorder.start(200);
 
       const samples = new Float32Array(analyser.fftSize);
+      const publishSpectrum = createSpectrumPublisher(analyser, "microphone");
       const MIN_UTTERANCE_MS = 320;
       const END_SILENCE_MS = 650;
       const MAX_UTTERANCE_MS = 7500;
       const tick = () => {
         if (!activeRef.current || !analyserRef.current) return;
         analyserRef.current.getFloatTimeDomainData(samples);
+        publishSpectrum();
         let energy = 0;
         for (const sample of samples) energy += sample * sample;
         const rms = Math.sqrt(energy / samples.length);
