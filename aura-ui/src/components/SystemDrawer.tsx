@@ -35,7 +35,7 @@ export default function SystemDrawer({ open, onClose, children }: { open: boolea
           <div><strong>{approvals?.length ?? "—"}</strong><span>Bekleyen onay</span></div>
           <div><strong>{patches?.length ?? "—"}</strong><span>Self-Patch taslağı</span></div>
         </section>
-        <section className="astral-card"><h3>BAĞIMSIZ ATTESTOR</h3><p className="astral-indicator" data-healthy={["HEALTHY","RUNNING","ACTIVE"].includes(evolution?.attestor_health?.state ?? "")}>{evolution?.attestor_health?.state ?? "BİLİNMİYOR"}</p>
+        <section className="astral-card"><h3>BAĞIMSIZ ATTESTOR</h3><p className="astral-indicator" data-healthy={["IDLE","SCANNING"].includes(evolution?.attestor_health?.state ?? "") && !evolution?.attestor_health?.last_error}>{evolution?.attestor_health?.state ?? "BİLİNMİYOR"}</p>
           {evolution?.attestor_health?.last_success ? <small>Son başarılı tarama: {new Date(evolution.attestor_health.last_success * 1000).toLocaleString("tr-TR")}</small> : null}
           {evolution?.attestor_health?.last_error && <p role="status">{evolution.attestor_health.last_error}</p>}
           <p>{evolution ? evolution.active_count + " aktif evrim yeteneği · " + evolution.queued_packages + " kuyrukta" : "Evrim durumu alınamadı"}</p>
