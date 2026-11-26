@@ -16,12 +16,14 @@ export default function AstralCore({ state, amplitude, docked }: Props) {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
     const spectrum = new Float32Array(64);
     let sampleTime = -Infinity;
+    let sampleSource = "";
     const receive = (event: Event) => {
       const detail = (event as CustomEvent<{ source: string; bands: number[] }>).detail;
       if (!detail || !Array.isArray(detail.bands) || detail.bands.length !== 64) return;
       const speaking = input.current.state === "speaking";
       if (detail.source !== (speaking ? "playback" : "microphone")) return;
       for (let i = 0; i < 64; i++) spectrum[i] = clamp(detail.bands[i]);
+      sampleSource = detail.source;
       sampleTime = performance.now();
     };
     window.addEventListener("aura:audio-spectrum", receive);
@@ -115,7 +117,7 @@ export default function AstralCore({ state, amplitude, docked }: Props) {
       }
       ctx.shadowBlur = 0;
       // No synthetic speech spectrum: stale samples decay to zero.
-      const fresh = live && now - sampleTime < 350;
+      const fresh = live && sampleSource === (speaking ? "playback" : "microphone") && now - sampleTime < 350;
       for (let i = 0; i < 64; i++) {
         const a = i * TAU / 64;
         const band = fresh ? spectrum[i] : 0;
