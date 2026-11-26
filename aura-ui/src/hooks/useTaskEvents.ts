@@ -52,11 +52,10 @@ export function useTaskEvents(
   const retryTimerRef =
     useRef<number | null>(null);
 
-  const stoppedRef =
-    useRef(false);
 
   useEffect(() => {
-    stoppedRef.current = false;
+    let stopped = false;
+    setEvents([]);
 
     if (!taskId) {
       setEvents([]);
@@ -67,14 +66,14 @@ export function useTaskEvents(
       });
 
       return () => {
-        stoppedRef.current = true;
+        stopped = true;
       };
     }
 
     let retry = 0;
 
     const connect = async (): Promise<void> => {
-      if (stoppedRef.current) {
+      if (stopped) {
         return;
       }
 
@@ -87,7 +86,7 @@ export function useTaskEvents(
         const ticket =
           await getWebSocketTicket();
 
-        if (stoppedRef.current) {
+        if (stopped) {
           return;
         }
 
@@ -99,6 +98,7 @@ export function useTaskEvents(
         socketRef.current = socket;
 
         socket.onopen = () => {
+          if (stopped) { socket.close(); return; }
           retry = 0;
 
           setConnection({
@@ -110,6 +110,7 @@ export function useTaskEvents(
         socket.onmessage = (
           message,
         ) => {
+          if (stopped) return;
           try {
             const event =
               JSON.parse(
@@ -132,9 +133,9 @@ export function useTaskEvents(
         };
 
         socket.onclose = () => {
-          socketRef.current = null;
+          if (socketRef.current === socket) socketRef.current = null;
 
-          if (stoppedRef.current) {
+          if (stopped) {
             return;
           }
 
@@ -164,7 +165,7 @@ export function useTaskEvents(
             );
         };
       } catch {
-        if (stoppedRef.current) {
+        if (stopped) {
           return;
         }
 
@@ -198,7 +199,7 @@ export function useTaskEvents(
     void connect();
 
     return () => {
-      stoppedRef.current = true;
+      stopped = true;
 
       if (
         retryTimerRef.current !== null
