@@ -76,6 +76,10 @@ class ContinuousEvolutionController:
             "queued_packages": queued,
             "active_count": sum(len(row.get("capabilities", [])) for row in active),
             "recent_active": self._last_active[-10:],
+            "active_providers": [
+                {"repository": row["repository"], "tool_count": len(row.get("capabilities", []))}
+                for row in active if isinstance(row.get("repository"), str)
+            ],
             "proposal_count": discovery.get("proposal_count", 0),
             "static_ready_count": discovery.get("verified_static_count", 0),
             "cycles": self._cycles,
