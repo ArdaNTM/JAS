@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-25T02:29:39.414Z",
-  "git_commit": "bde6e99623c5f55795f5145732b8179ab6de8774",
+  "generated_at": "2026-11-26T13:12:36.779Z",
+  "git_commit": "8c496933027b69dd6d121a8cec6186fb09d5baa6",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:05421141c33813188dc2e09cb94dd5f19e6013d03c96a79a10d8ab1b6e7ccf53",
-  "file_count": 472,
+  "release_digest": "sha256:037543779ed557d550f1e7687de0417c2ddf0adabb8821bbaa96cb12c625017e",
+  "file_count": 476,
   "files": [
     {
       "path": ".gitattributes",
@@ -66,7 +66,7 @@
     },
     {
       "path": "aura-ui/src/api/client.ts",
-      "sha256": "c006d5d496bb5687a023f8d8b20dc2bd3e7186a159f0539cef4c8a4a15cb2353"
+      "sha256": "ed149eedfb45c51582d74f50190a206fab05ea00bf5fb043f57f8387ef252f52"
     },
     {
       "path": "aura-ui/src/api/contracts.ts",
@@ -78,7 +78,7 @@
     },
     {
       "path": "aura-ui/src/App.tsx",
-      "sha256": "f271f3563d9fd429ca22d7dc9d1dbd5210b99064e1157a1165d0d005f7bda3fc"
+      "sha256": "e09fcacb41395ca4d7e4976c4399b164d0445c89448d23131c09066e813b417f"
     },
     {
       "path": "aura-ui/src/assets/hero.png",
@@ -93,8 +93,12 @@
       "sha256": "5be21acd42eb7b896e517f4e0f0f11eb5c5d9e54fbbcebe9453f033008fcca6f"
     },
     {
+      "path": "aura-ui/src/astral-hud.css",
+      "sha256": "336836e5ec1a27d15fc73639b124aab6240057f5df85ad35a18de7d3bd21d838"
+    },
+    {
       "path": "aura-ui/src/AuraJarvisBridge.tsx",
-      "sha256": "04ed0beb480c2ecd0bbebb328f18875168f6c9fa70d1842ade66bf14ab0e4337"
+      "sha256": "ec2c328eb804d8690fff3fdfe8a2717946daf974fe30caf82148aafcb635aa06"
     },
     {
       "path": "aura-ui/src/components/ApprovalPanel.tsx",
@@ -103,6 +107,10 @@
     {
       "path": "aura-ui/src/components/ArcReactor3D.tsx",
       "sha256": "0e75c2d49b308a1b9bb25f6549c2941da83c4d1b092de2a7451da4592f759e01"
+    },
+    {
+      "path": "aura-ui/src/components/AstralCore.tsx",
+      "sha256": "ee02f522c0c0394004f0dfc738d71ebb74c4ddece9ba300e6c1206f2ada03002"
     },
     {
       "path": "aura-ui/src/components/CapabilityAndToolCenter.tsx",
@@ -118,7 +126,7 @@
     },
     {
       "path": "aura-ui/src/components/DynamicHologram3D.tsx",
-      "sha256": "c1c4ec0921918f6eff2d959be54246e5a91e2521052a30d24eaa91c6f182054e"
+      "sha256": "90291eeda27f64d7d807f29c5fdb20f275451a093a10952c979329eb5d7d0242"
     },
     {
       "path": "aura-ui/src/components/EvolutionReviewPanel.tsx",
@@ -133,16 +141,20 @@
       "sha256": "16911e3baa9b338ac21daf79ebb352e8fad157970f86ff1dae4289e6024e5105"
     },
     {
+      "path": "aura-ui/src/components/SystemDrawer.tsx",
+      "sha256": "9a4fae3807a55c3ffe6d63b1c0e529ed8903b79facf05f71898394a324bd2d74"
+    },
+    {
       "path": "aura-ui/src/components/TaskConsole.tsx",
       "sha256": "0bf1fbb632aac8a3549c279de7d24ffc235101cd29a6b0d45c2304c302b098a3"
     },
     {
       "path": "aura-ui/src/FullDuplexPanel.tsx",
-      "sha256": "ce7a7e499652ddafef8888a577d5e22f5df7f75810f853616836f1ee9448f98f"
+      "sha256": "92be2910a0805307eb49c7e7d4b7469ae7f9773c11a246dd09890004d36eb8dc"
     },
     {
       "path": "aura-ui/src/hooks/useTaskEvents.ts",
-      "sha256": "42b8a713ce55e1907c5812f57ac061fa70856cba62c67ef20d58eaeae86ccbbd"
+      "sha256": "427e954ffaa5e9f19280a8c9713bd0d7eb7424dbed01803f97897683d4030aee"
     },
     {
       "path": "aura-ui/src/hooks/useWebSocket.ts",
@@ -174,7 +186,7 @@
     },
     {
       "path": "aura-ui/src/voice/orderedAudioPlayback.ts",
-      "sha256": "1c796e21dfa47ddb5c4054d9cae26fb0e33d2fffc97fdfbf82ec48988cac6d9f"
+      "sha256": "ed4f0dedcb0c8156fe39bc87a1261b00b41a732c32431950e0e89a4f5fc6a107"
     },
     {
       "path": "aura-ui/src/voice/sessionState.ts",
@@ -186,15 +198,15 @@
     },
     {
       "path": "aura-ui/src/voice/useContinuousAuraVoice.ts",
-      "sha256": "9218ca2cc8e10df90295740560417de8a50d13eb5bcb6abe6bb62e8a59596c21"
+      "sha256": "361b7ad004f59c5820ec9a03b72d23b62f51a94a404303d9a9ceefd1512b9cdb"
     },
     {
       "path": "aura-ui/src/voice/useFullDuplexAura.ts",
-      "sha256": "80d2d70a00dd60f0a4ba8e52f32cee3abdb5b0c4783a97f83fbc0c916a5c13c2"
+      "sha256": "4bb41cd89508fcbe2db782a8af43af1be0d6ac80e680bb1c871743f7cf8e68e1"
     },
     {
       "path": "aura-ui/vite.config.ts",
-      "sha256": "27085ebb1f98527a6924ab5d631b05ebcbea574430077237ba4942f2a9e77925"
+      "sha256": "c7446d17f26b8fcd7642fb45ab1f06718613968911b57ddda2897b07ccd3953c"
     },
     {
       "path": "core/frontend/package-lock.json",
@@ -238,7 +250,7 @@
     },
     {
       "path": "core/scripts/generate_final_lock.py",
-      "sha256": "65b0b3557d8d7c2985d7f95824b914793ab13bf29580c5f1201252d9b99a4a4e"
+      "sha256": "dd8f1259ca9e65b3838a4e5c5f6181c57996e4e22898516355eb39daec8dc17a"
     },
     {
       "path": "core/scripts/hardware_stage_c_acceptance.py",
@@ -442,7 +454,7 @@
     },
     {
       "path": "core/src/aura_core/application/directive_planner.py",
-      "sha256": "bd02252f20be0b3fc74b4310781240277c4f2080bfdbb9ab2d235cefcd3d0dc2"
+      "sha256": "e9a5e061d3bcd735ccd1f9f4025a62983a466fe4a279c8e9ffe4c29248fe71b5"
     },
     {
       "path": "core/src/aura_core/application/episodic_memory.py",
@@ -534,7 +546,7 @@
     },
     {
       "path": "core/src/aura_core/application/live_api.py",
-      "sha256": "0dd46e508fcbc6b9c36d038b2d6a192c58f58e26ac46a4afb259c806834530fd"
+      "sha256": "669eb72dfb79905b6641beeff3fd48b3de8cb0de6cea88ea14a2c9519f090693"
     },
     {
       "path": "core/src/aura_core/application/live_events.py",
@@ -722,7 +734,7 @@
     },
     {
       "path": "core/src/aura_core/application/tasks.py",
-      "sha256": "d91ebdc16fc458c77a2a38aa44b8e574f83e586d6a41b13bbc374f7ca4bf8e87"
+      "sha256": "d78af7332b11edda2a84d8b3b69ea975f553289adf8d0359524fbc7a0592c3bd"
     },
     {
       "path": "core/src/aura_core/application/telemetry_daemon.py",
@@ -894,7 +906,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/continuous_evolution.py",
-      "sha256": "d4a58111896dd78ca4a8027f9be0fed4cc3cbc57c32e45c2e4e5347ff37e7ee4"
+      "sha256": "bd450bb893be2cf46f0a9c7d5ce8ebc5e27a480b175763638aac8daa5859c4a6"
     },
     {
       "path": "core/src/aura_core/evolution/decision_engine.py",
@@ -1761,6 +1773,10 @@
       "sha256": "f31a33e4f9923ff6e4e5c4d1565cf550efec3e5142401fe30135f305a1c7742c"
     },
     {
+      "path": "core/tests/test_astral_hud_contract.py",
+      "sha256": "f76069ccbea8710e4c30dbb9ea80c3146003ea459b89a6fef2734f62989774ae"
+    },
+    {
       "path": "core/tests/test_audit_broker_attestor.py",
       "sha256": "f3d302513c64c9cbc88e518670d56c956d2a11657dd8caf574cb3e978f6dc34f"
     },
@@ -1874,7 +1890,7 @@
     },
     {
       "path": "scripts/launch-aura-desktop.ps1",
-      "sha256": "d1dd6db501465bd55bdf6ad7e3afdbb30494f50bd4144d07d418c33914852529"
+      "sha256": "27bd96d60a6123a3f62d2f1b59fd8ada72db9fe17f433e414b99b3de03c1bf3b"
     },
     {
       "path": "scripts/Register-AuraIndependentAttestor.ps1",
