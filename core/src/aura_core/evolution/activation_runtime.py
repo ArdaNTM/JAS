@@ -302,15 +302,18 @@ class DockerMCPProvider(MCPProvider):
     async def list_tools(self):
         if self._expired:
             self._reject_expired()
-        if not self._healthy or not self._owner_authorized():
+        if not self._healthy or not await asyncio.to_thread(self._owner_authorized):
             self._healthy = False
             self._on_failure(self.package)
             raise PermissionError("Quarantined or revoked external provider")
         self._reject_expired()
         try:
-            self._require_signed_tree()
+            await asyncio.to_thread(self._require_signed_tree)
+            if not self._healthy or not await asyncio.to_thread(self._owner_authorized):
+                raise PermissionError("Quarantined or revoked external provider")
+            self._reject_expired()
             tools = await super().list_tools()
-            self._require_signed_tree()
+            await asyncio.to_thread(self._require_signed_tree)
         except Exception:
             self._healthy = False
             self._on_failure(self.package)
@@ -322,18 +325,21 @@ class DockerMCPProvider(MCPProvider):
     async def call_tool(self, name, arguments=None):
         if self._expired:
             self._reject_expired()
-        if not self._healthy or not self._owner_authorized():
+        if not self._healthy or not await asyncio.to_thread(self._owner_authorized):
             self._healthy = False
             self._on_failure(self.package)
             raise PermissionError("Quarantined or revoked external provider")
         self._reject_expired()
         try:
             # Prevent host-side file mutation after signed sandbox evidence.
-            self._require_signed_tree()
+            await asyncio.to_thread(self._require_signed_tree)
+            if not self._healthy or not await asyncio.to_thread(self._owner_authorized):
+                raise PermissionError("Quarantined or revoked external provider")
+            self._reject_expired()
             result = await super().call_tool(name, arguments)
             # A stateful MCP may write into its isolated state folder, but
             # never into independently signed runtime source or wheels.
-            self._require_signed_tree()
+            await asyncio.to_thread(self._require_signed_tree)
         except Exception:
             self._healthy = False
             self._on_failure(self.package)
@@ -530,7 +536,7 @@ class DelegatedMCPActivationManager:
             )
         else:
             raise PermissionError("Unknown external MCP execution profile")
-        if signed_tree is None or runtime_fingerprint(self.workspace, name) != signed_tree:
+        if signed_tree is None or await asyncio.to_thread(runtime_fingerprint, self.workspace, name) != signed_tree:
             raise PermissionError("Runtime tree differs from signed independent observation")
         connection = MCPConnection()
         try:
@@ -551,8 +557,7 @@ class DelegatedMCPActivationManager:
             await connection.close()
             raise
 
-    async def _verify_and_connect(self, name: str, grant: dict, *,
-                                  recovery: bool = False):
+    def _verify_candidate(self, name: str, grant: dict):
         # Independent attestor quarantine must take precedence over a missing
         # prepared runtime. Evidence presence/shape is checked before invoking
         # the static candidate / runtime-tree checks, which may themselves fail
@@ -648,7 +653,17 @@ class DelegatedMCPActivationManager:
         if _schema_json_size({name: tool.input_schema
                               for name, tool in expected.items()}) > _MAX_SCHEMA_JSON_BYTES:
             raise PermissionError("Signed MCP schemas exceed delegated size budget")
-        expiry = min(expiries)
+        return decision, entry, tree, profile, expected, proof_hashes, min(expiries)
+
+    async def _verify_and_connect(self, name: str, grant: dict, *,
+                                  recovery: bool = False):
+        decision, entry, tree, profile, expected, proof_hashes, expiry = await asyncio.to_thread(
+            self._verify_candidate, name, grant,
+        )
+        if await asyncio.to_thread(self.delegation.verified_grant) != grant:
+            raise PermissionError("Owner delegation changed before independent connection")
+        if time.time() >= expiry:
+            raise PermissionError("Independent sandbox attestation expired")
         provider = await self._connect(
             name, grant, entry, expiry,
             execution_profile=profile, recovery=recovery, signed_tree=tree,
@@ -662,7 +677,7 @@ class DelegatedMCPActivationManager:
                 if canonical_hash(tool.input_schema) != canonical_hash(expected[tool.name].input_schema):
                     raise PermissionError("Healthy MCP schema changed")
             # Re-check after startup: external runner must not mutate files.
-            if runtime_fingerprint(self.workspace, name) != tree:
+            if await asyncio.to_thread(runtime_fingerprint, self.workspace, name) != tree:
                 raise PermissionError("Runtime changed after independent attestation")
             return decision, provider, tools, proof_hashes, expiry
         except BaseException:
@@ -670,7 +685,7 @@ class DelegatedMCPActivationManager:
             raise
 
     async def scan(self, *, limit: int = 3) -> list[str]:
-        grant = self.delegation.verified_grant()
+        grant = await asyncio.to_thread(self.delegation.verified_grant)
         if grant is None:
             # Revoke every live capability when standing consent expires.
             for name in tuple(self._active):
@@ -700,7 +715,7 @@ class DelegatedMCPActivationManager:
         # another trust decision. No MCP call may use stale evidence.
         expired_this_scan: set[str] = set()
         for name, active in tuple(self._active.items()):
-            if not self._still_authorized(name):
+            if not await asyncio.to_thread(self._still_authorized, name):
                 await self.quarantine(name, expected_provider=active.provider)
             elif active.owner_grant is not None and active.owner_grant != grant:
                 # Old runtime authorization cannot survive a changed signed
@@ -732,7 +747,7 @@ class DelegatedMCPActivationManager:
             # Presence is only a scheduling hint, NEVER proof authorization.
             # The workspace supports up to 250 candidates. Do not truncate
             # the decision list at 100 before prioritizing ready evidence.
-            pending = self.decisions.evaluate_pending(limit=self.workspace.max_items)
+            pending = await asyncio.to_thread(self.decisions.evaluate_pending, limit=self.workspace.max_items)
             def is_prepared(decision) -> bool:
                 if decision.status != "AUTO_APPROVED_BY_POLICY":
                     return False
@@ -814,7 +829,7 @@ class DelegatedMCPActivationManager:
                 if marker.exists() or marker.is_symlink():
                     if status != "QUARANTINED":
                         renewal = (local_signed and not marker.is_symlink()
-                                   and expired_attestation_evidence(
+                                   and await asyncio.to_thread(expired_attestation_evidence,
                                        self.workspace, name, grant=grant))
                         self._persist(
                             decision.repository,
@@ -887,7 +902,7 @@ class DelegatedMCPActivationManager:
                         or (
                             local_signed
                             and "Local Windows MCP candidate quarantined by independent attestor" in str(exc)
-                            and expired_attestation_evidence(self.workspace, name, grant=grant)
+                            and await asyncio.to_thread(expired_attestation_evidence, self.workspace, name, grant=grant)
                         )
                     )
                     expired_proof = waiting and "attestation expired" in str(exc)
@@ -920,6 +935,11 @@ class DelegatedMCPActivationManager:
         registered_service = False
         registered_provider = False
         try:
+            grant = await asyncio.to_thread(self.delegation.verified_grant)
+            if grant is None or grant != expected_grant:
+                raise PermissionError("Owner delegation revoked or changed before registration")
+            if time.time() >= expiry:
+                raise PermissionError("Independent sandbox attestation expired")
             self.kernel.service_registry.register(service, provider)
             registered_service = True
             self.kernel.provider_registry.register(ProviderDefinition(
@@ -927,9 +947,6 @@ class DelegatedMCPActivationManager:
                 version="1.0.0", service_id=service.service_id,
             ), provider)
             registered_provider = True
-            grant = self.delegation.verified_grant()
-            if grant is None or grant != expected_grant:
-                raise PermissionError("Owner delegation revoked or changed before registration")
             if (decision.category not in grant["categories"]
                     or len(tools) > grant["max_tools"]):
                 raise PermissionError("Owner delegation scope changed before registration")
