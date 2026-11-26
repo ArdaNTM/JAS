@@ -1032,9 +1032,18 @@ def build_app() -> FastAPI:
         # external stdio processes. Production keeps providers enabled unless
         # this explicit test/deployment switch is set.
         if os.getenv("AURA_DISABLE_EXTERNAL_PROVIDERS", "0") == "1":
+            local_evolution = getattr(_app.state, "evolution_review", None)
             try:
+                # Review is independently opted-in and does not start MCP.
+                if local_evolution is not None:
+                    local_evolution.start()
                 yield
             finally:
+                if local_evolution is not None:
+                    try:
+                        await local_evolution.stop()
+                    except Exception:
+                        logger.exception("Local evolution review shutdown failed")
                 reflection_service.close()
                 app.state.reflection_plan_unsubscribe()
                 for store in reversed(startup_stores):
