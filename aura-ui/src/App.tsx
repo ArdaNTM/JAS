@@ -182,6 +182,7 @@ export default function App() {
   const [assistantHistory, setAssistantHistory] = useState<Array<{role: "user" | "assistant"; content: string}>>([]);
   const activeReplyId = useRef<string | null>(null);
   const handleAssistantDelta = useCallback((delta: string) => {
+    setLlmOffline(false);
     setChatHistory((current) => current.map((turn) =>
       turn.id === activeReplyId.current ? { ...turn, content: turn.content + delta } : turn
     ));
@@ -254,7 +255,7 @@ export default function App() {
     },
     (status) => {
       if (status === "speaking") setSessionState("speaking");
-      else if (status === "listening") setSessionState("listening");
+      else if (status === "listening") setSessionState(current => current === "processing" || current === "responding" || current === "awaiting_approval" ? current : "listening");
       else if (status === "idle") setSessionState("idle");
       else if (status === "error") setSessionState("error");
     },
@@ -266,7 +267,7 @@ export default function App() {
     degraded?: boolean,
   ) => {
     if (status === "error") setLlmOffline(Boolean(degraded));
-    if (status === "ready" || status === "speaking") setLlmOffline(false);
+    if (status === "speaking") setLlmOffline(false);
     setSessionState(status === "ready" ? "idle" : status);
     if (status === "ready") {
       setSystemState("idle");
@@ -696,7 +697,18 @@ export default function App() {
 
   const latestReply = [...chatHistory].reverse().find(turn => turn.role === "assistant");
   const blocked = systemState !== "idle" || sessionBusy;
-  const quick = ["Porsche 911'in motorunu göster", "Sistem ve MCP durumunu araştır", "Yeni evrim önerilerini kontrol et", "AURA çekirdek matrisini yansıt"];
+  const quick = ["Porsche 911'in motorunu göster", "AURA çekirdek matrisini yansıt"];
+  function inspectPart(part: string) {
+    if (blocked || !hologramTarget) return;
+    const text = hologramTarget + " — " + part + " bölümünü açıkla; araştırma kanıtı ile temsili geometrinin farkını belirt.";
+    setAssistantHistory(chatHistory.filter(turn => (turn.role === "user" || turn.role === "assistant") && turn.content.trim()).slice(-8).map(turn => ({role: turn.role as "user" | "assistant", content: turn.content.slice(0, 4000)})));
+    const replyId = makeId();
+    activeReplyId.current = replyId;
+    setChatHistory(current => [...current, {id: makeId(), role: "user" as const, content: part + " bölümünü incele"}, {id: replyId, role: "assistant" as const, content: "", source: "Ollama · araştırma bağlamı"}].slice(-40));
+    setSessionState("processing");
+    setAssistantDirective(text);
+    setAssistantRequestId(current => current + 1);
+  }
   return <>
     <div className="astral-dashboard">
       <header className="astral-top">
@@ -715,7 +727,7 @@ export default function App() {
         <main className="astral-stage">
           <AstralCore state={visibleSessionState} amplitude={Math.max(audioEnergy, micEnergy, voice.amplitude)} docked={!!hologramTarget} />
           {hologramTarget && <div className="astral-projection">
-            <DynamicHologram3D target={hologramTarget} modelId={hologramModelId} active={true} />
+            <DynamicHologram3D target={hologramTarget} modelId={hologramModelId} active={true} onInspect={blocked ? undefined : inspectPart} />
             <button type="button" className="astral-pill" onClick={() => setHologramTarget("")}>Projeksiyonu kapat</button>
           </div>}
         </main>}
@@ -723,7 +735,7 @@ export default function App() {
         <div className="astral-subtitle" role="status"><small>AURA // HOLOGRAFİK İLETİŞİM</small>{latestReply?.content || (blocked ? sessionStateLabel(visibleSessionState) : "Komutunuzu bekliyorum. Araştırma, 3B projeksiyon veya sistem incelemesi isteyebilirsiniz.")}</div>
         {error && <div role="alert" className="astral-degraded">{error}</div>}
         {visibleSessionState === "awaiting_approval" && <button type="button" className="astral-pill" onClick={() => setDrawer(true)}>Bağımsız Owner onayı gerekiyor · İncele</button>}
-        <div className="astral-chips">{quick.map(value => <button type="button" className="astral-pill" key={value} disabled={blocked} onClick={() => { setCommand(value); void executeDirective(value); setCommand(""); }}>{value}</button>)}</div>
+        <div className="astral-chips">{quick.map(value => <button type="button" className="astral-pill" key={value} disabled={blocked} onClick={() => { void executeDirective(value); setCommand(""); }}>{value}</button>)}<button type="button" className="astral-pill" onClick={() => setDrawer(true)}>Sistem ve MCP durumu</button><button type="button" className="astral-pill" onClick={() => setDrawer(true)}>Yeni evrim önerileri</button></div>
         <form className="astral-command" onSubmit={handleSubmit}>
           <button type="button" className="astral-pill" disabled={!voice.available || blocked || fullDuplex.active || continuousVoice.active} onClick={voice.state === "recording" || voice.state === "listening" ? voice.stop : voice.start}>{voice.state === "recording" || voice.state === "listening" ? "Durdur" : "Mikrofon"}</button>
           <input aria-label="AURA komutu" value={command} onChange={event => setCommand(event.target.value)} placeholder="AURA'ya seslenin veya komut yazın…" disabled={blocked} />
