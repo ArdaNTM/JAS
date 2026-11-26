@@ -29,7 +29,18 @@ foreach ($name in @(
     "AURA_EVOLUTION_ROOT",
     "AURA_EVOLUTION_AUTO_ACTIVATE",
     "AURA_EVOLUTION_DELEGATION_KEY_SHA256",
-    "AURA_EVOLUTION_ATTESTOR_KEY_SHA256",
+    "AURA_EVOLUTION_ATTESTOR_KEY_SHA256"
+)) {
+    if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name, "Process"))) {
+        $userValue = [Environment]::GetEnvironmentVariable($name, "User")
+        if (-not [string]::IsNullOrWhiteSpace($userValue)) {
+            [Environment]::SetEnvironmentVariable($name, $userValue, "Process")
+        }
+    }
+}
+
+# Explicit per-user opt-ins must survive a stale Explorer process environment.
+foreach ($name in @(
     "AURA_BACKGROUND_THINKING_ENABLED",
     "AURA_EVOLUTION_REVIEW_ENABLED",
     "AURA_EVOLUTION_INTROSPECTION_ENABLED",
@@ -38,11 +49,9 @@ foreach ($name in @(
     "AURA_JAS_ROOT",
     "AURA_EVOLUTION_MODEL"
 )) {
-    if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name, "Process"))) {
-        $userValue = [Environment]::GetEnvironmentVariable($name, "User")
-        if (-not [string]::IsNullOrWhiteSpace($userValue)) {
-            [Environment]::SetEnvironmentVariable($name, $userValue, "Process")
-        }
+    $userValue = [Environment]::GetEnvironmentVariable($name, "User")
+    if (-not [string]::IsNullOrWhiteSpace($userValue)) {
+        [Environment]::SetEnvironmentVariable($name, $userValue, "Process")
     }
 }
 
