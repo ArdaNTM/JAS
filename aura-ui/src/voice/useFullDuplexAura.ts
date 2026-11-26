@@ -120,10 +120,10 @@ export function useFullDuplexAura(
     return true;
   }, []);
 
-  const interrupt = useCallback(async () => {
+  const interrupt = useCallback(async (cancelInference = true) => {
     // Abort the ongoing Ollama response *and* its queued TTS sentences.
     // This is synchronous and precedes the async server-side cancellation.
-    window.dispatchEvent(new Event("aura:voice-barge-in"));
+    if (cancelInference) window.dispatchEvent(new Event("aura:voice-barge-in"));
     const id = sessionIdRef.current;
     stopPlayer(); // Stop the browser audio synchronously, before awaiting the API.
     if (!id) return;
