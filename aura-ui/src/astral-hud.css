@@ -93,3 +93,8 @@
 @media(max-width:850px) { .astral-core { width:min(460px,76vw,47vh); } .astral-stage { min-height:390px; } .astral-projection { padding-top:65px; } .astral-stage-caption { font-size:9px; } .astral-brand small { border:0; padding:0; } }
 @media(max-width:600px) { .astral-dashboard { padding:14px; } .astral-stage { min-height:350px; } .astral-core.astral-docked { transform:scale(.27); } .astral-command { flex-wrap:wrap; } .astral-command input { min-width:140px!important; } .astral-subtitle { max-height:22vh; } .astral-brand { padding:10px 12px; } .astral-hologram-viewport { height:330px; } .astral-drawer-body { padding:12px; } }
 @media(prefers-reduced-motion:reduce) { .astral-dashboard *, .astral-drawer * { animation:none!important; transition:none!important; } }
+
+#root .astral-dashboard .astral-hotspot:hover:not(:disabled) { transform:translate(-50%,-50%); }
+#root .astral-dashboard .astral-hotspot { visibility:hidden; }
+#root .astral-dashboard .astral-stage { max-width:none; }
+@media (min-width:851px) and (max-height:850px) { .astral-stage { min-height:clamp(340px,51vh,450px); } .astral-stage-caption { top:3px; } .astral-core { width:min(440px,56vw,50vh); } .astral-bottom { gap:8px; } .astral-subtitle { padding:12px 20px; } }
