@@ -4,7 +4,6 @@ import type { useFullDuplexAura } from "./voice/useFullDuplexAura";
 type FullDuplexController = ReturnType<typeof useFullDuplexAura>;
 
 export default function FullDuplexPanel({ voice, goal }: { voice: FullDuplexController; goal: string }) {
-  const [testText, setTestText] = useState("Merhaba. AURA full-duplex ses hattı hazır.");
   const [visionConsent, setVisionConsent] = useState(false);
 
   async function readScreen() {
@@ -14,8 +13,7 @@ export default function FullDuplexPanel({ voice, goal }: { voice: FullDuplexCont
     );
     if (!approved) return;
     setVisionConsent(false);
-    const result = await voice.describeScreen();
-    if (result && voice.active) await voice.speak(result.slice(0, 1500));
+    await voice.describeScreen();
   }
 
   return (
@@ -78,26 +76,6 @@ export default function FullDuplexPanel({ voice, goal }: { voice: FullDuplexCont
 
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         <div className="rounded border border-cyan-950/70 p-3">
-          <div className="text-[9px] font-bold tracking-[.2em] text-cyan-600">GATEWAY TTS TESTİ</div>
-          <textarea
-            value={testText}
-            onChange={(event) => setTestText(event.target.value)}
-            maxLength={8000}
-            rows={3}
-            className="mt-2 w-full resize-y rounded border border-cyan-950 bg-black/40 p-2 text-xs text-cyan-100 outline-none focus:border-cyan-700"
-            aria-label="Seslendirme test metni"
-          />
-          <button
-            type="button"
-            disabled={!voice.active || !testText.trim() || voice.busy}
-            onClick={() => void voice.speak(testText).catch((error: unknown) => window.alert(error instanceof Error ? error.message : "Gateway TTS başarısız"))}
-            className="mt-2 border border-cyan-800 px-3 py-2 text-[9px] tracking-wider text-cyan-200 disabled:opacity-30"
-          >
-            METNİ GATEWAY ÜZERİNDEN SESLENDİR
-          </button>
-        </div>
-
-        <div className="rounded border border-cyan-950/70 p-3">
           <div className="text-[9px] font-bold tracking-[.2em] text-cyan-600">KONTROLLÜ EKRAN ALGILAMA</div>
           <label className="mt-2 flex items-start gap-2 text-[10px] leading-5 text-slate-400">
             <input type="checkbox" checked={visionConsent} onChange={(event) => setVisionConsent(event.target.checked)} className="mt-1 accent-cyan-500" />
@@ -110,7 +88,7 @@ export default function FullDuplexPanel({ voice, goal }: { voice: FullDuplexCont
             <div className="mt-3 max-h-40 overflow-auto rounded bg-black/30 p-2">
               <div className="text-[8px] tracking-wider text-slate-500">GÖRSEL SAĞLAYICI ÇIKTISI · GÜVENİLMEYEN BAĞLAM</div>
               <p className="mt-1 whitespace-pre-wrap text-[10px] leading-5 text-cyan-100">{voice.vision.description}</p>
-              <button type="button" disabled={!voice.active} onClick={() => void voice.speak(voice.vision!.description.slice(0, 1500))} className="mt-2 text-[9px] text-cyan-500 hover:text-cyan-200 disabled:opacity-30">
+              <button type="button" disabled={!voice.active} onClick={() => void voice.speakNotice(voice.vision!.description.slice(0, 1500))} className="mt-2 text-[9px] text-cyan-500 hover:text-cyan-200 disabled:opacity-30">
                 SONUCU SESLENDİR
               </button>
             </div>
