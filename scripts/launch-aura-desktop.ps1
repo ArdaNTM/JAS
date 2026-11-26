@@ -29,7 +29,14 @@ foreach ($name in @(
     "AURA_EVOLUTION_ROOT",
     "AURA_EVOLUTION_AUTO_ACTIVATE",
     "AURA_EVOLUTION_DELEGATION_KEY_SHA256",
-    "AURA_EVOLUTION_ATTESTOR_KEY_SHA256"
+    "AURA_EVOLUTION_ATTESTOR_KEY_SHA256",
+    "AURA_BACKGROUND_THINKING_ENABLED",
+    "AURA_EVOLUTION_REVIEW_ENABLED",
+    "AURA_EVOLUTION_INTROSPECTION_ENABLED",
+    "AURA_EVOLUTION_SELF_PATCH_ENABLED",
+    "AURA_EVOLUTION_SELF_PATCH_REVIEW_DIR",
+    "AURA_JAS_ROOT",
+    "AURA_EVOLUTION_MODEL"
 )) {
     if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name, "Process"))) {
         $userValue = [Environment]::GetEnvironmentVariable($name, "User")
@@ -668,10 +675,10 @@ if ($ownerPin -match '^[0-9a-f]{64}$') {
 }
 $env:AURA_API_PRINCIPAL_ID = "local_owner"
 $env:AURA_CHAT_MEMORY_ENABLED = "0"
-$env:AURA_BACKGROUND_THINKING_ENABLED = "1"
+if ([string]::IsNullOrWhiteSpace($env:AURA_BACKGROUND_THINKING_ENABLED)) { $env:AURA_BACKGROUND_THINKING_ENABLED = "1" }
 $env:AURA_BACKGROUND_THINKING_PRINCIPAL_ID = "local_owner"
 $env:AURA_REFLECTION_DB = Join-Path $env:LOCALAPPDATA "AURA\reflection.sqlite3"
-$env:AURA_EVOLUTION_REVIEW_ENABLED = "0"
+if ([string]::IsNullOrWhiteSpace($env:AURA_EVOLUTION_REVIEW_ENABLED)) { $env:AURA_EVOLUTION_REVIEW_ENABLED = "0" }
 $env:AURA_STAGE_C_BROWSER_ENABLED = "0"
 
 $env:AURA_RESEARCH_MCP_TRANSPORT = "stdio"
