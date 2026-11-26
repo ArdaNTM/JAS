@@ -22,9 +22,27 @@ export class OrderedAudioPlayback {
         const source = context.createBufferSource();
         this.current = source;
         source.buffer = decoded;
-        source.connect(context.destination);
-        source.onended = () => { if (this.current === source) this.current = null; resolve(); };
-        try { onStart?.(); source.start(); } catch (error) { reject(error); }
+        const analyser = context.createAnalyser();
+        analyser.fftSize = 256;
+        source.connect(analyser);
+        analyser.connect(context.destination);
+        const samples = new Float32Array(analyser.fftSize);
+        let frame = 0;
+        const level = () => {
+          if (this.current !== source) return;
+          analyser.getFloatTimeDomainData(samples);
+          const rms = Math.sqrt(samples.reduce((sum, v) => sum + v * v, 0) / samples.length);
+          window.dispatchEvent(new CustomEvent("aura:audio-energy", { detail: Math.min(1, rms * 5) }));
+          frame = requestAnimationFrame(level);
+        };
+        source.onended = () => {
+          cancelAnimationFrame(frame);
+          source.disconnect(); analyser.disconnect();
+          if (this.current === source) this.current = null;
+          window.dispatchEvent(new CustomEvent("aura:audio-energy", { detail: 0 }));
+          resolve();
+        };
+        try { onStart?.(); source.start(); level(); } catch (error) { source.onended = null; source.disconnect(); analyser.disconnect(); this.current = null; reject(error); }
       });
     };
     this.tail = this.tail.then(job, job);

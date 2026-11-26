@@ -25,9 +25,7 @@ interface EventConnectionState {
 }
 
 function websocketBaseUrl(): string {
-  const apiBase =
-    import.meta.env.VITE_API_BASE_URL ??
-    "http://127.0.0.1:8000";
+  const apiBase = import.meta.env.VITE_API_BASE_URL || window.location.origin;
 
   return apiBase
     .replace(/^http:/, "ws:")
@@ -52,11 +50,10 @@ export function useTaskEvents(
   const retryTimerRef =
     useRef<number | null>(null);
 
-  const stoppedRef =
-    useRef(false);
 
   useEffect(() => {
-    stoppedRef.current = false;
+    let stopped = false;
+    setEvents([]);
 
     if (!taskId) {
       setEvents([]);
@@ -67,14 +64,14 @@ export function useTaskEvents(
       });
 
       return () => {
-        stoppedRef.current = true;
+        stopped = true;
       };
     }
 
     let retry = 0;
 
     const connect = async (): Promise<void> => {
-      if (stoppedRef.current) {
+      if (stopped) {
         return;
       }
 
@@ -87,7 +84,7 @@ export function useTaskEvents(
         const ticket =
           await getWebSocketTicket();
 
-        if (stoppedRef.current) {
+        if (stopped) {
           return;
         }
 
@@ -99,6 +96,7 @@ export function useTaskEvents(
         socketRef.current = socket;
 
         socket.onopen = () => {
+          if (stopped) { socket.close(); return; }
           retry = 0;
 
           setConnection({
@@ -110,6 +108,7 @@ export function useTaskEvents(
         socket.onmessage = (
           message,
         ) => {
+          if (stopped) return;
           try {
             const event =
               JSON.parse(
@@ -117,7 +116,7 @@ export function useTaskEvents(
               ) as TaskEvent;
 
             setEvents(
-              (current) => [
+              (current) => event.id && current.some(item => item.id === event.id) ? current : [
                 ...current.slice(-199),
                 event,
               ],
@@ -132,9 +131,9 @@ export function useTaskEvents(
         };
 
         socket.onclose = () => {
-          socketRef.current = null;
+          if (socketRef.current === socket) socketRef.current = null;
 
-          if (stoppedRef.current) {
+          if (stopped) {
             return;
           }
 
@@ -164,7 +163,7 @@ export function useTaskEvents(
             );
         };
       } catch {
-        if (stoppedRef.current) {
+        if (stopped) {
           return;
         }
 
@@ -198,7 +197,7 @@ export function useTaskEvents(
     void connect();
 
     return () => {
-      stoppedRef.current = true;
+      stopped = true;
 
       if (
         retryTimerRef.current !== null

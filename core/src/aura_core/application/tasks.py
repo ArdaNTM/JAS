@@ -103,6 +103,10 @@ class AgentTaskService:
             if task_id in self._results:
                 raise ValueError(f"Task already submitted: {task_id}")
             task = submitted.task
+            # Pin the owner before publishing any runtime event. A failed
+            # task ID may not later be reused by a different principal.
+            if self._owners.setdefault(task_id, task.principal_id) != task.principal_id:
+                raise ValueError("Task ID belongs to another principal")
             await self._ensure_workflow(submitted)
             record = None
             if self._state_machine is not None:
@@ -450,8 +454,12 @@ class AgentTaskService:
         if len(set(submitted.dependencies)) != len(submitted.dependencies):
             raise ValueError("Task dependencies must be unique")
 
+    def owns_task(self, task_id: str, principal_id: str) -> bool:
+        """Read-only ownership check for the task-scoped event projection."""
+        return self._owners.get(task_id) == principal_id
+
     def get_for_owner(self, task_id: str, principal_id: str) -> ExecutionResult:
-        if self._owners.get(task_id) != principal_id:
+        if not self.owns_task(task_id, principal_id):
             raise KeyError(f"Unknown task: {task_id}")
         return self.get(task_id)
 

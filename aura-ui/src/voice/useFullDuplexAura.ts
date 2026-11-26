@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { respondAsAssistant } from "../api/client";
+import { normalizeSpeechText } from "../AuraJarvisBridge";
 import { OrderedAudioPlayback } from "./orderedAudioPlayback";
 
 type UIEvent = {
@@ -56,6 +58,7 @@ export function useFullDuplexAura(
 ) {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [active, setActive] = useState(false);
+  const amplitudeRef = useRef(0);
   const [speaking, setSpeaking] = useState(false);
   const [eventConnected, setEventConnected] = useState(false);
   const [message, setMessage] = useState("FULL-DUPLEX SES HAZIR — BAŞLATMAK İÇİN ONAY GEREKLİ");
@@ -117,10 +120,10 @@ export function useFullDuplexAura(
     return true;
   }, []);
 
-  const interrupt = useCallback(async () => {
+  const interrupt = useCallback(async (cancelInference = true) => {
     // Abort the ongoing Ollama response *and* its queued TTS sentences.
     // This is synchronous and precedes the async server-side cancellation.
-    window.dispatchEvent(new Event("aura:voice-barge-in"));
+    if (cancelInference) window.dispatchEvent(new Event("aura:voice-barge-in"));
     const id = sessionIdRef.current;
     stopPlayer(); // Stop the browser audio synchronously, before awaiting the API.
     if (!id) return;
@@ -292,6 +295,7 @@ export function useFullDuplexAura(
         let energy = 0;
         for (const sample of samples) energy += sample * sample;
         const rms = Math.sqrt(energy / samples.length);
+        amplitudeRef.current = Math.min(1, rms * 5);
         const now = performance.now();
         const thresholdValue = Number(import.meta.env.VITE_AURA_VAD_THRESHOLD);
         const threshold = Number.isFinite(thresholdValue)
@@ -428,6 +432,7 @@ export function useFullDuplexAura(
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
     analyserRef.current = null;
+    amplitudeRef.current = 0;
     await audioContextRef.current?.close().catch(() => undefined);
     audioContextRef.current = null;
     const id = sessionIdRef.current;
@@ -492,7 +497,7 @@ export function useFullDuplexAura(
       setAutonomyResult(boundedSummary);
       setMessage(`GOVERNOR SONUCU: ${finalRecord.state}`);
       if (sessionIdRef.current && boundedSummary) {
-        await speak(boundedSummary).catch((error: unknown) => {
+        await respondAsAssistant("Görev sonucunu Türkçe, kısa ve doğal biçimde özetle; ham bağlantıları okuma.", boundedSummary).then(reply => { if (reply.degraded) throw new Error("LLM OFFLINE / DEGRADED"); return speak(normalizeSpeechText(reply.assistant_reply)); }).catch((error: unknown) => {
           setMessage(error instanceof Error ? `SONUÇ SESLENDİRİLEMEDİ: ${error.message}` : "SONUÇ SESLENDİRİLEMEDİ");
         });
       }
@@ -520,7 +525,9 @@ export function useFullDuplexAura(
 
   const speakNotice = useCallback(async (text: string) => {
     try {
-      const ok = await speak(text);
+      const reply = await respondAsAssistant("Bu bildirimi Türkçe doğal bir cümleyle aktar; ham bağlantıları okuma.", text);
+      if (reply.degraded) throw new Error("LLM OFFLINE / DEGRADED");
+      const ok = await speak(normalizeSpeechText(reply.assistant_reply));
       if (!ok) setMessage("BİLDİRİMİ SESLENDİRMEK İÇİN ÖNCE FULL-DUPLEX OTURUMUNU BAŞLATIN");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "BİLDİRİM SESLENDİRİLEMEDİ");
@@ -536,7 +543,7 @@ export function useFullDuplexAura(
   }, [stopPlayer]);
 
   return {
-    active, busy, eventConnected, message, notices, sessionId, speaking,
+    active, busy, eventConnected, message, notices, sessionId, speaking, amplitudeRef,
     transcript, vision, start, stop, speak, speakNotice, describeScreen, interrupt,
     autonomyState, autonomyResult, runGovernedGoal,
   };

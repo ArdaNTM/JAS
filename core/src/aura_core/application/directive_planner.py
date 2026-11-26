@@ -74,12 +74,12 @@ class DirectivePlanner:
 
     _VISUAL_VERBS = frozenset({
         "ciz", "goster", "olustur", "uret", "modelle",
-        "gorsellestir", "visualize", "draw", "create", "make",
+        "gorsellestir", "yansit", "visualize", "draw", "create", "make",
     })
 
     _VISUAL_OBJECTS = frozenset({
         "model", "modelini", "3d", "3b", "hologram",
-        "disli", "kure", "motor", "nesne", "obje",
+        "disli", "kure", "motor", "motorunu", "motoru", "matris", "matrisini", "nesne", "obje",
         "gear", "gears", "sphere", "ball", "engine",
         "object",
     })
@@ -114,7 +114,7 @@ class DirectivePlanner:
     _MODEL_RULES = (
         (frozenset({"disli", "gear", "gears"}), "gear-v1"),
         (frozenset({"kure", "sphere", "ball"}), "sphere-v1"),
-        (frozenset({"motor", "engine"}), "motor-v1"),
+        (frozenset({"motor", "motorunu", "motoru", "engine"}), "motor-v1"),
     )
 
     def plan(self, directive: str) -> GeneratedPlan:

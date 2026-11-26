@@ -39,6 +39,22 @@ foreach ($name in @(
     }
 }
 
+# Explicit per-user opt-ins must survive a stale Explorer process environment.
+foreach ($name in @(
+    "AURA_BACKGROUND_THINKING_ENABLED",
+    "AURA_EVOLUTION_REVIEW_ENABLED",
+    "AURA_EVOLUTION_INTROSPECTION_ENABLED",
+    "AURA_EVOLUTION_SELF_PATCH_ENABLED",
+    "AURA_EVOLUTION_SELF_PATCH_REVIEW_DIR",
+    "AURA_JAS_ROOT",
+    "AURA_EVOLUTION_MODEL"
+)) {
+    $userValue = [Environment]::GetEnvironmentVariable($name, "User")
+    if (-not [string]::IsNullOrWhiteSpace($userValue)) {
+        [Environment]::SetEnvironmentVariable($name, $userValue, "Process")
+    }
+}
+
 if ([string]::IsNullOrWhiteSpace($env:OLLAMA_MODELS)) {
     $env:OLLAMA_MODELS = "D:\AI\Models\Ollama\models"
 }
@@ -668,10 +684,10 @@ if ($ownerPin -match '^[0-9a-f]{64}$') {
 }
 $env:AURA_API_PRINCIPAL_ID = "local_owner"
 $env:AURA_CHAT_MEMORY_ENABLED = "0"
-$env:AURA_BACKGROUND_THINKING_ENABLED = "1"
+if ([string]::IsNullOrWhiteSpace($env:AURA_BACKGROUND_THINKING_ENABLED)) { $env:AURA_BACKGROUND_THINKING_ENABLED = "1" }
 $env:AURA_BACKGROUND_THINKING_PRINCIPAL_ID = "local_owner"
 $env:AURA_REFLECTION_DB = Join-Path $env:LOCALAPPDATA "AURA\reflection.sqlite3"
-$env:AURA_EVOLUTION_REVIEW_ENABLED = "0"
+if ([string]::IsNullOrWhiteSpace($env:AURA_EVOLUTION_REVIEW_ENABLED)) { $env:AURA_EVOLUTION_REVIEW_ENABLED = "0" }
 $env:AURA_STAGE_C_BROWSER_ENABLED = "0"
 
 $env:AURA_RESEARCH_MCP_TRANSPORT = "stdio"
