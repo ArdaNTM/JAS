@@ -444,7 +444,7 @@ export default function App() {
             "Bağımsız Owner Control Plane ve sandbox incelemesi olmadan entegrasyon yapılmaz.",
           ].join("\n\n");
           setChatHistory((current) => [...current, {
-            id: makeId(), role: "assistant" as const,
+            id: makeId(), role: "tool" as const,
             content: reply, source: "SelfDiscoveryEngine · GitHub Keşif",
             reviewAvailable: true,
           }].slice(-40));
@@ -586,7 +586,9 @@ export default function App() {
         `GÖREV ${result.task_id} → ${result.state.toUpperCase()}`,
       );
 
-      if (result.state === "awaiting_approval" || result.state === "pending_approval") {
+      if (result.state === "awaiting_approval" || result.state === "pending_approval" || result.steps.some(step => step.approval_id)) {
+        setSessionState("awaiting_approval");
+        setTaskState("ONAY BEKLENİYOR");
         setSystemState("idle");
         setChatHistory((current) => [...current, {
           id: makeId(), role: "assistant" as const,
@@ -716,7 +718,7 @@ export default function App() {
         <div className="astral-actions">
           {llmOffline && <span className="astral-degraded" role="status">LLM OFFLINE / DEGRADED</span>}
           <button type="button" className="astral-pill" aria-pressed={speechEnabled} onClick={() => {
-            if (speechEnabled) void fullDuplex.interrupt();
+            if (speechEnabled) { window.dispatchEvent(new Event("aura:voice-mute")); void fullDuplex.interrupt(false); }
             setSpeechEnabled(value => !value);
           }}>{speechEnabled ? "Ses aktif" : "Ses kapalı"}</button>
           <button type="button" className="astral-pill" onClick={() => setMainView(mainView === "hud" ? "capabilities" : "hud")}>{mainView === "hud" ? "Yetenek merkezi" : "HUD"}</button>
@@ -734,7 +736,7 @@ export default function App() {
       <footer className="astral-bottom">
         <div className="astral-subtitle" role="status"><small>AURA // HOLOGRAFİK İLETİŞİM</small>{latestReply?.content || (blocked ? sessionStateLabel(visibleSessionState) : "Komutunuzu bekliyorum. Araştırma, 3B projeksiyon veya sistem incelemesi isteyebilirsiniz.")}</div>
         {error && <div role="alert" className="astral-degraded">{error}</div>}
-        {visibleSessionState === "awaiting_approval" && <button type="button" className="astral-pill" onClick={() => setDrawer(true)}>Bağımsız Owner onayı gerekiyor · İncele</button>}
+        {visibleSessionState === "awaiting_approval" && <div className="astral-chips"><button type="button" className="astral-pill" onClick={() => setDrawer(true)}>Bağımsız Owner onayı gerekiyor · İncele</button><button type="button" className="astral-pill" onClick={() => { setSessionState("idle"); setTaskId(null); setTaskState("BEKLEMEDE"); }}>Yeni komut (onayı değiştirmez)</button></div>}
         <div className="astral-chips">{quick.map(value => <button type="button" className="astral-pill" key={value} disabled={blocked} onClick={() => { void executeDirective(value); setCommand(""); }}>{value}</button>)}<button type="button" className="astral-pill" onClick={() => setDrawer(true)}>Sistem ve MCP durumu</button><button type="button" className="astral-pill" onClick={() => setDrawer(true)}>Yeni evrim önerileri</button></div>
         <form className="astral-command" onSubmit={handleSubmit}>
           <button type="button" className="astral-pill" disabled={!voice.available || blocked || fullDuplex.active || continuousVoice.active} onClick={voice.state === "recording" || voice.state === "listening" ? voice.stop : voice.start}>{voice.state === "recording" || voice.state === "listening" ? "Durdur" : "Mikrofon"}</button>
