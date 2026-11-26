@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 import { AuraApiError, respondAsAssistant, synthesizeLocalSpeech } from "./api/client";
 import { OrderedAudioPlayback } from "./voice/orderedAudioPlayback";
@@ -67,7 +67,10 @@ export default function AuraJarvisBridge({
   history = [],
   onDelta,
 }: AuraJarvisBridgeProps) {
+  const latest = useRef({ directive, researchOutput, onStatus, speakThroughSession, sessionActive, enableSpeech, history, onDelta });
+  latest.current = { directive, researchOutput, onStatus, speakThroughSession, sessionActive, enableSpeech, history, onDelta };
   useEffect(() => {
+    const { directive, researchOutput, onStatus, speakThroughSession, sessionActive, enableSpeech, history, onDelta } = latest.current;
     if (requestId <= 0 || !directive?.trim()) return;
 
     const abort = new AbortController();
@@ -126,7 +129,7 @@ export default function AuraJarvisBridge({
       playback.cancel();
       void playback.close().catch(() => undefined);
     };
-  }, [directive, researchOutput, requestId, onStatus, speakThroughSession, sessionActive, enableSpeech, onDelta]);
+  }, [requestId]);
 
   return null;
 }
