@@ -30,7 +30,12 @@ export default function SystemDrawer({ open, onClose, children }: { open: boolea
     <aside className="astral-drawer" aria-label="Sistem Çekirdeği ve Evrim">
       <div className="astral-drawer-heading"><div><small>AURA // CONTROL PLANE</small><h2>Sistem Çekirdeği &amp; Evrim</h2></div><button onClick={onClose} type="button" aria-label="Kapat">×</button></div>
       <div className="astral-drawer-body">
-        <section className="astral-card"><h3>BAĞIMSIZ ATTESTOR</h3><p>{evolution?.attestor_health?.state ?? "BİLİNMİYOR"}</p>
+        <section className="astral-metrics" aria-label="Canlı envanter özeti">
+          <div><strong>{evolution?.active_providers?.length ?? "—"}</strong><span>Aktif evrim sağlayıcısı</span></div>
+          <div><strong>{approvals?.length ?? "—"}</strong><span>Bekleyen onay</span></div>
+          <div><strong>{patches?.length ?? "—"}</strong><span>Self-Patch taslağı</span></div>
+        </section>
+        <section className="astral-card"><h3>BAĞIMSIZ ATTESTOR</h3><p className="astral-indicator" data-healthy={["HEALTHY","RUNNING","ACTIVE"].includes(evolution?.attestor_health?.state ?? "")}>{evolution?.attestor_health?.state ?? "BİLİNMİYOR"}</p>
           {evolution?.attestor_health?.last_success ? <small>Son başarılı tarama: {new Date(evolution.attestor_health.last_success * 1000).toLocaleString("tr-TR")}</small> : null}
           {evolution?.attestor_health?.last_error && <p role="status">{evolution.attestor_health.last_error}</p>}
           <p>{evolution ? evolution.active_count + " aktif evrim yeteneği · " + evolution.queued_packages + " kuyrukta" : "Evrim durumu alınamadı"}</p>
