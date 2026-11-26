@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 
-import { AuraApiError, streamAssistantResponse, synthesizeLocalSpeech } from "./api/client";
+import { AuraApiError, respondAsAssistant, synthesizeLocalSpeech } from "./api/client";
+import { OrderedAudioPlayback } from "./voice/orderedAudioPlayback";
 
 /** Speech text is presentation-only; untrusted research/tool evidence is untouched. */
 export function normalizeSpeechText(text: string): string {
@@ -46,6 +47,7 @@ type AuraJarvisBridgeProps = {
   onStatus?: (
     status: "processing" | "ready" | "speaking" | "error",
     errorMessage?: string,
+    degraded?: boolean,
   ) => void;
   speakThroughSession?: (text: string) => Promise<boolean>;
   sessionActive?: boolean;
@@ -70,96 +72,59 @@ export default function AuraJarvisBridge({
 
     const abort = new AbortController();
     let cancelled = false;
-    let player: HTMLAudioElement | null = null;
-    let spoken = "";
-    let pending = "";
-    let playlist = Promise.resolve();
-    let everQueued = false;
+    const playback = new OrderedAudioPlayback();
     const bargeIn = () => {
-      window.removeEventListener("aura:voice-barge-in", bargeIn);
       cancelled = true;
       abort.abort();
-      player?.pause();
-      if (player) { player.src = ""; player = null; }
-      // Every queued promise checks cancelled before synthesizing.
+      playback.cancel();
+      onStatus?.("ready");
     };
     window.addEventListener("aura:voice-barge-in", bargeIn);
-
-    const playChunk = async (speech: string): Promise<void> => {
-      if (cancelled || !speech) return;
-      const audio = await synthesizeLocalSpeech(speech);
-      if (cancelled) return;
-      const element = new Audio(`data:${audio.mime_type};base64,${audio.audio_base64}`);
-      player = element;
-      await new Promise<void>((resolve, reject) => {
-        element.onended = () => resolve();
-        element.onerror = () => reject(new Error("TTS ses verisi oynatılamadı"));
-        element.play().then(() => { if (!cancelled) onStatus?.("speaking"); }).catch(reject);
-      });
-      if (player === element) player = null;
-    };
-
-    const queue = (raw: string): void => {
-      for (const segment of speechChunks(raw, 420)) {
-        everQueued = true;
-        playlist = playlist.then(async () => {
-          if (sessionActive && speakThroughSession) {
-            await speakThroughSession(segment);
-          } else {
-            await playChunk(segment);
-          }
-        });
-        // The final await handles failures. No silent detached promises.
-      }
-    };
-
     const run = async () => {
       onStatus?.("processing");
+      let inferred = false;
       try {
-        // Run a genuine Ollama NDJSON stream. In non-full-duplex mode
-        // begin sentence playback while remaining tokens are generated.
-        await streamAssistantResponse(directive.trim(), researchOutput, (delta) => {
-          if (cancelled) return;
-          spoken += delta;
-          onDelta?.(delta);
-          if (!enableSpeech) return;
-          pending += delta;
-          if (pending.length >= 80) {
-              const cut = Math.max(pending.lastIndexOf(". "), pending.lastIndexOf("! "),
-                pending.lastIndexOf("? "), pending.lastIndexOf("\n"));
-              if (cut > 0) {
-                const complete = pending.slice(0, cut + 1);
-                pending = pending.slice(cut + 1);
-                queue(complete);
-              }
-          }
-        }, abort.signal, history);
-
+        const result = await respondAsAssistant(directive.trim(), researchOutput, history, abort.signal);
         if (cancelled) return;
-        if (pending.trim()) queue(pending);
-        if (!spoken.trim()) throw new Error("Ollama boş bir yanıt üretti. Model etiketini ve inference ayarlarını kontrol edin.");
-        if (!everQueued) {
-          onStatus?.("ready");
+        if (result.degraded) {
+          onStatus?.("error", "LLM OFFLINE / DEGRADED", true);
           return;
         }
-        await playlist;
+        if (!result.assistant_reply?.trim()) throw new Error("Yerel model boş yanıt üretti.");
+        inferred = true;
+        onDelta?.(result.assistant_reply);
+        if (enableSpeech) {
+          for (const segment of speechChunks(result.assistant_reply, 420)) {
+            if (cancelled) return;
+            if (sessionActive && speakThroughSession) {
+              if (!await speakThroughSession(segment)) throw new Error("Ses oturumu kapandı.");
+            } else {
+              const audio = await synthesizeLocalSpeech(segment);
+              if (cancelled) return;
+              const bytes = Uint8Array.from(atob(audio.audio_base64), ch => ch.charCodeAt(0));
+              await playback.enqueue(new Blob([bytes], { type: audio.mime_type }), () => onStatus?.("speaking"));
+            }
+          }
+        }
         if (!cancelled) onStatus?.("ready");
       } catch (error) {
         if (!cancelled) {
-          console.error("AURA JARVIS köprü hatası:", error);
-          const message = error instanceof AuraApiError
-            ? `${error.message}${error.requestId ? ` (istek kimliği: ${error.requestId})` : ""}`
-            : error instanceof Error ? error.message : "Sesli yanıt başarısız oldu.";
-          onStatus?.("error", message);
+          const degraded = !inferred && error instanceof AuraApiError && error.status === 503;
+          const message = degraded ? "LLM OFFLINE / DEGRADED" :
+            error instanceof Error ? error.message : "Sesli yanıt başarısız oldu.";
+          onStatus?.("error", message, degraded);
         }
+      } finally {
+        await playback.close().catch(() => undefined);
       }
     };
     void run();
     return () => {
+      window.removeEventListener("aura:voice-barge-in", bargeIn);
       cancelled = true;
       abort.abort();
-      player?.pause();
-      if (player) { player.src = ""; player = null; }
+      playback.cancel();
+      void playback.close().catch(() => undefined);
     };
   }, [directive, researchOutput, requestId, onStatus, speakThroughSession, sessionActive, enableSpeech, onDelta]);
 
