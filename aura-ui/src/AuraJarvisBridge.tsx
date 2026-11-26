@@ -82,7 +82,9 @@ export default function AuraJarvisBridge({
       playback.cancel();
       onStatus?.("ready");
     };
+    const mute = () => playback.cancel();
     window.addEventListener("aura:voice-barge-in", bargeIn);
+    window.addEventListener("aura:voice-mute", mute);
     const run = async () => {
       onStatus?.("processing");
       let inferred = false;
@@ -96,14 +98,16 @@ export default function AuraJarvisBridge({
         if (!result.assistant_reply?.trim()) throw new Error("Yerel model boş yanıt üretti.");
         inferred = true;
         onDelta?.(result.assistant_reply);
-        if (enableSpeech) {
+        if (enableSpeech && latest.current.enableSpeech) {
           for (const segment of speechChunks(result.assistant_reply, 420)) {
             if (cancelled) return;
+            if (!latest.current.enableSpeech) break;
             if (sessionActive && speakThroughSession) {
               if (!await speakThroughSession(segment)) throw new Error("Ses oturumu kapandı.");
             } else {
               const audio = await synthesizeLocalSpeech(segment);
               if (cancelled) return;
+              if (!latest.current.enableSpeech) break;
               const bytes = Uint8Array.from(atob(audio.audio_base64), ch => ch.charCodeAt(0));
               await playback.enqueue(new Blob([bytes], { type: audio.mime_type }), () => onStatus?.("speaking"));
             }
@@ -124,6 +128,7 @@ export default function AuraJarvisBridge({
     void run();
     return () => {
       window.removeEventListener("aura:voice-barge-in", bargeIn);
+      window.removeEventListener("aura:voice-mute", mute);
       cancelled = true;
       abort.abort();
       playback.cancel();
