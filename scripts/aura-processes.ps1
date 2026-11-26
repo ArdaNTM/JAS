@@ -20,10 +20,9 @@ function Test-AuraOwnedProcess {
         ($exe.Equals($corePython, $comparison) -or $exe.Equals($alternatePython, $comparison)) -and
         $command -match '(?i)(?:^|\s)-m\s+aura_core\.evolution\.owner_control_plane_http(?:\s|$)'
     )
-    $attestorOwned = (
-        ($exe.Equals($corePython, $comparison) -or $exe.Equals($alternatePython, $comparison)) -and
-        $command -match '(?i)(?:^|\s)-m\s+aura_core\.evolution\.attestor_worker(?:\s|$)'
-    )
+    # An independent signer is never desktop-owned, even if its executable
+    # happens to reside under this checkout. Do not stop a scheduled task.
+    if ($command -match '(?i)(?:^|\s)-m\s+aura_core\.evolution\.attestor_worker(?:\s|$)') { return $false }
     $researchOwned = (
         $command.IndexOf($research, $comparison) -ge 0 -and
         ($exe.Equals($corePython, $comparison) -or $exe.Equals($alternatePython, $comparison))
@@ -44,7 +43,7 @@ function Test-AuraOwnedProcess {
         $command -match '(?i)\bnpm(?:\.cmd)?\b.*\brun\s+preview\b' -and
         $exe -match '(?i)(?:^|\\)cmd\.exe$'
     )
-    return ($coreOwned -or $ownerReviewOwned -or $attestorOwned -or $researchOwned -or $viteOwned -or $npmPreview)
+    return ($coreOwned -or $ownerReviewOwned -or $researchOwned -or $viteOwned -or $npmPreview)
 }
 
 function Stop-AuraStaleProcesses {
