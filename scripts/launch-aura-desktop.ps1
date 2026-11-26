@@ -178,33 +178,57 @@ function Wait-ForHttp {
         [string]$Url,
 
         [int]$TimeoutSeconds = 30,
-        [switch]$RequireOk
+        [switch]$RequireOk,
+        [System.Diagnostics.Process]$ExpectedProcess = $null
     )
 
-    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
-
-    while ((Get-Date) -lt $deadline) {
+    # Windows PowerShell 5.1 Invoke-WebRequest inherits system proxy and
+    # redirect behavior. Probe the exact IPv4 loopback service directly.
+    # No token, credentials, response body or exception text is logged.
+    $uri = [Uri]$Url
+    if ($uri.Scheme -ne "http" -or $uri.Host -ne "127.0.0.1" -or $uri.UserInfo) {
+        throw "Launcher health probe requires an IPv4 loopback HTTP URL."
+    }
+    $clock = [Diagnostics.Stopwatch]::StartNew()
+    $script:LastHttpProbe = "No response"
+    while ($clock.Elapsed.TotalSeconds -lt $TimeoutSeconds) {
+        if ($null -ne $ExpectedProcess -and $ExpectedProcess.HasExited) {
+            $script:LastHttpProbe = "Process exited (code $($ExpectedProcess.ExitCode))"
+            return $false
+        }
+        $response = $null
         try {
-            $response = Invoke-WebRequest `
-                -Uri $Url `
-                -Method GET `
-                -UseBasicParsing `
-                -TimeoutSec 2 `
-                -ErrorAction Stop
-
-            if ($RequireOk) {
-                if ($response.StatusCode -eq 200) { return $true }
-            } elseif (
-                $response.StatusCode -ge 200 -and
-                $response.StatusCode -lt 500
-            ) {
-                return $true
+            $request = [Net.HttpWebRequest][Net.WebRequest]::Create($uri)
+            $request.Method = "GET"
+            $request.Proxy = $null
+            $request.AllowAutoRedirect = $false
+            $request.Timeout = [int][Math]::Max(1, [Math]::Min(2000, ($TimeoutSeconds * 1000 - $clock.ElapsedMilliseconds)))
+            $request.ReadWriteTimeout = $request.Timeout
+            $response = $request.GetResponse()
+            $status = [int]$response.StatusCode
+            $script:LastHttpProbe = "HTTP $status after $($clock.ElapsedMilliseconds) ms"
+            if (($RequireOk -and $status -eq 200) -or
+                (-not $RequireOk -and $status -ge 200 -and $status -lt 300)) {
+                if ($null -eq $ExpectedProcess -or -not $ExpectedProcess.HasExited) {
+                    return $true
+                }
+            }
+        }
+        catch [Net.WebException] {
+            $response = $_.Exception.Response
+            if ($null -ne $response) {
+                $script:LastHttpProbe = "HTTP $([int]$response.StatusCode) after $($clock.ElapsedMilliseconds) ms"
+            } else {
+                $script:LastHttpProbe = "$($_.Exception.Status) after $($clock.ElapsedMilliseconds) ms"
             }
         }
         catch {
+            $script:LastHttpProbe = "$($_.Exception.GetType().Name) after $($clock.ElapsedMilliseconds) ms"
         }
-
-        Start-Sleep -Milliseconds 500
+        finally {
+            if ($null -ne $response) { $response.Close() }
+        }
+        Start-Sleep -Milliseconds 250
     }
 
     return $false
@@ -816,11 +840,13 @@ try {
     $Splash.Status.Text = "WAITING FOR CORE..."
     $Splash.Form.Refresh()
 
-    if (-not (Wait-ForHttp -Url "http://127.0.0.1:$CorePort/health" -TimeoutSeconds 75)) {
+    if (-not (Wait-ForHttp -Url "http://127.0.0.1:$CorePort/health" -TimeoutSeconds 75 -RequireOk -ExpectedProcess $coreProcess)) {
         $stderr = Read-LogSafe -Path $CoreLogErr
         $stdout = Read-LogSafe -Path $CoreLogOut
 
-        $details = "AURA Core failed to start.`n`n"
+        $details = "AURA Core failed its HTTP health check.`n"
+        $details += "Probe: $script:LastHttpProbe`n"
+        $details += "Launcher PID: $($coreProcess.Id); exited: $($coreProcess.HasExited)`n`n"
 
         if (-not [string]::IsNullOrWhiteSpace($stderr)) {
             $details += "----- aura-daemon.stderr.log -----`n"
@@ -911,7 +937,12 @@ catch {
         $message = "Unknown AURA startup error."
     }
 
-    Show-LauncherError $message
+    # Persist bounded probe diagnostics even when launched by wscript.
+    try {
+        $diagnostic = "UTC=$([DateTime]::UtcNow.ToString('o')); last_http_probe=$script:LastHttpProbe"
+        if ($null -ne $coreProcess) { $diagnostic += "; core_launcher_pid=$($coreProcess.Id); exited=$($coreProcess.HasExited)" }
+        [IO.File]::WriteAllText((Join-Path $Root "logs\launcher-startup-failure.log"), $diagnostic, [Text.UTF8Encoding]::new($false))
+    } catch { }
 
     if ($null -ne $coreProcess) {
         Stop-ProcessTreeSafe -ProcessId $coreProcess.Id
@@ -928,6 +959,8 @@ catch {
         Stop-ProcessTreeSafe -ProcessId $attestorProcess.Id
     }
 
+    # Report after cleanup, so the dialog does not leave a partial stack running.
+    Show-LauncherError $message
     exit 1
 }
 finally {
