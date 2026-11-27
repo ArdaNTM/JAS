@@ -1074,14 +1074,22 @@ def build_app() -> FastAPI:
             )
             report_mcp_healthy(research_config)
 
-            kokoro_provider = await register_kokoro_mcp(
-                config=kokoro_config,
-                services=kernel.service_registry,
-                providers=kernel.provider_registry,
-                capabilities=kernel.capability_registry,
-                tools=tts_tools,
-            )
-            report_mcp_healthy(kokoro_config)
+            # Speech is optional; a broken local model/SDK handshake must
+            # not take down tasks, STT, research or the HTTP control plane.
+            app.state.tts_startup_available = False
+            try:
+                kokoro_provider = await register_kokoro_mcp(
+                    config=kokoro_config,
+                    services=kernel.service_registry,
+                    providers=kernel.provider_registry,
+                    capabilities=kernel.capability_registry,
+                    tools=tts_tools,
+                )
+            except Exception:
+                logger.exception("Local TTS startup failed; continuing with TTS degraded")
+            else:
+                report_mcp_healthy(kokoro_config)
+                app.state.tts_startup_available = True
 
             filesystem_provider = await register_local_filesystem_mcp(
                 config=filesystem_config,
