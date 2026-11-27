@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import hashlib
 import os
 from pathlib import Path
 
@@ -74,11 +75,14 @@ def project_iot_event(event: dict, principal: str) -> dict | None:
     device = data.get("device_id")
     action, status, state = data.get("action"), data.get("status"), data.get("state")
     if (not isinstance(device, str) or not _ID.fullmatch(device)
+            or not isinstance(action, str) or not isinstance(status, str)
+            or (state is not None and not isinstance(state, str))
             or action not in {"on", "off", "status"}
             or status not in {"submitted_unverified", "attested"}
             or state not in {None, "on", "off"}):
         return None
-    if (action == "status") != (status == "attested" and state is not None):
+    if not ((action == "status" and status == "attested" and state is not None)
+            or (action in {"on", "off"} and status == "submitted_unverified" and state is None)):
         return None
     return {"event": IOT_EVENT, "data": {"device_id": device, "action": action,
                                         "status": status, "state": state}}
@@ -100,19 +104,13 @@ def load_smart_devices(*, event_bus: EventBus, face_gate=None) -> dict[str, Smar
     if not nonce_db.is_absolute() or not nonce_db.parent.is_dir():
         raise ValueError("Explicit local nonce database path required")
     # Keep persistent replay evidence outside executable checkout and symlinks.
-    checkout = Path(__file__).resolve().parents[3]
+    checkout = Path(__file__).resolve().parents[4]
     target = nonce_db.resolve()
     if target.is_relative_to(checkout) or any(
         p.is_symlink() or (hasattr(p, "is_junction") and p.is_junction())
         for p in (nonce_db, *nonce_db.parents)
     ):
         raise ValueError("IoT replay database must be outside checkout and links")
-    transport = LocalMQTT(
-        port=int(os.getenv("AURA_IOT_MQTT_PORT", "1883")),
-        username=os.getenv("AURA_IOT_MQTT_USERNAME", ""),
-        password=os.getenv("AURA_IOT_MQTT_PASSWORD", ""),
-        client_id="aura-jarvis-iot",
-    )
     devices = {}
     for profile in config:
         if not isinstance(profile, dict) or set(profile) != {"device_id", "sensor_key_hex"}:
@@ -120,6 +118,12 @@ def load_smart_devices(*, event_bus: EventBus, face_gate=None) -> dict[str, Smar
         identity = profile["device_id"]
         if not isinstance(identity, str) or not _ID.fullmatch(identity) or identity in devices:
             raise ValueError("Invalid or duplicate device ID")
+        transport = LocalMQTT(
+            port=int(os.getenv("AURA_IOT_MQTT_PORT", "1883")),
+            username=os.getenv("AURA_IOT_MQTT_USERNAME", ""),
+            password=os.getenv("AURA_IOT_MQTT_PASSWORD", ""),
+            client_id="aura-iot-" + hashlib.sha256(identity.encode()).hexdigest()[:12],
+        )
         # Topic names remain the existing signed physical-device namespaces.
         binding = DeviceBinding(identity, f"aura/robots/{identity}/control",
                                 f"aura/sensors/{identity}/power", ("on", "off"),
