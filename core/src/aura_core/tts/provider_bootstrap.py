@@ -13,7 +13,9 @@ from aura_core.tts.config import KokoroMCPConfig
 
 async def register_kokoro_mcp(*, config: KokoroMCPConfig, services, providers, capabilities, tools: MCPToolRegistry):
     service = services.register(ServiceDefinition(name=config.service_name, version=config.service_version, provider="mcp", category=ServiceCategory.MCP), object())
-    connection = MCPConnection()
+    # A speech provider is latency-sensitive; do not let an RPC monopolize
+    # its serialized connection indefinitely. Other MCP transports unchanged.
+    connection = MCPConnection(read_timeout_seconds=15)
     await connection.connect_stdio(StdioServerParameters(
         command=config.command,
         args=list(config.args),

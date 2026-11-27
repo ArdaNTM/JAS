@@ -2222,18 +2222,26 @@ def create_api(
         gateway = getattr(app.state, "mcp_gateway", None)
         if gateway is None:
             raise HTTPException(status_code=503, detail="Local speech provider is unavailable")
-        response = await gateway.invoke(MCPGatewayRequest(
-            request_id=f"speech:{uuid4()}", principal_id=principal_id,
-            capability_id="speech.synthesize", operation_id="speech.synthesize",
-            resource_scope="local_default", risk_level=RiskLevel.LOW,
-            tool_name="synthesize",
-            arguments={
-                "text": request.text,
-                **({"voice": request.voice} if request.voice is not None else {}),
-            },
-        ))
-        if response.result is None:
+        try:
+            response = await asyncio.wait_for(gateway.invoke(MCPGatewayRequest(
+                request_id=f"speech:{uuid4()}", principal_id=principal_id,
+                capability_id="speech.synthesize", operation_id="speech.synthesize",
+                resource_scope="local_default", risk_level=RiskLevel.LOW,
+                tool_name="synthesize",
+                arguments={
+                    "text": request.text,
+                    **({"voice": request.voice} if request.voice is not None else {}),
+                },
+            )), timeout=20)
+        except TimeoutError as exc:
+            raise HTTPException(status_code=504, detail="Local TTS deadline exceeded") from exc
+        except Exception as exc:
+            logger.warning("Local TTS provider failed (%s)", type(exc).__name__)
+            raise HTTPException(status_code=502, detail="Local TTS provider failed") from exc
+        if response.decision is not AuthorizationDecision.ALLOW:
             raise HTTPException(status_code=403, detail=response.reason)
+        if response.result is None:
+            raise HTTPException(status_code=502, detail="TTS provider returned no audio")
         result = response.result
         payload = getattr(result, "structured_content", None)
         if payload is None:

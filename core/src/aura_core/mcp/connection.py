@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 from contextlib import AsyncExitStack
 from dataclasses import dataclass
+from datetime import timedelta
 from typing import Any
 
 from mcp.client.session import ClientSession
@@ -28,7 +29,10 @@ class MCPToolResult:
 class MCPConnection:
     """Managed MCP stdio / Streamable HTTP connection owned by one task."""
 
-    def __init__(self) -> None:
+    def __init__(self, *, read_timeout_seconds: float | None = None) -> None:
+        if read_timeout_seconds is not None and not 0 < read_timeout_seconds <= 300:
+            raise ValueError("Invalid MCP read timeout")
+        self._read_timeout = timedelta(seconds=read_timeout_seconds) if read_timeout_seconds is not None else None
         self._stack: AsyncExitStack | None = None
         self._session: ClientSession | None = None
         self._owner: asyncio.Task | None = None
@@ -78,7 +82,9 @@ class MCPConnection:
                 read, write = await stack.enter_async_context(
                     streamable_http_client(target),
                 )
-            self._session = await stack.enter_async_context(ClientSession(read, write))
+            session_options = ({"read_timeout_seconds": self._read_timeout}
+                               if self._read_timeout is not None else {})
+            self._session = await stack.enter_async_context(ClientSession(read, write, **session_options))
             await self._session.initialize()
             if not self._ready.done():
                 self._ready.set_result(None)
@@ -88,6 +94,10 @@ class MCPConnection:
                 operation, arguments, kwargs, answer = await self._requests.get()
                 if operation == "__close__":
                     break
+                # A cancelled queued request has no remaining caller. Never
+                # start it after the client has already given up.
+                if answer.cancelled():
+                    continue
                 try:
                     result = await getattr(self.session, operation)(*arguments, **kwargs)
                 except Exception as exc:
