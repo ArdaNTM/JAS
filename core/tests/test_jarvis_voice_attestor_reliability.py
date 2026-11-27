@@ -3,7 +3,11 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import sys
+import tempfile
+from pathlib import Path
+from shutil import rmtree as remove_test_tree
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
@@ -121,7 +125,17 @@ def test_mcp_cancelled_queued_request_is_not_dispatched():
 @pytest.mark.parametrize("outcome,status", [
     ("timeout", 504), ("denied", 403), ("empty", 502), ("error", 502), ("ok", 200),
 ])
-def test_tts_api_distinguishes_timeout_denial_and_provider_failure(outcome, status):
+def test_tts_api_distinguishes_timeout_denial_and_provider_failure(outcome, status, monkeypatch, tmp_path):
+    # These API contract tests must not inherit the live Owner's opt-in settings.
+    for name in (
+        "AURA_EVOLUTION_REVIEW_ENABLED",
+        "AURA_EVOLUTION_SELF_PATCH_ENABLED",
+        "AURA_EVOLUTION_INTROSPECTION_ENABLED",
+        "AURA_BACKGROUND_THINKING_ENABLED",
+    ):
+        monkeypatch.setenv(name, "0")
+    monkeypatch.setenv("AURA_STORAGE_MODE", "local")
+    monkeypatch.chdir(tmp_path)
     requests = []
 
     async def invoke(request):
@@ -137,6 +151,8 @@ def test_tts_api_distinguishes_timeout_denial_and_provider_failure(outcome, stat
         )
 
     with make_client() as client:
+        assert client.app.state.evolution_review is None
+        assert client.app.state.background_thinking is None
         client.app.state.mcp_gateway = SimpleNamespace(invoke=invoke)
         response = client.post("/api/speech/synthesize", json={"text": "Merhaba"})
     assert response.status_code == status
@@ -166,8 +182,67 @@ def test_session_tts_deadline_cancels_wait_without_bypassing_gateway(monkeypatch
     assert observed == [20]
 
 
-def _workspace(tmp_path):
-    ws = EvolutionWorkspace(tmp_path / "evolution")
+def _make_isolated_workspace_dir():
+    # The launcher can redirect TEMP/TMP and pytest's tmp_path into JAS.
+    # Choose an existing system temp directory outside the resolved checkout.
+    checkout = Path(__file__).resolve().parents[2]
+    candidates = []
+    try:
+        candidates.append(Path(tempfile.gettempdir()))
+    except OSError:
+        pass
+    if os.name == "nt":
+        local_appdata = os.environ.get("LOCALAPPDATA")
+        if local_appdata:
+            candidates.append(Path(local_appdata) / "Temp")
+        candidates.append(Path.home() / "AppData" / "Local" / "Temp")
+    else:
+        candidates.extend((Path("/tmp"), Path("/var/tmp")))
+
+    for candidate in candidates:
+        try:
+            if not candidate.is_absolute():
+                continue
+            base = candidate.resolve()
+            if base.is_relative_to(checkout) or not base.is_dir():
+                continue
+            root = Path(tempfile.mkdtemp(prefix="aura-voice-regression-", dir=base))
+        except OSError:
+            continue
+        resolved = root.resolve()
+        if resolved.is_relative_to(checkout) or checkout.is_relative_to(resolved):
+            remove_test_tree(root, ignore_errors=True)
+            continue
+        return root
+    pytest.fail("No writable system temp directory outside JAS checkout")
+
+
+@pytest.fixture
+def isolated_workspace_dir():
+    root = _make_isolated_workspace_dir()
+    try:
+        yield root
+    finally:
+        # Keep the real cleanup function even while the pruning test patches
+        # external_staging.shutil.rmtree (the shared shutil module).
+        remove_test_tree(root, ignore_errors=True)
+
+
+def test_workspace_temp_root_ignores_checkout_temp(monkeypatch):
+    checkout = Path(__file__).resolve().parents[2]
+    monkeypatch.setattr(tempfile, "gettempdir", lambda: str(checkout / ".tmp"))
+    root = _make_isolated_workspace_dir()
+    try:
+        assert not root.resolve().is_relative_to(checkout)
+        assert not checkout.is_relative_to(root.resolve())
+        assert EvolutionWorkspace(root / "evolution").root.is_dir()
+    finally:
+        remove_test_tree(root, ignore_errors=True)
+    assert not root.exists()
+
+
+def _workspace(isolated_workspace_dir):
+    ws = EvolutionWorkspace(isolated_workspace_dir / "evolution")
     for package in ("aa__terminal", "bb__active"):
         (ws.root / "verified" / package).mkdir()
         path = ws.root / "runtime" / package
@@ -183,8 +258,8 @@ def _workspace(tmp_path):
     return ws
 
 
-def test_terminal_delete_denied_is_deferred_only_for_independent_scan(tmp_path, monkeypatch):
-    ws = _workspace(tmp_path)
+def test_terminal_delete_denied_is_deferred_only_for_independent_scan(isolated_workspace_dir, monkeypatch):
+    ws = _workspace(isolated_workspace_dir)
     terminal = ws.root / "runtime" / "aa__terminal"
     active = ws.root / "runtime" / "bb__active"
     calls = []
@@ -221,8 +296,8 @@ def test_terminal_delete_denied_is_deferred_only_for_independent_scan(tmp_path, 
     assert worker.last_scan_error == "PruneTerminalDeleteDeferred"
 
 
-def test_invalid_quarantine_fails_closed_even_with_deferral(tmp_path):
-    ws = _workspace(tmp_path)
+def test_invalid_quarantine_fails_closed_even_with_deferral(isolated_workspace_dir):
+    ws = _workspace(isolated_workspace_dir)
     marker = ws.root / "verified" / "aa__terminal" / "local-windows-quarantined.json"
     marker.write_text("{invalid")
     with pytest.raises(WorkspacePruneError) as err:
@@ -231,9 +306,9 @@ def test_invalid_quarantine_fails_closed_even_with_deferral(tmp_path):
     assert (ws.root / "runtime" / "aa__terminal").is_dir()
 
 
-def test_runtime_symlink_is_not_treated_as_deferred_delete(tmp_path):
-    ws = _workspace(tmp_path)
-    outside = tmp_path / "outside"
+def test_runtime_symlink_is_not_treated_as_deferred_delete(isolated_workspace_dir):
+    ws = _workspace(isolated_workspace_dir)
+    outside = isolated_workspace_dir / "outside"
     outside.mkdir()
     target = outside / "sentinel"
     target.write_text("untouched")
