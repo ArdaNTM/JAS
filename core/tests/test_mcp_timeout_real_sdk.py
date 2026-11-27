@@ -130,12 +130,17 @@ def test_composed_core_survives_real_optional_tts_startup_failure(tmp_path, monk
     monkeypatch.chdir(tmp_path)
     for name, value in {
         "LOCALAPPDATA": str(tmp_path),
+        # Standalone Windows CI does not inherit the full suite's runtime config.
+        # No model inference is performed by this lifespan/real-MCP test.
+        "AURA_RUNTIME": "ollama",
+        "AURA_MODEL": "qwen3",
         "AURA_STORAGE_MODE": "local",
         "AURA_DISABLE_EXTERNAL_PROVIDERS": "0",
         "AURA_SELF_DISCOVERY_ENABLED": "0",
         "AURA_EVOLUTION_AUTO_ACTIVATE": "0",
         "AURA_BACKGROUND_THINKING_ENABLED": "0",
         "AURA_EVOLUTION_REVIEW_ENABLED": "0",
+        "AURA_EVOLUTION_INTROSPECTION_ENABLED": "0",
         "AURA_EVOLUTION_SELF_PATCH_ENABLED": "0",
         "AURA_STAGE_C_ENABLED": "0",
         "AURA_STAGE_C_BROWSER_ENABLED": "0",

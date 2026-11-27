@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-27T01:17:00.903Z",
-  "git_commit": "6f290718d42d50bbd1b5d62cf2438e61eb3e352d",
+  "generated_at": "2026-11-27T01:39:41.390+00:00",
+  "git_commit": "a4e3f62951a2fa95c94c4aba248ba9ec947dae04",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:7ab82a15cd631d78596048f728f740d12ddc408e4b5914b5c3cc93790cbb9dbe",
+  "release_digest": "sha256:b33201dfd65f53f0201bee82d359c64f082a1fe6822c42e9d8b44d1d3c267894",
   "file_count": 484,
   "files": [
     {
@@ -38,7 +38,7 @@
     },
     {
       "path": ".github/workflows/aura-windows-launcher.yml",
-      "sha256": "6049163153798a1b890be2b67f509d280cc6845c7f02e5c3c2ca18e33558c032"
+      "sha256": "1f87d9adb2b6a514d59b1e540802ef661c759ba891849937e72348fbd7c7f7b1"
     },
     {
       "path": ".github/workflows/aura-windows-owner-security.yml",
@@ -1862,11 +1862,11 @@
     },
     {
       "path": "core/tests/test_jarvis_voice_attestor_reliability.py",
-      "sha256": "51394c79caf6dcc7667f71e1fda6d4a2d418d6e9b067e622376912ac7f8b04b3"
+      "sha256": "892ddfbcc409864a9122e6e8806bd1432d56c58ab0a6a062d14146946d9e0bb2"
     },
     {
       "path": "core/tests/test_mcp_timeout_real_sdk.py",
-      "sha256": "1ee6a1d7757407421b56561e85a6991246dbc6eaf52051957795dd14dd8c5498"
+      "sha256": "9b33c373659b5b20580414b9193045d40b68f4d5380bf370698b20d0d07102bd"
     },
     {
       "path": "core/tests/test_osworld_secure_live.py",
