@@ -1,4 +1,9 @@
 import base64
+import io
+import wave
+
+import pytest
+from aura_core.application import full_duplex_session as whisper
 
 from fastapi.testclient import TestClient
 
@@ -161,6 +166,37 @@ def test_local_speech_transcription_accepts_m4a_alias(monkeypatch) -> None:
     assert response.status_code == 200
     assert calls["suffix"] == ".m4a"
 
+@pytest.fixture(autouse=True)
+def isolate_stt_runtime(monkeypatch):
+    # No test shares a cached native model, live Owner configuration, or GPU latch.
+    monkeypatch.setattr(whisper, "_shared_whisper", None)
+    for name in ("AURA_STT_MODEL", "AURA_STT_CPU_MODEL", "AURA_STT_MODEL_PATH",
+                 "AURA_STT_INITIAL_PROMPT", "AURA_STT_CPU_THREADS"):
+        monkeypatch.delenv(name, raising=False)
+    for name, value in {
+        "AURA_STT_DEVICE": "auto",
+        "AURA_STT_COMPUTE_TYPE": "auto",
+        "AURA_VOICE_MODE": "standard",
+        "AURA_STORAGE_MODE": "local",
+        "AURA_EVOLUTION_REVIEW_ENABLED": "0",
+        "AURA_EVOLUTION_SELF_PATCH_ENABLED": "0",
+        "AURA_EVOLUTION_INTROSPECTION_ENABLED": "0",
+        "AURA_BACKGROUND_THINKING_ENABLED": "0",
+    }.items():
+        monkeypatch.setenv(name, value)
+    monkeypatch.setattr(api_module, "_stt_memory_store", False)
+
+
+def _wav_bytes():
+    buffer = io.BytesIO()
+    with wave.open(buffer, "wb") as stream:
+        stream.setnchannels(2)
+        stream.setsampwidth(2)
+        stream.setframerate(48000)
+        stream.writeframes(b"\x00\x00" * 4800 * 2)
+    return buffer.getvalue()
+
+
 def test_transcription_uses_quality_oriented_decode_options(monkeypatch) -> None:
     calls = {}
 
@@ -175,11 +211,13 @@ def test_transcription_uses_quality_oriented_decode_options(monkeypatch) -> None
             calls.update(kwargs)
             return iter([FakeSegment()]), FakeInfo()
 
-    monkeypatch.setattr(api_module, "_whisper_model", FakeModel())
+    recognizer = whisper.shared_whisper_recognizer()
+    monkeypatch.setattr(recognizer, "_model", FakeModel())
+    monkeypatch.setattr(recognizer, "_active_device", "cpu")
     monkeypatch.setenv("AURA_STT_BEAM_SIZE", "5")
 
     text, language = api_module.transcribe_audio_bytes(
-        b"synthetic-audio-bytes",
+        _wav_bytes(),
         language="tr",
         suffix=".wav",
     )
@@ -201,7 +239,7 @@ def test_transcription_uses_quality_oriented_decode_options(monkeypatch) -> None
     assert calls["log_prob_threshold"] == -1.0
     assert calls["compression_ratio_threshold"] == 2.4
 
-def test_default_stt_model_is_medium_and_prompt_can_be_configured(monkeypatch) -> None:
+def test_default_cpu_stt_model_is_small_and_prompt_can_be_configured(monkeypatch) -> None:
     import sys
     from types import SimpleNamespace
 
@@ -217,21 +255,19 @@ def test_default_stt_model_is_medium_and_prompt_can_be_configured(monkeypatch) -
             return iter([]), SimpleNamespace(language="tr")
 
     monkeypatch.setitem(sys.modules, "faster_whisper", SimpleNamespace(WhisperModel=FakeModel))
-    monkeypatch.setattr(api_module, "_whisper_model", None)
     monkeypatch.delenv("AURA_STT_MODEL", raising=False)
     monkeypatch.setenv("AURA_STT_DEVICE", "cpu")
     monkeypatch.setenv("AURA_STT_COMPUTE_TYPE", "int8")
     monkeypatch.setenv("AURA_STT_INITIAL_PROMPT", "Türkçe komutlar: Doğa hakkında araştırma yap.")
     monkeypatch.setattr(api_module, "_stt_memory_store", False)
 
-    text, language = api_module.transcribe_audio_bytes(b"fake-audio", "tr", ".wav")
+    text, language = api_module.transcribe_audio_bytes(_wav_bytes(), "tr", ".wav")
 
     assert text == ""
     assert language == "tr"
-    assert calls["model_name"] == "medium"
+    assert calls["model_name"] == "small"
     assert calls["model_options"]["device"] == "cpu"
     assert calls["transcribe_options"]["initial_prompt"].startswith("Türkçe komutlar: Doğa hakkında araştırma yap.")
-    monkeypatch.setattr(api_module, "_whisper_model", None)
 
 def test_resolve_stt_runtime_selects_cuda_precision_when_available(monkeypatch) -> None:
     from types import SimpleNamespace
@@ -287,17 +323,13 @@ def test_cuda_model_initialization_failure_retries_cpu_int8(monkeypatch) -> None
     monkeypatch.setitem(sys.modules, "ctranslate2", SimpleNamespace(get_cuda_device_count=lambda: 1))
     monkeypatch.setenv("AURA_STT_DEVICE", "auto")
     monkeypatch.setenv("AURA_STT_COMPUTE_TYPE", "auto")
-    monkeypatch.setattr(api_module, "_whisper_model", None)
-    monkeypatch.setattr(api_module, "_whisper_model_device", None)
     monkeypatch.setattr(api_module, "_stt_memory_store", False)
 
-    text, language = api_module.transcribe_audio_bytes(b"fake-audio", "tr", ".wav")
+    text, language = api_module.transcribe_audio_bytes(_wav_bytes(), "tr", ".wav")
 
     assert (text, language) == ("", "tr")
     assert [call["device"] for call in calls] == ["cuda", "cpu"]
     assert calls[1]["compute_type"] == "int8"
-    monkeypatch.setattr(api_module, "_whisper_model", None)
-    monkeypatch.setattr(api_module, "_whisper_model_device", None)
 
 
 def test_cuda_inference_failure_retries_recording_on_cpu(monkeypatch) -> None:
@@ -320,28 +352,20 @@ def test_cuda_inference_failure_retries_recording_on_cpu(monkeypatch) -> None:
                 raise RuntimeError("CUDA inference failure")
             return iter([Segment()]), SimpleNamespace(language="tr")
 
-    class BrokenContainerModule:
-        @staticmethod
-        def open(*args, **kwargs):
-            raise RuntimeError("synthetic invalid container")
-
     monkeypatch.setitem(sys.modules, "faster_whisper", SimpleNamespace(WhisperModel=FakeModel))
     monkeypatch.setitem(sys.modules, "ctranslate2", SimpleNamespace(get_cuda_device_count=lambda: 1))
-    monkeypatch.setitem(sys.modules, "av", BrokenContainerModule)
     monkeypatch.setenv("AURA_STT_DEVICE", "auto")
     monkeypatch.setenv("AURA_STT_COMPUTE_TYPE", "auto")
-    monkeypatch.setattr(api_module, "_whisper_model", None)
-    monkeypatch.setattr(api_module, "_whisper_model_device", None)
     monkeypatch.setattr(api_module, "_stt_memory_store", False)
 
-    text, language = api_module.transcribe_audio_bytes(b"synthetic-audio", "tr", ".wav")
+    text, language = api_module.transcribe_audio_bytes(_wav_bytes(), "tr", ".wav")
 
     assert (text, language) == ("Türkçe yedek transkripsiyon", "tr")
     assert ("init", "cuda") in calls
     assert ("init", "cpu") in calls
     assert calls[-1] == ("transcribe", "cpu")
-    monkeypatch.setattr(api_module, "_whisper_model", None)
-    monkeypatch.setattr(api_module, "_whisper_model_device", None)
+    assert api_module.transcribe_audio_bytes(_wav_bytes(), "tr", ".wav") == (text, language)
+    assert calls == [("init", "cuda"), ("transcribe", "cuda"), ("init", "cpu"), ("transcribe", "cpu"), ("transcribe", "cpu")]
 
 def test_explicit_unavailable_cuda_configuration_still_uses_cpu(monkeypatch) -> None:
     import sys
@@ -360,12 +384,83 @@ def test_explicit_unavailable_cuda_configuration_still_uses_cpu(monkeypatch) -> 
     monkeypatch.setitem(sys.modules, "ctranslate2", SimpleNamespace(get_cuda_device_count=lambda: 0))
     monkeypatch.setenv("AURA_STT_DEVICE", "cuda")
     monkeypatch.setenv("AURA_STT_COMPUTE_TYPE", "float16")
-    monkeypatch.setattr(api_module, "_whisper_model", None)
-    monkeypatch.setattr(api_module, "_whisper_model_device", None)
     monkeypatch.setattr(api_module, "_stt_memory_store", False)
 
-    assert api_module.transcribe_audio_bytes(b"fake-audio", "tr", ".wav") == ("", "tr")
+    assert api_module.transcribe_audio_bytes(_wav_bytes(), "tr", ".wav") == ("", "tr")
     assert initialized_devices == [("cpu", "int8")]
-    monkeypatch.setattr(api_module, "_whisper_model", None)
-    monkeypatch.setattr(api_module, "_whisper_model_device", None)
 
+@pytest.mark.parametrize("container_format", ["webm", "ogg", "wav"])
+def test_real_browser_containers_decode_to_mono_float32(container_format):
+    import av
+    import numpy as np
+
+    if container_format == "wav":
+        data = _wav_bytes()
+    else:
+        buffer = io.BytesIO()
+        with av.open(buffer, mode="w", format=container_format) as output:
+            stream = output.add_stream("libopus", rate=48000)
+            stream.layout = "mono"
+            frame = av.AudioFrame.from_ndarray(
+                np.zeros((1, 4800), dtype=np.float32), format="fltp", layout="mono"
+            )
+            frame.sample_rate = 48000
+            for packet in stream.encode(frame):
+                output.mux(packet)
+            for packet in stream.encode(None):
+                output.mux(packet)
+        data = buffer.getvalue()
+    samples = whisper.FasterWhisperRecognizer._decode_audio(data)
+    assert samples.dtype == np.float32
+    assert samples.ndim == 1
+    assert 1400 <= samples.size <= 1800
+    assert np.isfinite(samples).all()
+
+
+def test_codec_failure_does_not_load_or_retry_cuda(monkeypatch):
+    import sys
+    from types import SimpleNamespace
+    monkeypatch.setitem(sys.modules, "faster_whisper", SimpleNamespace(
+        WhisperModel=lambda *args, **kwargs: pytest.fail("invalid codec must not load a model")
+    ))
+    with pytest.raises(api_module.SpeechDecodeError):
+        api_module.transcribe_audio_bytes(b"not an audio container", "tr")
+    assert whisper.shared_whisper_recognizer()._cpu_only is False
+
+
+def test_http_and_full_duplex_share_cpu_fallback_model(monkeypatch):
+    import asyncio
+    import sys
+    from types import SimpleNamespace
+
+    models, calls, decoded = [], [], []
+    monkeypatch.setenv("AURA_STT_CPU_MODEL", "tiny")
+    monkeypatch.setitem(sys.modules, "ctranslate2", SimpleNamespace(get_cuda_device_count=lambda: 1))
+
+    class Model:
+        def __init__(self, name, *, device, compute_type, cpu_threads):
+            models.append((name, device, compute_type))
+            self.device = device
+
+        def transcribe(self, samples, **kwargs):
+            calls.append((self.device, samples))
+            def segments():
+                if self.device == "cuda":
+                    raise RuntimeError("native runtime unavailable")
+                yield SimpleNamespace(text="Merhaba")
+            return segments(), SimpleNamespace(language="tr")
+
+    monkeypatch.setitem(sys.modules, "faster_whisper", SimpleNamespace(WhisperModel=Model))
+    recognizer = whisper.shared_whisper_recognizer()
+    def decode(payload):
+        samples = object()
+        decoded.append(samples)
+        return samples
+    monkeypatch.setattr(recognizer, "_decode_audio", decode)
+    assert api_module.transcribe_audio_bytes(b"first", "tr") == ("Merhaba", "tr")
+    assert asyncio.run(whisper.shared_whisper_recognizer().transcribe(b"second", session_id="voice")) == "Merhaba"
+    assert models == [("small", "cuda", "float16"), ("tiny", "cpu", "int8")]
+    assert [device for device, _ in calls] == ["cuda", "cpu", "cpu"]
+    assert calls[0][1] is calls[1][1] is decoded[0]
+    assert calls[2][1] is decoded[1]
+    assert len(decoded) == 2
