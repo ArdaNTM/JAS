@@ -1945,6 +1945,7 @@ def create_api(
     ) -> SpeechTranscriptionResponse | JSONResponse:
         # Local STT is a local capability; do not make it a remote transcription service.
         require_local_client(http_request)
+        app.state.last_user_activity = time.monotonic()
 
         try:
             audio_bytes = base64.b64decode(request.audio_base64, validate=True)
