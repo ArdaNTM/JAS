@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-26T14:05:53.993Z",
-  "git_commit": "abc8942fd51f86ac8aa3b0f1401ac436a3809add",
+  "generated_at": "2026-11-27T01:00:10.760Z",
+  "git_commit": "27a1d9d915217a5b4c691dab1561d3b6abdea692",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:1c3f99ec4e9d00906ed3de79330b13290856046a51738f61b33c0c1153674a2d",
-  "file_count": 481,
+  "release_digest": "sha256:ee4526b9ac5dd15d4d805a1ebca2726ed35b9cd9b4300dd63353c12716401b7f",
+  "file_count": 483,
   "files": [
     {
       "path": ".gitattributes",
@@ -262,7 +262,7 @@
     },
     {
       "path": "core/scripts/generate_final_lock.py",
-      "sha256": "8d122e3a734096ef94fde26d01fc21204f0a9e4bb232c1b7545ad052c7d05595"
+      "sha256": "f32155177ba364a1432493083cf20511f7b76348afa418759abdb417c0639cf0"
     },
     {
       "path": "core/scripts/hardware_stage_c_acceptance.py",
@@ -394,7 +394,7 @@
     },
     {
       "path": "core/src/aura_core/application/api.py",
-      "sha256": "f9033760b53c0662052f42e699aa3e915c3ec9663c6a44cb5106f23ee0a78967"
+      "sha256": "d5206bdccaccd4af856220a674ba332a508c4e19027a2b2078cd06f49bf6d2ca"
     },
     {
       "path": "core/src/aura_core/application/approval_api.py",
@@ -498,7 +498,7 @@
     },
     {
       "path": "core/src/aura_core/application/full_duplex_session.py",
-      "sha256": "57c7ac3d4d7b489982da2b1d8faa3da66f5823ff125d1400a6b3f6d2dccad423"
+      "sha256": "050f51449246e757808a486e0645ea11b5a88bb9785a717ff42b90384b03a71f"
     },
     {
       "path": "core/src/aura_core/application/goal_planning.py",
@@ -698,7 +698,7 @@
     },
     {
       "path": "core/src/aura_core/application/speech_api.py",
-      "sha256": "f410c50d8333389021facc6c46e1889af9e825ba4587866cecc4b245f6e241c3"
+      "sha256": "03db11b6f5296fb92c7aada9a2a2fba450eac256324925995e1728987b707e1e"
     },
     {
       "path": "core/src/aura_core/application/stage_c_api.py",
@@ -910,7 +910,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/attestor_worker.py",
-      "sha256": "b18f5f15f66991b5f1526915e397d7d2865bcfd613aafb53d128e6da1978bd91"
+      "sha256": "18fcce6a2c0a8b7e335dcc10e7eab85d46fe3c080049d0df4c5abc7cbc4633b5"
     },
     {
       "path": "core/src/aura_core/evolution/autonomous_analyzer.py",
@@ -938,7 +938,7 @@
     },
     {
       "path": "core/src/aura_core/evolution/external_staging.py",
-      "sha256": "32c76025a1f87f343ba1fe0f496b14c11f5d83f828e5447ae47e29f8588b3365"
+      "sha256": "514a9e3748729078e13b89837282c6383689b6c8917d582e8780685dbba47a60"
     },
     {
       "path": "core/src/aura_core/evolution/goal_tree.py",
@@ -1222,7 +1222,7 @@
     },
     {
       "path": "core/src/aura_core/main.py",
-      "sha256": "7e39efbb1172e85619f11e1e5237fe5ade992ad287c67e93abab8c10c8e454b3"
+      "sha256": "22f984eeda5124d068a4e074077d9e0e16e307d069515f2aae4b54299ceb778e"
     },
     {
       "path": "core/src/aura_core/mcp/__init__.py",
@@ -1234,7 +1234,7 @@
     },
     {
       "path": "core/src/aura_core/mcp/connection.py",
-      "sha256": "09f9e2f6718b2d8583f01cdbfb73f7156429caccdcbe8dd98ccddfe9b15f80cf"
+      "sha256": "bc4e5b50e8044381eb6efb5b5b90cd813bbdb1a9eb1532ae9ccd1ade28eda3bf"
     },
     {
       "path": "core/src/aura_core/mcp/dispatch_context.py",
@@ -1766,7 +1766,7 @@
     },
     {
       "path": "core/src/aura_core/tts/provider_bootstrap.py",
-      "sha256": "9b18e3826863c58ada13623e7b8b22f5966d16f6dfda30b16dd9d8b01c0a686e"
+      "sha256": "665dbf0ab7f89210021957d02ba7df15efa65bbf8f2283732fc6378023b2b807"
     },
     {
       "path": "core/src/aura_core/tts/text.py",
@@ -1855,6 +1855,14 @@
     {
       "path": "core/tests/test_evolution_windows_live_recovery.py",
       "sha256": "ec27aa258649fb3e2f69373bb87e47cc7d926bee7b56ca98c477c3705e78d788"
+    },
+    {
+      "path": "core/tests/test_full_duplex_session.py",
+      "sha256": "938f853a7e131306a1c169521538fc41419a2782e8d0f71488cf07cc210e3d82"
+    },
+    {
+      "path": "core/tests/test_jarvis_voice_attestor_reliability.py",
+      "sha256": "909963750bf63d9246bf4d14180f8e52d3a6de6875c0ac5b293e72a29c9c9e1e"
     },
     {
       "path": "core/tests/test_osworld_secure_live.py",
