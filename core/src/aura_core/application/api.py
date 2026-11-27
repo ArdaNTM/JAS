@@ -1,14 +1,11 @@
 import asyncio
 from contextlib import asynccontextmanager
 import base64
-import io
 import inspect
 import json
 import logging
 import os
-import tempfile
 from pathlib import Path
-import threading
 import time
 from time import perf_counter
 from uuid import uuid4
@@ -37,6 +34,10 @@ from aura_core.application.adaptive_orchestrator import AdaptiveTaskOrchestrator
 from aura_core.application.async_work import AsyncWorkCoordinator
 from aura_core.application.context_synthesizer import ContextSynthesizer
 from aura_core.application.context_aware_stt import build_stt_prompt
+from aura_core.application.full_duplex_session import (
+    SpeechDecodeError, SpeechModelLoadError, SpeechTranscriptionError,
+    resolve_whisper_runtime, shared_whisper_recognizer,
+)
 from aura_core.application.background_thinking import IdleMemoryReflectionDaemon
 from aura_core.evolution.autonomous_analyzer import AutonomousAnalyzer
 from aura_core.evolution.self_discovery_api import continuous_router
@@ -137,46 +138,14 @@ def _external_mcp_execution_scope(permissions, principal_id: str, capability_id:
 
 logger = logging.getLogger("aura_core.http")
 
-_whisper_model = None
-_whisper_model_device = None
-_whisper_model_lock = threading.Lock()
 _stt_memory_store = None
 
 
-class SpeechModelLoadError(RuntimeError):
-    """The configured local faster-whisper model could not be initialized."""
-
-
-class SpeechTranscriptionError(RuntimeError):
-    """The local STT engine failed while decoding or transcribing audio."""
-
-
 def resolve_stt_runtime() -> tuple[str, str]:
-    """Resolve configured STT device/precision with safe automatic CUDA selection."""
-    requested_device = os.getenv("AURA_STT_DEVICE", "auto").strip().lower()
-    requested_compute = os.getenv("AURA_STT_COMPUTE_TYPE", "auto").strip().lower()
-    if requested_device not in {"auto", "cuda", "cpu"}:
-        raise ValueError("AURA_STT_DEVICE must be auto, cuda, or cpu")
-    if requested_compute not in {"auto", "float16", "int8", "int8_float16", "float32", "bfloat16"}:
-        raise ValueError("Unsupported AURA_STT_COMPUTE_TYPE")
-    cuda_available = False
-    if requested_device in {"auto", "cuda"}:
-        try:
-            import ctranslate2
-            cuda_available = ctranslate2.get_cuda_device_count() > 0
-        except Exception:
-            cuda_available = False
-    if requested_device == "cuda" and not cuda_available:
-        raise RuntimeError("CUDA was explicitly requested but no CUDA device is available")
-    device = "cuda" if requested_device == "cuda" or (requested_device == "auto" and cuda_available) else "cpu"
-    if requested_compute == "auto":
-        compute_type = "float16" if device == "cuda" else "int8"
-    else:
-        compute_type = requested_compute
-    if device == "cpu" and compute_type in {"float16", "int8_float16"}:
-        # These precision modes are CUDA-oriented; use a compatible CPU default.
-        compute_type = "int8"
-    return device, compute_type
+    """Compatibility entry point used by the local STT preflight."""
+    return resolve_whisper_runtime(
+        os.getenv("AURA_STT_DEVICE", "auto"), os.getenv("AURA_STT_COMPUTE_TYPE", "auto"),
+    )
 
 
 def _stt_context_prompt() -> str:
@@ -216,74 +185,13 @@ def transcribe_audio_bytes(
     *,
     _force_cpu: bool = False,
 ) -> tuple[str, str]:
-    """Transcribe locally, retrying CUDA failures once on CPU INT8."""
-    global _whisper_model, _whisper_model_device
-    from pathlib import Path
+    """Decode and transcribe locally through the process-owned voice runtime.
 
-    if not audio_bytes:
-        raise ValueError("Audio payload is empty")
-
-    try:
-        from faster_whisper import WhisperModel
-    except ImportError:
-        raise
-
-    def load_model(device: str, compute_type: str):
-        return WhisperModel(
-            os.getenv("AURA_STT_MODEL", "medium"),
-            device=device,
-            compute_type=compute_type,
-            cpu_threads=max(
-                1,
-                min(16, int(os.getenv("AURA_STT_CPU_THREADS", str(min(8, os.cpu_count() or 4))))),
-            ),
-        )
-
-    if _force_cpu and _whisper_model_device != "cpu":
-        with _whisper_model_lock:
-            if _whisper_model_device != "cpu":
-                _whisper_model = None
-                _whisper_model_device = None
-
-    if _whisper_model is None:
-        with _whisper_model_lock:
-            if _whisper_model is None:
-                try:
-                    if _force_cpu:
-                        requested_device, compute_type = "cpu", "int8"
-                    else:
-                        try:
-                            requested_device, compute_type = resolve_stt_runtime()
-                        except Exception as runtime_exc:
-                            # Even an explicitly requested but unavailable CUDA runtime
-                            # should not prevent a best-effort local CPU transcription.
-                            logger.warning(
-                                "STT runtime selection failed; retrying with CPU INT8",
-                                extra={"stt_exception_type": type(runtime_exc).__name__},
-                                exc_info=True,
-                            )
-                            requested_device, compute_type = "cpu", "int8"
-                    try:
-                        _whisper_model = load_model(requested_device, compute_type)
-                        _whisper_model_device = requested_device
-                    except Exception as model_exc:
-                        if requested_device != "cuda":
-                            raise
-                        logger.warning(
-                            "CUDA STT model initialization failed; retrying with CPU INT8",
-                            extra={"stt_exception_type": type(model_exc).__name__},
-                            exc_info=True,
-                        )
-                        _whisper_model = load_model("cpu", "int8")
-                        _whisper_model_device = "cpu"
-                except Exception as exc:
-                    _whisper_model = None
-                    _whisper_model_device = None
-                    raise SpeechModelLoadError("Unable to initialize faster-whisper on CUDA or CPU") from exc
-
+    The suffix remains part of the HTTP adapter contract; PyAV detects the
+    actual container from bytes rather than a temporary filename.
+    """
     prompt = _stt_context_prompt()
     options = {
-        "language": language,
         "beam_size": max(1, min(10, int(os.getenv("AURA_STT_BEAM_SIZE", "3")))),
         "temperature": 0.0,
         "vad_filter": True,
@@ -299,83 +207,9 @@ def transcribe_audio_bytes(
         "compression_ratio_threshold": 2.4,
     }
 
-    temp_path = None
-    try:
-        try:
-            with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as audio_file:
-                audio_file.write(audio_bytes)
-                temp_path = audio_file.name
-            try:
-                segments, info = _whisper_model.transcribe(temp_path, **options)
-                text = " ".join(segment.text.strip() for segment in segments).strip()
-            except Exception as path_exc:
-                # Browser MediaRecorder commonly emits WebM/Opus. Try PyAV normalization
-                # before classifying this as a model/runtime failure.
-                try:
-                    import av
-                    import numpy as np
-
-                    with av.open(io.BytesIO(audio_bytes), mode="r") as container:
-                        audio_stream = next(
-                            (stream for stream in container.streams if stream.type == "audio"),
-                            None,
-                        )
-                        if audio_stream is None:
-                            raise ValueError("Audio container has no audio stream")
-                        resampler = av.AudioResampler(format="fltp", layout="mono", rate=16000)
-                        chunks = []
-                        for frame in container.decode(audio_stream):
-                            chunks.extend(
-                                converted.to_ndarray().reshape(-1)
-                                for converted in resampler.resample(frame)
-                            )
-                        chunks.extend(
-                            converted.to_ndarray().reshape(-1)
-                            for converted in resampler.resample(None)
-                        )
-                        if not chunks:
-                            raise ValueError("Audio decoder produced no samples")
-                        audio_samples = np.concatenate(chunks).astype(np.float32, copy=False)
-
-                    segments, info = _whisper_model.transcribe(audio_samples, **options)
-                    text = " ".join(segment.text.strip() for segment in segments).strip()
-                except Exception as fallback_exc:
-                    logger.warning(
-                        "STT file decoding and in-memory normalization failed",
-                        extra={
-                            "stt_exception_type": type(fallback_exc).__name__,
-                            "stt_initial_exception_type": type(path_exc).__name__,
-                            "stt_device": _whisper_model_device,
-                        },
-                        exc_info=True,
-                    )
-                    raise SpeechTranscriptionError(
-                        "faster-whisper could not decode or transcribe the audio"
-                    ) from fallback_exc
-        except SpeechTranscriptionError:
-            raise
-        except Exception as exc:
-            raise SpeechTranscriptionError("faster-whisper inference failed") from exc
-        return text, getattr(info, "language", None) or language
-    except SpeechTranscriptionError:
-        # CUDA can fail lazily during inference/segment iteration, not just model loading.
-        if _whisper_model_device == "cuda" and not _force_cpu:
-            logger.warning(
-                "CUDA STT inference failed; retrying the recording on CPU INT8",
-                extra={"stt_exception_type": "SpeechTranscriptionError"},
-                exc_info=True,
-            )
-            with _whisper_model_lock:
-                _whisper_model = None
-                _whisper_model_device = None
-            return transcribe_audio_bytes(audio_bytes, language, suffix, _force_cpu=True)
-        raise
-    finally:
-        if temp_path:
-            try:
-                Path(temp_path).unlink(missing_ok=True)
-            except OSError:
-                logger.warning("Unable to remove temporary STT audio file", exc_info=True)
+    return shared_whisper_recognizer().transcribe_bytes(
+        audio_bytes, language=language, options=options, force_cpu=_force_cpu,
+    )
 
 
 class TaskStepPayload(BaseModel):
@@ -2193,9 +2027,15 @@ def create_api(
                 exc,
                 False,
             )
+        except SpeechDecodeError as exc:
+            return failure_response(
+                422,
+                "stt_decode_failed",
+                "The recording could not be decoded. Check the audio codec/container.",
+                exc,
+                False,
+            )
         except SpeechTranscriptionError as exc:
-            # The inference engine can fail for codec, runtime, device, or resource
-            # reasons. Do not misreport every engine failure as a client-side 422.
             return failure_response(
                 500,
                 "stt_transcription_failed",
