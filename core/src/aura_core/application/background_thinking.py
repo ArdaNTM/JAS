@@ -147,6 +147,8 @@ class IdleMemoryReflectionDaemon:
         self._cycles = 0
         self._proposals = 0
         self._errors = 0
+        self.semantic_consolidation = None  # Composed Gateway-only idle callback.
+        self._semantic_saved = 0
         self.database_path.parent.mkdir(parents=True, exist_ok=True)
         with sqlite3.connect(str(self.database_path), timeout=5.0) as db:
             db.execute("""CREATE TABLE IF NOT EXISTS reflection_proposals (
@@ -179,7 +181,8 @@ class IdleMemoryReflectionDaemon:
             "cycles": self._cycles,
             "proposals": self._proposals,
             "errors": self._errors,
-            "mode": "reviewable_suggestions_only",
+            "mode": "reviewable_suggestions_only" if self.semantic_consolidation is None else "reviewable_suggestions_and_untrusted_semantic_summaries",
+            "semantic_saved": self._semantic_saved,
         }
 
     def list_proposals(self, *, limit: int = 20) -> list[dict[str, Any]]:
@@ -225,6 +228,14 @@ class IdleMemoryReflectionDaemon:
                 saved += max(0, cursor.rowcount)
         self._cycles += 1
         self._proposals += saved
+        if self.semantic_consolidation is not None and time.monotonic() - self.last_activity() >= self.idle_seconds:
+            try:
+                self._semantic_saved += await self.semantic_consolidation()
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                self._errors += 1
+                logger.warning("Idle semantic consolidation failed", exc_info=True)
         return saved
 
     async def _run(self) -> None:

@@ -42,6 +42,13 @@ class TaskMemoryCoordinator:
                 kind="episodic", content=record.content,
                 source_ref=record.record_id, created_at=record.created_at, untrusted=True,
             ))
+        for record in reversed(self.store.recall_semantic(
+            principal_id=principal_id, task_id=task_id, limit=min(self.max_recalled, 5)
+        )):
+            context.add(ContextItem(
+                kind="semantic_summary", content=record.content,
+                source_ref=record.record_id, created_at=record.created_at, untrusted=True,
+            ))
         context.add(ContextItem(kind="goal", content=goal[:4000], untrusted=True))
         self._contexts[scope] = context
         self.store.append(

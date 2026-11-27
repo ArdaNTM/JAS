@@ -31,13 +31,15 @@ def test_cuda_fallback_preserves_buffer_and_caches_cpu(monkeypatch, failure):
     samples = object()
     monkeypatch.setitem(sys.modules, "ctranslate2", SimpleNamespace(get_cuda_device_count=lambda: 1))
     monkeypatch.setenv("AURA_STT_BEAM_SIZE", "3")
+    monkeypatch.delenv("AURA_STT_MODEL", raising=False)
+    monkeypatch.delenv("AURA_STT_CPU_MODEL", raising=False)
 
     def decode(audio):
         decoded.append(audio)
         return samples
 
     class Model:
-        def __init__(self, size, *, device, compute_type):
+        def __init__(self, size, *, device, compute_type, cpu_threads):
             models.append((size, device, compute_type))
             self.device = device
             if device == "cuda" and failure == "load":

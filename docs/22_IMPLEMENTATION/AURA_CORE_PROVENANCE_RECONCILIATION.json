@@ -3,11 +3,11 @@
   "source_pr": "https://github.com/ArdaNTM/JAS/pull/158",
   "unified_snapshot": "19baa60b1139b519947270654d0c0fd59fb2516c",
   "baseline_main": "b1ffe6f534ced0d329dae273a4b949a634cb8bfa",
-  "statement": "Canonical Git blobs and source-specific regression evidence verified for five selected PR differences; PR #66/#68 missing modules merged exactly as their respective source branch blobs. PR #135/#146/#147 endpoints, providers and tests already existed under cumulative PR #152. This is NOT a semantic sign-off for every open PR. Post-F2.7 integration: canonical main.py was merged from PR #158 and main; source pin rebased to exact blob dc3a92e3 (no automatic feature completion). PR #187 adds a candidate canonical Gateway blob under isolated review; this lineage pin is not production Owner approval or automatic feature completion. PR #188 changes canonical composition main.py with an explicit pending-review lineage pin; it does not imply production Owner approval or feature-level completion. PR #189 updates Core lifespan activation scheduling; the source pin is pending CI and Owner review, not a COMPLETED or production-accepted designation. PR #200 updates the candidate composition source pin for explicit review worker startup/shutdown; pending exact-head CI and Owner review. Voice reliability candidate changes the composition pin for auto STT device/precision defaults only; exact-head CI and Owner review pending. MCP timeout candidate updates the composition source pin for optional TTS startup isolation; pending CI and Owner review.",
+  "statement": "Canonical Git blobs and source-specific regression evidence verified for five selected PR differences; PR #66/#68 missing modules merged exactly as their respective source branch blobs. PR #135/#146/#147 endpoints, providers and tests already existed under cumulative PR #152. This is NOT a semantic sign-off for every open PR. Post-F2.7 integration: canonical main.py was merged from PR #158 and main; source pin rebased to exact blob dc3a92e3 (no automatic feature completion). PR #187 adds a candidate canonical Gateway blob under isolated review; this lineage pin is not production Owner approval or automatic feature completion. PR #188 changes canonical composition main.py with an explicit pending-review lineage pin; it does not imply production Owner approval or feature-level completion. PR #189 updates Core lifespan activation scheduling; the source pin is pending CI and Owner review, not a COMPLETED or production-accepted designation. PR #200 updates the candidate composition source pin for explicit review worker startup/shutdown; pending exact-head CI and Owner review. Voice reliability candidate changes the composition pin for auto STT device/precision defaults only; exact-head CI and Owner review pending. MCP timeout candidate updates the composition source pin for optional TTS startup isolation; pending CI and Owner review. JARVIS local subsystem and semantic-store integration candidate; acceptance pending exact-head CI and Owner live evidence.",
   "files": [
     {
       "path": "core/src/aura_core/main.py",
-      "unified_blob_sha": "3050b780d6c8659ba7e80932d2b511cbc1c5a40b",
+      "unified_blob_sha": "40bff3f0c2fbbf02858d659e23a12c0c38f8a623",
       "canonical": "PR #172 local Owner external staging: narrow resource path PermissionEngine policy, Gateway-only static staging, no Owner passkey or sandbox boundary changes. CI and independent Owner live acceptance pending.",
       "variants": [
         {
@@ -140,6 +140,12 @@
           "blob": "3050b780d6c8659ba7e80932d2b511cbc1c5a40b",
           "ancestry": "Isolated MCP timeout fix based on main f1434916; optional TTS startup degradation only.",
           "assessment": "PENDING_EXACT_HEAD_CI_AND_OWNER_REVIEW; no permission or completion change."
+        },
+        {
+          "ref": "915674626d61a0cb47b98c3db25bad38d4e47ca3",
+          "blob": "40bff3f0c2fbbf02858d659e23a12c0c38f8a623",
+          "ancestry": "JARVIS subsystem candidate based on merged PR #204.",
+          "assessment": "PENDING_EXACT_HEAD_CI_AND_OWNER_REVIEW; no sealed boundary or Owner authority change."
         }
       ]
     },
@@ -222,7 +228,7 @@
     },
     {
       "path": "core/src/aura_core/memory/hierarchical_memory.py",
-      "unified_blob_sha": "7cf1f82b34f0f33f54eafab0f59d1b9ffe137fa0",
+      "unified_blob_sha": "ede2643444ca194a5f5a1b6e2c6e60cc030511f3",
       "canonical": "PR #68 scoped task-forget method integrated with canonical baseline",
       "variants": [
         {
@@ -238,6 +244,12 @@
           "blob": "7cf1f82b34f0f33f54eafab0f59d1b9ffe137fa0",
           "ancestry": "diverged",
           "assessment": "EXACT_FILE_MATCH_AFTER_SURGICAL_CHERRY_PICK"
+        },
+        {
+          "ref": "915674626d61a0cb47b98c3db25bad38d4e47ca3",
+          "blob": "ede2643444ca194a5f5a1b6e2c6e60cc030511f3",
+          "ancestry": "JARVIS subsystem candidate based on merged PR #204.",
+          "assessment": "PENDING_EXACT_HEAD_CI_AND_OWNER_REVIEW; no sealed boundary or Owner authority change."
         }
       ]
     }

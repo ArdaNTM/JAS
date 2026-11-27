@@ -188,11 +188,33 @@ export default function HudOverlay() {
     } finally { setScanning(false); }
   }, []);
 
+  const showBriefing = async () => {
+    try {
+      setError("");
+      const response = await fetch("/api/jarvis/briefing", { credentials: "same-origin", cache: "no-store" });
+      if (response.status !== 200) throw new Error("Günlük özet kullanılamıyor (" + response.status + ")");
+      const data = await response.json() as { plan?: unknown; alerts?: unknown };
+      for (const [title, rows] of [["Günün Planı", data.plan], ["Kritik Uyarılar", data.alerts]] as const) {
+        if (!Array.isArray(rows)) throw new Error("Geçersiz günlük özet");
+        const copy = rows.slice(0, 12).map(row => {
+          if (!row || typeof row.goal !== "string" || typeof row.state !== "string") return "";
+          return row.goal.slice(0, 240) + " · " + row.state.slice(0, 40) +
+            (typeof row.reason === "string" ? " · " + row.reason.slice(0, 40) : "");
+        }).filter(Boolean).join("\n") || "Kayıt yok.";
+        await window.auraDesktop?.hudPublishPanel?.({ title, kind: "briefing", copy: copy.slice(0, 4000) });
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Günlük özet başarısız");
+    }
+  };
+
   const handleTranscript = (transcript: string, wakeRequired: boolean) => {
     const phrase = transcript.trim();
     const command = wakeRequired ? /(?:^|\s)aura[\s,:;.!?-]*(.*)$/i.exec(phrase)?.[1]?.trim() : phrase;
     if (!command) return;
-    if (/(oyun|game).*(oluştur|başlat|yap|create|start)/i.test(command)) {
+    if (["günün planı", "günaydın", "morning briefing", "kritik uyarılar"].includes(command.toLocaleLowerCase("tr-TR").replace(/[.!?]+$/, "").trim())) {
+      void showBriefing();
+    } else if (/(oyun|game).*(oluştur|başlat|yap|create|start)/i.test(command)) {
       void publishVisualization(command, "game");
     } else if (/(hologram|3d|3b|üç boyut)/i.test(command)) {
       void publishVisualization(command, "hologram");
@@ -319,10 +341,10 @@ export default function HudOverlay() {
           referrerPolicy="no-referrer" loading="lazy" />
         <div className="hud-media-meta">{panel.media.license} · {panel.media.artist || "Wikimedia Commons"}</div>
         <div className="hud-media-source">WIKIMEDIA COMMONS · EXTERNAL QUERY · SOURCE AVAILABLE</div>
-      </div> : panel.copy ? <p>{panel.copy}</p> : <Schematic title={panel.title} />}
+      </div> : panel.copy ? <p style={panel.kind === "briefing" ? { whiteSpace: "pre-wrap" } : undefined}>{panel.copy}</p> : <Schematic title={panel.title} />}
       {panel.copy && panel.media && <p>{panel.copy}</p>}
       <footer>{panel.kind.startsWith("vision") ? "UNTRUSTED VLM ESTIMATE · NOT VERIFIED" :
-        panel.media ? "SOURCED IMAGE · CREDIT ABOVE" : "ILLUSTRATIVE · ASSET NOT FOUND"}</footer>
+        panel.kind === "briefing" ? "DURABLE TASK STATE · READ ONLY" : panel.media ? "SOURCED IMAGE · CREDIT ABOVE" : "ILLUSTRATIVE · ASSET NOT FOUND"}</footer>
     </article>)}
     <div className="hud-hint">CTRL + ALT + H · {scene?.interactive ? "INTERACTIVE" : "CLICK THROUGH"}</div>
     {isPrimary && scene?.interactive && <section className="hud-command" aria-label="AURA HUD control deck">
@@ -335,6 +357,7 @@ export default function HudOverlay() {
       <button onClick={() => void publishVisualization(topic, "hologram")}>3D HOLOGRAM</button>
       <button onClick={() => void publishVisualization(topic, "game")}>GAME STUDIO</button>
       <small>Görsel araması yalnızca açık isteğinizle Wikimedia Commons'a gider.</small>
+      <button onClick={() => void showBriefing()}>GÜNÜN PLANI / KRİTİK UYARILAR</button>
       <label>SCREENREAD QUESTION <input maxLength={400} value={question}
         onChange={e => setQuestion(e.target.value)} /></label>
       <button disabled={scanning} onClick={() => void readScreen(question, activeSession ?? undefined)}>
