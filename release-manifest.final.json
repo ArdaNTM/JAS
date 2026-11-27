@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-27T01:29:30.757+00:00",
-  "git_commit": "fc4059114f4df6b4b8f035a512df6d4f93bce751",
+  "generated_at": "2026-11-27T01:38:31.242+00:00",
+  "git_commit": "36600e06849e3cc2ff67180c1059054a4d9a236c",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:66f0474ab74c75bacf91db247cf787e21602fedf60123f55e474554a6aeb2e60",
+  "release_digest": "sha256:1d45f1f999e931251d67500ae0f6a0b4b9433a90c7eba6278317e66f700f15ca",
   "file_count": 484,
   "files": [
     {
@@ -1866,7 +1866,7 @@
     },
     {
       "path": "core/tests/test_mcp_timeout_real_sdk.py",
-      "sha256": "1ee6a1d7757407421b56561e85a6991246dbc6eaf52051957795dd14dd8c5498"
+      "sha256": "9b33c373659b5b20580414b9193045d40b68f4d5380bf370698b20d0d07102bd"
     },
     {
       "path": "core/tests/test_osworld_secure_live.py",
