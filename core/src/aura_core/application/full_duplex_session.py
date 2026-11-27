@@ -40,10 +40,57 @@ class AudioPlayer(Protocol):
 logger = logging.getLogger(__name__)
 
 
-class FasterWhisperRecognizer:
-    """Lazy local STT adapter; decode audio to 16 kHz mono before inference."""
+class SpeechModelLoadError(RuntimeError):
+    """The configured local faster-whisper model could not be initialized."""
 
-    def __init__(self, *, model_size: str = "small", device: str = "auto", compute_type: str = "auto") -> None:
+
+class SpeechTranscriptionError(RuntimeError):
+    """The local STT inference engine failed."""
+
+
+class SpeechDecodeError(ValueError):
+    """The supplied recording could not be decoded into PCM."""
+
+
+def resolve_whisper_runtime(device: str, compute_type: str) -> tuple[str, str]:
+    requested, precision = device.strip().lower(), compute_type.strip().lower()
+    if requested not in {"auto", "cuda", "cpu"}:
+        raise ValueError("AURA_STT_DEVICE must be auto, cuda, or cpu")
+    if precision not in {"auto", "int8", "float16", "int8_float16", "float32", "bfloat16"}:
+        raise ValueError("Unsupported AURA_STT_COMPUTE_TYPE")
+    cuda = False
+    if requested != "cpu":
+        try:
+            import ctranslate2
+            cuda = ctranslate2.get_cuda_device_count() > 0
+        except Exception:
+            logger.warning("STT CUDA probe failed; using CPU INT8")
+    if requested == "cuda" and not cuda:
+        raise RuntimeError("CUDA was explicitly requested but no CUDA device is available")
+    if cuda:
+        return "cuda", "float16" if precision == "auto" else precision
+    return "cpu", "int8" if precision in {"auto", "float16", "int8_float16", "bfloat16"} else precision
+
+
+def configured_whisper_model(device: str, explicit: str | None = None) -> str:
+    # Explicit model paths (including offline mode) take precedence; do not
+    # silently download another model when an operator selected a local one.
+    name = explicit if explicit is not None else os.getenv("AURA_STT_MODEL")
+    if name is None:
+        name = os.getenv("AURA_STT_CPU_MODEL", "small") if device == "cpu" else "small"
+    if not name.strip():
+        raise ValueError("AURA_STT_MODEL / AURA_STT_CPU_MODEL must not be empty")
+    return name.strip()
+
+
+def whisper_cpu_threads() -> int:
+    return max(1, min(16, int(os.getenv("AURA_STT_CPU_THREADS", str(min(8, os.cpu_count() or 4))))))
+
+
+class FasterWhisperRecognizer:
+    """Shared local STT runtime: one decode, serialized inference, sticky CPU retry."""
+
+    def __init__(self, *, model_size: str | None = None, device: str = "auto", compute_type: str = "auto") -> None:
         self._model_size = model_size
         self._device = device
         self._compute_type = compute_type
@@ -89,74 +136,123 @@ class FasterWhisperRecognizer:
         return samples
 
     def _runtime(self) -> tuple[str, str]:
-        requested = self._device.strip().lower()
-        precision = self._compute_type.strip().lower()
-        if requested not in {"auto", "cuda", "cpu"}:
-            raise ValueError("Invalid STT device")
-        if precision not in {"auto", "int8", "float16", "int8_float16", "float32", "bfloat16"}:
-            raise ValueError("Invalid STT compute type")
-        cuda = False
-        if not self._cpu_only and requested != "cpu":
-            try:
-                import ctranslate2
-                cuda = ctranslate2.get_cuda_device_count() > 0
-            except Exception:
-                logger.warning("STT CUDA probe failed; using CPU INT8")
-        if cuda:
-            return "cuda", "float16" if precision == "auto" else precision
-        return "cpu", "int8" if precision in {"auto", "float16", "int8_float16", "bfloat16"} or self._cpu_only else precision
+        if self._cpu_only:
+            return "cpu", "int8"
+        try:
+            return resolve_whisper_runtime(self._device, self._compute_type)
+        except RuntimeError:
+            self._cpu_only = True
+            logger.warning("STT runtime unavailable; using CPU INT8")
+            return "cpu", "int8"
 
     def _load_model(self, device: str, precision: str):
         from faster_whisper import WhisperModel
 
-        return WhisperModel(self._model_size, device=device, compute_type=precision)
+        return WhisperModel(
+            configured_whisper_model(device, self._model_size),
+            device=device, compute_type=precision, cpu_threads=whisper_cpu_threads(),
+        )
 
-    def _transcribe_sync(self, audio: bytes) -> str:
-        # Decode once before entering inference; a codec failure is not a GPU
-        # failure. Reuse the exact decoded buffer on the one CPU retry.
+    def _load(self, device: str, precision: str) -> None:
+        try:
+            self._model = self._load_model(device, precision)
+            self._active_device = device
+        except ImportError:
+            raise
+        except Exception as exc:
+            self._model = None
+            self._active_device = None
+            raise SpeechModelLoadError("Unable to initialize the local faster-whisper model") from exc
+
+    def _fallback(self) -> None:
+        # Keep the latch set even if CPU model initialization itself fails.
+        self._cpu_only = True
+        self._model = None
+        self._active_device = None
+        self._load("cpu", "int8")
+
+    def transcribe_bytes(self, audio: bytes, *, language: str, options: Mapping[str, Any],
+                         force_cpu: bool = False) -> tuple[str, str]:
+        if not audio or len(audio) > 20_000_000:
+            raise SpeechDecodeError("Audio payload is empty or exceeds the 20 MB limit")
         with self._worker_lock:
-            samples = self._decode_audio(audio)
-            if self._model is None:
-                device, precision = self._runtime()
-                try:
-                    self._model = self._load_model(device, precision)
-                    self._active_device = device
-                except Exception:
-                    if device != "cuda":
-                        raise
-                    self._cpu_only = True
-                    logger.warning("Session STT CUDA model load failed; using CPU INT8")
-                    self._model = self._load_model("cpu", "int8")
-                    self._active_device = "cpu"
-
-            def infer() -> str:
-                segments, _info = self._model.transcribe(
-                    samples, language="tr",
-                    beam_size=max(1, min(5, int(os.getenv("AURA_STT_BEAM_SIZE", "3")))),
-                    vad_filter=True,
-                    vad_parameters={"min_silence_duration_ms": 300, "speech_pad_ms": 300},
-                    temperature=0.0, condition_on_previous_text=False,
-                )
-                # The native CUDA error can be raised only during iteration.
-                return " ".join(segment.text.strip() for segment in segments).strip()
-
+            # Decode errors are input/codec failures, not CUDA failures. The
+            # same PCM buffer is retained if native inference fails lazily.
             try:
-                return infer()[:8000]
-            except Exception:
-                if self._active_device != "cuda":
-                    raise
+                samples = self._decode_audio(audio)
+            except ImportError:
+                raise
+            except ValueError as exc:
+                raise SpeechDecodeError(str(exc)) from exc
+            except Exception as exc:
+                raise SpeechDecodeError("Unable to decode the audio container") from exc
+
+            if force_cpu and not self._cpu_only:
                 self._cpu_only = True
                 self._model = None
                 self._active_device = None
-                logger.warning("Session STT CUDA inference failed; retrying same samples on CPU INT8")
-                self._model = self._load_model("cpu", "int8")
-                self._active_device = "cpu"
-                return infer()[:8000]
+            if self._model is None:
+                device, precision = self._runtime()
+                try:
+                    self._load(device, precision)
+                except SpeechModelLoadError:
+                    if device != "cuda":
+                        raise
+                    logger.warning("STT CUDA model load failed; using CPU INT8", exc_info=True)
+                    self._fallback()
+
+            def infer() -> tuple[str, str]:
+                try:
+                    segments, info = self._model.transcribe(samples, language=language, **options)
+                    # Native errors may be deferred until segment iteration.
+                    text = " ".join(segment.text.strip() for segment in segments).strip()
+                    return text, getattr(info, "language", None) or language
+                except Exception as exc:
+                    raise SpeechTranscriptionError("Local faster-whisper inference failed") from exc
+
+            try:
+                return infer()
+            except SpeechTranscriptionError:
+                if self._active_device != "cuda":
+                    raise
+                logger.warning("STT CUDA inference failed; retrying same samples on CPU INT8", exc_info=True)
+                self._fallback()
+                return infer()
+
+    def _transcribe_sync(self, audio: bytes) -> str:
+        text, _ = self.transcribe_bytes(
+            audio, language="tr",
+            options={
+                "beam_size": max(1, min(5, int(os.getenv("AURA_STT_BEAM_SIZE", "3")))),
+                "vad_filter": True,
+                "vad_parameters": {"min_silence_duration_ms": 300, "speech_pad_ms": 300},
+                "temperature": 0.0, "condition_on_previous_text": False,
+            },
+        )
+        return text[:8000]
 
     async def transcribe(self, audio: bytes, *, session_id: str) -> str:
-        if not audio or len(audio) > 20_000_000:
-            raise ValueError("Audio payload is empty or exceeds the 20 MB limit")
         return await asyncio.to_thread(self._transcribe_sync, audio)
+
+
+_shared_whisper: FasterWhisperRecognizer | None = None
+_shared_whisper_lock = threading.Lock()
+
+
+def shared_whisper_recognizer() -> FasterWhisperRecognizer:
+    """Process-owned recognizer shared by HTTP and full-duplex composition."""
+    global _shared_whisper
+    with _shared_whisper_lock:
+        if _shared_whisper is None:
+            from aura_core.tts.offline_voice import OfflineVoiceConfig
+
+            offline = OfflineVoiceConfig.from_environment()
+            _shared_whisper = FasterWhisperRecognizer(
+                model_size=offline.stt_model_path if offline is not None else os.getenv("AURA_STT_MODEL"),
+                device=os.getenv("AURA_STT_DEVICE", "auto"),
+                compute_type=os.getenv("AURA_STT_COMPUTE_TYPE", "auto"),
+            )
+        return _shared_whisper
 
 
 class EventBusAudioPlayer:
