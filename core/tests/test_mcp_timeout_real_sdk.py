@@ -30,7 +30,7 @@ import asyncio
 import sys
 import mcp.server.stdio
 from mcp import types
-from mcp.server.lowlevel import Server
+from mcp.server import Server
 
 mode = sys.argv[1]
 async def list_tools(ctx, params):
