@@ -4,7 +4,6 @@ from __future__ import annotations
 import asyncio
 import json
 import sys
-from datetime import timedelta
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
@@ -97,7 +96,8 @@ def test_mcp_cancelled_queued_request_is_not_dispatched():
         ) as constructor:
             connection = MCPConnection(read_timeout_seconds=15)
             await connection.connect_stdio(SimpleNamespace(command="fake"))
-            assert constructor.call_args.kwargs["read_timeout_seconds"] == timedelta(seconds=15)
+            assert type(constructor.call_args.kwargs["read_timeout_seconds"]) is float
+            assert constructor.call_args.kwargs["read_timeout_seconds"] == 15.0
             try:
                 first = asyncio.create_task(connection.call_tool("first", {}))
                 await asyncio.wait_for(started.wait(), 1)
