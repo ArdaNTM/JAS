@@ -25,7 +25,7 @@ from aura_core.evolution.activation_runtime import (
     _SCHEMA, runtime_fingerprint, tool_binding_digest,
 )
 from aura_core.evolution.decision_engine import EvolutionDecisionEngine
-from aura_core.evolution.external_staging import EvolutionWorkspace
+from aura_core.evolution.external_staging import EvolutionWorkspace, WorkspacePruneError
 from aura_core.evolution.sandbox_preflight import (
     IsolatedMCPPreflight, _MAX_TOOLS, _MAX_SCHEMA_JSON_BYTES,
     _schema_json_size,
@@ -319,14 +319,30 @@ class IndependentMCPAttestorWorker:
         # runtime owners. A quota-deferred package keeps all source/evidence
         # until this independent operator can safely reobserve and sign it.
         prune = getattr(self.workspace, "prune_permanent_evolution_artifacts", None)
+        deferred: set[str] = set()
         if callable(prune):
             try:
-                prune()
-            except (OSError, ValueError, PermissionError):
-                self.last_scan_error = "WorkspacePruneFailed"
+                if isinstance(self.workspace, EvolutionWorkspace):
+                    prune(defer_locked_terminal=True)
+                    deferred = set(getattr(self.workspace, "last_prune_deferred", ()))
+                else:
+                    prune()
+            except WorkspacePruneError as exc:
+                self.last_scan_error = exc.code
                 return []
+            except PermissionError:
+                self.last_scan_error = "PruneReadAccessDenied"
+                return []
+            except OSError:
+                self.last_scan_error = "PruneFilesystemFailed"
+                return []
+            except (ValueError, RuntimeError):
+                self.last_scan_error = "PruneValidationFailed"
+                return []
+        if deferred:
+            self.last_scan_error = "PruneTerminalDeleteDeferred"
         inventory_path = self.workspace.root / "active_capabilities.json"
-        denied: set[str] = set()
+        denied: set[str] = set(deferred)
         live_expiry: dict[str, int] = {}
         try:
             if inventory_path.exists():
@@ -581,6 +597,7 @@ def main() -> int:
                 error = getattr(worker, "last_scan_error", "")
                 if error:
                     health.update(phase="ERROR", last_error=error)
+                    print(json.dumps({"event": "attestor_scan_diagnostic", "error": error}, sort_keys=True), file=sys.stderr, flush=True)
                 else:
                     health.update(phase="IDLE", last_success=int(time.time()), last_error="")
                 print(json.dumps({"attested_packages": len(result)}, sort_keys=True), flush=True)
