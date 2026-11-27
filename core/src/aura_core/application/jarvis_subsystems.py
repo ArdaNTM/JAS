@@ -138,12 +138,17 @@ def compose_jarvis_subsystems(app, *, kernel, gateway, tasks, workflows, memory,
             reflection.semantic_consolidation = consolidate
 
     if _enabled("AURA_FACE_VERIFICATION_ENABLED") and approval_store is not None:
-        gate = FaceVerificationGate(OpenCVFaceVerifier(
-            reference=os.getenv("AURA_FACE_REFERENCE_PATH", ""),
-            detector=os.getenv("AURA_FACE_DETECTOR_PATH", ""),
-            recognizer=os.getenv("AURA_FACE_RECOGNIZER_PATH", ""),
-            camera_index=int(os.getenv("AURA_FACE_CAMERA_INDEX", "0")),
-        ))
+        try:
+            verifier = OpenCVFaceVerifier(
+                reference=os.getenv("AURA_FACE_REFERENCE_PATH", ""),
+                detector=os.getenv("AURA_FACE_DETECTOR_PATH", ""),
+                recognizer=os.getenv("AURA_FACE_RECOGNIZER_PATH", ""),
+                camera_index=int(os.getenv("AURA_FACE_CAMERA_INDEX", "0")),
+            )
+        except ValueError:
+            logger.warning("Optional face verification configuration unavailable")
+            verifier = lambda: None
+        gate = FaceVerificationGate(verifier)
         register_jarvis_provider(kernel, FACE_PROVIDER, gate,
             ((FACE_CAP, FACE_TOOL, "high", CapabilityCategory.SECURITY),))
         _policy(kernel, FACE_CAP, FACE_SCOPE, level=AuthorizationLevel.USER_APPROVAL_REQUIRED,
