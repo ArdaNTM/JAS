@@ -45,6 +45,7 @@ export default defineConfig(({ mode }) => {
     // SSE connection is public only to the local app; the Kernel EventBus
     // still applies its own allowlist.
     "/api/events/stream": governedProxy(true),
+    "/api/jarvis/iot/events": { target: proxyTarget, ws: true, changeOrigin: true },
     "/api": governedProxy(),
     // WebSocket uses its short-lived Core ticket, never a browser bearer.
     "/ws/tasks": { target: proxyTarget, ws: true, changeOrigin: true },
