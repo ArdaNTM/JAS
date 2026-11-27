@@ -79,6 +79,7 @@ class FaceVerificationGate:
     def __init__(self, verifier: Callable[[], bool | None]):
         self._verifier = verifier
         self._lock = threading.Lock()
+        self._capture_lock = threading.Lock()
         self._restricted = False
 
     def restricted(self, principal: str) -> bool:
@@ -88,15 +89,16 @@ class FaceVerificationGate:
     def verify(self, principal: str) -> str:
         if principal != "local_owner":
             raise PermissionError("Local Owner session required")
-        with self._lock:
+        with self._capture_lock:
             outcome = self._verifier()
-            if outcome is True:
-                self._restricted = False
-                return "matched"
-            if outcome is False:
-                self._restricted = True
-                return "restricted"
-            return "unavailable"
+            with self._lock:
+                if outcome is True:
+                    self._restricted = False
+                    return "matched"
+                if outcome is False:
+                    self._restricted = True
+                    return "restricted"
+                return "unavailable"
 
     async def list_tools(self):
         return (MCPTool(FACE_TOOL, "Optional local camera comparison; no Owner authority is granted",
