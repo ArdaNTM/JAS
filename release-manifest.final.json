@@ -2,11 +2,11 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-27T01:00:10.760Z",
-  "git_commit": "27a1d9d915217a5b4c691dab1561d3b6abdea692",
+  "generated_at": "2026-11-27T01:17:00.903Z",
+  "git_commit": "6f290718d42d50bbd1b5d62cf2438e61eb3e352d",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:ee4526b9ac5dd15d4d805a1ebca2726ed35b9cd9b4300dd63353c12716401b7f",
-  "file_count": 483,
+  "release_digest": "sha256:7ab82a15cd631d78596048f728f740d12ddc408e4b5914b5c3cc93790cbb9dbe",
+  "file_count": 484,
   "files": [
     {
       "path": ".gitattributes",
@@ -262,7 +262,7 @@
     },
     {
       "path": "core/scripts/generate_final_lock.py",
-      "sha256": "f32155177ba364a1432493083cf20511f7b76348afa418759abdb417c0639cf0"
+      "sha256": "8df21e0898e8332d83091d1a543a8a899bea9180926c2bb8bf1d259b8cb3e31a"
     },
     {
       "path": "core/scripts/hardware_stage_c_acceptance.py",
@@ -394,7 +394,7 @@
     },
     {
       "path": "core/src/aura_core/application/api.py",
-      "sha256": "d5206bdccaccd4af856220a674ba332a508c4e19027a2b2078cd06f49bf6d2ca"
+      "sha256": "905a52c5ad4cb035e72a52b30fbf7619d193753b5d26fbd4897723ba17e5009b"
     },
     {
       "path": "core/src/aura_core/application/approval_api.py",
@@ -698,7 +698,7 @@
     },
     {
       "path": "core/src/aura_core/application/speech_api.py",
-      "sha256": "03db11b6f5296fb92c7aada9a2a2fba450eac256324925995e1728987b707e1e"
+      "sha256": "5ecff66ac170a4aca846f187703bd859a217d0e8a49db1493aae83a01902f171"
     },
     {
       "path": "core/src/aura_core/application/stage_c_api.py",
@@ -1222,7 +1222,7 @@
     },
     {
       "path": "core/src/aura_core/main.py",
-      "sha256": "22f984eeda5124d068a4e074077d9e0e16e307d069515f2aae4b54299ceb778e"
+      "sha256": "826ef20ea7d8412df58f1f3f0f3d165e0d43643272e8b81e6d214d00b85a6db4"
     },
     {
       "path": "core/src/aura_core/mcp/__init__.py",
@@ -1234,7 +1234,7 @@
     },
     {
       "path": "core/src/aura_core/mcp/connection.py",
-      "sha256": "bc4e5b50e8044381eb6efb5b5b90cd813bbdb1a9eb1532ae9ccd1ade28eda3bf"
+      "sha256": "d83c270d58c932c43d6852f75435f50130d1f40a81185bd1d2a39085c531ea3b"
     },
     {
       "path": "core/src/aura_core/mcp/dispatch_context.py",
@@ -1766,7 +1766,7 @@
     },
     {
       "path": "core/src/aura_core/tts/provider_bootstrap.py",
-      "sha256": "665dbf0ab7f89210021957d02ba7df15efa65bbf8f2283732fc6378023b2b807"
+      "sha256": "90b8f8dc15b8750c917ef712a53a667630a1db34182e2db55de2fbc2d95b0fea"
     },
     {
       "path": "core/src/aura_core/tts/text.py",
@@ -1862,7 +1862,11 @@
     },
     {
       "path": "core/tests/test_jarvis_voice_attestor_reliability.py",
-      "sha256": "909963750bf63d9246bf4d14180f8e52d3a6de6875c0ac5b293e72a29c9c9e1e"
+      "sha256": "51394c79caf6dcc7667f71e1fda6d4a2d418d6e9b067e622376912ac7f8b04b3"
+    },
+    {
+      "path": "core/tests/test_mcp_timeout_real_sdk.py",
+      "sha256": "1ee6a1d7757407421b56561e85a6991246dbc6eaf52051957795dd14dd8c5498"
     },
     {
       "path": "core/tests/test_osworld_secure_live.py",
