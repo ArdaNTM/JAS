@@ -227,13 +227,13 @@ class GatewaySpeechSynthesizer:
     async def synthesize(self, text: str, *, session_id: str) -> Any:
         if not text.strip() or len(text) > 8000:
             raise ValueError("Speech text is empty or exceeds the configured bound")
-        response = await self._gateway.invoke(MCPGatewayRequest(
+        response = await asyncio.wait_for(self._gateway.invoke(MCPGatewayRequest(
             request_id=str(uuid4()), principal_id=self._principal,
             capability_id=self._capability, operation_id=self._operation,
             resource_scope=self._scope, risk_level=RiskLevel.LOW,
             tool_name=self._tool, arguments={"text": text},
             session_id=session_id,
-        ))
+        )), timeout=20)
         if response.decision is not AuthorizationDecision.ALLOW:
             raise PermissionError(f"TTS authorization denied: {response.reason}")
         return response.result
