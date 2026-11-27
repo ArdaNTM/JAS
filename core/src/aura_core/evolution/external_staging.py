@@ -449,8 +449,9 @@ class EvolutionWorkspace:
             "PROVIDER_FAILED_OR_REVOKED", "OWNER_REVOKED",
         }
         removed = 0
+        attempts = 0
         for package in sorted(verified.iterdir()):
-            if removed >= max_packages:
+            if attempts >= max_packages:
                 break
             if package.is_symlink() or (hasattr(package, "is_junction") and package.is_junction()):
                 raise WorkspacePruneError("PruneVerifiedPackageLink", "Unsafe verified package link")
@@ -504,6 +505,8 @@ class EvolutionWorkspace:
                 if not archive.is_file():
                     raise WorkspacePruneError("PruneTerminalArchiveUnsafe", "Unsafe terminal source archive")
             changed = False
+            if current.is_dir() or (archive.is_file() and archive.stat().st_size >= _MIB):
+                attempts += 1
             try:
                 if current.is_dir():
                     shutil.rmtree(current)
