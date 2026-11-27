@@ -62,3 +62,36 @@ jobs:
           uv run --frozen python scripts/verify_final_lock.py
           uv run --frozen python -c 'import json, os; from pathlib import Path; a=json.loads((Path(os.environ["RUNNER_TEMP"])/"aura-release-lock-original.json").read_text()); b=json.loads(Path("../release-manifest.final.json").read_text()); assert all(a[k]==b[k] for k in ("files","file_count","release_digest")), "Regenerated manifest differs"; print("AURA release generator parity: PASS")'
           cp "$RUNNER_TEMP/aura-release-lock-original.json" ../release-manifest.final.json
+
+  windows-test-isolation:
+    name: Windows voice regression with inherited live settings
+    runs-on: windows-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: core
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: core/uv.lock
+      - name: Install locked test dependencies
+        run: uv sync --frozen --group dev
+      - name: Reproduce live environment flags and checkout-local TEMP
+        shell: pwsh
+        env:
+          AURA_EVOLUTION_REVIEW_ENABLED: "1"
+          AURA_EVOLUTION_SELF_PATCH_ENABLED: "1"
+          AURA_EVOLUTION_INTROSPECTION_ENABLED: "1"
+          AURA_BACKGROUND_THINKING_ENABLED: "1"
+        run: |
+          $checkoutTemp = Join-Path $env:GITHUB_WORKSPACE ".aura-ci-temp"
+          New-Item -ItemType Directory -Force -Path $checkoutTemp | Out-Null
+          $env:TEMP = $checkoutTemp
+          $env:TMP = $checkoutTemp
+          uv run --frozen pytest tests/test_mcp_timeout_real_sdk.py tests/test_jarvis_voice_attestor_reliability.py -q --tb=short "--basetemp=$checkoutTemp/pytest"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
