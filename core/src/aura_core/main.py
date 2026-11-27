@@ -15,6 +15,7 @@ from fastapi import FastAPI
 
 from aura_core.agent.runtime import AgentExecutor
 from aura_core.application.composition import create_composed_app
+from aura_core.application.jarvis_subsystems import compose_jarvis_subsystems
 from aura_core.application.capability_center import FeatureCatalog, router as capability_center_router
 from aura_core.application.event_bus_runtime import EventBusRuntime
 from aura_core.application.event_driven_orchestration import EventDrivenOrchestrationCoordinator
@@ -45,7 +46,7 @@ from aura_core.application.local_synthesis_mcp import (
 from aura_core.application.stage_c_runtime import StageCLedger, StageCController
 from aura_core.mcp.stage_c_browser import OriginGuard, PlaywrightSessions, BrowserControlMCPProvider
 from aura_core.application.full_duplex_session import (
-    EventBusAudioPlayer, FasterWhisperRecognizer, FullDuplexSessionManager,
+    EventBusAudioPlayer, shared_whisper_recognizer, FullDuplexSessionManager,
     GatewaySpeechSynthesizer, ProactiveNotifier, ControlledVisionService,
 )
 from aura_core.voice.sherpa_onnx import SherpaOnnxRecognizer
@@ -864,6 +865,12 @@ def build_app() -> FastAPI:
     app.state.event_bus_runtime = event_runtime
     app.state.task_state_machine = task_state_machine
     app.state.workflow_store = workflow_store
+    compose_jarvis_subsystems(
+        app, kernel=kernel, gateway=gateway, tasks=task_state_machine,
+        workflows=workflow_store, memory=task_memory,
+        local=storage_mode is StorageMode.LOCAL, principal=http_principal_id,
+        bearer_token=http_bearer_token, approval_store=approval_store,
+    )
     app.state.task_service = task_service
 
     def _reflection_planner(failure: dict) -> dict:
@@ -1114,17 +1121,7 @@ def build_app() -> FastAPI:
             sherpa_health = app.state.sherpa_onnx_config.health()
             recognizer = (
                 SherpaOnnxRecognizer(app.state.sherpa_onnx_config)
-                if sherpa_health["available"] else FasterWhisperRecognizer(
-                    # Offline mode passes an absolute, pre-provisioned model
-                    # directory. FasterWhisper therefore has no model-hub fallback.
-                    model_size=(
-                        offline_voice_config.stt_model_path
-                        if offline_voice_config is not None
-                        else os.getenv("AURA_STT_MODEL", "small")
-                    ),
-                    device=os.getenv("AURA_STT_DEVICE", "auto"),
-                    compute_type=os.getenv("AURA_STT_COMPUTE_TYPE", "auto"),
-                )
+                if sherpa_health["available"] else shared_whisper_recognizer()
             )
             app.state.speech_session_manager = FullDuplexSessionManager(
                 recognizer=recognizer,
