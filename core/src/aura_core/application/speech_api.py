@@ -120,8 +120,10 @@ async def speak(
         await manager.speak(body.text)
     except PermissionError as exc:
         raise HTTPException(status_code=403, detail="TTS execution was not authorized") from exc
+    except TimeoutError as exc:
+        raise HTTPException(status_code=504, detail="Local TTS deadline exceeded") from exc
     except (ValueError, RuntimeError) as exc:
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+        raise HTTPException(status_code=502, detail="Local TTS provider failed") from exc
     return {"session_id": body.session_id, "state": manager.snapshot().state}
 
 
