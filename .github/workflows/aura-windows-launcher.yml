@@ -15,6 +15,9 @@ on:
       - "scripts/test-piper-voice-config.ps1"
       - "core/scripts/validate_piper_voice_config.py"
       - "core/tests/test_piper_voice_config_validation.py"
+      # Voice transport regressions also require the Windows UI/launcher checks.
+      - "core/tests/test_mcp_timeout_real_sdk.py"
+      - "core/tests/test_jarvis_voice_attestor_reliability.py"
       - "aura-ui/electron-main.cjs"
       - "aura-ui/electron-preload.cjs"
       - "scripts/enable-aura-hud.ps1"
