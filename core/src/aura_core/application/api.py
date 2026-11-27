@@ -2219,6 +2219,8 @@ def create_api(
         request: SpeechSynthesisRequest,
         principal_id: str = Depends(authenticated_principal),
     ) -> SpeechSynthesisResponse:
+        if getattr(app.state, "tts_startup_available", None) is False:
+            raise HTTPException(status_code=503, detail="Local TTS provider is unavailable")
         gateway = getattr(app.state, "mcp_gateway", None)
         if gateway is None:
             raise HTTPException(status_code=503, detail="Local speech provider is unavailable")
