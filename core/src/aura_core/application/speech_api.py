@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import base64
 import binascii
+import time
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
@@ -24,6 +25,7 @@ def _manager(request: Request):
     manager = getattr(request.app.state, "speech_session_manager", None)
     if manager is None:
         raise HTTPException(status_code=503, detail="Speech providers are not ready")
+    request.app.state.last_user_activity = time.monotonic()
     return manager
 
 
