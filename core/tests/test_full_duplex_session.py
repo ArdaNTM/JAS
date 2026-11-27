@@ -117,6 +117,7 @@ def test_faster_whisper_recognizer_decodes_audio_and_passes_samples_to_model(mon
     import numpy as np
 
     observed = {}
+    monkeypatch.setenv("AURA_STT_BEAM_SIZE", "3")
 
     class AudioFrame:
         def __init__(self, values):
@@ -190,7 +191,11 @@ def test_faster_whisper_recognizer_decodes_audio_and_passes_samples_to_model(mon
     assert isinstance(observed["samples"], np.ndarray)
     assert observed["samples"].dtype == np.float32
     assert observed["samples"].tolist() == pytest.approx([0.1, -0.2, 0.3])
-    assert observed["transcribe_kwargs"] == {"language": "tr", "beam_size": 1, "vad_filter": True}
+    assert observed["transcribe_kwargs"] == {
+        "language": "tr", "beam_size": 3, "vad_filter": True,
+        "vad_parameters": {"min_silence_duration_ms": 300, "speech_pad_ms": 300},
+        "temperature": 0.0, "condition_on_previous_text": False,
+    }
 
 
 
