@@ -121,7 +121,7 @@ class FasterWhisperRecognizer:
 
             resampler = av.AudioResampler(format="fltp", layout="mono", rate=16000)
             chunks = []
-            for frame in container.decode(audio=audio_stream.index):
+            for frame in container.decode(audio=0):
                 chunks.extend(resampler.resample(frame))
             # Flush any buffered samples from the resampler.
             chunks.extend(resampler.resample(None))
