@@ -55,3 +55,10 @@ jobs:
         run: uv run python ../scripts/validate_aura_feature_tracker.py
       - name: Verify complete production release lock
         run: uv run python scripts/verify_final_lock.py
+      - name: Regenerate release lock and verify identical source inventory
+        run: |
+          cp ../release-manifest.final.json "$RUNNER_TEMP/aura-release-lock-original.json"
+          uv run --frozen python scripts/generate_final_lock.py
+          uv run --frozen python scripts/verify_final_lock.py
+          uv run --frozen python -c 'import json, os; from pathlib import Path; a=json.loads((Path(os.environ["RUNNER_TEMP"])/"aura-release-lock-original.json").read_text()); b=json.loads(Path("../release-manifest.final.json").read_text()); assert all(a[k]==b[k] for k in ("files","file_count","release_digest")), "Regenerated manifest differs"; print("AURA release generator parity: PASS")'
+          cp "$RUNNER_TEMP/aura-release-lock-original.json" ../release-manifest.final.json

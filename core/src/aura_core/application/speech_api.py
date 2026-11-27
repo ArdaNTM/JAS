@@ -116,6 +116,8 @@ async def speak(
     manager = _manager(request)
     if manager.snapshot().session_id != body.session_id:
         raise HTTPException(status_code=404, detail="Speech session not found")
+    if getattr(request.app.state, "tts_startup_available", None) is False:
+        raise HTTPException(status_code=503, detail="Local TTS provider is unavailable")
     try:
         await manager.speak(body.text)
     except PermissionError as exc:
@@ -148,6 +150,7 @@ async def voice_health(request: Request) -> dict[str, object]:
     sherpa = config.health() if config is not None else {"available": False, "reason": "not_composed"}
     manager = getattr(request.app.state, "speech_session_manager", None)
     return {"full_duplex_available": manager is not None, "sherpa_onnx": sherpa,
+            "tts_available": getattr(request.app.state, "tts_startup_available", None),
             "kokoro_language": "en-us", "kokoro_runtime": "kokoro-onnx" if
             __import__("os").getenv("AURA_KOKORO_ONNX_ENABLED", "0") == "1" else "kokoro-python",
             "latency": manager.latency_snapshot() if manager is not None else {}}

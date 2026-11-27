@@ -9,6 +9,7 @@ the arbitrary requesting task.
 from __future__ import annotations
 
 import asyncio
+import math
 from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from datetime import timedelta
@@ -29,10 +30,19 @@ class MCPToolResult:
 class MCPConnection:
     """Managed MCP stdio / Streamable HTTP connection owned by one task."""
 
-    def __init__(self, *, read_timeout_seconds: float | None = None) -> None:
-        if read_timeout_seconds is not None and not 0 < read_timeout_seconds <= 300:
-            raise ValueError("Invalid MCP read timeout")
-        self._read_timeout = timedelta(seconds=read_timeout_seconds) if read_timeout_seconds is not None else None
+    def __init__(self, *, read_timeout_seconds: float | int | timedelta | None = None) -> None:
+        # MCP 2.0.0 forwards this value unchanged into anyio.fail_after().
+        # Normalize at our SDK boundary, not inside a caller or the SDK.
+        if isinstance(read_timeout_seconds, timedelta):
+            read_timeout_seconds = read_timeout_seconds.total_seconds()
+        if read_timeout_seconds is not None:
+            if (isinstance(read_timeout_seconds, bool)
+                    or not isinstance(read_timeout_seconds, (int, float))
+                    or not 0 < read_timeout_seconds <= 300
+                    or not math.isfinite(read_timeout_seconds)):
+                raise ValueError("Invalid MCP read timeout")
+            read_timeout_seconds = float(read_timeout_seconds)
+        self._read_timeout: float | None = read_timeout_seconds
         self._stack: AsyncExitStack | None = None
         self._session: ClientSession | None = None
         self._owner: asyncio.Task | None = None

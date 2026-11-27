@@ -3,11 +3,11 @@
   "source_pr": "https://github.com/ArdaNTM/JAS/pull/158",
   "unified_snapshot": "19baa60b1139b519947270654d0c0fd59fb2516c",
   "baseline_main": "b1ffe6f534ced0d329dae273a4b949a634cb8bfa",
-  "statement": "Canonical Git blobs and source-specific regression evidence verified for five selected PR differences; PR #66/#68 missing modules merged exactly as their respective source branch blobs. PR #135/#146/#147 endpoints, providers and tests already existed under cumulative PR #152. This is NOT a semantic sign-off for every open PR. Post-F2.7 integration: canonical main.py was merged from PR #158 and main; source pin rebased to exact blob dc3a92e3 (no automatic feature completion). PR #187 adds a candidate canonical Gateway blob under isolated review; this lineage pin is not production Owner approval or automatic feature completion. PR #188 changes canonical composition main.py with an explicit pending-review lineage pin; it does not imply production Owner approval or feature-level completion. PR #189 updates Core lifespan activation scheduling; the source pin is pending CI and Owner review, not a COMPLETED or production-accepted designation. PR #200 updates the candidate composition source pin for explicit review worker startup/shutdown; pending exact-head CI and Owner review. Voice reliability candidate changes the composition pin for auto STT device/precision defaults only; exact-head CI and Owner review pending.",
+  "statement": "Canonical Git blobs and source-specific regression evidence verified for five selected PR differences; PR #66/#68 missing modules merged exactly as their respective source branch blobs. PR #135/#146/#147 endpoints, providers and tests already existed under cumulative PR #152. This is NOT a semantic sign-off for every open PR. Post-F2.7 integration: canonical main.py was merged from PR #158 and main; source pin rebased to exact blob dc3a92e3 (no automatic feature completion). PR #187 adds a candidate canonical Gateway blob under isolated review; this lineage pin is not production Owner approval or automatic feature completion. PR #188 changes canonical composition main.py with an explicit pending-review lineage pin; it does not imply production Owner approval or feature-level completion. PR #189 updates Core lifespan activation scheduling; the source pin is pending CI and Owner review, not a COMPLETED or production-accepted designation. PR #200 updates the candidate composition source pin for explicit review worker startup/shutdown; pending exact-head CI and Owner review. Voice reliability candidate changes the composition pin for auto STT device/precision defaults only; exact-head CI and Owner review pending. MCP timeout candidate updates the composition source pin for optional TTS startup isolation; pending CI and Owner review.",
   "files": [
     {
       "path": "core/src/aura_core/main.py",
-      "unified_blob_sha": "f3347b60892dc20b94dbefef61a02441bc280bf7",
+      "unified_blob_sha": "3050b780d6c8659ba7e80932d2b511cbc1c5a40b",
       "canonical": "PR #172 local Owner external staging: narrow resource path PermissionEngine policy, Gateway-only static staging, no Owner passkey or sandbox boundary changes. CI and independent Owner live acceptance pending.",
       "variants": [
         {
@@ -134,6 +134,12 @@
           "blob": "f3347b60892dc20b94dbefef61a02441bc280bf7",
           "ancestry": "Isolated voice reliability candidate based on main 4948d05a; STT defaults only.",
           "assessment": "PENDING_EXACT_HEAD_CI_AND_OWNER_REVIEW; no feature completion or permission change."
+        },
+        {
+          "ref": "125fd18be1de7b8a4eb3ac2899fd859f5f4472ef",
+          "blob": "3050b780d6c8659ba7e80932d2b511cbc1c5a40b",
+          "ancestry": "Isolated MCP timeout fix based on main f1434916; optional TTS startup degradation only.",
+          "assessment": "PENDING_EXACT_HEAD_CI_AND_OWNER_REVIEW; no permission or completion change."
         }
       ]
     },
