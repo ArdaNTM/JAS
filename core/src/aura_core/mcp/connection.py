@@ -38,8 +38,8 @@ class MCPConnection:
         if read_timeout_seconds is not None:
             if (isinstance(read_timeout_seconds, bool)
                     or not isinstance(read_timeout_seconds, (int, float))
-                    or not math.isfinite(read_timeout_seconds)
-                    or not 0 < read_timeout_seconds <= 300):
+                    or not 0 < read_timeout_seconds <= 300
+                    or not math.isfinite(read_timeout_seconds)):
                 raise ValueError("Invalid MCP read timeout")
             read_timeout_seconds = float(read_timeout_seconds)
         self._read_timeout: float | None = read_timeout_seconds
