@@ -174,6 +174,25 @@ class StagingRejected(ValueError):
     """Untrusted or unsafe candidate cannot be promoted to static review."""
 
 
+class WorkspacePruneError(StagingRejected):
+    """Bounded diagnostic; never expose filesystem paths or arbitrary text."""
+
+    def __init__(self, code: str, message: str):
+        super().__init__(message)
+        self.code = code
+
+
+def _prune_path(path: Path, code: str) -> None:
+    try:
+        _checked_path(path)
+    except (OSError, ValueError, RuntimeError) as exc:
+        raise WorkspacePruneError(code, "Unsafe or inaccessible cleanup path") from exc
+
+
+def _raise_walk_error(error: OSError) -> None:
+    raise error
+
+
 def _checked_path(path: Path) -> Path:
     resolved = path.resolve()
     cursor = path
@@ -382,7 +401,8 @@ class EvolutionWorkspace:
             removed += 1
         return removed
 
-    def prune_permanent_evolution_artifacts(self, *, max_packages: int = 12) -> int:
+    def prune_permanent_evolution_artifacts(self, *, max_packages: int = 12,
+                                            defer_locked_terminal: bool = False) -> int:
         """Bounded removal of terminal runtimes and needless source archives.
 
         Never remove ACTIVE, unclassified or recoverable quarantines, signed
@@ -392,30 +412,37 @@ class EvolutionWorkspace:
         """
         if type(max_packages) is not int or not 1 <= max_packages <= 12:
             raise StagingRejected("Invalid permanent-artifact prune budget")
+        self.last_prune_deferred: set[str] = set()
         verified = self.root / "verified"
         runtime = self.root / "runtime"
-        _checked_path(verified)
-        if runtime.exists() or runtime.is_symlink():
-            _checked_path(runtime)
+        _prune_path(verified, "PruneVerifiedRootUnsafe")
+        if not verified.is_dir():
+            raise WorkspacePruneError("PruneVerifiedRootUnsafe", "Unsafe verified root")
+        _prune_path(runtime, "PruneRuntimeRootUnsafe")
+        if runtime.exists():
             if not runtime.is_dir():
-                raise StagingRejected("Unsafe evolution runtime root")
+                raise WorkspacePruneError("PruneRuntimeRootUnsafe", "Unsafe evolution runtime root")
+        _prune_path(self.active, "PruneInventoryUnsafe")
         if (self.active.is_symlink() or not self.active.is_file()
                 or self.active.stat().st_size > 200_000):
-            raise StagingRejected("Unsafe active inventory for quota cleanup")
-        inventory = json.loads(self.active.read_text("utf-8"))
+            raise WorkspacePruneError("PruneInventoryUnsafe", "Unsafe active inventory for quota cleanup")
+        try:
+            inventory = json.loads(self.active.read_text("utf-8"))
+        except (OSError, ValueError) as exc:
+            raise WorkspacePruneError("PruneInventoryReadFailed", "Inventory read failed") from exc
         if (not isinstance(inventory, dict)
                 or inventory.get("schema") != "aura.external-capabilities.v1"
                 or not isinstance(inventory.get("active"), list)
                 or len(inventory["active"]) > self.max_items):
-            raise StagingRejected("Untrusted activation inventory for quota cleanup")
+            raise WorkspacePruneError("PruneInventoryInvalid", "Untrusted activation inventory for quota cleanup")
         statuses = {}
         for row in inventory["active"]:
             if (not isinstance(row, dict)
                     or not _valid_repository(row.get("repository"))):
-                raise StagingRejected("Invalid quota cleanup inventory row")
+                raise WorkspacePruneError("PruneInventoryInvalid", "Invalid quota cleanup inventory row")
             repository = row["repository"]
             if repository in statuses:
-                raise StagingRejected("Duplicate quota cleanup inventory row")
+                raise WorkspacePruneError("PruneInventoryInvalid", "Duplicate quota cleanup inventory row")
             statuses[repository] = row
         terminal_reasons = {
             "PythonVersionIncompatible", "StagingRejected",
@@ -426,7 +453,7 @@ class EvolutionWorkspace:
             if removed >= max_packages:
                 break
             if package.is_symlink() or (hasattr(package, "is_junction") and package.is_junction()):
-                raise StagingRejected("Unsafe verified package link")
+                raise WorkspacePruneError("PruneVerifiedPackageLink", "Unsafe verified package link")
             if not package.is_dir() or package.name.count("__") != 1:
                 continue
             repository = package.name.replace("__", "/")
@@ -442,12 +469,15 @@ class EvolutionWorkspace:
             )
             marker = package / "local-windows-quarantined.json"
             if marker.exists() or marker.is_symlink():
-                _checked_path(marker)
+                _prune_path(marker, "PruneQuarantinePathUnsafe")
                 if not marker.is_file() or marker.stat().st_size > 2048:
-                    raise StagingRejected("Unsafe local quarantine record for cleanup")
-                reason = json.loads(marker.read_text("utf-8"))
+                    raise WorkspacePruneError("PruneQuarantineInvalid", "Unsafe local quarantine record for cleanup")
+                try:
+                    reason = json.loads(marker.read_text("utf-8"))
+                except (OSError, ValueError) as exc:
+                    raise WorkspacePruneError("PruneQuarantineReadFailed", "Quarantine read failed") from exc
                 if not isinstance(reason, dict):
-                    raise StagingRejected("Invalid local quarantine record for cleanup")
+                    raise WorkspacePruneError("PruneQuarantineInvalid", "Invalid local quarantine record for cleanup")
                 if (reason.get("status") == "QUARANTINED"
                         and reason.get("reason_code") in terminal_reasons):
                     terminal = True
@@ -458,30 +488,40 @@ class EvolutionWorkspace:
             archive = package / "source.zip"
             # Validate BOTH candidates before deleting EITHER. Unknown links
             # cannot be used to redirect cleanup beyond evolution storage.
-            if current.exists() or current.is_symlink():
-                _checked_path(current)
+            _prune_path(current, "PruneTerminalRuntimeUnsafe")
+            _prune_path(archive, "PruneTerminalArchiveUnsafe")
+            if current.exists():
                 if not current.is_dir():
-                    raise StagingRejected("Invalid terminal runtime directory")
-                for folder, dirs, files in os.walk(current, followlinks=False):
+                    raise WorkspacePruneError("PruneTerminalRuntimeUnsafe", "Invalid terminal runtime directory")
+                for folder, dirs, files in os.walk(current, followlinks=False, onerror=_raise_walk_error):
                     for name in dirs + files:
                         child = Path(folder) / name
                         if child.is_symlink() or (
                             hasattr(child, "is_junction") and child.is_junction()
                         ):
-                            raise StagingRejected("Unsafe terminal runtime link")
-            if archive.exists() or archive.is_symlink():
-                _checked_path(archive)
+                            raise WorkspacePruneError("PruneTerminalRuntimeLink", "Unsafe terminal runtime link")
+            if archive.exists():
                 if not archive.is_file():
-                    raise StagingRejected("Unsafe terminal source archive")
+                    raise WorkspacePruneError("PruneTerminalArchiveUnsafe", "Unsafe terminal source archive")
             changed = False
-            if current.is_dir():
-                shutil.rmtree(current)
-                changed = True
-            # Keep small source archives for postmortem review. Larger unused
-            # ZIPs are safely reclaimable only after a terminal classification.
-            if archive.is_file() and archive.stat().st_size >= _MIB:
-                archive.unlink()
-                changed = True
+            try:
+                if current.is_dir():
+                    shutil.rmtree(current)
+                    changed = True
+                # Preserve small source archives for postmortem review.
+                if archive.is_file() and archive.stat().st_size >= _MIB:
+                    archive.unlink()
+                    changed = True
+            except OSError as exc:
+                # The independent account need not have DELETE rights on Core
+                # runtime files. A terminal package remains denied and can be
+                # reclaimed later by its authorized owner. Do not chmod, take
+                # ownership, follow links, or retry with elevated credentials.
+                locked = isinstance(exc, PermissionError) or getattr(exc, "winerror", None) in {32, 33}
+                if not defer_locked_terminal or not locked:
+                    raise WorkspacePruneError("PruneTerminalDeleteFailed", "Terminal artifact deletion failed") from exc
+                self.last_prune_deferred.add(repository)
+                continue
             if changed:
                 removed += 1
                 self.audit(action="quota_prune", repository=repository, result="RECLAIMED")
