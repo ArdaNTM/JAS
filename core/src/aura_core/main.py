@@ -1114,8 +1114,8 @@ def build_app() -> FastAPI:
                         if offline_voice_config is not None
                         else os.getenv("AURA_STT_MODEL", "small")
                     ),
-                    device=os.getenv("AURA_STT_DEVICE", "cpu"),
-                    compute_type=os.getenv("AURA_STT_COMPUTE_TYPE", "int8"),
+                    device=os.getenv("AURA_STT_DEVICE", "auto"),
+                    compute_type=os.getenv("AURA_STT_COMPUTE_TYPE", "auto"),
                 )
             )
             app.state.speech_session_manager = FullDuplexSessionManager(
