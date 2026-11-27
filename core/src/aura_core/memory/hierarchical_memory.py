@@ -6,6 +6,7 @@ instructions by callers.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import sqlite3
 import time
@@ -25,6 +26,17 @@ class EpisodicRecord:
     source: str
     created_at: float
     metadata: dict[str, Any]
+    untrusted: bool = True
+
+
+@dataclass(frozen=True, slots=True)
+class SemanticRecord:
+    record_id: str
+    principal_id: str
+    task_id: str
+    content: str
+    source_ids: tuple[str, ...]
+    created_at: float
     untrusted: bool = True
 
 
@@ -113,6 +125,92 @@ class SQLiteEpisodicMemory:
                     PRIMARY KEY (principal_id, task_id)
                 )"""
             )
+
+            db.execute(
+                """CREATE TABLE IF NOT EXISTS semantic_records (
+                    record_id TEXT PRIMARY KEY,
+                    principal_id TEXT NOT NULL,
+                    task_id TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    source_ids_json TEXT NOT NULL,
+                    created_at REAL NOT NULL
+                )"""
+            )
+            db.execute(
+                """CREATE INDEX IF NOT EXISTS idx_semantic_scope_time
+                   ON semantic_records(principal_id, task_id, created_at DESC)"""
+            )
+
+    def consolidation_candidates(self, *, principal_id: str, limit: int = 20) -> list[EpisodicRecord]:
+        principal = self._validate_scope(principal_id, "principal_id")
+        if type(limit) is not int or not 1 <= limit <= 20:
+            raise ValueError("Consolidation scan limit must be 1..20")
+        with self._connect() as db:
+            rows = db.execute(
+                """SELECT record_id, principal_id, task_id, content, source, created_at, metadata_json
+                   FROM episodic_records WHERE principal_id = ?
+                   ORDER BY created_at DESC, rowid DESC LIMIT ?""",
+                (principal, limit),
+            ).fetchall()
+        return [EpisodicRecord(row[0], row[1], row[2], row[3], row[4], row[5],
+                               json.loads(row[6]), True) for row in rows]
+
+    @staticmethod
+    def _semantic_id(principal: str, task: str, source_ids: tuple[str, ...]) -> str:
+        return hashlib.sha256(json.dumps(
+            [principal, task, sorted(source_ids)], ensure_ascii=False, separators=(",", ":")
+        ).encode("utf-8")).hexdigest()
+
+    def semantic_exists(self, *, principal_id: str, task_id: str, source_ids: tuple[str, ...]) -> bool:
+        principal = self._validate_scope(principal_id, "principal_id")
+        task = self._validate_scope(task_id, "task_id")
+        with self._connect() as db:
+            return db.execute(
+                "SELECT 1 FROM semantic_records WHERE principal_id=? AND task_id=? AND record_id=?",
+                (principal, task, self._semantic_id(principal, task, source_ids)),
+            ).fetchone() is not None
+
+    def save_semantic(self, *, principal_id: str, task_id: str, source_ids: tuple[str, ...],
+                      content: str) -> bool:
+        """Atomically store a derived, untrusted summary if all source rows still exist."""
+        principal = self._validate_scope(principal_id, "principal_id")
+        task = self._validate_scope(task_id, "task_id")
+        if (type(source_ids) is not tuple or not 2 <= len(source_ids) <= 5
+                or len(set(source_ids)) != len(source_ids)
+                or any(not isinstance(value, str) or not value or len(value) > 200 for value in source_ids)):
+            raise ValueError("Bounded distinct source IDs required")
+        if not isinstance(content, str) or not content.strip() or len(content) > min(4000, self.max_record_chars):
+            raise ValueError("Invalid semantic summary")
+        record_id = self._semantic_id(principal, task, source_ids)
+        with self._connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            count = db.execute(
+                "SELECT COUNT(*) FROM episodic_records WHERE principal_id=? AND task_id=? AND record_id IN ("
+                + ",".join("?" for _ in source_ids) + ")",
+                (principal, task, *source_ids),
+            ).fetchone()[0]
+            if count != len(source_ids):
+                return False  # Sources were erased or belong to another scope.
+            cursor = db.execute(
+                "INSERT OR IGNORE INTO semantic_records VALUES (?, ?, ?, ?, ?, ?)",
+                (record_id, principal, task, content.strip(), json.dumps(sorted(source_ids)), time.time()),
+            )
+            return cursor.rowcount == 1
+
+    def recall_semantic(self, *, principal_id: str, task_id: str, limit: int = 5) -> list[SemanticRecord]:
+        principal = self._validate_scope(principal_id, "principal_id")
+        task = self._validate_scope(task_id, "task_id")
+        if type(limit) is not int or not 1 <= limit <= 20:
+            raise ValueError("Semantic recall limit must be 1..20")
+        with self._connect() as db:
+            rows = db.execute(
+                """SELECT record_id, principal_id, task_id, content, source_ids_json, created_at
+                   FROM semantic_records WHERE principal_id=? AND task_id=?
+                   ORDER BY created_at DESC, record_id LIMIT ?""",
+                (principal, task, limit),
+            ).fetchall()
+        return [SemanticRecord(row[0], row[1], row[2], row[3], tuple(json.loads(row[4])), row[5])
+                for row in rows]
 
     def append(
         self,
@@ -241,6 +339,10 @@ class SQLiteEpisodicMemory:
         if confirmed is not True:
             raise PermissionError("explicit task erasure confirmation is required")
         with self._connect() as db:
+            db.execute(
+                "DELETE FROM semantic_records WHERE principal_id = ? AND task_id = ?",
+                (principal, task),
+            )
             records = db.execute(
                 "DELETE FROM episodic_records WHERE principal_id = ? AND task_id = ?",
                 (principal, task),
