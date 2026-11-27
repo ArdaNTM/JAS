@@ -2,10 +2,10 @@
   "schema": "aura.release-lock.v2",
   "version": "1.0.0-final",
   "status": "production-locked",
-  "generated_at": "2026-11-27T01:17:00.903Z",
-  "git_commit": "6f290718d42d50bbd1b5d62cf2438e61eb3e352d",
+  "generated_at": "2026-11-27T01:29:30.757+00:00",
+  "git_commit": "fc4059114f4df6b4b8f035a512df6d4f93bce751",
   "algorithm": "SHA-256",
-  "release_digest": "sha256:7ab82a15cd631d78596048f728f740d12ddc408e4b5914b5c3cc93790cbb9dbe",
+  "release_digest": "sha256:66f0474ab74c75bacf91db247cf787e21602fedf60123f55e474554a6aeb2e60",
   "file_count": 484,
   "files": [
     {
@@ -1862,7 +1862,7 @@
     },
     {
       "path": "core/tests/test_jarvis_voice_attestor_reliability.py",
-      "sha256": "51394c79caf6dcc7667f71e1fda6d4a2d418d6e9b067e622376912ac7f8b04b3"
+      "sha256": "892ddfbcc409864a9122e6e8806bd1432d56c58ab0a6a062d14146946d9e0bb2"
     },
     {
       "path": "core/tests/test_mcp_timeout_real_sdk.py",
